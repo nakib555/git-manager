@@ -1,140 +1,287 @@
 import React, { useState } from 'react';
 import { AreaChart, Area, ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 import { useAppContext } from '../AppContext';
-import { Home, FileCode, FileText, Copy, GitMerge, AlertTriangle, GitPullRequest, Search, Folder } from 'lucide-react';
+import { Home, FileCode, FileText, Copy, GitMerge, AlertTriangle, GitPullRequest, Search, Folder, GitCommit, GitBranch } from 'lucide-react';
+
+const getLanguageColor = (lang: string | null) => {
+  if (!lang) return '#8F8F9D';
+  const colors: Record<string, string> = {
+    TypeScript: '#3178c6',
+    JavaScript: '#f7df1e',
+    Python: '#3572A5',
+    Rust: '#DEA584',
+    Swift: '#F05138',
+    Go: '#00ADD8',
+    Java: '#b07219',
+    HTML: '#e34c26',
+    CSS: '#563d7c',
+  };
+  return colors[lang] || '#8F8F9D';
+};
 
 export const RepoDetails: React.FC = () => {
-  const { currentScreen } = useAppContext();
+  const { currentScreen, isLoadingRepoDetails } = useAppContext();
 
   return (
     <div className="animate-fade-up">
-      {currentScreen === 'files' && <FilesScreen />}
-      {currentScreen === 'commits' && <CommitsScreen />}
-      {currentScreen === 'branches' && <BranchesScreen />}
-      {currentScreen === 'insights' && <InsightsScreen />}
-      {currentScreen === 'prs' && <PRsScreen />}
+      {isLoadingRepoDetails ? (
+        <div className="flex flex-col items-center justify-center py-24 gap-4">
+          <div className="w-10 h-10 border-[3px] border-primary border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-xs text-text-muted font-semibold uppercase tracking-wider">Syncing details from GitHub...</p>
+        </div>
+      ) : (
+        <>
+          {currentScreen === 'files' && <FilesScreen />}
+          {currentScreen === 'commits' && <CommitsScreen />}
+          {currentScreen === 'branches' && <BranchesScreen />}
+          {currentScreen === 'insights' && <InsightsScreen />}
+          {currentScreen === 'prs' && <PRsScreen />}
+        </>
+      )}
     </div>
   );
 };
 
-const FilesScreen = () => (
-  <div className="bg-card rounded-xl border border-border overflow-hidden flex flex-col h-[65vh]">
-    <div className="px-4 py-3 text-xs text-text-muted border-b border-border flex items-center gap-1.5">
-      <Home size={14} /> / src / components / <b className="text-text-main">Rocket.tsx</b>
+const FilesScreen = () => {
+  const { activeFiles, currentRepo } = useAppContext();
+  const [selectedFile, setSelectedFile] = useState<string>('README.md');
+
+  const getSimulatedCode = (fileName: string) => {
+    if (fileName.toLowerCase().endsWith('.md')) {
+      return `
+# ${currentRepo || 'Repository'}
+
+This repository is powered by **Git Manager**.
+
+## Getting Started
+
+First, install dependencies:
+\`\`\`bash
+npm install
+\`\`\`
+
+Then run the development server:
+\`\`\`bash
+npm run dev
+\`\`\`
+
+## Architecture
+This app follows a modern, highly responsive design with robust offline and cloud stage staging capabilities.
+      `;
+    }
+    if (fileName.toLowerCase().endsWith('.tsx') || fileName.toLowerCase().endsWith('.ts')) {
+      return `
+import React, { useState, useEffect } from 'react';
+
+export const MainApp: React.FC = () => {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 800);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) {
+    return <div className="loader">Initializing...</div>;
+  }
+
+  return (
+    <div className="container p-6 bg-main">
+      <h1 className="text-xl font-bold">Git Staging Loaded</h1>
+      <p className="text-sm text-text-muted">Changes staged successfully.</p>
     </div>
-    <div className="flex overflow-x-auto p-3 gap-2 border-b border-border bg-hover no-scrollbar shrink-0">
-      <div className="border border-border text-text-muted px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap bg-card flex items-center gap-1.5">
-        <Folder size={14} className="text-info" /> hooks
+  );
+};
+      `;
+    }
+    if (fileName.toLowerCase().endsWith('.html')) {
+      return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Git Manager App</title>
+</head>
+<body>
+  <div id="root"></div>
+</body>
+</html>
+      `;
+    }
+    return `
+// Configured settings for ${fileName}
+{
+  "name": "${currentRepo || 'git-app'}",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "react": "^19.0.0"
+  }
+}
+    `;
+  };
+
+  const filesToDisplay = activeFiles.length > 0 ? activeFiles : [
+    { name: 'App.tsx', type: 'file' },
+    { name: 'README.md', type: 'file' }
+  ];
+
+  return (
+    <div className="bg-card rounded-2xl border border-border overflow-hidden flex flex-col h-[60vh]">
+      <div className="px-4 py-3.5 text-xs text-text-muted border-b border-border flex items-center gap-1.5 font-medium">
+        <Home size={14} className="text-primary" /> / <span className="text-text-main font-semibold">{currentRepo || 'repo'}</span> / <span className="text-text-main font-semibold">{selectedFile}</span>
       </div>
-      <div className="border border-border text-text-muted px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap bg-card flex items-center gap-1.5">
-        <Folder size={14} className="text-info" /> utils
+      <div className="flex overflow-x-auto p-3 gap-2 border-b border-border bg-hover/20 no-scrollbar shrink-0">
+        {filesToDisplay.map(file => {
+          const isSelected = selectedFile === file.name;
+          const Icon = file.type === 'dir' ? Folder : file.name.endsWith('.md') ? FileText : FileCode;
+          const iconColor = file.type === 'dir' ? 'text-info' : 'text-primary';
+          return (
+            <div 
+              key={file.name}
+              onClick={() => {
+                if (file.type === 'file') {
+                  setSelectedFile(file.name);
+                }
+              }}
+              className={`border px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap cursor-pointer flex items-center gap-1.5 transition-all duration-200 ${isSelected ? 'border-primary/40 text-primary bg-primary/10 shadow-sm' : 'border-border text-text-muted bg-card hover:border-text-muted/40'}`}
+            >
+              <Icon size={13} className={iconColor} /> {file.name}
+            </div>
+          );
+        })}
       </div>
-      <div className="border border-border text-text-muted px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap bg-card flex items-center gap-1.5">
-        <FileCode size={14} className="text-blue-500" /> App.tsx
-      </div>
-      <div className="border border-primary/40 text-primary px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap bg-primary/15 flex items-center gap-1.5">
-        <FileCode size={14} className="text-blue-500" /> Rocket.tsx
-      </div>
-      <div className="border border-border text-text-muted px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap bg-card flex items-center gap-1.5">
-        <FileText size={14} className="text-text-muted" /> README.md
+      <div className="flex-1 font-mono text-[11px] leading-relaxed p-4 overflow-auto bg-hover/10">
+        {getSimulatedCode(selectedFile).trim().split('\n').map((line, idx) => (
+          <div key={idx} className="flex">
+            <span className="text-[#4B4B5E] w-6 select-none shrink-0">{idx + 1}</span>
+            <span className="text-text-main/90 whitespace-pre">{line}</span>
+          </div>
+        ))}
       </div>
     </div>
-    <div className="flex-1 font-mono text-xs leading-relaxed p-4 overflow-auto bg-hover">
-      <div className="flex"><span className="text-[#4B4B5E] w-6 select-none">1</span><span className="text-[#A9B7C6] whitespace-pre"><span className="text-[#CC7832]">import</span> React, {'{'} useState {'}'} <span className="text-[#CC7832]">from</span> <span className="text-[#6A8759]">'react'</span>;</span></div>
-      <div className="flex"><span className="text-[#4B4B5E] w-6 select-none">2</span><span className="text-[#A9B7C6] whitespace-pre"><span className="text-[#CC7832]">import</span> {'{'} Engine {'}'} <span className="text-[#CC7832]">from</span> <span className="text-[#6A8759]">'./Engine'</span>;</span></div>
-      <div className="flex"><span className="text-[#4B4B5E] w-6 select-none">3</span><span className="text-[#A9B7C6] whitespace-pre"><span className="text-[#CC7832]">import</span> {'{'} Controls {'}'} <span className="text-[#CC7832]">from</span> <span className="text-[#6A8759]">'./Controls'</span>;</span></div>
-      <div className="flex"><span className="text-[#4B4B5E] w-6 select-none">4</span><span className="text-[#A9B7C6] whitespace-pre"> </span></div>
-      <div className="flex"><span className="text-[#4B4B5E] w-6 select-none">5</span><span className="text-[#A9B7C6] whitespace-pre"><span className="text-[#CC7832]">export const</span> <span className="text-[#FFC66D]">Rocket</span>: React.FC = () <span className="text-[#CC7832]">{'=>'}</span> {'{'}</span></div>
-      <div className="flex"><span className="text-[#4B4B5E] w-6 select-none">6</span><span className="text-[#A9B7C6] whitespace-pre">    <span className="text-[#CC7832]">const</span> [thrust, setThrust] = <span className="text-[#FFC66D]">useState</span>(<span className="text-[#6897BB]">0</span>);</span></div>
-      <div className="flex"><span className="text-[#4B4B5E] w-6 select-none">7</span><span className="text-[#A9B7C6] whitespace-pre"> </span></div>
-      <div className="flex"><span className="text-[#4B4B5E] w-6 select-none">8</span><span className="text-[#A9B7C6] whitespace-pre">    <span className="text-[#CC7832]">return</span> ( </span></div>
-      <div className="flex"><span className="text-[#4B4B5E] w-6 select-none">9</span><span className="text-[#A9B7C6] whitespace-pre">        <span className="text-[#E8BF6A]">{'<'}div</span> <span className="text-[#9876AA]">className</span>=<span className="text-[#6A8759]">"rocket-container"</span><span className="text-[#E8BF6A]">{'>'}</span></span></div>
-      <div className="flex"><span className="text-[#4B4B5E] w-6 select-none">10</span><span className="text-[#A9B7C6] whitespace-pre">            <span className="text-[#E8BF6A]">{'<'}Engine</span> <span className="text-[#9876AA]">power</span>={'{'}thrust{'}'} <span className="text-[#E8BF6A]">/{'>'}</span></span></div>
-      <div className="flex"><span className="text-[#4B4B5E] w-6 select-none">11</span><span className="text-[#A9B7C6] whitespace-pre">            <span className="text-[#E8BF6A]">{'<'}Controls</span> <span className="text-[#9876AA]">onChange</span>={'{'}setThrust{'}'} <span className="text-[#E8BF6A]">/{'>'}</span></span></div>
-      <div className="flex"><span className="text-[#4B4B5E] w-6 select-none">12</span><span className="text-[#A9B7C6] whitespace-pre">        <span className="text-[#E8BF6A]">{'</'}div{'>'}</span> </span></div>
-      <div className="flex"><span className="text-[#4B4B5E] w-6 select-none">13</span><span className="text-[#A9B7C6] whitespace-pre">    );</span></div>
-      <div className="flex"><span className="text-[#4B4B5E] w-6 select-none">14</span><span className="text-[#A9B7C6] whitespace-pre">{'}'};</span></div>
-    </div>
-  </div>
-);
+  );
+};
 
 const CommitsScreen = () => {
-  const { showToast } = useAppContext();
+  const { activeCommits, openModal } = useAppContext();
   return (
-    <div className="pl-5 border-l-2 border-border relative flex flex-col gap-6 pt-2">
-      <div className="text-xs font-semibold text-text-muted mt-0 mb-[-1rem]">Today</div>
-      
-      <CommitItem hash="a1b2c3d" msg="feat: add rocket engine controls" author="Tanvir Ahmed" time="2h ago" add="+24" del="-8" isPrimary />
-      <CommitItem hash="d4e5f6g" msg="fix: update ignition thrust" author="Minnat Uddin" time="5h ago" add="+12" del="-3" />
+    <div className="flex flex-col gap-4">
+      <div className="flex justify-between items-center bg-card border border-border rounded-xl p-3 mb-1">
+        <span className="text-xs text-text-muted font-semibold uppercase tracking-wider">Ready to record state?</span>
+        <button 
+          onClick={() => openModal('commit')}
+          className="bg-primary hover:bg-primary-hover text-white text-xs font-bold px-3 py-2 rounded-xl active:scale-95 transition-all flex items-center gap-1.5 shadow-sm"
+        >
+          <GitCommit size={14} strokeWidth={2.5} /> Commit Changes
+        </button>
+      </div>
 
-      <div className="text-xs font-semibold text-text-muted mb-[-1rem]">Yesterday</div>
-      
-      <CommitItem hash="h7i8j9k" msg="refactor: optimize fuel consumption logic" author="Hridoy Hasan" time="1d ago" add="+18" del="-4" />
-      <CommitItem hash="l0m1n2o" msg="docs: update API documentation" author="Jubayer Hossain" time="1d ago" add="+6" del="-1" />
-      <CommitItem hash="p3q4r5s" msg="chore: update dependencies" author="Mim Akter" time="1d ago" add="+3" del="-0" />
+      <div className="pl-5 border-l-2 border-border relative flex flex-col gap-6 pt-2">
+        {activeCommits.map((commit, idx) => (
+          <CommitItem 
+            key={commit.hash + idx} 
+            hash={commit.hash} 
+            msg={commit.msg} 
+            author={commit.author} 
+            time={commit.time} 
+            add={commit.add} 
+            del={commit.del} 
+            isPrimary={idx === 0} 
+            avatar={commit.avatar}
+          />
+        ))}
+        {activeCommits.length === 0 && (
+          <div className="text-center py-8 text-text-muted text-xs font-semibold uppercase tracking-wider">No commits yet. Make your first staging commit!</div>
+        )}
+      </div>
     </div>
   );
 };
 
-const CommitItem = ({ hash, msg, author, time, add, del, isPrimary = false }: any) => {
+const CommitItem = ({ hash, msg, author, time, add, del, isPrimary = false, avatar }: any) => {
   const { showToast } = useAppContext();
   return (
-    <div>
-      <div className={`absolute -left-[7px] w-3 h-3 bg-main border-2 rounded-full z-10 ${isPrimary ? 'border-primary' : 'border-text-muted'}`}></div>
+    <div className="relative">
+      <div className={`absolute -left-[27px] top-1 w-3 h-3 bg-main border-2 rounded-full z-10 transition-colors ${isPrimary ? 'border-primary' : 'border-text-muted'}`}></div>
       <div 
-        className="font-semibold mb-1 inline-block px-2 py-1 bg-card rounded-md cursor-pointer active:opacity-70 text-sm"
-        onClick={() => showToast(`Commit ${hash} copied to clipboard`)}
+        className="font-mono font-bold mb-1.5 inline-flex items-center gap-1 px-2.5 py-1 bg-card border border-border rounded-lg cursor-pointer hover:border-primary/40 active:opacity-75 text-xs text-primary transition-all"
+        onClick={() => {
+          navigator.clipboard.writeText(hash);
+          showToast(`Hash ${hash} copied to clipboard`);
+        }}
       >
-        {hash} <Copy size={12} className="inline text-text-muted mb-0.5 ml-1" />
+        {hash} <Copy size={11} className="text-text-muted" />
       </div>
-      <div className="text-[13px] mb-2 mt-1">{msg}</div>
+      <div className="text-[13px] text-text-main font-semibold mb-2 leading-relaxed">{msg}</div>
       <div className="text-xs text-text-muted flex justify-between items-center">
         <div className="flex items-center gap-1.5">
-          <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${author.split(' ')[0]}`} className="w-5 h-5 rounded-full bg-border" alt="" /> 
-          {author} · {time}
+          <img src={avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${author.split(' ')[0]}`} className="w-5 h-5 rounded-full bg-border" alt="" /> 
+          <span className="font-medium text-text-main/80">{author}</span> · {time}
         </div>
-        <span className="text-success">{add} <span className={del !== '-0' ? 'text-danger' : 'text-text-muted'}>{del}</span></span>
+        <span className="text-[11px] font-bold text-success flex items-center gap-1">
+          {add} <span className={del !== '-0' && del !== '0' ? 'text-danger' : 'text-text-muted'}>{del}</span>
+        </span>
       </div>
     </div>
   );
 };
 
-const BranchesScreen = () => (
-  <>
-    <div className="bg-card rounded-xl p-3 flex items-center gap-3 mb-4 border border-border">
-      <Search size={20} className="text-text-muted" />
-      <input type="text" placeholder="Search branches..." className="bg-transparent border-none text-text-main w-full outline-none text-sm placeholder:text-text-muted" />
-    </div>
-    <div className="relative py-2 flex gap-4">
-      <svg className="absolute top-2 left-7 w-[60px] h-[350px] z-0" viewBox="0 0 60 300" fill="none">
-        <path d="M15 10 L15 290" stroke="#38BDF8" strokeWidth="2" strokeDasharray="4 4"/>
-        <path d="M15 40 C 35 60, 35 120, 35 160 C 35 220, 15 240, 15 260" stroke="#10B981" strokeWidth="2"/>
-        <path d="M35 100 C 55 120, 55 160, 35 180" stroke="#A78BFA" strokeWidth="2"/>
-        <path d="M15 220 C 40 230, 40 250, 15 270" stroke="#EF4444" strokeWidth="2"/>
-        <circle cx="15" cy="20" r="6" fill="var(--main)" stroke="#38BDF8" strokeWidth="3"/>
-        <circle cx="35" cy="70" r="6" fill="#10B981"/>
-        <circle cx="55" cy="140" r="6" fill="var(--main)" stroke="#A78BFA" strokeWidth="3"/>
-        <circle cx="35" cy="190" r="6" fill="#10B981"/>
-        <circle cx="40" cy="245" r="6" fill="#EF4444"/>
-      </svg>
-      <div className="flex flex-col gap-[35px] ml-20 z-10 relative -mt-1.5 w-full pr-1">
-        <BranchLabel title="main" desc="Production ready environment" isDefault borderColor="#38BDF8" />
-        <BranchLabel title="develop" desc="Active development branch" icon={<GitMerge size={14} className="text-text-muted" strokeWidth={3} />} />
-        <BranchLabel title="feature/auth" desc="Add OAuth2 authentication" icon={<GitMerge size={14} className="text-text-muted" strokeWidth={3} />} />
-        <BranchLabel title="feature/rocket-ui" desc="Improve UI design elements" icon={<GitMerge size={14} className="text-text-muted" strokeWidth={3} />} />
-        <BranchLabel title="hotfix/engine-bug" desc="Fix engine thrust calculation issue" icon={<AlertTriangle size={14} className="text-danger" strokeWidth={3} />} />
-      </div>
-    </div>
-  </>
-);
+const BranchesScreen = () => {
+  const { activeBranches, openModal } = useAppContext();
+  const [search, setSearch] = useState('');
 
-const BranchLabel = ({ title, desc, isDefault = false, icon = null, borderColor = 'transparent' }: any) => (
-  <div className="flex flex-col gap-0.5 bg-card p-3 rounded-xl border border-border w-full" style={{ borderColor: borderColor !== 'transparent' ? borderColor : undefined }}>
-    <span className="text-sm font-semibold flex items-center justify-between">
-      {title} 
-      {isDefault ? <span className="text-[10px] px-2 py-0.5 rounded-full bg-info/10 text-info font-medium">Default</span> : icon}
-    </span>
-    <span className="text-[11px] text-text-muted">{desc}</span>
+  const filteredBranches = activeBranches.filter(b => b.name.toLowerCase().includes(search.toLowerCase()));
+
+  return (
+    <>
+      <div className="bg-card rounded-xl p-3 flex items-center gap-3 mb-4 border border-border">
+        <Search size={20} className="text-text-muted" />
+        <input 
+          type="text" 
+          placeholder="Search branches..." 
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="bg-transparent border-none text-text-main w-full outline-none text-sm placeholder:text-text-muted" 
+        />
+      </div>
+      <div className="flex justify-between items-center bg-card border border-border rounded-xl p-3 mb-4">
+        <span className="text-xs text-text-muted font-semibold uppercase tracking-wider">Branch from main</span>
+        <button 
+          onClick={() => openModal('branch')}
+          className="bg-info text-white text-xs font-bold px-3 py-2 rounded-xl active:scale-95 transition-all flex items-center gap-1.5 shadow-sm"
+        >
+          <GitBranch size={14} strokeWidth={2.5} /> New Branch
+        </button>
+      </div>
+      <div className="flex flex-col gap-3">
+        {filteredBranches.map(branch => (
+          <BranchLabel 
+            key={branch.name} 
+            title={branch.name} 
+            desc={branch.desc || 'Active branch'} 
+            isDefault={branch.isDefault} 
+            borderColor={branch.borderColor} 
+          />
+        ))}
+        {filteredBranches.length === 0 && (
+          <div className="text-center py-8 text-text-muted text-xs font-semibold uppercase tracking-wider">No branches found matching your search.</div>
+        )}
+      </div>
+    </>
+  );
+};
+
+const BranchLabel = ({ title, desc, isDefault = false, borderColor = 'transparent' }: any) => (
+  <div 
+    className="flex flex-col gap-1 bg-card p-3.5 rounded-2xl border transition-all" 
+    style={{ borderColor: borderColor !== 'transparent' ? borderColor : 'var(--border)' }}
+  >
+    <div className="text-[14px] font-bold flex items-center justify-between text-text-main">
+      <span className="flex items-center gap-1.5"><GitBranch size={14} className="text-primary" /> {title}</span>
+      {isDefault && <span className="text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-info/10 text-info border border-info/20 font-bold">Default</span>}
+    </div>
+    <span className="text-[11px] text-text-muted font-medium">{desc}</span>
   </div>
 );
 
@@ -144,136 +291,163 @@ const insightsData = [
   { name: '20 Jun', uv: 40 },
   { name: '30 Jun', uv: 68 },
 ];
-const pieData = [
-  { name: 'TypeScript', value: 45, color: '#3178c6' },
-  { name: 'JavaScript', value: 30, color: '#f7df1e' },
-  { name: 'Python', value: 15, color: '#3572A5' },
-  { name: 'Others', value: 10, color: '#262636' },
-];
 
-const InsightsScreen = () => (
-  <>
-    <div className="grid grid-cols-3 gap-3 mb-6">
-      <div className="bg-card rounded-2xl p-3 flex flex-col items-center text-center">
-        <span className="text-[11px] text-text-muted">Commits</span>
-        <span className="text-xl font-bold">68</span>
-        <span className="text-[10px] text-success">+15%</span>
-      </div>
-      <div className="bg-card rounded-2xl p-3 flex flex-col items-center text-center">
-        <span className="text-[11px] text-text-muted">Contributors</span>
-        <span className="text-xl font-bold text-warning">12</span>
-        <span className="text-[10px] text-success">+8%</span>
-      </div>
-      <div className="bg-card rounded-2xl p-3 flex flex-col items-center text-center">
-        <span className="text-[11px] text-text-muted">PRs Merged</span>
-        <span className="text-xl font-bold">24</span>
-        <span className="text-[10px] text-success">+20%</span>
-      </div>
-    </div>
-    
-    <div className="bg-card rounded-3xl p-4 mb-5">
-      <div className="text-sm font-semibold mb-2.5">Commits Over Time</div>
-      <div className="h-[120px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={insightsData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-            <defs>
-              <linearGradient id="colorUvIns" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#7C3AED" stopOpacity={0.4}/>
-                <stop offset="95%" stopColor="#7C3AED" stopOpacity={0}/>
-              </linearGradient>
-            </defs>
-            <Area type="monotone" dataKey="uv" stroke="#7C3AED" strokeWidth={2} fillOpacity={1} fill="url(#colorUvIns)" />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
+const InsightsScreen = () => {
+  const { activeLanguages } = useAppContext();
 
-    <div className="bg-card rounded-3xl p-4 flex items-center justify-between">
-      <div>
-        <div className="text-sm font-semibold mb-4">Languages</div>
-        <div className="w-[110px] h-[110px]">
+  const total = (Object.values(activeLanguages) as number[]).reduce((a, b) => a + b, 0) || 1;
+  const pieData = Object.entries(activeLanguages).map(([name, val]) => ({
+    name,
+    value: val as number,
+    color: getLanguageColor(name)
+  })).sort((a, b) => b.value - a.value);
+
+  const displayPie = pieData.length > 4 
+    ? [...pieData.slice(0, 3), { name: 'Others', value: pieData.slice(3).reduce((acc, curr) => acc + curr.value, 0), color: '#262636' }]
+    : pieData.length > 0 ? pieData : [{ name: 'TypeScript', value: 100, color: '#3178c6' }];
+
+  const finalTotal = displayPie.reduce((acc, curr) => acc + curr.value, 0) || 1;
+
+  return (
+    <>
+      <div className="grid grid-cols-3 gap-3 mb-5">
+        <div className="bg-card rounded-2xl p-3 border border-border flex flex-col items-center text-center">
+          <span className="text-[10px] text-text-muted font-semibold uppercase tracking-wider mb-1">Commits</span>
+          <span className="text-lg font-bold">68</span>
+          <span className="text-[10px] text-success font-bold mt-0.5">+15%</span>
+        </div>
+        <div className="bg-card rounded-2xl p-3 border border-border flex flex-col items-center text-center">
+          <span className="text-[10px] text-text-muted font-semibold uppercase tracking-wider mb-1">Contributors</span>
+          <span className="text-lg font-bold text-warning">12</span>
+          <span className="text-[10px] text-success font-bold mt-0.5">+8%</span>
+        </div>
+        <div className="bg-card rounded-2xl p-3 border border-border flex flex-col items-center text-center">
+          <span className="text-[10px] text-text-muted font-semibold uppercase tracking-wider mb-1">PRs Merged</span>
+          <span className="text-lg font-bold">24</span>
+          <span className="text-[10px] text-success font-bold mt-0.5">+20%</span>
+        </div>
+      </div>
+      
+      <div className="bg-card rounded-2xl p-4 mb-5 border border-border">
+        <div className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">Commits Over Time</div>
+        <div className="h-[120px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie data={pieData} innerRadius={35} outerRadius={55} paddingAngle={0} dataKey="value" stroke="none">
-                {pieData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-main)', fontSize: '12px' }} itemStyle={{ color: 'var(--text-main)' }} />
-            </PieChart>
+            <AreaChart data={insightsData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+              <defs>
+                <linearGradient id="colorUvIns" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#7C3AED" stopOpacity={0.4}/>
+                  <stop offset="95%" stopColor="#7C3AED" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <Area type="monotone" dataKey="uv" stroke="#7C3AED" strokeWidth={2.5} fillOpacity={1} fill="url(#colorUvIns)" />
+            </AreaChart>
           </ResponsiveContainer>
         </div>
       </div>
-      <div className="text-xs flex flex-col gap-2.5 w-[45%]">
-        <div className="flex justify-between"><span className="font-semibold text-[#3178c6]">TypeScript</span> <span>45%</span></div>
-        <div className="flex justify-between"><span className="font-semibold text-[#f7df1e]">JavaScript</span> <span>30%</span></div>
-        <div className="flex justify-between"><span className="font-semibold text-[#3572A5]">Python</span> <span>15%</span></div>
-        <div className="flex justify-between"><span className="font-semibold text-text-muted">Others</span> <span>10%</span></div>
+
+      <div className="bg-card rounded-2xl p-4 flex items-center justify-between border border-border">
+        <div>
+          <div className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-4">Languages</div>
+          <div className="w-[100px] h-[100px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={displayPie} innerRadius={28} outerRadius={46} paddingAngle={0} dataKey="value" stroke="none">
+                  {displayPie.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-main)', fontSize: '11px' }} itemStyle={{ color: 'var(--text-main)' }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        <div className="text-xs flex flex-col gap-2 w-[50%]">
+          {displayPie.map(lang => (
+            <div key={lang.name} className="flex justify-between items-center text-text-main/90 font-medium">
+              <span className="font-bold flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: lang.color }} />
+                {lang.name}
+              </span> 
+              <span className="text-text-muted font-bold">{Math.round((lang.value / finalTotal) * 100)}%</span>
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
-  </>
-);
+    </>
+  );
+};
 
 const PRsScreen = () => {
-  const { showToast } = useAppContext();
+  const { activePRs, openModal } = useAppContext();
   const [activeTab, setActiveTab] = useState('Open');
+
+  const filteredPRs = activePRs.filter(pr => {
+    if (activeTab === 'Open') return pr.status === 'Open' || pr.status === 'Review Req.' || pr.status === 'Draft' || pr.status === 'Approved';
+    if (activeTab === 'Merged') return pr.status === 'Merged';
+    if (activeTab === 'Closed') return pr.status === 'Closed';
+    return true;
+  });
 
   return (
     <>
       <div className="flex border-b border-border mb-4">
-        {['Open', 'Merged', 'Closed'].map((tab, i) => (
-          <div 
-            key={tab}
-            className={`px-4 py-3 text-[13px] font-medium relative cursor-pointer transition-colors ${activeTab === tab ? 'text-primary' : 'text-text-muted'}`}
-            onClick={() => { setActiveTab(tab); showToast(`Viewing ${tab} PRs`); }}
-          >
-            {tab}
-            {i === 0 && <span className="bg-primary/20 text-primary px-1.5 py-0.5 rounded-full text-[10px] ml-1">3</span>}
-            {i === 1 && <span className="bg-success/20 text-success px-1.5 py-0.5 rounded-full text-[10px] ml-1">12</span>}
-            {activeTab === tab && <div className="absolute -bottom-[1px] left-0 w-full h-[2px] bg-primary rounded-t-sm"></div>}
+        {['Open', 'Merged', 'Closed'].map((tab) => {
+          const count = activePRs.filter(pr => {
+            if (tab === 'Open') return pr.status === 'Open' || pr.status === 'Review Req.' || pr.status === 'Draft' || pr.status === 'Approved';
+            if (tab === 'Merged') return pr.status === 'Merged';
+            if (tab === 'Closed') return pr.status === 'Closed';
+            return false;
+          }).length;
+          
+          return (
+            <div 
+              key={tab}
+              className={`px-4 py-3 text-[13px] font-semibold relative cursor-pointer transition-colors ${activeTab === tab ? 'text-primary' : 'text-text-muted'}`}
+              onClick={() => { setActiveTab(tab); }}
+            >
+              {tab}
+              <span className={`px-1.5 py-0.5 rounded-full text-[10px] ml-1.5 font-bold ${activeTab === tab ? 'bg-primary/20 text-primary border border-primary/25' : 'bg-hover/40 text-text-muted border border-border'}`}>
+                {count}
+              </span>
+              {activeTab === tab && <div className="absolute -bottom-[1px] left-0 w-full h-[2.5px] bg-primary rounded-t-sm"></div>}
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="flex justify-between items-center bg-card border border-border rounded-xl p-3 mb-4">
+        <span className="text-xs text-text-muted font-semibold uppercase tracking-wider">Ready to merge changes?</span>
+        <button 
+          onClick={() => openModal('pr')}
+          className="bg-success text-white text-xs font-bold px-3 py-2 rounded-xl active:scale-95 transition-all flex items-center gap-1.5 shadow-sm"
+        >
+          <GitPullRequest size={14} strokeWidth={2.5} /> Open PR
+        </button>
+      </div>
+
+      <div className="space-y-3">
+        {filteredPRs.map(pr => (
+          <div key={pr.id} className="flex gap-3.5 p-4 border border-border rounded-2xl bg-card transition-all hover:border-primary/40">
+            <GitPullRequest size={20} className={`${pr.status === 'Open' || pr.status === 'Approved' ? 'text-success' : pr.status === 'Merged' ? 'text-purple-500' : 'text-text-muted'} shrink-0`} strokeWidth={2.5} />
+            <div className="flex-1">
+              <div className="text-sm font-bold mb-1 leading-snug text-text-main">{pr.title}</div>
+              <div className="text-xs text-text-muted mb-3 font-medium">#{pr.id} opened {pr.time} by {pr.author}</div>
+              <div className="flex justify-between items-center">
+                {pr.avatar ? (
+                  <img src={pr.avatar} className="w-5 h-5 rounded-full bg-border" alt="" />
+                ) : (
+                  <div className="w-5 h-5 rounded-full bg-primary/20 text-[9px] font-bold flex items-center justify-center text-primary border border-primary/10">{pr.author.substring(0, 2).toUpperCase()}</div>
+                )}
+                <span className={`text-[10px] px-2.5 py-0.5 rounded-full border font-bold ${pr.status === 'Approved' || pr.status === 'Open' ? 'bg-success/10 text-success border-success/30' : pr.status === 'Merged' ? 'bg-primary/10 text-primary border-primary/30' : 'bg-hover text-text-muted border-border'}`}>
+                  {pr.status}
+                </span>
+              </div>
+            </div>
           </div>
         ))}
-      </div>
-
-      <div className="flex gap-3 p-4 border border-border rounded-2xl mb-3 bg-card">
-        <GitPullRequest size={20} className="text-success shrink-0" strokeWidth={3} />
-        <div className="flex-1">
-          <div className="text-sm font-medium mb-1 leading-snug">Add authentication system via OAuth2</div>
-          <div className="text-xs text-text-muted mb-3">#42 opened 2h ago by Tanvir</div>
-          <div className="flex justify-between items-center">
-            <div className="flex items-center">
-              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Mim" className="w-5 h-5 rounded-full border-2 border-card" alt="" />
-              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Hridoy" className="w-5 h-5 rounded-full border-2 border-card -ml-2" alt="" />
-            </div>
-            <span className="text-[10px] bg-success/10 text-success px-2 py-0.5 rounded-full border border-success">Approved</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex gap-3 p-4 border border-border rounded-2xl mb-3 bg-card">
-        <GitPullRequest size={20} className="text-text-muted shrink-0" strokeWidth={3} />
-        <div className="flex-1">
-          <div className="text-sm font-medium mb-1 leading-snug">Fix UI responsiveness issues on mobile</div>
-          <div className="text-xs text-text-muted mb-3">#41 opened 5h ago by Mim Akter</div>
-          <div className="flex justify-between items-center">
-            <div className="flex items-center">
-              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Tanvir" className="w-5 h-5 rounded-full border-2 border-card" alt="" />
-            </div>
-            <span className="text-[10px] bg-hover text-text-muted px-2 py-0.5 rounded-full border border-border">Draft</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex gap-3 p-4 border border-danger rounded-2xl mb-3 bg-card">
-        <GitPullRequest size={20} className="text-warning shrink-0" strokeWidth={3} />
-        <div className="flex-1">
-          <div className="text-sm font-medium mb-1 leading-snug">Update dependencies and packages</div>
-          <div className="text-xs text-text-muted mb-3">#40 opened 1d ago by Hridoy Hasan</div>
-          <div className="flex justify-between items-center">
-            <span className="text-[11px] text-danger flex items-center gap-1"><AlertTriangle size={12} fill="currentColor" /> Conflicts</span>
-            <span className="text-[10px] bg-warning/10 text-warning px-2 py-0.5 rounded-full border border-warning">Review Req.</span>
-          </div>
-        </div>
+        {filteredPRs.length === 0 && (
+          <div className="text-center py-10 text-text-muted text-xs font-semibold uppercase tracking-wider">No pull requests found.</div>
+        )}
       </div>
     </>
   );

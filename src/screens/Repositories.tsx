@@ -50,20 +50,22 @@ export const Repositories: React.FC = () => {
     }
   }, [isSearchFocused]);
 
-  const displayRepos = githubRepos.length > 0 
-    ? githubRepos.map((repo: GitHubRepo) => ({
-        id: repo.name,
-        name: repo.name,
-        isPrivate: repo.private,
-        desc: repo.description || 'No description provided.',
-        lang: repo.language || 'Unknown',
-        langColor: getLanguageColor(repo.language),
-        updated: formatTime(repo.pushed_at),
-        icon: FolderGit2,
-        iconColor: 'text-[#38BDF8]',
-        bg: 'bg-[#38BDF8]/10'
-      }))
-    : REPOS;
+  const displayRepos = githubRepos.map((repo: GitHubRepo) => {
+    const lang = repo.language || 'Unknown';
+    return {
+      id: repo.name,
+      name: repo.name,
+      owner: (repo as any).owner?.login || null,
+      isPrivate: repo.private,
+      desc: repo.description || 'No description provided.',
+      lang,
+      langColor: getLanguageColor(lang),
+      updated: formatTime(repo.pushed_at),
+      icon: FolderGit2,
+      iconColor: 'text-[#38BDF8]',
+      bg: 'bg-[#38BDF8]/10'
+    };
+  });
 
   const filteredRepos = displayRepos.filter(repo => {
     if (searchQuery && !repo.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
@@ -87,7 +89,7 @@ export const Repositories: React.FC = () => {
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-4 no-scrollbar">
-        {['All', 'Private', 'Public', 'Starred'].map(f => (
+        {['All', 'Private', 'Public'].map(f => (
           <div 
             key={f}
             onClick={() => { setFilter(f); showToast(`Filtered by: ${f}`); }}
@@ -104,8 +106,8 @@ export const Repositories: React.FC = () => {
           return (
             <div 
               key={repo.id}
-              className="bg-card p-4 rounded-2xl mb-3 cursor-pointer transition-transform duration-200 active:scale-95 active:bg-hover border border-transparent active:border-border"
-              onClick={() => openRepo(repo.id)}
+              className="bg-card p-4 rounded-2xl mb-3 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 active:scale-95 border border-border"
+              onClick={() => openRepo(repo.id, repo.owner)}
             >
               <div className="flex justify-between mb-2">
                 <div className="text-[15px] font-semibold flex items-center gap-2.5">

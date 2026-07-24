@@ -21,6 +21,7 @@ export interface GitHubRepo {
 export interface AppState {
   currentScreen: Screen;
   currentRepo: string | null;
+  currentRepoOwner: string | null;
   isActionSheetOpen: boolean;
   isDrawerOpen: boolean;
   toastMessage: string | null;
@@ -29,11 +30,20 @@ export interface AppState {
   githubToken: string | null;
   githubUser: GitHubUser | null;
   githubRepos: GitHubRepo[];
+  
+  // Repo details state
+  activeCommits: any[];
+  activePRs: any[];
+  activeBranches: any[];
+  activeFiles: any[];
+  activeLanguages: Record<string, number>;
+  isLoadingRepoDetails: boolean;
+  activeModal: 'repo' | 'branch' | 'pr' | 'commit' | null;
 }
 
 export type AppContextType = AppState & {
   navigate: (screen: Screen) => void;
-  openRepo: (repoName: string) => void;
+  openRepo: (repoName: string, owner?: string | null) => void;
   openActionSheet: () => void;
   closeActionSheet: () => void;
   openDrawer: () => void;
@@ -45,4 +55,13 @@ export type AppContextType = AppState & {
   connectGitHub: () => void;
   disconnectGitHub: () => void;
   setManualToken: (token: string) => void;
+  
+  // Details and local creation actions
+  openModal: (modalType: 'repo' | 'branch' | 'pr' | 'commit') => void;
+  closeModal: () => void;
+  createLocalRepo: (repo: { name: string; desc: string; isPrivate: boolean; lang: string }) => void;
+  createLocalBranch: (branch: { name: string; desc: string }) => void;
+  createLocalPR: (pr: { title: string; desc: string; source: string; target: string }) => void;
+  createLocalCommit: (commit: { msg: string; author: string; hash?: string; add?: string; del?: string }) => void;
 };
+

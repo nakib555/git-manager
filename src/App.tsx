@@ -3,6 +3,7 @@ import { AppProvider, useAppContext } from './AppContext';
 import { Header, BottomNav, RepoTabs } from './components/Layout';
 import { ActionSheet, NotificationDrawer, Toast } from './components/UI';
 import { Splash } from './components/Splash';
+import { CreateModals } from './components/CreateModals';
 
 import { Dashboard } from './screens/Dashboard';
 import { Repositories } from './screens/Repositories';
@@ -25,6 +26,7 @@ const MainApp = () => {
       <BottomNav />
       <ActionSheet />
       <NotificationDrawer />
+      <CreateModals />
       <Toast />
     </div>
   );

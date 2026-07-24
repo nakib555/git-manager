@@ -3,7 +3,7 @@ import { useAppContext } from '../AppContext';
 import { Folder, GitBranch, GitPullRequest, X, XCircle, CheckCircle2, MessageSquare } from 'lucide-react';
 
 export const ActionSheet: React.FC = () => {
-  const { isActionSheetOpen, closeModals, showToast } = useAppContext();
+  const { isActionSheetOpen, closeModals, showToast, openModal } = useAppContext();
 
   return (
     <>
@@ -17,7 +17,7 @@ export const ActionSheet: React.FC = () => {
         
         <div 
           className="flex items-center gap-4 py-4 border-b border-border cursor-pointer active:opacity-70"
-          onClick={() => { showToast('Repository creation started'); closeModals(); }}
+          onClick={() => { openModal('repo'); }}
         >
           <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
             <Folder size={20} />
@@ -30,7 +30,7 @@ export const ActionSheet: React.FC = () => {
 
         <div 
           className="flex items-center gap-4 py-4 border-b border-border cursor-pointer active:opacity-70"
-          onClick={() => { showToast('Branch creation opened'); closeModals(); }}
+          onClick={() => { openModal('branch'); }}
         >
           <div className="w-10 h-10 rounded-xl bg-info/10 text-info flex items-center justify-center">
             <GitBranch size={20} />
@@ -43,7 +43,7 @@ export const ActionSheet: React.FC = () => {
 
         <div 
           className="flex items-center gap-4 py-4 cursor-pointer active:opacity-70"
-          onClick={() => { showToast('Pull Request form opened'); closeModals(); }}
+          onClick={() => { openModal('pr'); }}
         >
           <div className="w-10 h-10 rounded-xl bg-success/10 text-success flex items-center justify-center">
             <GitPullRequest size={20} />
