@@ -55,6 +55,7 @@ export type AppContextType = AppState & {
   connectGitHub: () => void;
   disconnectGitHub: () => void;
   setManualToken: (token: string) => void;
+  refreshData: () => Promise<void>;
   
   // Details and local creation actions
   openModal: (modalType: 'repo' | 'branch' | 'pr' | 'commit' | 'oauth_setup') => void;

@@ -454,6 +454,50 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     showToast(`Committed: ${newCommit.hash}`);
   };
 
+  const refreshData = async () => {
+    setState(prev => ({ ...prev, isLoadingRepoDetails: true }));
+    // Simulate brief refreshing delay to show the loader feedback
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    if (state.githubToken) {
+      try {
+        await fetchGitHubData(state.githubToken);
+        if (state.currentRepo && state.currentRepoOwner && state.currentRepoOwner !== 'mock') {
+          await fetchRepoDetails(state.currentRepo, state.currentRepoOwner);
+        }
+      } catch (error) {
+        console.error('Refresh error:', error);
+      }
+    } else {
+      // Local mode refresh
+      setState(prev => {
+        const repos = getLocalRepos();
+        let commits = prev.activeCommits;
+        let branches = prev.activeBranches;
+        let prs = prev.activePRs;
+        let files = prev.activeFiles;
+        
+        if (prev.currentRepo) {
+          commits = getLocalRepoDetails(prev.currentRepo, 'commits');
+          branches = getLocalRepoDetails(prev.currentRepo, 'branches');
+          prs = getLocalRepoDetails(prev.currentRepo, 'prs');
+          files = getLocalRepoDetails(prev.currentRepo, 'files');
+        }
+        
+        return {
+          ...prev,
+          githubRepos: repos,
+          activeCommits: commits,
+          activeBranches: branches,
+          activePRs: prs,
+          activeFiles: files,
+          isLoadingRepoDetails: false
+        };
+      });
+    }
+    showToast('Data refreshed successfully');
+  };
+
   useEffect(() => {
     if (state.toastMessage) {
       const timer = setTimeout(() => {
@@ -480,6 +524,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         connectGitHub,
         disconnectGitHub,
         setManualToken,
+        refreshData,
         openModal,
         closeModal,
         createLocalRepo,

@@ -4,6 +4,7 @@ import { Header, BottomNav, RepoTabs } from './components/Layout';
 import { ActionSheet, NotificationDrawer, Toast } from './components/UI';
 import { Splash } from './components/Splash';
 import { CreateModals } from './components/CreateModals';
+import { PullToRefresh } from './components/PullToRefresh';
 
 import { Dashboard } from './screens/Dashboard';
 import { Repositories } from './screens/Repositories';
@@ -17,12 +18,12 @@ const MainApp = () => {
     <div className="flex flex-col w-full h-full bg-main opacity-0 animate-[fadeUp_0.3s_ease_forwards] relative">
       <Header />
       <RepoTabs />
-      <main className="flex-1 overflow-y-auto overflow-x-hidden px-5 pb-5 no-scrollbar relative">
+      <PullToRefresh>
         {currentScreen === 'dash' && <Dashboard />}
         {currentScreen === 'repos' && <Repositories />}
         {['commits', 'prs', 'branches', 'files', 'insights'].includes(currentScreen) && <RepoDetails />}
         {currentScreen === 'settings' && <Settings />}
-      </main>
+      </PullToRefresh>
       <BottomNav />
       <ActionSheet />
       <NotificationDrawer />
