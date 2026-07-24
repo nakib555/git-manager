@@ -172,18 +172,39 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const fetchGitHubData = async (token: string) => {
     try {
+      // Modern GitHub API prefers Bearer token format, but we fall back to token format if needed
+      const headers = {
+        Authorization: token.startsWith('ghp_') || token.startsWith('github_pat_') || token.startsWith('gho_')
+          ? `Bearer ${token}`
+          : `token ${token}`
+      };
+
       // Fetch user profile
-      const userRes = await fetch('https://api.github.com/user', {
-        headers: { Authorization: `token ${token}` }
-      });
-      if (!userRes.ok) throw new Error('Failed to fetch user');
+      const userRes = await fetch('https://api.github.com/user', { headers });
+      if (!userRes.ok) {
+        let errorMsg = `Status ${userRes.status}`;
+        try {
+          const errBody = await userRes.json();
+          if (errBody.message) {
+            errorMsg = errBody.message;
+          }
+        } catch (_) {}
+        throw new Error(`Profile: ${errorMsg}`);
+      }
       const userData = await userRes.json();
 
       // Fetch user repos
-      const reposRes = await fetch('https://api.github.com/user/repos?sort=updated&per_page=20', {
-        headers: { Authorization: `token ${token}` }
-      });
-      if (!reposRes.ok) throw new Error('Failed to fetch repos');
+      const reposRes = await fetch('https://api.github.com/user/repos?sort=updated&per_page=20', { headers });
+      if (!reposRes.ok) {
+        let errorMsg = `Status ${reposRes.status}`;
+        try {
+          const errBody = await reposRes.json();
+          if (errBody.message) {
+            errorMsg = errBody.message;
+          }
+        } catch (_) {}
+        throw new Error(`Repositories: ${errorMsg}`);
+      }
       const reposData = await reposRes.json();
 
       setState((prev) => ({
@@ -191,10 +212,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         githubUser: userData,
         githubRepos: reposData,
       }));
-    } catch (error) {
+    } catch (error: any) {
       console.error('GitHub fetch error:', error);
-      showToast('Error loading GitHub data');
-      disconnectGitHub();
+      showToast(`Error loading GitHub data: ${error.message || error}`);
+      // Do not clear the token immediately if it's a manual entry error, let the user check it
     }
   };
 
@@ -202,7 +223,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (!state.githubToken) return;
     setState(prev => ({ ...prev, isLoadingRepoDetails: true }));
     try {
-      const headers = { Authorization: `token ${state.githubToken}` };
+      const token = state.githubToken;
+      const headers = {
+        Authorization: token.startsWith('ghp_') || token.startsWith('github_pat_') || token.startsWith('gho_')
+          ? `Bearer ${token}`
+          : `token ${token}`
+      };
       
       // 1. Fetch Commits
       const commitsRes = await fetch(`https://api.github.com/repos/${owner}/${repoName}/commits?per_page=15`, { headers });
