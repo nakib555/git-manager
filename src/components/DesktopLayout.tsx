@@ -229,11 +229,19 @@ export const DesktopLayout: React.FC = () => {
         </header>
 
         {/* Content Viewport */}
-        <div className="flex-1 overflow-y-auto p-8 relative min-h-0">
-          {currentScreen === 'dash' && <DesktopDashboard globalSearch={globalSearch} />}
+        <div className="flex-1 overflow-hidden p-8 relative min-h-0 flex flex-col">
+          {currentScreen === 'dash' && (
+            <div className="flex-1 overflow-y-auto pr-1 no-scrollbar">
+              <DesktopDashboard globalSearch={globalSearch} />
+            </div>
+          )}
           {currentScreen === 'repos' && <DesktopRepositories globalSearch={globalSearch} />}
           {isRepoScreen && <DesktopRepoWorkspace />}
-          {currentScreen === 'settings' && <DesktopSettings />}
+          {currentScreen === 'settings' && (
+            <div className="flex-1 overflow-y-auto pr-1 no-scrollbar">
+              <DesktopSettings />
+            </div>
+          )}
         </div>
       </main>
     </div>
@@ -656,7 +664,7 @@ const DesktopRepositories: React.FC<{ globalSearch: string }> = ({ globalSearch 
   const selectedRepo = filteredRepos.find(r => r.id === selectedRepoId);
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 h-[calc(100vh-12rem)] flex flex-col">
+    <div className="w-full max-w-7xl mx-auto space-y-6 flex-1 flex flex-col min-h-0">
       <div className="flex justify-between items-center shrink-0">
         <div>
           <h1 className="text-xl font-bold tracking-tight">Repositories Explorer</h1>
@@ -840,14 +848,14 @@ const DesktopRepoWorkspace: React.FC = () => {
   const { currentScreen, isLoadingRepoDetails } = useAppContext();
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 h-full flex flex-col">
+    <div className="w-full max-w-7xl mx-auto space-y-6 flex-1 flex flex-col min-h-0">
       {isLoadingRepoDetails ? (
-        <div className="h-[60vh] flex flex-col items-center justify-center gap-3">
+        <div className="flex-1 flex flex-col items-center justify-center gap-3">
           <span className="w-10 h-10 rounded-full border-4 border-primary border-t-transparent animate-spin" />
           <span className="text-xs text-text-muted font-bold tracking-widest uppercase">Loading workspace metadata...</span>
         </div>
       ) : (
-        <div className="h-[calc(100vh-12rem)] min-h-0">
+        <div className="flex-1 min-h-0 flex flex-col">
           {currentScreen === 'files' && <DesktopFilesView />}
           {currentScreen === 'commits' && <DesktopCommitsView />}
           {currentScreen === 'prs' && <DesktopPRsView />}
@@ -863,7 +871,7 @@ const DesktopRepoWorkspace: React.FC = () => {
  * 3.1 DESKTOP CODE FILES EXPLORER VIEW (IDE SIDEBAR + CODE PREVIEW PANEL)
  */
 const DesktopFilesView: React.FC = () => {
-  const { activeFiles, currentRepo, githubToken, currentRepoOwner } = useAppContext();
+  const { activeFiles, currentRepo, githubToken, currentRepoOwner, showToast } = useAppContext();
   const [selectedFile, setSelectedFile] = useState<string>('');
   const [fileContent, setFileContent] = useState<string>('');
   const [isLoadingFile, setIsLoadingFile] = useState<boolean>(false);
@@ -921,7 +929,7 @@ const DesktopFilesView: React.FC = () => {
 
   if (filesToDisplay.length === 0) {
     return (
-      <div className="bg-card rounded-2xl border border-border p-12 text-center h-full flex flex-col items-center justify-center">
+      <div className="bg-card rounded-2xl border border-border p-12 text-center flex-1 flex flex-col items-center justify-center">
         <Folder size={40} className="text-text-muted mb-3" />
         <h3 className="font-bold text-sm text-text-main mb-1">No Files Loaded</h3>
         <p className="text-xs text-text-muted max-w-sm">This repository has no registered files loaded. Link a token or commit files locally.</p>
@@ -930,9 +938,9 @@ const DesktopFilesView: React.FC = () => {
   }
 
   return (
-    <div className="h-full flex gap-5">
+    <div className="flex-1 min-h-0 flex gap-5">
       {/* File sidebar explorer */}
-      <div className="w-80 bg-card border border-border rounded-2xl p-4 flex flex-col h-full shrink-0">
+      <div className="w-80 bg-card border border-border rounded-2xl p-4 flex flex-col h-full shrink-0 min-h-0">
         <span className="block text-[10px] font-bold text-text-muted uppercase tracking-widest mb-4 px-1">WORKSPACE DIRECTORY</span>
         
         <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 no-scrollbar">
@@ -956,7 +964,7 @@ const DesktopFilesView: React.FC = () => {
       </div>
 
       {/* Code Editor Preview Screen */}
-      <div className="flex-1 bg-card border border-border rounded-2xl overflow-hidden flex flex-col h-full shadow-sm">
+      <div className="flex-1 bg-card border border-border rounded-2xl overflow-hidden flex flex-col h-full shadow-sm min-h-0">
         <div className="px-5 py-3 border-b border-border bg-hover/10 flex justify-between items-center shrink-0">
           <div className="flex items-center gap-1.5 text-xs text-text-muted font-medium">
             <Home size={13} className="text-primary" />
@@ -969,7 +977,7 @@ const DesktopFilesView: React.FC = () => {
           <button 
             onClick={() => {
               navigator.clipboard.writeText(fileContent);
-              alert('Code copied to clipboard!');
+              showToast('Code copied to clipboard!');
             }}
             className="text-[10px] bg-card hover:bg-hover/60 border border-border px-3 py-1.5 rounded-lg font-bold text-text-main transition-colors cursor-pointer"
           >
@@ -1056,9 +1064,9 @@ const DesktopCommitsView: React.FC = () => {
   };
 
   return (
-    <div className="h-full flex gap-5">
+    <div className="flex-1 min-h-0 flex gap-5">
       {/* Timeline panel */}
-      <div className="w-96 bg-card border border-border rounded-2xl p-5 flex flex-col h-full shrink-0">
+      <div className="w-96 bg-card border border-border rounded-2xl p-5 flex flex-col h-full shrink-0 min-h-0">
         <div className="flex justify-between items-center mb-5 shrink-0">
           <span className="block text-[10px] font-bold text-text-muted uppercase tracking-widest">VERSION TIMELINE</span>
           <button 
@@ -1128,7 +1136,7 @@ const DesktopCommitsView: React.FC = () => {
       </div>
 
       {/* Inspector details panel */}
-      <div className="flex-1 bg-card border border-border rounded-2xl overflow-y-auto p-6 space-y-6 flex flex-col h-full justify-between shadow-sm">
+      <div className="flex-1 bg-card border border-border rounded-2xl overflow-y-auto p-6 space-y-6 flex flex-col h-full justify-between shadow-sm min-h-0">
         {commitToInspect ? (
           <div className="space-y-6 flex-1 overflow-y-auto pr-1 no-scrollbar">
             {/* Header info */}
@@ -1315,7 +1323,7 @@ const DesktopPRsView: React.FC = () => {
   });
 
   return (
-    <div className="space-y-5 h-full flex flex-col">
+    <div className="space-y-5 flex-1 flex flex-col min-h-0">
       {/* Top action header bar */}
       <div className="flex justify-between items-center shrink-0">
         {/* Navigation tabs */}
@@ -1413,7 +1421,7 @@ const DesktopBranchesView: React.FC = () => {
   const filtered = activeBranches.filter(b => b.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="space-y-5 h-full flex flex-col">
+    <div className="space-y-5 flex-1 flex flex-col min-h-0">
       <div className="flex justify-between items-center shrink-0">
         <div className="bg-card border border-border rounded-xl px-3 py-2 flex items-center gap-2.5 w-80">
           <Search size={15} className="text-text-muted" />
@@ -1491,7 +1499,7 @@ const DesktopInsightsView: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-6 h-full overflow-y-auto pr-1 no-scrollbar pb-8">
+    <div className="space-y-6 flex-1 overflow-y-auto pr-1 no-scrollbar pb-8">
       {/* 3 Metric Card Grid */}
       <div className="grid grid-cols-3 gap-5">
         <div className="bg-card rounded-2xl p-5 border border-border flex flex-col justify-between">
