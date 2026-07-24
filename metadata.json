@@ -1,0 +1,6 @@
+{
+  "name": "Git Manager",
+  "description": "A mobile-first GitHub repository manager and activity tracker with OAuth integration and theme switching.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

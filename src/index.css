@@ -1,0 +1,96 @@
+@import "tailwindcss";
+
+@theme {
+  --color-main: var(--main);
+  --color-card: var(--card);
+  --color-hover: var(--hover);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-text-main: var(--text-main);
+  --color-text-muted: var(--text-muted);
+  --color-border: var(--border);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  
+  --font-inter: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+:root {
+  --main: #0B0B14;
+  --card: #151522;
+  --hover: #1E1E2F;
+  --primary: #7C3AED;
+  --primary-hover: #6D28D9;
+  --text-main: #FFFFFF;
+  --text-muted: #8F8F9D;
+  --border: #262636;
+  --success: #10B981;
+  --danger: #EF4444;
+  --warning: #F59E0B;
+  --info: #38BDF8;
+
+  background-color: var(--main);
+  color: var(--text-main);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.light-theme {
+  --main: #F4F4F5;
+  --card: #FFFFFF;
+  --hover: #E4E4E7;
+  --primary: #7C3AED;
+  --primary-hover: #6D28D9;
+  --text-main: #18181B;
+  --text-muted: #71717A;
+  --border: #D4D4D8;
+  --success: #10B981;
+  --danger: #EF4444;
+  --warning: #F59E0B;
+  --info: #0EA5E9;
+  
+  background-color: var(--main);
+  color: var(--text-main);
+}
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  box-sizing: border-box;
+  font-family: var(--font-inter);
+}
+
+/* Custom scrollbar hiding */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* Animations */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up {
+  animation: fadeUp 0.3s ease forwards;
+}
