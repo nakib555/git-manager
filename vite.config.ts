@@ -12,6 +12,9 @@ export default defineConfig(() => {
       VitePWA({
         registerType: 'autoUpdate',
         includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+        workbox: {
+          navigateFallbackDenylist: [/^\/auth\/callback/, /^\/api\//],
+        },
         manifest: {
           name: 'Git Manager Desktop System',
           short_name: 'GitManager',

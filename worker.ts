@@ -2,7 +2,9 @@ export default {
   async fetch(request: Request, env: any, ctx: any) {
     const url = new URL(request.url);
 
-    if (url.pathname === '/api/auth/url') {
+    const path = url.pathname.replace(/\/$/, '');
+    
+    if (path === '/api/auth/url') {
       if (!env.GITHUB_CLIENT_ID || !env.GITHUB_CLIENT_SECRET) {
         return new Response(JSON.stringify({ 
           error: "GITHUB_CLIENT_ID or GITHUB_CLIENT_SECRET is missing. Please add them as Secrets in your Cloudflare Workers dashboard." 
@@ -27,7 +29,7 @@ export default {
       });
     }
 
-    if (url.pathname === '/auth/callback' || url.pathname === '/auth/callback/') {
+    if (path === '/auth/callback') {
       const code = url.searchParams.get('code');
       if (!code) {
         const fallbackHtml = `
