@@ -11,7 +11,7 @@ export default defineConfig(() => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['git_manager_logo.jpg'],
+        includeAssets: ['git-manager-logo.png'],
         workbox: {
           navigateFallbackDenylist: [/^\/auth\/callback/, /^\/api\//],
         },
@@ -22,19 +22,19 @@ export default defineConfig(() => {
           theme_color: '#1a1a2e',
           icons: [
             {
-              src: 'git_manager_logo.jpg',
+              src: 'git-manager-logo.png',
               sizes: '192x192',
-              type: 'image/jpeg'
+              type: 'image/png'
             },
             {
-              src: 'git_manager_logo.jpg',
+              src: 'git-manager-logo.png',
               sizes: '512x512',
-              type: 'image/jpeg'
+              type: 'image/png'
             },
             {
-              src: 'git_manager_logo.jpg',
+              src: 'git-manager-logo.png',
               sizes: '512x512',
-              type: 'image/jpeg',
+              type: 'image/png',
               purpose: 'any maskable'
             }
           ]

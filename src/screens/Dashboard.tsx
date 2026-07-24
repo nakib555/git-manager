@@ -1,7 +1,26 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { ArrowUpRight, GitMerge, GitCommit, AlertCircle, ChevronDown, Github, FolderGit2, Settings, Sliders, RefreshCw, Eye, EyeOff } from 'lucide-react';
 import { useAppContext } from '../AppContext';
+import { AnimatedGlobe, AnimatedLock } from '../components/Layout';
+
+interface AnimateIconProps {
+  children: React.ReactNode;
+  animateOnHover?: boolean;
+}
+
+const AnimateIcon: React.FC<AnimateIconProps> = ({ children, animateOnHover = true }) => {
+  return (
+    <motion.div
+      whileHover={animateOnHover ? { rotate: 360 } : {}}
+      transition={{ duration: 0.6, ease: "easeInOut" }}
+      className="flex items-center justify-center"
+    >
+      {children}
+    </motion.div>
+  );
+};
 
 export const Dashboard: React.FC = () => {
   const { githubUser, githubRepos, connectGitHub, githubToken, activeCommits, openRepo, sessionCommitsCount } = useAppContext();
@@ -146,8 +165,16 @@ export const Dashboard: React.FC = () => {
             {timeframe === 'Day' ? 'Today' : `This ${timeframe}`} <ChevronDown size={14} className="ml-1" />
           </button>
           
+          <AnimatePresence>
           {isDropdownOpen && (
-            <div className="absolute right-0 top-6 bg-card border border-border rounded-xl shadow-lg overflow-hidden z-10 w-32 py-1">
+            <motion.div
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -5 }}
+              transition={{ duration: 0.15 }}
+              className="absolute right-0 top-6 bg-card border border-border rounded-xl shadow-lg overflow-hidden z-10 w-32 py-1"
+            >
+            
               {(['Day', 'Week', 'Month', 'Year'] as const).map((t) => (
                 <button
                   key={t}
@@ -157,8 +184,9 @@ export const Dashboard: React.FC = () => {
                   {t === 'Day' ? 'Today' : `This ${t}`}
                 </button>
               ))}
-            </div>
+            </motion.div>
           )}
+          </AnimatePresence>
         </div>
         <div className="h-[150px] w-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -230,8 +258,16 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
 
+          <AnimatePresence>
           {isAdjustmentPanelOpen && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-hover/10 p-3 rounded-2xl border border-border animate-fade-in text-xs">
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-hover/10 p-3 rounded-2xl border border-border text-xs mt-3">
               {/* Toggles */}
               <div className="flex flex-col gap-2">
                 <span className="font-semibold text-text-main">Series Visibility</span>
@@ -303,12 +339,16 @@ export const Dashboard: React.FC = () => {
                     className="p-1.5 rounded-lg border border-border bg-card text-text-muted hover:text-text-main transition-colors cursor-pointer"
                     title="Reset to 1.0x"
                   >
-                    <RefreshCw size={13} />
+                    <AnimateIcon animateOnHover>
+                      <RefreshCw size={13} />
+                    </AnimateIcon>
                   </button>
                 </div>
               </div>
             </div>
+            </motion.div>
           )}
+          </AnimatePresence>
         </div>
       </div>
 
@@ -337,8 +377,9 @@ export const Dashboard: React.FC = () => {
                   <div className="text-xs text-text-muted">{repo.description || 'No description provided.'}</div>
                 </div>
               </div>
-              <span className="text-[10px] px-2 py-1 rounded-full bg-hover text-text-muted font-medium shrink-0">
-                {repo.private ? 'Private' : 'Public'}
+              <span className="text-[10px] px-2 py-0.5 rounded-full border border-border text-text-muted flex items-center gap-1 h-fit shrink-0 font-semibold bg-hover/40">
+                {repo.private ? <AnimatedLock size={11} className="text-text-muted" /> : <AnimatedGlobe size={11} className="text-text-muted" />}
+                <span>{repo.private ? 'Private' : 'Public'}</span>
               </span>
             </div>
           ))}

@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { AreaChart, Area, ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useAppContext } from '../AppContext';
 import { Home, FileCode, FileText, Copy, GitMerge, AlertTriangle, GitPullRequest, Search, Folder, GitCommit, GitBranch, Edit2, Trash2, Check, X, MoreVertical, Undo, Eye, BookOpen, FileSearch, Tag, RotateCcw, HelpCircle, Terminal, Sliders, Clock, User } from 'lucide-react';
+import emptyStateImage from '../assets/images/empty_commits_state_1784913881320.jpg';
+
+import { useIsDesktop } from '../hooks/useIsDesktop';
 
 const getLanguageColor = (lang: string | null) => {
   if (!lang) return '#8F8F9D';
@@ -236,10 +240,14 @@ const SkeletonDetails: React.FC<{ screen: string }> = ({ screen }) => {
 
 export const RepoDetails: React.FC = () => {
   const { currentScreen, isLoadingRepoDetails, currentRepo, navigate } = useAppContext();
+  const isDesktop = useIsDesktop();
 
   if (!currentRepo) {
     return (
-      <div className="bg-card rounded-2xl border border-border p-8 text-center flex flex-col items-center justify-center my-12 mx-5 animate-fade-up">
+      <div 
+        className="bg-card rounded-2xl border border-border p-8 text-center flex flex-col items-center justify-center my-12 mx-5 animate-fade-up"
+        style={!isDesktop ? { width: '315px', marginLeft: '10px', marginTop: '10px', marginInline: 'calc(var(--spacing) * 0)', marginBlock: 'calc(var(--spacing) * 0)' } : undefined}
+      >
         <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-3">
           <Folder size={24} />
         </div>
@@ -656,7 +664,7 @@ const CommitsScreen = () => {
           );
         })}
         {activeCommits.length === 0 && (
-          <div className="text-center py-8 text-text-muted text-xs font-semibold uppercase tracking-wider">No commits yet. Make your first staging commit!</div>
+          <div className="flex flex-col items-center justify-center py-16 px-4 animate-fade-in"><img src={emptyStateImage} alt="Empty repository" className="w-48 h-48 mb-6 rounded-2xl shadow-sm opacity-90 object-cover pointer-events-none" /><div className="text-base font-bold text-text-main mb-2">It is quiet here...</div><div className="text-center text-text-muted text-xs leading-relaxed max-w-[250px]">This repository has no commits yet. Make your first staging commit to start tracking changes!</div></div>
         )}
       </div>
 
@@ -679,13 +687,13 @@ const CommitsScreen = () => {
       )}
 
       {/* Custom Bottom Action Sheet for Commit Actions */}
-      {showActionSheet && selectedCommit && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-[990] flex items-end justify-center animate-fade-in p-0 sm:p-4">
+      <AnimatePresence>{showActionSheet && selectedCommit && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="fixed inset-0 bg-background/80 backdrop-blur-md z-[990] flex items-end justify-center p-0 sm:p-4">
           <div 
             className="absolute inset-0" 
             onClick={() => setShowActionSheet(false)}
           />
-          <div className="bg-card w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl border border-border shadow-2xl z-[991] flex flex-col max-h-[90vh] overflow-hidden animate-slide-up relative">
+          <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 300 }} className="bg-card w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl border border-border shadow-2xl z-[991] flex flex-col max-h-[90vh] overflow-hidden relative">
             
             {/* Handlebar for dragging feedback on mobile */}
             <div className="w-12 h-1 bg-border rounded-full mx-auto my-3 shrink-0 sm:hidden"></div>
@@ -717,7 +725,7 @@ const CommitsScreen = () => {
               </p>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
+            <div className="flex-1 overflow-y-auto p-4 pb-8 sm:pb-4 space-y-4 no-scrollbar">
               
               {/* Latest Commit-Only Actions Section */}
               {isLatestCommit(selectedCommit) && (
@@ -924,18 +932,20 @@ const CommitsScreen = () => {
               </div>
 
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+      </AnimatePresence>
 
       {/* Secondary Bottom Sheet: Restore to This Commit Options */}
+      <AnimatePresence>
       {showRestoreSheet && selectedCommit && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-[990] flex items-end justify-center animate-fade-in p-0 sm:p-4">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="fixed inset-0 bg-background/80 backdrop-blur-md z-[990] flex items-end justify-center p-0 sm:p-4">
           <div 
             className="absolute inset-0" 
             onClick={() => setShowRestoreSheet(false)}
           />
-          <div className="bg-card w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl border border-border shadow-2xl z-[991] flex flex-col max-h-[90vh] overflow-hidden animate-slide-up relative">
+          <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 300 }} className="bg-card w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl border border-border shadow-2xl z-[991] flex flex-col max-h-[90vh] overflow-hidden relative">
             <div className="w-12 h-1 bg-border rounded-full mx-auto my-3 shrink-0 sm:hidden"></div>
 
             <div className="px-5 pb-4 pt-2 sm:pt-4 border-b border-border flex justify-between items-center">
@@ -956,7 +966,7 @@ const CommitsScreen = () => {
               </button>
             </div>
 
-            <div className="p-5 overflow-y-auto space-y-4 no-scrollbar">
+            <div className="p-5 pb-8 sm:pb-5 overflow-y-auto space-y-4 no-scrollbar">
               
               {/* Option 1: Restore Files */}
               <button 
@@ -1001,14 +1011,15 @@ const CommitsScreen = () => {
               </button>
 
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+      </AnimatePresence>
 
       {/* View Commit Details Modal */}
       {showDetailsModal && selectedCommit && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-[995] flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl animate-scale-up">
+          <div className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl animate-scale-up max-h-[85vh] overflow-y-auto no-scrollbar">
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-2.5">
                 <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
@@ -1070,7 +1081,7 @@ const CommitsScreen = () => {
       {/* Amend Latest Commit Modal (Supports Edit Message, Content, Both) */}
       {showAmendModal && selectedCommit && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-[995] flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl animate-scale-up">
+          <div className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl animate-scale-up max-h-[85vh] overflow-y-auto no-scrollbar">
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-2.5">
                 <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
@@ -1177,7 +1188,7 @@ const CommitsScreen = () => {
       {/* Delete Latest Commit Destructive Warning Confirmation Modal */}
       {showDeleteConfirm && selectedCommit && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-[995] flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl animate-scale-up">
+          <div className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl animate-scale-up max-h-[85vh] overflow-y-auto no-scrollbar">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 rounded-full bg-danger/10 text-danger flex items-center justify-center shrink-0">
                 <AlertTriangle size={24} />
@@ -1213,7 +1224,7 @@ const CommitsScreen = () => {
       {/* Undo Latest Commit Warning Confirmation Modal */}
       {showUndoConfirm && selectedCommit && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-[995] flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl animate-scale-up">
+          <div className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl animate-scale-up max-h-[85vh] overflow-y-auto no-scrollbar">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 rounded-full bg-warning/10 text-warning flex items-center justify-center shrink-0">
                 <Undo size={22} />
@@ -1249,7 +1260,7 @@ const CommitsScreen = () => {
       {/* Create Branch at Commit Modal */}
       {showBranchModal && selectedCommit && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-[995] flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl animate-scale-up">
+          <div className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl animate-scale-up max-h-[85vh] overflow-y-auto no-scrollbar">
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-2.5">
                 <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center">
@@ -1303,7 +1314,7 @@ const CommitsScreen = () => {
       {/* Create Tag at Commit Modal */}
       {showTagModal && selectedCommit && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-[995] flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl animate-scale-up">
+          <div className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl animate-scale-up max-h-[85vh] overflow-y-auto no-scrollbar">
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-2.5">
                 <div className="w-10 h-10 rounded-xl bg-pink-500/10 text-pink-500 flex items-center justify-center">
@@ -1357,7 +1368,7 @@ const CommitsScreen = () => {
       {/* Changed Files Explorer Modal */}
       {showFilesModal && selectedCommit && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-[995] flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl animate-scale-up">
+          <div className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl animate-scale-up max-h-[85vh] overflow-y-auto no-scrollbar">
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-2.5">
                 <div className="w-10 h-10 rounded-xl bg-info/10 text-info flex items-center justify-center">

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../AppContext';
 import { User, Key, CreditCard, Palette, Plug, Info, Moon, Sun, ChevronRight, Github, Cloud, KeySquare, Check } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 export const Settings: React.FC = () => {
   const { showToast, theme, toggleTheme, githubUser, githubToken, connectGitHub, disconnectGitHub, setManualToken } = useAppContext();
@@ -72,8 +73,16 @@ export const Settings: React.FC = () => {
               <ChevronRight size={16} className={`text-text-muted transition-transform ${showTokenInput ? 'rotate-90' : ''}`} />
             </div>
             
+            <AnimatePresence>
             {showTokenInput && (
-              <div className="mt-3 space-y-2 animate-fade-in">
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+              <div className="mt-3 space-y-2">
                 <p className="text-xs text-text-muted">
                   Paste your GitHub Personal Access Token (PAT). Need one?{' '}
                   <a 
@@ -101,7 +110,9 @@ export const Settings: React.FC = () => {
                   </button>
                 </div>
               </div>
+              </motion.div>
             )}
+            </AnimatePresence>
           </div>
         )}
 

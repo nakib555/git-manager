@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useAppContext } from '../AppContext';
-import { Menu, Bell, Plus, ArrowLeft, ChevronDown, MoreVertical, Folder, Activity, Search, Grid, Home, GitBranch } from 'lucide-react';
+import { Menu, Bell, Plus, ArrowLeft, ChevronDown, MoreVertical, Folder, Activity, Search, Grid, Home, GitBranch, ChevronLeft } from 'lucide-react';
+import { motion } from 'motion/react';
 
 export const Header: React.FC = () => {
-  const { currentScreen, currentRepo, navigate, openDrawer, openActionSheet } = useAppContext();
+  const { currentScreen, currentRepo, currentRepoOwner, navigate, openDrawer, openActionSheet } = useAppContext();
 
   const getHeaderContent = () => {
     switch (currentScreen) {
@@ -18,7 +19,7 @@ export const Header: React.FC = () => {
                 <Bell size={24} />
                 <div className="absolute top-0 right-0.5 w-2 h-2 bg-danger rounded-full border-2 border-main"></div>
               </button>
-              <button className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-text-main" onClick={openActionSheet}>
+              <button className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-text-main header-action-btn" onClick={openActionSheet}>
                 <Plus size={18} />
               </button>
             </div>
@@ -32,7 +33,7 @@ export const Header: React.FC = () => {
           right: (
             <div className="flex gap-3">
               <button className="text-text-main" onClick={openDrawer}><Bell size={24} /></button>
-              <button className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-text-main" onClick={openActionSheet}>
+              <button className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-text-main header-action-btn" onClick={openActionSheet}>
                 <Plus size={18} />
               </button>
             </div>
@@ -42,14 +43,14 @@ export const Header: React.FC = () => {
         return {
           title: 'Settings',
           sub: '',
-          left: <ArrowLeft size={24} onClick={() => navigate('dash')} className="cursor-pointer" />,
+          left: <AnimatedChevronLeft onClick={() => navigate('dash')} />,
           right: <MoreVertical size={24} />
         };
       case 'insights':
         return {
           title: 'Insights',
           sub: currentRepo,
-          left: <ArrowLeft size={24} onClick={() => navigate('repos')} className="cursor-pointer" />,
+          left: <AnimatedChevronLeft onClick={() => navigate('repos')} />,
           right: <span className="text-xs text-text-muted flex items-center">This Month <ChevronDown size={14} className="ml-1 font-bold" /></span>
         };
       case 'files':
@@ -57,7 +58,7 @@ export const Header: React.FC = () => {
         return {
           title: currentScreen === 'files' ? 'Files' : 'Commits',
           sub: currentRepo,
-          left: <ArrowLeft size={24} onClick={() => navigate('repos')} className="cursor-pointer" />,
+          left: <AnimatedChevronLeft onClick={() => navigate('repos')} />,
           right: (
             <button className="bg-card border border-border rounded-lg px-3 py-1.5 text-[13px] font-semibold flex items-center text-text-main">
               <GitBranch size={14} className="mr-1" /> main {currentScreen === 'files' && <ChevronDown size={14} className="ml-1" />}
@@ -69,7 +70,7 @@ export const Header: React.FC = () => {
         return {
           title: currentScreen === 'branches' ? 'Branches' : 'Pull Requests',
           sub: currentRepo,
-          left: <ArrowLeft size={24} onClick={() => navigate('repos')} className="cursor-pointer" />,
+          left: <AnimatedChevronLeft onClick={() => navigate('repos')} />,
           right: (
             <button className="bg-primary rounded-lg px-3 py-1.5 text-[13px] font-semibold text-white" onClick={openActionSheet}>
               + New {currentScreen === 'branches' ? 'Branch' : 'PR'}
@@ -83,18 +84,57 @@ export const Header: React.FC = () => {
 
   const content = getHeaderContent();
 
+  const isRepoScreen = ['files', 'commits', 'branches', 'insights', 'prs'].includes(currentScreen);
+
   return (
-    <header className="flex-shrink-0 flex justify-between items-center px-5 pb-4 pt-[max(1rem,env(safe-area-inset-top))] bg-main z-10">
-      <div className="text-text-main flex items-center justify-center">{content.left}</div>
-      <div className="text-[17px] font-semibold flex flex-col items-center">
-        {content.title}
-        {content.sub && (
-          <span className="text-[11px] text-text-muted font-normal mt-0.5 flex items-center gap-1">
-            <Folder size={10} className="text-primary" fill="currentColor" /> {content.sub}
-          </span>
+    <header className="flex-shrink-0 flex items-center px-5 pb-4 pt-[max(1rem,env(safe-area-inset-top))] bg-main z-10 gap-3">
+      <div className="text-text-main flex items-center justify-center shrink-0">
+        {content.left}
+      </div>
+      
+      <div className="text-[17px] font-bold flex flex-col items-start text-left min-w-0 flex-1 ml-0">
+        {isRepoScreen && currentRepo ? (
+          <>
+            <div className="flex items-center gap-1.5 text-[15px] font-semibold text-text-muted leading-none truncate w-full">
+              <span className="truncate max-w-[100px] text-text-muted">{currentRepoOwner || 'workspace'}</span>
+              <motion.svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-text-muted/60 shrink-0 mx-0.5"
+                animate={{ x: [0, 3, 0] }}
+                transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+              >
+                <path d="M5 12h14" />
+                <path d="m12 5 7 7-7 7" />
+              </motion.svg>
+              <span className="font-bold text-text-main truncate">{currentRepo}</span>
+            </div>
+            <span className="text-[11px] text-text-muted font-normal mt-1 flex items-center gap-1 leading-none">
+              <Folder size={10} className="text-primary" fill="currentColor" /> {content.title}
+            </span>
+          </>
+        ) : (
+          <>
+            <span className="text-text-main font-bold truncate leading-none">{content.title}</span>
+            {content.sub && (
+              <span className="text-[11px] text-text-muted font-normal mt-1 flex items-center gap-1 leading-none">
+                <Folder size={10} className="text-primary" fill="currentColor" /> {content.sub}
+              </span>
+            )}
+          </>
         )}
       </div>
-      <div className="text-text-main flex items-center justify-center">{content.right}</div>
+
+      <div className="text-text-main flex items-center justify-center shrink-0">
+        {content.right}
+      </div>
     </header>
   );
 };
@@ -131,38 +171,269 @@ export const RepoTabs: React.FC = () => {
   );
 };
 
+export const AnimatedGlobe: React.FC<{ size?: number; className?: string }> = ({ size = 12, className }) => {
+  const [rotation, setRotation] = useState(0);
+
+  const handleTouch = (e: React.MouseEvent | React.TouchEvent) => {
+    setRotation(prev => prev + 360);
+  };
+
+  return (
+    <motion.svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={`${className || ''} cursor-pointer select-none`}
+      onClick={handleTouch}
+      onTouchStart={handleTouch}
+      animate={{ rotate: rotation }}
+      whileHover={{ scale: 1.15 }}
+      whileTap={{ scale: 0.85 }}
+      transition={{ 
+        rotate: { type: "spring", stiffness: 220, damping: 16 },
+        scale: { duration: 0.15 }
+      }}
+      style={{ transformOrigin: 'center center' }}
+    >
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+      <path d="M2 12h20" />
+    </motion.svg>
+  );
+};
+
+export const AnimatedLock: React.FC<{ size?: number; className?: string }> = ({ size = 12, className }) => {
+  const [isHovered, setIsHovered] = useState(false);
+
+  const handleTouch = () => {
+    setIsHovered(prev => !prev);
+  };
+
+  return (
+    <motion.svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={`${className || ''} cursor-pointer select-none`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onClick={handleTouch}
+      onTouchStart={handleTouch}
+      whileHover={{ scale: 1.15 }}
+      whileTap={{ scale: 0.85 }}
+      transition={{ duration: 0.15 }}
+    >
+      <motion.path 
+        d="M7 11V7a5 5 0 0 1 10 0v4" 
+        animate={{ 
+          y: isHovered ? -1.5 : 0 
+        }}
+        transition={{ type: "spring", stiffness: 350, damping: 12 }}
+      />
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+      <path d="M12 16v3" />
+    </motion.svg>
+  );
+};
+
+export const AnimatedSearchIcon: React.FC<{ size?: number; className?: string }> = ({ size = 20, className }) => {
+  const [rotation, setRotation] = useState(0);
+
+  const handleTouch = (e: React.MouseEvent | React.TouchEvent) => {
+    // Prevent default to avoid double-trigger on some devices if needed, but standard onClick is fine.
+    setRotation(prev => prev + 360);
+  };
+
+  return (
+    <motion.svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      onClick={handleTouch}
+      onTouchStart={handleTouch}
+      animate={{ rotate: rotation }}
+      whileHover={{ rotate: rotation - 10, scale: 1.05 }}
+      transition={{ 
+        rotate: { type: "spring", stiffness: 180, damping: 15 },
+        scale: { duration: 0.2 }
+      }}
+      style={{ transformOrigin: 'right bottom' }}
+    >
+      <path d="m21 21-4.34-4.34" />
+      <circle cx="11" cy="11" r="8" />
+    </motion.svg>
+  );
+};
+
+const MotionChevronLeft = motion.create(ChevronLeft);
+
+export const AnimatedChevronLeft: React.FC<{ size?: number; className?: string; onClick?: () => void }> = ({ size = 24, className, onClick }) => {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onTouchStart={() => setIsHovered(true)}
+      onTouchEnd={() => setIsHovered(false)}
+      className={`w-10 h-10 -ml-2 rounded-full flex items-center justify-center text-text-muted hover:text-text-main hover:bg-hover active:bg-hover/80 transition-all duration-200 cursor-pointer select-none focus:outline-none ${className || ''}`}
+      whileHover={{ scale: 1.08 }}
+      whileTap={{ scale: 0.92 }}
+      transition={{ type: "spring", stiffness: 450, damping: 18 }}
+    >
+      <MotionChevronLeft
+        size={size}
+        className="pointer-events-none"
+        animate={{ x: isHovered ? -3 : 0 }}
+        transition={{ type: "spring", stiffness: 450, damping: 18 }}
+      />
+    </motion.button>
+  );
+};
+
 export const BottomNav: React.FC = () => {
   const { currentScreen, navigate, setSearchFocus } = useAppContext();
   
   const isActivity = ['files', 'branches', 'insights', 'commits', 'prs'].includes(currentScreen);
 
-  const getNavClass = (isActive: boolean, activeColorClass: string) => 
-    `flex flex-col items-center gap-1.5 text-[11px] font-medium cursor-pointer transition-colors duration-200 ${isActive ? activeColorClass : 'text-text-muted'}`;
-
   const getIconClass = (isActive: boolean) => 
-    `transition-transform duration-200 ${isActive ? '-translate-y-0.5' : ''}`;
+    `transition-transform duration-300 ${isActive ? 'scale-105' : 'group-hover:scale-105'}`;
 
   return (
-    <nav className="flex-shrink-0 bg-main/95 backdrop-blur-md border-t border-border flex justify-around px-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 z-50">
-      <div className={getNavClass(currentScreen === 'dash', 'text-blue-500')} onClick={() => navigate('dash')}>
-        <Home size={24} className={getIconClass(currentScreen === 'dash')} fill={currentScreen === 'dash' ? 'currentColor' : 'none'} />
-        <span>Home</span>
+    <nav className="flex-shrink-0 bg-main/95 backdrop-blur-md border-t border-border flex justify-around px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2.5 z-50">
+      {/* Home tab */}
+      <div 
+        className={`group flex flex-col items-center gap-1 text-[11px] font-semibold cursor-pointer transition-all duration-200 w-16 ${
+          currentScreen === 'dash' ? 'text-blue-500' : 'text-text-muted hover:text-text-main'
+        }`}
+        onClick={() => navigate('dash')}
+      >
+        <div className={`w-12 h-8 flex items-center justify-center rounded-2xl transition-all duration-300 ${
+          currentScreen === 'dash' 
+            ? 'bg-blue-500/10 text-blue-500' 
+            : 'hover:bg-hover'
+        }`}>
+          <Home size={20} className={getIconClass(currentScreen === 'dash')} />
+        </div>
+        <span className="text-[10px]">Home</span>
       </div>
-      <div className={getNavClass(currentScreen === 'repos' && !isActivity, 'text-purple-500')} onClick={() => navigate('repos')}>
-        <Folder size={24} className={getIconClass(currentScreen === 'repos' && !isActivity)} fill={currentScreen === 'repos' && !isActivity ? 'currentColor' : 'none'} />
-        <span>Repos</span>
+
+      {/* Repos tab */}
+      <div 
+        className={`group flex flex-col items-center gap-1 text-[11px] font-semibold cursor-pointer transition-all duration-200 w-16 ${
+          currentScreen === 'repos' && !isActivity ? 'text-purple-500' : 'text-text-muted hover:text-text-main'
+        }`}
+        onClick={() => navigate('repos')}
+      >
+        <div className={`w-12 h-8 flex items-center justify-center rounded-2xl transition-all duration-300 ${
+          currentScreen === 'repos' && !isActivity 
+            ? 'bg-purple-500/10 text-purple-500' 
+            : 'hover:bg-hover'
+        }`}>
+          <Folder size={20} className={getIconClass(currentScreen === 'repos' && !isActivity)} />
+        </div>
+        <span className="text-[10px]">Repos</span>
       </div>
-      <div className={getNavClass(isActivity, 'text-pink-500')} onClick={() => navigate('commits')}>
-        <Activity size={24} className={getIconClass(isActivity)} />
-        <span>Activity</span>
+
+      {/* Activity tab */}
+      <div 
+        className={`group flex flex-col items-center gap-1 text-[11px] font-semibold cursor-pointer transition-all duration-200 w-16 ${
+          isActivity ? 'text-pink-500' : 'text-text-muted hover:text-text-main'
+        }`}
+        onClick={() => navigate('commits')}
+      >
+        <div className={`w-12 h-8 flex items-center justify-center rounded-2xl transition-all duration-300 ${
+          isActivity 
+            ? 'bg-pink-500/10 text-pink-500' 
+            : 'hover:bg-hover'
+        }`}>
+          <Activity size={20} className={getIconClass(isActivity)} />
+        </div>
+        <span className="text-[10px]">Activity</span>
       </div>
-      <div className={getNavClass(false, 'text-orange-500')} onClick={() => { navigate('repos'); setSearchFocus(true); }}>
-        <Search size={24} className={getIconClass(false)} />
-        <span>Search</span>
+
+      {/* Search tab */}
+      <div 
+        className="group flex flex-col items-center gap-1 text-[11px] font-semibold cursor-pointer transition-all duration-200 w-16 text-text-muted hover:text-text-main"
+        onClick={() => { navigate('repos'); setSearchFocus(true); }}
+      >
+        <div className="w-12 h-8 flex items-center justify-center rounded-2xl transition-all duration-300 hover:bg-hover">
+          <AnimatedSearchIcon className={getIconClass(false)} />
+        </div>
+        <span className="text-[10px]">Search</span>
       </div>
-      <div className={getNavClass(currentScreen === 'settings', 'text-green-500')} onClick={() => navigate('settings')}>
-        <Grid size={24} className={getIconClass(currentScreen === 'settings')} fill={currentScreen === 'settings' ? 'currentColor' : 'none'} />
-        <span>More</span>
+
+      {/* Settings / More tab */}
+      <div 
+        className={`group flex flex-col items-center gap-1 text-[11px] font-semibold cursor-pointer transition-all duration-200 w-16 ${
+          currentScreen === 'settings' ? 'text-green-500' : 'text-text-muted hover:text-text-main'
+        }`}
+        onClick={() => navigate('settings')}
+      >
+        <div className={`w-12 h-8 flex items-center justify-center rounded-2xl transition-all duration-300 ${
+          currentScreen === 'settings' 
+            ? 'bg-green-500/10 text-green-500' 
+            : 'hover:bg-hover'
+        }`}>
+          <motion.svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={getIconClass(currentScreen === 'settings')}
+            whileHover={{ scale: 1.1 }}
+            transition={{ duration: 0.2 }}
+          >
+            <motion.g 
+              style={{ transformOrigin: '50% 50%', transformBox: 'fill-box' }}
+              animate={currentScreen === 'settings' ? { rotate: 180 } : { rotate: 0 }}
+              whileHover={{ rotate: 360 }}
+              transition={{ duration: 0.6, ease: "easeInOut" }}
+            >
+              <path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z" fill="none"></path>
+              <path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" fill="none"></path>
+              <path d="M12 2v2"></path>
+              <path d="M12 22v-2"></path>
+              <path d="m17 20.66-1-1.73"></path>
+              <path d="M11 10.27 7 3.34"></path>
+              <path d="m20.66 17-1.73-1"></path>
+              <path d="m3.34 7 1.73 1"></path>
+              <path d="M14 12h8"></path>
+              <path d="M2 12h2"></path>
+              <path d="m20.66 7-1.73 1"></path>
+              <path d="m3.34 17 1.73-1"></path>
+              <path d="m17 3.34-1 1.73"></path>
+              <path d="m11 13.73-4 6.93"></path>
+            </motion.g>
+          </motion.svg>
+        </div>
+        <span className="text-[10px]">More</span>
       </div>
     </nav>
   );

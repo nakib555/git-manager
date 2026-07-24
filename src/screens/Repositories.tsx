@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useAppContext } from '../AppContext';
 import { Search, Lock, Globe, Square, FolderGit2 } from 'lucide-react';
+import { AnimatedSearchIcon, AnimatedGlobe, AnimatedLock } from '../components/Layout';
 import { GitHubRepo } from '../types';
 import { useVirtualizer } from '@tanstack/react-virtual';
 
@@ -78,7 +79,7 @@ export const Repositories: React.FC = () => {
   return (
     <div className="animate-fade-up">
       <div className="bg-card rounded-xl p-3 flex items-center gap-3 mb-4 border border-border">
-        <Search size={20} className="text-text-muted" />
+        <AnimatedSearchIcon size={20} className="text-text-muted" />
         <input 
           ref={searchInputRef}
           type="text" 
@@ -94,9 +95,11 @@ export const Repositories: React.FC = () => {
           <div 
             key={f}
             onClick={() => { setFilter(f); showToast(`Filtered by: ${f}`); }}
-            className={`border px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap cursor-pointer transition-colors duration-200 ${filter === f ? 'bg-primary/15 text-primary border-primary/40' : 'border-border text-text-muted'}`}
+            className={`border px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap cursor-pointer transition-colors duration-200 ${filter === f ? 'bg-primary/15 text-primary border-primary/40' : 'border-border text-text-muted'} flex items-center gap-1.5`}
           >
-            {f}
+            {f === 'Public' && <AnimatedGlobe size={13} className={filter === f ? 'text-primary' : 'text-text-muted'} />}
+            {f === 'Private' && <AnimatedLock size={13} className={filter === f ? 'text-primary' : 'text-text-muted'} />}
+            <span>{f}</span>
           </div>
         ))}
       </div>
@@ -154,8 +157,8 @@ export const Repositories: React.FC = () => {
                           <span className="truncate">{repo.name}</span>
                         </div>
                         <div className="text-[10px] px-2 py-0.5 rounded-full border border-border text-text-muted flex items-center gap-1 h-fit shrink-0">
-                          {repo.isPrivate ? <Lock size={10} /> : <Globe size={10} />}
-                          {repo.isPrivate ? 'Private' : 'Public'}
+                          {repo.isPrivate ? <AnimatedLock size={11} className="text-text-muted" /> : <AnimatedGlobe size={11} className="text-text-muted" />}
+                          <span>{repo.isPrivate ? 'Private' : 'Public'}</span>
                         </div>
                       </div>
                       <div className="text-[13px] text-text-muted mb-3 line-clamp-1 truncate">{repo.desc}</div>

@@ -1,19 +1,34 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useAppContext } from '../AppContext';
 import { X, Folder, GitBranch, GitPullRequest, GitCommit, Check, Key, ExternalLink, ShieldAlert } from 'lucide-react';
 
 export const CreateModals: React.FC = () => {
   const { activeModal, closeModal, createLocalRepo, createLocalBranch, createLocalPR, createLocalCommit } = useAppContext();
 
-  if (!activeModal) return null;
+  
 
   return (
-    <>
-      <div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm z-[200] transition-opacity duration-300 opacity-100"
-        onClick={closeModal}
-      />
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[92%] max-w-[420px] max-h-[85vh] overflow-y-auto bg-card rounded-2xl border border-border z-[201] p-6 shadow-2xl animate-fade-up">
+    <AnimatePresence>
+      {activeModal && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6"
+        >
+          <div 
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={closeModal}
+          />
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="relative w-full max-w-[420px] max-h-[90vh] overflow-y-auto bg-card rounded-2xl border border-border p-6 shadow-2xl"
+          >
         <div className="flex justify-between items-center mb-5">
           <div className="flex items-center gap-2.5 font-semibold text-text-main text-base">
             {activeModal === 'repo' && (
@@ -70,8 +85,10 @@ export const CreateModals: React.FC = () => {
         {activeModal === 'pr' && <PRForm onSubmit={(data) => { createLocalPR(data); closeModal(); }} />}
         {activeModal === 'commit' && <CommitForm onSubmit={(data) => { createLocalCommit(data); closeModal(); }} />}
         {activeModal === 'oauth_setup' && <OAuthSetupForm />}
-      </div>
-    </>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 
@@ -169,6 +186,8 @@ const BranchForm: React.FC<{ onSubmit: (data: any) => void }> = ({ onSubmit }) =
   };
 
   return (
+    
+      
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label className="block text-xs font-semibold text-text-muted mb-1.5 uppercase tracking-wider">Branch Name</label>
@@ -216,6 +235,8 @@ const PRForm: React.FC<{ onSubmit: (data: any) => void }> = ({ onSubmit }) => {
   };
 
   return (
+    
+      
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label className="block text-xs font-semibold text-text-muted mb-1.5 uppercase tracking-wider">Title</label>
@@ -302,6 +323,8 @@ const CommitForm: React.FC<{ onSubmit: (data: any) => void }> = ({ onSubmit }) =
   };
 
   return (
+    
+      
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label className="block text-xs font-semibold text-text-muted mb-1.5 uppercase tracking-wider">Commit Message</label>
@@ -379,6 +402,8 @@ const OAuthSetupForm: React.FC = () => {
   };
 
   return (
+    
+      
     <div className="space-y-4">
       {/* Navigation tabs */}
       <div className="flex border-b border-border text-xs font-semibold">

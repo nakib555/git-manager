@@ -153,7 +153,11 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({ children }) => {
         transition={{ type: "spring", stiffness: 350, damping: 25 }}
         className="h-full"
       >
-        {children}
+        <div style={{ width: '315px', marginLeft: '10px', marginTop: '10px' }}>
+          <div style={{ marginInline: 'calc(var(--spacing) * 0)', marginBlock: 'calc(var(--spacing) * 0)' }}>
+            {children}
+          </div>
+        </div>
       </motion.div>
     </div>
   );
