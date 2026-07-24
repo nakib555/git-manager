@@ -10,13 +10,20 @@ async function startServer() {
 
   // OAuth endpoints
   app.get('/api/auth/url', (req, res) => {
+    if (!process.env.GITHUB_CLIENT_ID || !process.env.GITHUB_CLIENT_SECRET) {
+      res.status(400).json({ 
+        error: "GITHUB_CLIENT_ID or GITHUB_CLIENT_SECRET is missing. Please configure them in your settings/environment." 
+      });
+      return;
+    }
+
     const protocol = req.headers['x-forwarded-proto'] || 'http';
     const host = req.headers['x-forwarded-host'] || req.headers.host;
     // We use the client's origin or the request's origin to determine redirect URI
     const redirectUri = `${protocol}://${host}/auth/callback`;
     
     const params = new URLSearchParams({
-      client_id: process.env.GITHUB_CLIENT_ID || '',
+      client_id: process.env.GITHUB_CLIENT_ID,
       redirect_uri: redirectUri,
       scope: 'repo read:user user:email',
     });

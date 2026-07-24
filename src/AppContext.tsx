@@ -131,7 +131,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     try {
       const response = await fetch('/api/auth/url');
       if (!response.ok) {
-        throw new Error('Failed to get auth URL');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to get auth URL');
       }
       const { url } = await response.json();
       
@@ -144,9 +145,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (!authWindow) {
         showToast('Please allow popups to connect your GitHub account.');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('OAuth error:', error);
-      showToast('Error connecting to GitHub');
+      showToast(error.message || 'Error connecting to GitHub');
     }
   };
 

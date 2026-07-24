@@ -3,11 +3,20 @@ export default {
     const url = new URL(request.url);
 
     if (url.pathname === '/api/auth/url') {
+      if (!env.GITHUB_CLIENT_ID || !env.GITHUB_CLIENT_SECRET) {
+        return new Response(JSON.stringify({ 
+          error: "GITHUB_CLIENT_ID or GITHUB_CLIENT_SECRET is missing. Please add them as Secrets in your Cloudflare Workers dashboard." 
+        }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
       // We use the request's origin to determine redirect URI
       const redirectUri = `${url.protocol}//${url.host}/auth/callback`;
       
       const params = new URLSearchParams({
-        client_id: env.GITHUB_CLIENT_ID || '',
+        client_id: env.GITHUB_CLIENT_ID,
         redirect_uri: redirectUri,
         scope: 'repo read:user user:email',
       });
