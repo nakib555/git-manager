@@ -8,7 +8,7 @@ const defaultState: AppState = {
   isDrawerOpen: false,
   toastMessage: null,
   isSearchFocused: false,
-  theme: 'dark',
+  theme: (localStorage.getItem('theme') as 'dark' | 'light') || 'dark',
   githubToken: localStorage.getItem('githubToken') || null,
   githubUser: null,
   githubRepos: [],
@@ -22,14 +22,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // Apply theme to document body
   useEffect(() => {
     if (state.theme === 'light') {
-      document.documentElement.classList.add('light-theme');
+      document.body.classList.add('light-theme');
     } else {
-      document.documentElement.classList.remove('light-theme');
+      document.body.classList.remove('light-theme');
     }
   }, [state.theme]);
 
   const toggleTheme = () => {
-    setState((prev) => ({ ...prev, theme: prev.theme === 'dark' ? 'light' : 'dark' }));
+    setState((prev) => {
+      const newTheme = prev.theme === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('theme', newTheme);
+      return { ...prev, theme: newTheme };
+    });
   };
 
   const connectGitHub = async () => {
