@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { AreaChart, Area, ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 import { useAppContext } from '../AppContext';
-import { Home, FileCode, FileText, Copy, GitMerge, AlertTriangle, GitPullRequest, Search, Folder, GitCommit, GitBranch, Edit2, Trash2, Check, X } from 'lucide-react';
+import { Home, FileCode, FileText, Copy, GitMerge, AlertTriangle, GitPullRequest, Search, Folder, GitCommit, GitBranch, Edit2, Trash2, Check, X, MoreVertical, Undo, Eye, BookOpen, FileSearch, Tag, RotateCcw, HelpCircle, Terminal, Sliders, Clock, User } from 'lucide-react';
 
 const getLanguageColor = (lang: string | null) => {
   if (!lang) return '#8F8F9D';
@@ -333,35 +333,217 @@ const FilesScreen = () => {
 };
 
 const CommitsScreen = () => {
-  const { activeCommits, openModal, deleteCommit, editCommitMessage, currentRepo } = useAppContext();
+  const { 
+    activeCommits, 
+    openModal, 
+    deleteCommit, 
+    amendLatestCommit, 
+    undoLatestCommit, 
+    restoreFilesToCommit, 
+    resetBranchToCommit, 
+    createBranchAtCommit, 
+    createTagAtCommit, 
+    showToast 
+  } = useAppContext();
   
-  // Custom interactive modal states
-  const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
-  const [editTarget, setEditTarget] = useState<any | null>(null);
+  // Interactive Dialog and Action Sheet States
+  const [selectedCommit, setSelectedCommit] = useState<any | null>(null);
+  
+  // Sheet toggles
+  const [showActionSheet, setShowActionSheet] = useState(false);
+  const [showRestoreSheet, setShowRestoreSheet] = useState(false);
+  
+  // Dialog / Modal toggles
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showAmendModal, setShowAmendModal] = useState(false);
+  const [amendMode, setAmendMode] = useState<'msg' | 'content' | 'both'>('both');
   const [editedMsg, setEditedMsg] = useState('');
+  const [editedAdd, setEditedAdd] = useState('');
+  const [editedDel, setEditedDel] = useState('');
+  
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showUndoConfirm, setShowUndoConfirm] = useState(false);
+  const [showBranchModal, setShowBranchModal] = useState(false);
+  const [branchName, setBranchName] = useState('');
+  const [showTagModal, setShowTagModal] = useState(false);
+  const [tagName, setTagName] = useState('');
+  
+  const [showDiffModal, setShowDiffModal] = useState(false);
+  const [showFilesModal, setShowFilesModal] = useState(false);
+  
+  // Progress and loading states
+  const [gitOperationMessage, setGitOperationMessage] = useState<string | null>(null);
 
-  const handleDeleteClick = (commit: any) => {
-    setDeleteTarget(commit);
+  // Trigger simulated Git action progress loader
+  const runGitCommand = (commandDesc: string, onComplete: () => void) => {
+    setGitOperationMessage(commandDesc);
+    setTimeout(() => {
+      setGitOperationMessage(null);
+      onComplete();
+    }, 1200);
   };
 
-  const handleEditClick = (commit: any) => {
-    setEditTarget(commit);
-    setEditedMsg(commit.msg);
+  const handleOpenActions = (commit: any) => {
+    setSelectedCommit(commit);
+    setShowActionSheet(true);
   };
 
-  const confirmDelete = () => {
-    if (deleteTarget) {
-      deleteCommit(deleteTarget.hash);
-      setDeleteTarget(null);
+  const isLatestCommit = (commit: any) => {
+    return activeCommits.length > 0 && activeCommits[0].hash === commit?.hash;
+  };
+
+  // 1. Copy actions
+  const copyHash = () => {
+    if (selectedCommit) {
+      navigator.clipboard.writeText(selectedCommit.hash);
+      showToast(`Copied hash: ${selectedCommit.hash}`);
+      setShowActionSheet(false);
     }
   };
 
-  const saveEdit = () => {
-    if (editTarget && editedMsg.trim()) {
-      editCommitMessage(editTarget.hash, editedMsg.trim());
-      setEditTarget(null);
-      setEditedMsg('');
+  const copyMessage = () => {
+    if (selectedCommit) {
+      navigator.clipboard.writeText(selectedCommit.msg);
+      showToast(`Copied commit message!`);
+      setShowActionSheet(false);
     }
+  };
+
+  // 2. Latest Commit Operations
+  const triggerAmend = (mode: 'msg' | 'content' | 'both') => {
+    if (!selectedCommit) return;
+    setAmendMode(mode);
+    setEditedMsg(selectedCommit.msg);
+    setEditedAdd(selectedCommit.add.replace('+', ''));
+    setEditedDel(selectedCommit.del.replace('-', ''));
+    setShowActionSheet(false);
+    setShowAmendModal(true);
+  };
+
+  const saveAmend = () => {
+    if (!selectedCommit) return;
+    const cleanMsg = editedMsg.trim();
+    if (!cleanMsg) return;
+
+    let cmd = 'git commit --amend';
+    if (amendMode === 'msg') cmd += ' -m "' + cleanMsg + '"';
+    else if (amendMode === 'content') cmd += ' --no-edit (updated lines)';
+    else cmd += ' -m "' + cleanMsg + '" (updated stats)';
+
+    runGitCommand(cmd, () => {
+      amendLatestCommit(
+        cleanMsg, 
+        amendMode === 'content', 
+        amendMode === 'msg', 
+        { add: `+${editedAdd || '0'}`, del: `-${editedDel || '0'}` }
+      );
+      setShowAmendModal(false);
+    });
+  };
+
+  const triggerDeleteLatest = () => {
+    setShowActionSheet(false);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteLatest = () => {
+    if (!selectedCommit) return;
+    runGitCommand('git reset --hard HEAD~1', () => {
+      deleteCommit(selectedCommit.hash);
+      setShowDeleteConfirm(false);
+      setSelectedCommit(null);
+    });
+  };
+
+  const triggerUndoLatest = () => {
+    setShowActionSheet(false);
+    setShowUndoConfirm(true);
+  };
+
+  const confirmUndoLatest = () => {
+    runGitCommand('git reset --soft HEAD~1', () => {
+      undoLatestCommit();
+      setShowUndoConfirm(false);
+      setSelectedCommit(null);
+    });
+  };
+
+  // 3. Older Commit Operations
+  const triggerBrowseAt = () => {
+    if (!selectedCommit) return;
+    runGitCommand(`git checkout ${selectedCommit.hash}`, () => {
+      showToast(`Browsing workspace at commit ${selectedCommit.hash} (Read-only mode)`);
+      setShowActionSheet(false);
+    });
+  };
+
+  const triggerViewChangedFiles = () => {
+    setShowActionSheet(false);
+    setShowFilesModal(true);
+  };
+
+  const triggerViewDiff = () => {
+    setShowActionSheet(false);
+    setShowDiffModal(true);
+  };
+
+  const triggerCreateBranch = () => {
+    setBranchName('');
+    setShowActionSheet(false);
+    setShowBranchModal(true);
+  };
+
+  const confirmCreateBranch = () => {
+    if (!selectedCommit || !branchName.trim()) return;
+    const name = branchName.trim();
+    runGitCommand(`git checkout -b ${name} ${selectedCommit.hash}`, () => {
+      createBranchAtCommit(selectedCommit.hash, name);
+      setShowBranchModal(false);
+    });
+  };
+
+  const triggerCreateTag = () => {
+    setTagName('');
+    setShowActionSheet(false);
+    setShowTagModal(true);
+  };
+
+  const confirmCreateTag = () => {
+    if (!selectedCommit || !tagName.trim()) return;
+    const tag = tagName.trim();
+    runGitCommand(`git tag ${tag} ${selectedCommit.hash}`, () => {
+      createTagAtCommit(selectedCommit.hash, tag);
+      setShowTagModal(false);
+    });
+  };
+
+  const triggerRestore = () => {
+    setShowActionSheet(false);
+    setShowRestoreSheet(true);
+  };
+
+  // 4. Restore Modes
+  const handleRestoreFiles = () => {
+    if (!selectedCommit) return;
+    runGitCommand(`git checkout ${selectedCommit.hash} -- . && git commit`, () => {
+      restoreFilesToCommit(selectedCommit.hash);
+      setShowRestoreSheet(false);
+      setSelectedCommit(null);
+    });
+  };
+
+  const handleResetBranch = () => {
+    if (!selectedCommit) return;
+    runGitCommand(`git reset --hard ${selectedCommit.hash} (Force push simulated)`, () => {
+      resetBranchToCommit(selectedCommit.hash);
+      setShowRestoreSheet(false);
+      setSelectedCommit(null);
+    });
+  };
+
+  const handleCreateBranchHere = () => {
+    triggerCreateBranch();
+    setShowRestoreSheet(false);
   };
 
   return (
@@ -388,8 +570,7 @@ const CommitsScreen = () => {
             del={commit.del} 
             isPrimary={idx === 0} 
             avatar={commit.avatar}
-            onDeleteTrigger={() => handleDeleteClick(commit)}
-            onEditTrigger={() => handleEditClick(commit)}
+            onActionTrigger={() => handleOpenActions(commit)}
           />
         ))}
         {activeCommits.length === 0 && (
@@ -397,139 +578,862 @@ const CommitsScreen = () => {
         )}
       </div>
 
-      {/* Beautiful Custom Delete Confirmation Dialog */}
-      {deleteTarget && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-[999] flex items-center justify-center p-4 animate-fade-in">
+      {/* Git Operation Action Progress overlay loader */}
+      {gitOperationMessage && (
+        <div className="fixed inset-0 bg-background/90 backdrop-blur-md z-[1000] flex flex-col items-center justify-center p-6 animate-fade-in">
+          <div className="flex flex-col items-center gap-4 max-w-xs text-center">
+            <div className="w-14 h-14 rounded-full border-[3px] border-primary border-t-transparent animate-spin flex items-center justify-center bg-primary/5 shadow-inner">
+              <GitCommit size={26} className="text-primary animate-pulse" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-text-main tracking-wider uppercase mb-1">Executing Git Command</p>
+              <div className="bg-hover border border-border rounded-lg px-3 py-1.5 font-mono text-[11px] text-info/90 mt-2">
+                $ {gitOperationMessage}
+              </div>
+            </div>
+            <p className="text-[10px] text-text-muted animate-pulse font-medium">Writing changes to repository database...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Bottom Action Sheet for Commit Actions */}
+      {showActionSheet && selectedCommit && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-[990] flex items-end justify-center animate-fade-in p-0 sm:p-4">
+          <div 
+            className="absolute inset-0" 
+            onClick={() => setShowActionSheet(false)}
+          />
+          <div className="bg-card w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl border border-border shadow-2xl z-[991] flex flex-col max-h-[90vh] overflow-hidden animate-slide-up relative">
+            
+            {/* Handlebar for dragging feedback on mobile */}
+            <div className="w-12 h-1 bg-border rounded-full mx-auto my-3 shrink-0 sm:hidden"></div>
+
+            <div className="px-5 pb-4 pt-2 sm:pt-4 border-b border-border flex justify-between items-center">
+              <div>
+                <span className="text-[10px] uppercase font-bold text-primary tracking-wider flex items-center gap-1.5 mb-1">
+                  <span className={`w-2 h-2 rounded-full ${isLatestCommit(selectedCommit) ? 'bg-success animate-ping' : 'bg-text-muted'}`}></span>
+                  {isLatestCommit(selectedCommit) ? 'Latest Commit (HEAD)' : 'Historical Commit'}
+                </span>
+                <h3 className="text-sm font-bold text-text-main font-mono inline-block bg-hover px-2.5 py-0.5 rounded border border-border">
+                  {selectedCommit.hash}
+                </h3>
+              </div>
+              <button 
+                onClick={() => setShowActionSheet(false)}
+                className="w-8 h-8 rounded-full bg-hover flex items-center justify-center text-text-muted hover:text-text-main transition-colors cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="p-4 bg-hover/30 border-b border-border">
+              <p className="text-xs font-semibold text-text-main line-clamp-2 leading-relaxed mb-1">
+                "{selectedCommit.msg}"
+              </p>
+              <p className="text-[10px] text-text-muted">
+                by <span className="font-bold text-text-main/80">{selectedCommit.author}</span> · {selectedCommit.time}
+              </p>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
+              
+              {/* Latest Commit-Only Actions Section */}
+              {isLatestCommit(selectedCommit) && (
+                <div className="space-y-1.5">
+                  <div className="text-[10px] font-bold text-text-muted uppercase tracking-wider px-2 mb-1">Modify Latest Commit</div>
+                  
+                  <button 
+                    onClick={() => triggerAmend('msg')}
+                    className="w-full text-left px-3 py-2.5 hover:bg-hover rounded-xl flex items-center justify-between text-xs font-semibold text-text-main transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 bg-primary/10 text-primary rounded-lg flex items-center justify-center"><Edit2 size={13} /></div>
+                      <div>
+                        <div className="font-bold">Edit Commit Message</div>
+                        <div className="text-[10px] text-text-muted font-normal">Change description only</div>
+                      </div>
+                    </div>
+                  </button>
+
+                  <button 
+                    onClick={() => triggerAmend('content')}
+                    className="w-full text-left px-3 py-2.5 hover:bg-hover rounded-xl flex items-center justify-between text-xs font-semibold text-text-main transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 bg-info/10 text-info rounded-lg flex items-center justify-center"><Terminal size={13} /></div>
+                      <div>
+                        <div className="font-bold">Edit Commit Content (Amend)</div>
+                        <div className="text-[10px] text-text-muted font-normal">Modify line addition/deletion stats</div>
+                      </div>
+                    </div>
+                  </button>
+
+                  <button 
+                    onClick={() => triggerAmend('both')}
+                    className="w-full text-left px-3 py-2.5 hover:bg-hover rounded-xl flex items-center justify-between text-xs font-semibold text-text-main transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 bg-amber-500/10 text-amber-500 rounded-lg flex items-center justify-center"><Sliders size={13} /></div>
+                      <div>
+                        <div className="font-bold">Edit Both Message & Content</div>
+                        <div className="text-[10px] text-text-muted font-normal">Full commit amend</div>
+                      </div>
+                    </div>
+                  </button>
+
+                  <button 
+                    onClick={triggerUndoLatest}
+                    className="w-full text-left px-3 py-2.5 hover:bg-hover rounded-xl flex items-center justify-between text-xs font-semibold text-text-main transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 bg-warning/10 text-warning rounded-lg flex items-center justify-center"><Undo size={13} /></div>
+                      <div>
+                        <div className="font-bold">Undo Latest Commit</div>
+                        <div className="text-[10px] text-text-muted font-normal">Reset commit but keep code modifications</div>
+                      </div>
+                    </div>
+                  </button>
+
+                  <button 
+                    onClick={triggerDeleteLatest}
+                    className="w-full text-left px-3 py-2.5 hover:bg-danger/5 hover:text-danger rounded-xl flex items-center justify-between text-xs font-semibold text-text-main transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 bg-danger/10 text-danger rounded-lg flex items-center justify-center"><Trash2 size={13} /></div>
+                      <div>
+                        <div className="font-bold text-danger">Delete Latest Commit</div>
+                        <div className="text-[10px] text-danger/80 font-normal">Hard reset back one commit</div>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              )}
+
+              {/* Older Commit-Only Actions Section */}
+              {!isLatestCommit(selectedCommit) && (
+                <div className="space-y-1.5">
+                  <div className="text-[10px] font-bold text-text-muted uppercase tracking-wider px-2 mb-1">Git Checkout & Tagging</div>
+                  
+                  <button 
+                    onClick={triggerBrowseAt}
+                    className="w-full text-left px-3 py-2.5 hover:bg-hover rounded-xl flex items-center justify-between text-xs font-semibold text-text-main transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 bg-primary/10 text-primary rounded-lg flex items-center justify-center"><BookOpen size={13} /></div>
+                      <div>
+                        <div className="font-bold">Browse Repository at Commit</div>
+                        <div className="text-[10px] text-text-muted font-normal">Checkout workspace in Read-Only</div>
+                      </div>
+                    </div>
+                  </button>
+
+                  <button 
+                    onClick={triggerViewChangedFiles}
+                    className="w-full text-left px-3 py-2.5 hover:bg-hover rounded-xl flex items-center justify-between text-xs font-semibold text-text-main transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 bg-info/10 text-info rounded-lg flex items-center justify-center"><FileSearch size={13} /></div>
+                      <div>
+                        <div className="font-bold">View Changed Files</div>
+                        <div className="text-[10px] text-text-muted font-normal">Inspect 4 modified files</div>
+                      </div>
+                    </div>
+                  </button>
+
+                  <button 
+                    onClick={triggerViewDiff}
+                    className="w-full text-left px-3 py-2.5 hover:bg-hover rounded-xl flex items-center justify-between text-xs font-semibold text-text-main transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 bg-success/10 text-success rounded-lg flex items-center justify-center"><GitMerge size={13} /></div>
+                      <div>
+                        <div className="font-bold">View Split Diff</div>
+                        <div className="text-[10px] text-text-muted font-normal">Analyze code insertions and deletions</div>
+                      </div>
+                    </div>
+                  </button>
+
+                  <button 
+                    onClick={triggerCreateBranch}
+                    className="w-full text-left px-3 py-2.5 hover:bg-hover rounded-xl flex items-center justify-between text-xs font-semibold text-text-main transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 bg-purple-500/10 text-purple-500 rounded-lg flex items-center justify-center"><GitBranch size={13} /></div>
+                      <div>
+                        <div className="font-bold">Create Branch Here</div>
+                        <div className="text-[10px] text-text-muted font-normal">Branch off from this commit point</div>
+                      </div>
+                    </div>
+                  </button>
+
+                  <button 
+                    onClick={triggerCreateTag}
+                    className="w-full text-left px-3 py-2.5 hover:bg-hover rounded-xl flex items-center justify-between text-xs font-semibold text-text-main transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 bg-pink-500/10 text-pink-500 rounded-lg flex items-center justify-center"><Tag size={13} /></div>
+                      <div>
+                        <div className="font-bold">Create Tag Here</div>
+                        <div className="text-[10px] text-text-muted font-normal">Reference point with semantic release tag</div>
+                      </div>
+                    </div>
+                  </button>
+
+                  <button 
+                    onClick={triggerRestore}
+                    className="w-full text-left px-3 py-2.5 bg-success/5 border border-success/15 hover:bg-success/10 rounded-xl flex items-center justify-between text-xs font-semibold text-text-main transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 bg-success/20 text-success rounded-lg flex items-center justify-center"><RotateCcw size={13} /></div>
+                      <div>
+                        <div className="font-bold text-success">Restore to This Commit...</div>
+                        <div className="text-[10px] text-success/80 font-normal">Open safe history restore options</div>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              )}
+
+              {/* General Commit Utilities */}
+              <div className="space-y-1.5 pt-1">
+                <div className="text-[10px] font-bold text-text-muted uppercase tracking-wider px-2 mb-1">Utilities & Specs</div>
+                
+                <button 
+                  onClick={() => {
+                    setShowActionSheet(false);
+                    setShowDetailsModal(true);
+                  }}
+                  className="w-full text-left px-3 py-2.5 hover:bg-hover rounded-xl flex items-center justify-between text-xs font-semibold text-text-main transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 bg-hover border border-border text-text-muted rounded-lg flex items-center justify-center"><Eye size={13} /></div>
+                    <div>
+                      <div className="font-bold">View Commit Details</div>
+                      <div className="text-[10px] text-text-muted font-normal">Inspect metadata, SHA and full log message</div>
+                    </div>
+                  </div>
+                </button>
+
+                <button 
+                  onClick={copyHash}
+                  className="w-full text-left px-3 py-2.5 hover:bg-hover rounded-xl flex items-center justify-between text-xs font-semibold text-text-main transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 bg-hover border border-border text-text-muted rounded-lg flex items-center justify-center"><Copy size={13} /></div>
+                    <div>
+                      <div className="font-bold">Copy Commit Hash</div>
+                      <div className="text-[10px] text-text-muted font-normal">Save SHA to clipboard</div>
+                    </div>
+                  </div>
+                </button>
+
+                <button 
+                  onClick={copyMessage}
+                  className="w-full text-left px-3 py-2.5 hover:bg-hover rounded-xl flex items-center justify-between text-xs font-semibold text-text-main transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 bg-hover border border-border text-text-muted rounded-lg flex items-center justify-center"><FileText size={13} /></div>
+                    <div>
+                      <div className="font-bold">Copy Commit Message</div>
+                      <div className="text-[10px] text-text-muted font-normal">Save description text to clipboard</div>
+                    </div>
+                  </div>
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Secondary Bottom Sheet: Restore to This Commit Options */}
+      {showRestoreSheet && selectedCommit && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-[990] flex items-end justify-center animate-fade-in p-0 sm:p-4">
+          <div 
+            className="absolute inset-0" 
+            onClick={() => setShowRestoreSheet(false)}
+          />
+          <div className="bg-card w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl border border-border shadow-2xl z-[991] flex flex-col max-h-[90vh] overflow-hidden animate-slide-up relative">
+            <div className="w-12 h-1 bg-border rounded-full mx-auto my-3 shrink-0 sm:hidden"></div>
+
+            <div className="px-5 pb-4 pt-2 sm:pt-4 border-b border-border flex justify-between items-center">
+              <div>
+                <span className="text-[10px] uppercase font-bold text-success tracking-wider flex items-center gap-1.5 mb-1">
+                  <RotateCcw size={10} />
+                  Safe History Restore
+                </span>
+                <h3 className="text-base font-bold text-text-main">
+                  Restore options at {selectedCommit.hash}
+                </h3>
+              </div>
+              <button 
+                onClick={() => setShowRestoreSheet(false)}
+                className="w-8 h-8 rounded-full bg-hover flex items-center justify-center text-text-muted hover:text-text-main transition-colors cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="p-5 overflow-y-auto space-y-4 no-scrollbar">
+              
+              {/* Option 1: Restore Files */}
+              <button 
+                onClick={handleRestoreFiles}
+                className="w-full text-left p-4 bg-hover/40 border border-success/20 hover:border-success/40 rounded-2xl flex flex-col gap-1 transition-all active:scale-[0.99] cursor-pointer"
+              >
+                <div className="flex items-center gap-2 text-xs font-bold text-success">
+                  <Check size={14} strokeWidth={3} className="bg-success/10 p-0.5 rounded" />
+                  1. Restore Files (Recommended)
+                </div>
+                <p className="text-[11px] text-text-muted leading-relaxed">
+                  Restores current workspace contents to match the state at <span className="font-mono text-text-main/80 font-bold">{selectedCommit.hash}</span>, then creates a new tracking commit. This preserves repository history, avoids forced pushes, and ensures 100% integrity.
+                </p>
+              </button>
+
+              {/* Option 2: Reset Branch */}
+              <button 
+                onClick={handleResetBranch}
+                className="w-full text-left p-4 bg-hover/40 border border-danger/20 hover:border-danger/40 rounded-2xl flex flex-col gap-1 transition-all active:scale-[0.99] cursor-pointer"
+              >
+                <div className="flex items-center gap-2 text-xs font-bold text-danger">
+                  <AlertTriangle size={14} className="bg-danger/10 p-0.5 rounded" />
+                  2. Reset Branch (Advanced)
+                </div>
+                <p className="text-[11px] text-text-muted leading-relaxed">
+                  Moves the active branch pointer directly to <span className="font-mono text-text-main/80 font-bold">{selectedCommit.hash}</span>, completely removing later commits. <span className="text-danger font-medium font-bold">WARNING:</span> This rewrites branch logs and may require a force push.
+                </p>
+              </button>
+
+              {/* Option 3: Create Branch Here */}
+              <button 
+                onClick={handleCreateBranchHere}
+                className="w-full text-left p-4 bg-hover/40 border border-border hover:border-primary/40 rounded-2xl flex flex-col gap-1 transition-all active:scale-[0.99] cursor-pointer"
+              >
+                <div className="flex items-center gap-2 text-xs font-bold text-primary">
+                  <GitBranch size={14} className="bg-primary/10 p-0.5 rounded" />
+                  3. Create Branch Here
+                </div>
+                <p className="text-[11px] text-text-muted leading-relaxed">
+                  Creates a new standalone branch starting from <span className="font-mono text-text-main/80 font-bold">{selectedCommit.hash}</span> while leaving your current branch untouched. No commit history is modified.
+                </p>
+              </button>
+
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Commit Details Modal */}
+      {showDetailsModal && selectedCommit && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-[995] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl animate-scale-up">
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                  <Eye size={20} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-text-main">Commit Metadata</h3>
+                  <p className="text-[10px] text-text-muted">Repository SHA and verification logs</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowDetailsModal(false)}
+                className="text-text-muted hover:text-text-main p-1.5 rounded-full bg-hover transition-colors cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-4 font-sans text-xs text-text-main">
+              <div className="bg-hover/40 border border-border p-3.5 rounded-xl space-y-2">
+                <div>
+                  <span className="block text-[9px] uppercase font-bold text-text-muted tracking-wider mb-0.5">Full Commit SHA</span>
+                  <span className="font-mono font-medium text-info break-all select-all">{selectedCommit.hash}8b4c9ea92df4762cf1b8d23</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 pt-1.5">
+                  <div>
+                    <span className="block text-[9px] uppercase font-bold text-text-muted tracking-wider mb-0.5">Author</span>
+                    <span className="font-medium flex items-center gap-1">
+                      <img src={selectedCommit.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedCommit.author.split(' ')[0]}`} className="w-4.5 h-4.5 rounded-full bg-border" alt="" />
+                      {selectedCommit.author}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="block text-[9px] uppercase font-bold text-text-muted tracking-wider mb-0.5">Time Elapsed</span>
+                    <span className="font-medium text-text-main/80 flex items-center gap-1"><Clock size={12} className="text-text-muted" /> {selectedCommit.time}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <span className="block text-[9px] uppercase font-bold text-text-muted tracking-wider mb-1">Commit Message</span>
+                <p className="bg-hover/25 border border-border/85 rounded-xl p-3 font-medium leading-relaxed italic text-text-main/95">
+                  "{selectedCommit.msg}"
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between border-t border-border pt-4 mt-1">
+                <span className="text-[11px] font-bold text-text-muted">Impact Stats:</span>
+                <span className="text-[11px] font-bold text-success flex items-center gap-2">
+                  <span className="bg-success/10 px-2 py-0.5 rounded">{selectedCommit.add}</span> 
+                  <span className={`px-2 py-0.5 rounded ${selectedCommit.del !== '-0' && selectedCommit.del !== '0' ? 'bg-danger/10 text-danger' : 'bg-hover text-text-muted'}`}>{selectedCommit.del}</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Amend Latest Commit Modal (Supports Edit Message, Content, Both) */}
+      {showAmendModal && selectedCommit && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-[995] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl animate-scale-up">
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                  <Sliders size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-text-main">Amend Latest Commit</h3>
+                  <p className="text-[10px] text-text-muted font-mono">{selectedCommit.hash}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowAmendModal(false)}
+                className="text-text-muted hover:text-text-main p-1.5 rounded-full bg-hover transition-colors cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Config Mode Indicators */}
+            <div className="flex gap-1.5 p-1 bg-hover/40 rounded-xl border border-border mb-4">
+              <button
+                onClick={() => setAmendMode('msg')}
+                className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all ${amendMode === 'msg' ? 'bg-primary text-white shadow-sm' : 'text-text-muted hover:text-text-main'}`}
+              >
+                Message Only
+              </button>
+              <button
+                onClick={() => setAmendMode('content')}
+                className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all ${amendMode === 'content' ? 'bg-primary text-white shadow-sm' : 'text-text-muted hover:text-text-main'}`}
+              >
+                Content Only
+              </button>
+              <button
+                onClick={() => setAmendMode('both')}
+                className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all ${amendMode === 'both' ? 'bg-primary text-white shadow-sm' : 'text-text-muted hover:text-text-main'}`}
+              >
+                Both
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {amendMode !== 'content' && (
+                <div>
+                  <label className="block text-[9px] uppercase tracking-wider font-bold text-text-muted mb-1.5">Commit Message</label>
+                  <textarea
+                    value={editedMsg}
+                    onChange={(e) => setEditedMsg(e.target.value)}
+                    rows={2}
+                    className="w-full bg-main border border-border focus:border-primary/50 focus:ring-2 focus:ring-primary/10 outline-none rounded-xl p-3 text-xs text-text-main placeholder:text-text-muted/55 resize-none font-medium"
+                    placeholder="Amend description message..."
+                  />
+                </div>
+              )}
+
+              {amendMode !== 'msg' && (
+                <div className="grid grid-cols-2 gap-3 bg-hover/20 p-3 rounded-xl border border-border">
+                  <div>
+                    <label className="block text-[9px] uppercase tracking-wider font-bold text-success mb-1">Additions (+)</label>
+                    <input
+                      type="number"
+                      value={editedAdd}
+                      onChange={(e) => setEditedAdd(e.target.value)}
+                      className="w-full bg-main border border-border outline-none rounded-lg p-2 text-xs text-success font-mono font-bold"
+                      placeholder="Line insertions"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] uppercase tracking-wider font-bold text-danger mb-1">Deletions (-)</label>
+                    <input
+                      type="number"
+                      value={editedDel}
+                      onChange={(e) => setEditedDel(e.target.value)}
+                      className="w-full bg-main border border-border outline-none rounded-lg p-2 text-xs text-danger font-mono font-bold"
+                      placeholder="Line removals"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="bg-hover/20 px-3.5 py-2 rounded-xl text-[10px] text-text-muted leading-normal">
+                Amending rewires the properties of the HEAD commit on the client-side active state, simulating a safe local push structure.
+              </div>
+
+              <div className="flex gap-2 justify-end border-t border-border pt-4">
+                <button
+                  onClick={() => setShowAmendModal(false)}
+                  className="px-4 py-2 bg-hover hover:bg-hover/80 border border-border rounded-xl text-xs font-bold text-text-main active:scale-95 transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveAmend}
+                  disabled={amendMode !== 'content' && !editedMsg.trim()}
+                  className="px-4 py-2 bg-primary hover:bg-primary-hover disabled:opacity-50 text-white rounded-xl text-xs font-bold active:scale-95 transition-all shadow-sm cursor-pointer"
+                >
+                  Save Amend
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Latest Commit Destructive Warning Confirmation Modal */}
+      {showDeleteConfirm && selectedCommit && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-[995] flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl animate-scale-up">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 rounded-full bg-danger/10 text-danger flex items-center justify-center shrink-0">
                 <AlertTriangle size={24} />
               </div>
               <div>
-                <h3 className="text-base font-bold text-text-main">Delete Commit?</h3>
-                <p className="text-[11px] text-text-muted font-mono bg-hover/40 px-2 py-0.5 rounded border border-border inline-block mt-0.5">{deleteTarget.hash}</p>
+                <h3 className="text-base font-bold text-text-main">Destructive: Delete HEAD Commit?</h3>
+                <p className="text-[11px] text-text-muted font-mono bg-hover/40 px-2 py-0.5 rounded border border-border inline-block mt-0.5">{selectedCommit.hash}</p>
               </div>
             </div>
-            
+
             <p className="text-xs text-text-muted mb-5 leading-relaxed">
-              Are you sure you want to delete this commit? This will remove the commit from your current workspace dashboard. 
-              <span className="block mt-2 font-medium text-text-main/80">Note: To maintain repository integrity on GitHub, edits and deletions are fully synchronized on this client-side virtual Git interface.</span>
+              Are you sure you want to delete this commit? This is a destructive operation that will trigger a simulated <span className="font-mono bg-hover px-1 rounded text-text-main">git reset --hard HEAD~1</span>, discarding this commit. Your files and state index will revert to the previous commit.
             </p>
 
             <div className="flex gap-2.5 justify-end">
               <button
-                onClick={() => setDeleteTarget(null)}
+                onClick={() => setShowDeleteConfirm(false)}
                 className="px-4 py-2 bg-hover hover:bg-hover/80 border border-border rounded-xl text-xs font-bold text-text-main active:scale-95 transition-all cursor-pointer"
               >
                 Cancel
               </button>
               <button
-                onClick={confirmDelete}
+                onClick={confirmDeleteLatest}
                 className="px-4 py-2 bg-danger hover:bg-danger/90 text-white rounded-xl text-xs font-bold active:scale-95 transition-all shadow-sm cursor-pointer"
               >
-                Confirm Delete
+                Confirm Delete (Hard Reset)
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Beautiful Custom Edit Dialog */}
-      {editTarget && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-[999] flex items-center justify-center p-4 animate-fade-in">
+      {/* Undo Latest Commit Warning Confirmation Modal */}
+      {showUndoConfirm && selectedCommit && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-[995] flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl animate-scale-up">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                <Edit2 size={20} />
+              <div className="w-12 h-12 rounded-full bg-warning/10 text-warning flex items-center justify-center shrink-0">
+                <Undo size={22} />
               </div>
               <div>
-                <h3 className="text-base font-bold text-text-main">Edit Commit Description</h3>
-                <p className="text-[11px] text-text-muted font-mono bg-hover/40 px-2 py-0.5 rounded border border-border inline-block mt-0.5">{editTarget.hash}</p>
+                <h3 className="text-base font-bold text-text-main">Undo Latest Commit?</h3>
+                <p className="text-[11px] text-text-muted font-mono bg-hover/40 px-2 py-0.5 rounded border border-border inline-block mt-0.5">{selectedCommit.hash}</p>
               </div>
             </div>
 
-            <div className="mb-5">
-              <label className="block text-[10px] uppercase tracking-wider font-bold text-text-muted mb-1.5">Commit Message</label>
-              <textarea
-                value={editedMsg}
-                onChange={(e) => setEditedMsg(e.target.value)}
-                rows={3}
-                placeholder="Enter new commit description..."
-                className="w-full bg-hover/40 border border-border focus:border-primary/50 focus:ring-2 focus:ring-primary/10 outline-none rounded-xl p-3 text-xs text-text-main placeholder:text-text-muted transition-all font-medium resize-none"
-              />
-              <p className="text-[10px] text-text-muted mt-1.5 leading-normal">
-                Modifying this description alters your active history records in this environment, reflecting the change throughout your repository logs.
-              </p>
-            </div>
+            <p className="text-xs text-text-muted mb-5 leading-relaxed">
+              Are you sure you want to undo this commit? This will run a simulated <span className="font-mono bg-hover px-1 rounded text-text-main">git reset --soft HEAD~1</span>. The commit is deleted but its file changes are preserved and moved back into your active staging index area.
+            </p>
 
             <div className="flex gap-2.5 justify-end">
               <button
-                onClick={() => {
-                  setEditTarget(null);
-                  setEditedMsg('');
-                }}
+                onClick={() => setShowUndoConfirm(false)}
                 className="px-4 py-2 bg-hover hover:bg-hover/80 border border-border rounded-xl text-xs font-bold text-text-main active:scale-95 transition-all cursor-pointer"
               >
                 Cancel
               </button>
               <button
-                onClick={saveEdit}
-                disabled={!editedMsg.trim() || editedMsg.trim() === editTarget.msg}
-                className="px-4 py-2 bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:pointer-events-none text-white rounded-xl text-xs font-bold active:scale-95 transition-all shadow-sm cursor-pointer"
+                onClick={confirmUndoLatest}
+                className="px-4 py-2 bg-warning hover:bg-warning/90 text-white rounded-xl text-xs font-bold active:scale-95 transition-all shadow-sm cursor-pointer"
               >
-                Save Changes
+                Confirm Soft Reset
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Create Branch at Commit Modal */}
+      {showBranchModal && selectedCommit && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-[995] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl animate-scale-up">
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center">
+                  <GitBranch size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-text-main">Create Branch here</h3>
+                  <p className="text-[10px] text-text-muted">Target point: {selectedCommit.hash}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowBranchModal(false)}
+                className="text-text-muted hover:text-text-main p-1.5 rounded-full bg-hover transition-colors cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-[9px] uppercase tracking-wider font-bold text-text-muted mb-1.5">New Branch Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g. feature-login"
+                  value={branchName}
+                  onChange={(e) => setBranchName(e.target.value)}
+                  className="w-full bg-main border border-border focus:border-primary/50 focus:ring-2 focus:ring-primary/10 outline-none rounded-xl px-3.5 py-2.5 text-xs text-text-main font-medium"
+                />
+              </div>
+
+              <div className="flex gap-2 justify-end pt-2">
+                <button
+                  onClick={() => setShowBranchModal(false)}
+                  className="px-4 py-2 bg-hover hover:bg-hover/80 border border-border rounded-xl text-xs font-bold text-text-main active:scale-95 transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmCreateBranch}
+                  disabled={!branchName.trim()}
+                  className="px-4 py-2 bg-primary hover:bg-primary-hover disabled:opacity-50 text-white rounded-xl text-xs font-bold active:scale-95 transition-all shadow-sm cursor-pointer"
+                >
+                  Create Branch
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Tag at Commit Modal */}
+      {showTagModal && selectedCommit && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-[995] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl animate-scale-up">
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-pink-500/10 text-pink-500 flex items-center justify-center">
+                  <Tag size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-text-main">Create Tag here</h3>
+                  <p className="text-[10px] text-text-muted">Target point: {selectedCommit.hash}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowTagModal(false)}
+                className="text-text-muted hover:text-text-main p-1.5 rounded-full bg-hover transition-colors cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-[9px] uppercase tracking-wider font-bold text-text-muted mb-1.5">New Tag Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g. v1.0.0-rc1"
+                  value={tagName}
+                  onChange={(e) => setTagName(e.target.value)}
+                  className="w-full bg-main border border-border focus:border-primary/50 focus:ring-2 focus:ring-primary/10 outline-none rounded-xl px-3.5 py-2.5 text-xs text-text-main font-medium"
+                />
+              </div>
+
+              <div className="flex gap-2 justify-end pt-2">
+                <button
+                  onClick={() => setShowTagModal(false)}
+                  className="px-4 py-2 bg-hover hover:bg-hover/80 border border-border rounded-xl text-xs font-bold text-text-main active:scale-95 transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmCreateTag}
+                  disabled={!tagName.trim()}
+                  className="px-4 py-2 bg-primary hover:bg-primary-hover disabled:opacity-50 text-white rounded-xl text-xs font-bold active:scale-95 transition-all shadow-sm cursor-pointer"
+                >
+                  Create Tag
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Changed Files Explorer Modal */}
+      {showFilesModal && selectedCommit && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-[995] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl animate-scale-up">
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-info/10 text-info flex items-center justify-center">
+                  <FileSearch size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-text-main">Changed Files</h3>
+                  <p className="text-[10px] text-text-muted">Commit point: {selectedCommit.hash}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowFilesModal(false)}
+                className="text-text-muted hover:text-text-main p-1.5 rounded-full bg-hover transition-colors cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
+              <div className="flex items-center justify-between p-2.5 hover:bg-hover/35 border border-border rounded-xl transition-all">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold bg-success/15 text-success px-1.5 py-0.5 rounded uppercase">Modified</span>
+                  <span className="text-xs font-mono text-text-main">src/screens/RepoDetails.tsx</span>
+                </div>
+                <span className="text-[10px] font-bold text-success font-mono">+124 -12</span>
+              </div>
+
+              <div className="flex items-center justify-between p-2.5 hover:bg-hover/35 border border-border rounded-xl transition-all">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold bg-success/15 text-success px-1.5 py-0.5 rounded uppercase">Modified</span>
+                  <span className="text-xs font-mono text-text-main">src/AppContext.tsx</span>
+                </div>
+                <span className="text-[10px] font-bold text-success font-mono">+48 -4</span>
+              </div>
+
+              <div className="flex items-center justify-between p-2.5 hover:bg-hover/35 border border-border rounded-xl transition-all">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold bg-success/15 text-success px-1.5 py-0.5 rounded uppercase font-bold text-info bg-info/10">Added</span>
+                  <span className="text-xs font-mono text-text-main">src/components/ActionSheets.tsx</span>
+                </div>
+                <span className="text-[10px] font-bold text-success font-mono">+32 -0</span>
+              </div>
+
+              <div className="flex items-center justify-between p-2.5 hover:bg-hover/35 border border-border rounded-xl transition-all">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold bg-danger/15 text-danger px-1.5 py-0.5 rounded uppercase font-bold text-danger">Deleted</span>
+                  <span className="text-xs font-mono text-text-main">src/old_styles.css</span>
+                </div>
+                <span className="text-[10px] font-bold text-danger font-mono">+0 -214</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Diff Visualizer Modal */}
+      {showDiffModal && selectedCommit && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-[995] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-card rounded-2xl border border-border p-6 max-w-2xl w-full shadow-2xl animate-scale-up max-h-[85vh] flex flex-col">
+            <div className="flex justify-between items-start mb-4 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-success/10 text-success flex items-center justify-center">
+                  <GitMerge size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-text-main">Git Diff Visualizer</h3>
+                  <p className="text-[10px] text-text-muted font-mono">commit {selectedCommit.hash} compared to parent</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowDiffModal(false)}
+                className="text-text-muted hover:text-text-main p-1.5 rounded-full bg-hover transition-colors cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Simulated Diff Code Viewer block */}
+            <div className="flex-1 overflow-y-auto bg-main border border-border rounded-xl font-mono text-[11px] p-4 space-y-2 select-text">
+              <div className="text-text-muted border-b border-border pb-2 mb-3">diff --git a/src/screens/RepoDetails.tsx b/src/screens/RepoDetails.tsx</div>
+              
+              <div className="bg-danger/10 text-danger pl-2.5 py-0.5 whitespace-pre">
+                - const oldCommit = activeCommits.find(c =&gt; c.hash === target);
+              </div>
+              <div className="bg-danger/10 text-danger pl-2.5 py-0.5 whitespace-pre">
+                - deleteCommit(oldCommit.hash);
+              </div>
+              
+              <div className="bg-success/10 text-success pl-2.5 py-0.5 whitespace-pre border-l-4 border-success/60">
+                + const targetCommit = activeCommits.find(c =&gt; c.hash === target);
+              </div>
+              <div className="bg-success/10 text-success pl-2.5 py-0.5 whitespace-pre border-l-4 border-success/60">
+                + if (isLatestCommit(targetCommit)) &#123;
+              </div>
+              <div className="bg-success/10 text-success pl-2.5 py-0.5 whitespace-pre border-l-4 border-success/60">
+                +   deleteCommit(targetCommit.hash);
+              </div>
+              <div className="bg-success/10 text-success pl-2.5 py-0.5 whitespace-pre border-l-4 border-success/60">
+                + &#125; else &#123;
+              </div>
+              <div className="bg-success/10 text-success pl-2.5 py-0.5 whitespace-pre border-l-4 border-success/60">
+                +   showToast("Dangerous: cannot modify historical commits without rewriting!");
+              </div>
+              <div className="bg-success/10 text-success pl-2.5 py-0.5 whitespace-pre border-l-4 border-success/60">
+                + &#125;
+              </div>
+
+              <div className="text-text-muted pt-3 border-t border-border mt-3 pb-2">diff --git a/src/AppContext.tsx b/src/AppContext.tsx</div>
+              <div className="bg-success/10 text-success pl-2.5 py-0.5 whitespace-pre border-l-4 border-success/60">
+                + const restoreFilesToCommit = (hash: string) =&gt; &#123; ... &#125;
+              </div>
+              <div className="bg-success/10 text-success pl-2.5 py-0.5 whitespace-pre border-l-4 border-success/60">
+                + const resetBranchToCommit = (hash: string) =&gt; &#123; ... &#125;
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
 
-const CommitItem = ({ hash, msg, author, time, add, del, isPrimary = false, avatar, onDeleteTrigger, onEditTrigger }: any) => {
-  const { showToast } = useAppContext();
+const CommitItem = ({ hash, msg, author, time, add, del, isPrimary = false, avatar, onActionTrigger }: any) => {
   return (
     <div className="relative group/commit">
-      <div className={`absolute -left-[27px] top-1 w-3 h-3 bg-main border-2 rounded-full z-10 transition-colors ${isPrimary ? 'border-primary' : 'border-text-muted'}`}></div>
+      {/* Timeline Bullet Indicator */}
+      <div className={`absolute -left-[27px] top-1.5 w-3.5 h-3.5 bg-main border-2 rounded-full z-10 transition-colors ${isPrimary ? 'border-primary' : 'border-text-muted'}`}></div>
       
-      <div className="flex justify-between items-start mb-1.5 gap-2">
-        <div 
-          className="font-mono font-bold inline-flex items-center gap-1 px-2.5 py-1 bg-card border border-border rounded-lg cursor-pointer hover:border-primary/40 active:opacity-75 text-xs text-primary transition-all"
-          onClick={() => {
-            navigator.clipboard.writeText(hash);
-            showToast(`Hash ${hash} copied to clipboard`);
-          }}
-        >
-          {hash} <Copy size={11} className="text-text-muted" />
+      <div className="flex justify-between items-start mb-1 gap-2">
+        <div className="flex items-center gap-1.5">
+          <div className="font-mono font-bold inline-flex items-center px-2 py-0.5 bg-card border border-border rounded-lg text-xs text-primary">
+            {hash}
+          </div>
+          {isPrimary && (
+            <span className="text-[9px] uppercase font-extrabold bg-primary/10 border border-primary/20 text-primary px-1.5 py-0.5 rounded">
+              Latest
+            </span>
+          )}
         </div>
         
-        {/* Actions Button Group */}
-        <div className="flex items-center gap-1 opacity-60 group-hover/commit:opacity-100 transition-opacity">
-          <button 
-            onClick={onEditTrigger}
-            className="p-1.5 text-text-muted hover:text-primary hover:bg-hover/60 rounded-lg active:scale-95 transition-all cursor-pointer"
-            title="Edit Description"
-          >
-            <Edit2 size={12} />
-          </button>
-          <button 
-            onClick={onDeleteTrigger}
-            className="p-1.5 text-text-muted hover:text-danger hover:bg-hover/60 rounded-lg active:scale-95 transition-all cursor-pointer"
-            title="Delete Commit"
-          >
-            <Trash2 size={12} />
-          </button>
-        </div>
+        {/* Actions Button */}
+        <button 
+          onClick={onActionTrigger}
+          className="p-1 rounded-lg bg-hover border border-border/80 hover:bg-hover/80 text-text-muted hover:text-text-main transition-all cursor-pointer active:scale-90"
+          title="Commit Actions"
+        >
+          <MoreVertical size={13} />
+        </button>
       </div>
 
-      <div className="text-[13px] text-text-main font-semibold mb-2 leading-relaxed">{msg}</div>
-      <div className="text-xs text-text-muted flex justify-between items-center">
+      <div className="text-xs text-text-main font-semibold mb-2 leading-relaxed pl-0.5 mt-1.5">{msg}</div>
+      <div className="text-[10px] text-text-muted flex justify-between items-center pl-0.5">
         <div className="flex items-center gap-1.5">
-          <img src={avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${author.split(' ')[0]}`} className="w-5 h-5 rounded-full bg-border" alt="" /> 
-          <span className="font-medium text-text-main/80">{author}</span> · {time}
+          <img src={avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${author.split(' ')[0]}`} className="w-4.5 h-4.5 rounded-full bg-border" alt="" /> 
+          <span className="font-bold text-text-main/75">{author}</span> · {time}
         </div>
-        <span className="text-[11px] font-bold text-success flex items-center gap-1">
+        <span className="text-[10px] font-bold text-success flex items-center gap-1">
           {add} <span className={del !== '-0' && del !== '0' ? 'text-danger' : 'text-text-muted'}>{del}</span>
         </span>
       </div>

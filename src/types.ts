@@ -67,5 +67,11 @@ export type AppContextType = AppState & {
   createLocalCommit: (commit: { msg: string; author: string; hash?: string; add?: string; del?: string }) => void;
   editCommitMessage: (hash: string, newMsg: string) => void;
   deleteCommit: (hash: string) => void;
+  amendLatestCommit: (msg: string, contentOnly: boolean, messageOnly: boolean, changes?: { add?: string; del?: string }) => void;
+  undoLatestCommit: () => void;
+  restoreFilesToCommit: (hash: string) => void;
+  resetBranchToCommit: (hash: string) => void;
+  createBranchAtCommit: (hash: string, branchName: string) => void;
+  createTagAtCommit: (hash: string, tagName: string) => void;
 };
 

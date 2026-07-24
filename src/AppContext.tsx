@@ -533,6 +533,111 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     showToast(`Commit deleted successfully!`);
   };
 
+  const amendLatestCommit = (msg: string, contentOnly: boolean, messageOnly: boolean, changes?: { add?: string; del?: string }) => {
+    if (!state.currentRepo || state.activeCommits.length === 0) return;
+    const key = `local_details_${state.currentRepo}_commits`;
+    
+    const updatedCommits = state.activeCommits.map((c: any, idx: number) => {
+      if (idx === 0) {
+        const updated = { ...c };
+        if (!contentOnly) {
+          updated.msg = msg;
+        }
+        if (!messageOnly) {
+          updated.add = changes?.add || `+${Math.floor(Math.random() * 45) + 5}`;
+          updated.del = changes?.del || `-${Math.floor(Math.random() * 15) + 1}`;
+        }
+        return updated;
+      }
+      return c;
+    });
+
+    localStorage.setItem(key, JSON.stringify(updatedCommits));
+    setState(prev => ({
+      ...prev,
+      activeCommits: updatedCommits
+    }));
+    showToast(`Latest commit amended successfully!`);
+  };
+
+  const undoLatestCommit = () => {
+    if (!state.currentRepo || state.activeCommits.length === 0) return;
+    const key = `local_details_${state.currentRepo}_commits`;
+    
+    const updatedCommits = state.activeCommits.slice(1);
+    localStorage.setItem(key, JSON.stringify(updatedCommits));
+    setState(prev => ({
+      ...prev,
+      activeCommits: updatedCommits
+    }));
+    showToast(`Undone latest commit! Changes moved to index staging area.`);
+  };
+
+  const restoreFilesToCommit = (hash: string) => {
+    if (!state.currentRepo) return;
+    const key = `local_details_${state.currentRepo}_commits`;
+    
+    const newCommit = {
+      hash: Math.random().toString(16).substring(2, 9),
+      msg: `Restore files to match state at ${hash}`,
+      author: state.githubUser?.name || state.githubUser?.login || 'User',
+      time: 'Just now',
+      add: `+0`,
+      del: `-0`,
+      isPrimary: true
+    };
+
+    const updatedCommits = [newCommit, ...state.activeCommits];
+    localStorage.setItem(key, JSON.stringify(updatedCommits));
+    setState(prev => ({
+      ...prev,
+      activeCommits: updatedCommits
+    }));
+    showToast(`Restored files to ${hash}! Created new commit.`);
+  };
+
+  const resetBranchToCommit = (hash: string) => {
+    if (!state.currentRepo) return;
+    const key = `local_details_${state.currentRepo}_commits`;
+    
+    const targetIdx = state.activeCommits.findIndex((c: any) => c.hash === hash);
+    if (targetIdx === -1) return;
+    
+    const updatedCommits = state.activeCommits.slice(targetIdx);
+    
+    localStorage.setItem(key, JSON.stringify(updatedCommits));
+    setState(prev => ({
+      ...prev,
+      activeCommits: updatedCommits
+    }));
+    showToast(`Branch reset to ${hash}. Later commits removed.`);
+  };
+
+  const createBranchAtCommit = (hash: string, branchName: string) => {
+    if (!state.currentRepo) return;
+    const key = `local_details_${state.currentRepo}_branches`;
+    const current = getLocalRepoDetails(state.currentRepo, 'branches');
+    
+    const newBranch = {
+      name: branchName.trim().toLowerCase().replace(/\s+/g, '-'),
+      desc: `Created from commit ${hash}`,
+      isDefault: false,
+      borderColor: 'transparent'
+    };
+    
+    const updated = [...current, newBranch];
+    localStorage.setItem(key, JSON.stringify(updated));
+    setState(prev => ({
+      ...prev,
+      activeBranches: updated
+    }));
+    showToast(`Branch "${branchName}" created from commit ${hash}!`);
+  };
+
+  const createTagAtCommit = (hash: string, tagName: string) => {
+    showToast(`Created tag "${tagName}" at commit ${hash}!`);
+  };
+
   const refreshData = async () => {
     setState(prev => ({ ...prev, isLoadingRepoDetails: true }));
     // Simulate brief refreshing delay to show the loader feedback
@@ -612,6 +717,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         createLocalCommit,
         editCommitMessage,
         deleteCommit,
+        amendLatestCommit,
+        undoLatestCommit,
+        restoreFilesToCommit,
+        resetBranchToCommit,
+        createBranchAtCommit,
+        createTagAtCommit,
       }}
     >
       {children}
