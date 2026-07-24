@@ -109,6 +109,7 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({ children }) => {
 
   return (
     <div 
+      id="mobile-scroll-container"
       ref={containerRef}
       className="flex-1 overflow-y-auto overflow-x-hidden px-5 pb-5 no-scrollbar relative select-none"
       onTouchStart={onTouchStart}

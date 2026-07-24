@@ -707,38 +707,135 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
-  const editCommitMessage = (hash: string, newMsg: string) => {
+  const editCommitMessage = async (hash: string, newMsg: string) => {
     if (!state.currentRepo) return;
-    const key = `local_details_${state.currentRepo}_commits`;
     
-    const updatedCommits = state.activeCommits.map((c: any) => {
-      if (c.hash === hash) {
-        return { ...c, msg: newMsg };
+    if (state.githubToken && state.currentRepoOwner && state.currentRepoOwner !== 'mock') {
+      try {
+        const token = state.githubToken;
+        const headers = {
+          Authorization: token.startsWith('ghp_') || token.startsWith('github_pat_') || token.startsWith('gho_')
+            ? `Bearer ${token}`
+            : `token ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/vnd.github.v3+json'
+        };
+        const owner = state.currentRepoOwner;
+        const repo = state.currentRepo;
+        const branch = state.activeBranches.find(b => b.isDefault)?.name || 'main';
+
+        // 1. Get original commit
+        const commitRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/commits/${hash}`, { headers });
+        if (!commitRes.ok) throw new Error('Failed to fetch commit details');
+        const commitData = await commitRes.json();
+
+        // 2. Create new commit
+        const newCommitRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/commits`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            message: newMsg,
+            tree: commitData.tree.sha,
+            parents: commitData.parents.map((p: any) => p.sha)
+          })
+        });
+        if (!newCommitRes.ok) throw new Error('Failed to create new commit');
+        const newCommitData = await newCommitRes.json();
+
+        // 3. Update branch ref
+        const refRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/refs/heads/${branch}`, {
+          method: 'PATCH',
+          headers,
+          body: JSON.stringify({
+            sha: newCommitData.sha,
+            force: true
+          })
+        });
+        if (!refRes.ok) throw new Error('Failed to update branch reference');
+
+        showToast('Commit message updated on GitHub!');
+        await fetchRepoDetails(repo, owner);
+      } catch (error: any) {
+        console.error('Error editing commit message:', error);
+        showToast(`Failed to edit commit: ${error.message || error}`);
       }
-      return c;
-    });
+    } else {
+      const key = `local_details_${state.currentRepo}_commits`;
+      
+      const updatedCommits = state.activeCommits.map((c: any) => {
+        if (c.hash === hash) {
+          return { ...c, msg: newMsg };
+        }
+        return c;
+      });
 
-    localStorage.setItem(key, JSON.stringify(updatedCommits));
+      localStorage.setItem(key, JSON.stringify(updatedCommits));
 
-    setState(prev => ({
-      ...prev,
-      activeCommits: updatedCommits
-    }));
-    showToast(`Commit message updated!`);
+      setState(prev => ({
+        ...prev,
+        activeCommits: updatedCommits
+      }));
+      showToast(`Commit message updated!`);
+    }
   };
 
-  const deleteCommit = (hash: string) => {
+  const deleteCommit = async (hash: string) => {
     if (!state.currentRepo) return;
-    const key = `local_details_${state.currentRepo}_commits`;
+    
+    if (state.githubToken && state.currentRepoOwner && state.currentRepoOwner !== 'mock') {
+      try {
+        const token = state.githubToken;
+        const headers = {
+          Authorization: token.startsWith('ghp_') || token.startsWith('github_pat_') || token.startsWith('gho_')
+            ? `Bearer ${token}`
+            : `token ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/vnd.github.v3+json'
+        };
+        const owner = state.currentRepoOwner;
+        const repo = state.currentRepo;
+        const branch = state.activeBranches.find(b => b.isDefault)?.name || 'main';
 
-    const updatedCommits = state.activeCommits.filter((c: any) => c.hash !== hash);
-    localStorage.setItem(key, JSON.stringify(updatedCommits));
+        // 1. Get original commit
+        const commitRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/commits/${hash}`, { headers });
+        if (!commitRes.ok) throw new Error('Failed to fetch commit details');
+        const commitData = await commitRes.json();
 
-    setState(prev => ({
-      ...prev,
-      activeCommits: updatedCommits
-    }));
-    showToast(`Commit deleted successfully!`);
+        if (!commitData.parents || commitData.parents.length === 0) {
+          throw new Error('Cannot delete initial commit');
+        }
+
+        const parentSha = commitData.parents[0].sha;
+
+        // 2. Update branch ref to parent
+        const refRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/refs/heads/${branch}`, {
+          method: 'PATCH',
+          headers,
+          body: JSON.stringify({
+            sha: parentSha,
+            force: true
+          })
+        });
+        if (!refRes.ok) throw new Error('Failed to update branch reference');
+
+        showToast('Commit deleted from GitHub!');
+        await fetchRepoDetails(repo, owner);
+      } catch (error: any) {
+        console.error('Error deleting commit:', error);
+        showToast(`Failed to delete commit: ${error.message || error}`);
+      }
+    } else {
+      const key = `local_details_${state.currentRepo}_commits`;
+
+      const updatedCommits = state.activeCommits.filter((c: any) => c.hash !== hash);
+      localStorage.setItem(key, JSON.stringify(updatedCommits));
+
+      setState(prev => ({
+        ...prev,
+        activeCommits: updatedCommits
+      }));
+      showToast(`Commit deleted successfully!`);
+    }
   };
 
   const amendLatestCommit = (msg: string, contentOnly: boolean, messageOnly: boolean, changes?: { add?: string; del?: string }) => {

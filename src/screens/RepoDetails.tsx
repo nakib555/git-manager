@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AreaChart, Area, ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { useAppContext } from '../AppContext';
 import { Home, FileCode, FileText, Copy, GitMerge, AlertTriangle, GitPullRequest, Search, Folder, GitCommit, GitBranch, Edit2, Trash2, Check, X, MoreVertical, Undo, Eye, BookOpen, FileSearch, Tag, RotateCcw, HelpCircle, Terminal, Sliders, Clock, User } from 'lucide-react';
 
@@ -395,6 +396,13 @@ const CommitsScreen = () => {
     createTagAtCommit, 
     showToast 
   } = useAppContext();
+
+  const rowVirtualizer = useVirtualizer({
+    count: activeCommits.length,
+    getScrollElement: () => typeof document !== 'undefined' ? document.getElementById('mobile-scroll-container') : null,
+    estimateSize: () => 110,
+    overscan: 5,
+  });
   
   // Interactive Dialog and Action Sheet States
   const [selectedCommit, setSelectedCommit] = useState<any | null>(null);
@@ -608,21 +616,39 @@ const CommitsScreen = () => {
         </button>
       </div>
 
-      <div className="pl-5 border-l-2 border-border relative flex flex-col gap-6 pt-2">
-        {activeCommits.map((commit, idx) => (
-          <CommitItem 
-            key={commit.hash + idx} 
-            hash={commit.hash} 
-            msg={commit.msg} 
-            author={commit.author} 
-            time={commit.time} 
-            add={commit.add} 
-            del={commit.del} 
-            isPrimary={idx === 0} 
-            avatar={commit.avatar}
-            onActionTrigger={() => handleOpenActions(commit)}
-          />
-        ))}
+      <div className="pl-5 border-l-2 border-border relative pt-2" style={{ height: activeCommits.length > 0 ? `${rowVirtualizer.getTotalSize()}px` : 'auto' }}>
+        {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+          const commit = activeCommits[virtualRow.index];
+          const idx = virtualRow.index;
+          return (
+            <div
+              key={virtualRow.key}
+              data-index={virtualRow.index}
+              ref={rowVirtualizer.measureElement}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                transform: `translateY(${virtualRow.start}px)`,
+                paddingLeft: '1.25rem', // pl-5 equivalent for positioning children correctly relative to the line
+                paddingBottom: '1.5rem', // gap-6 equivalent
+              }}
+            >
+              <CommitItem 
+                hash={commit.hash} 
+                msg={commit.msg} 
+                author={commit.author} 
+                time={commit.time} 
+                add={commit.add} 
+                del={commit.del} 
+                isPrimary={idx === 0} 
+                avatar={commit.avatar}
+                onActionTrigger={() => handleOpenActions(commit)}
+              />
+            </div>
+          );
+        })}
         {activeCommits.length === 0 && (
           <div className="text-center py-8 text-text-muted text-xs font-semibold uppercase tracking-wider">No commits yet. Make your first staging commit!</div>
         )}
