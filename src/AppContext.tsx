@@ -381,122 +381,330 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setState(prev => ({ ...prev, activeModal: null }));
   };
 
-  const createLocalRepo = (repo: { name: string; desc: string; isPrivate: boolean; lang: string }) => {
-    const newRepo: GitHubRepo = {
-      id: Date.now(),
-      name: repo.name,
-      private: repo.isPrivate,
-      description: repo.desc || 'No description provided.',
-      language: repo.lang || 'TypeScript',
-      pushed_at: new Date().toISOString()
-    };
-    
-    const existing = localStorage.getItem('localRepos') 
-      ? JSON.parse(localStorage.getItem('localRepos')!) 
-      : INITIAL_MOCK_REPOS;
+  const createLocalRepo = async (repo: { name: string; desc: string; isPrivate: boolean; lang: string }) => {
+    if (state.githubToken) {
+      try {
+        const token = state.githubToken;
+        const headers = {
+          Authorization: token.startsWith('ghp_') || token.startsWith('github_pat_') || token.startsWith('gho_')
+            ? `Bearer ${token}`
+            : `token ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/vnd.github.v3+json'
+        };
 
-    const updated = [newRepo, ...existing];
-    localStorage.setItem('localRepos', JSON.stringify(updated));
+        const res = await fetch('https://api.github.com/user/repos', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            name: repo.name,
+            description: repo.desc,
+            private: repo.isPrivate,
+            auto_init: true
+          })
+        });
 
-    // Create an initial commit for this repo so it's not empty
-    const initialCommit = {
-      hash: Math.random().toString(16).substring(2, 9),
-      msg: 'Initial commit',
-      author: state.githubUser?.name || state.githubUser?.login || 'User',
-      time: 'Just now',
-      add: '+12',
-      del: '-0',
-      isPrimary: true
-    };
-    localStorage.setItem(`local_details_${repo.name}_commits`, JSON.stringify([initialCommit]));
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.message || `Status ${res.status}`);
+        }
 
-    setState(prev => {
-      const nextCount = prev.sessionCommitsCount + 1;
-      sessionStorage.setItem('sessionCommitsCount', nextCount.toString());
-      return {
-        ...prev,
-        githubRepos: prev.githubToken ? prev.githubRepos : updated,
-        sessionCommitsCount: nextCount
+        const newRepoData = await res.json();
+        showToast(`Repository '${repo.name}' created on GitHub!`);
+        await fetchGitHubData(token);
+      } catch (error: any) {
+        console.error('Error creating GitHub repository:', error);
+        showToast(`Failed to create repository: ${error.message || error}`);
+      }
+    } else {
+      const newRepo: GitHubRepo = {
+        id: Date.now(),
+        name: repo.name,
+        private: repo.isPrivate,
+        description: repo.desc || 'No description provided.',
+        language: repo.lang || 'TypeScript',
+        pushed_at: new Date().toISOString()
       };
-    });
+      
+      const existing = localStorage.getItem('localRepos') 
+        ? JSON.parse(localStorage.getItem('localRepos')!) 
+        : INITIAL_MOCK_REPOS;
 
-    showToast(`Repository '${repo.name}' created!`);
-  };
+      const updated = [newRepo, ...existing];
+      localStorage.setItem('localRepos', JSON.stringify(updated));
 
-  const createLocalBranch = (branch: { name: string; desc: string }) => {
-    if (!state.currentRepo) return;
-    const key = `local_details_${state.currentRepo}_branches`;
-    const current = getLocalRepoDetails(state.currentRepo, 'branches');
-    const newBranch = {
-      name: branch.name,
-      desc: branch.desc || 'Active branch',
-      isDefault: false
-    };
-    const updated = [newBranch, ...current];
-    localStorage.setItem(key, JSON.stringify(updated));
-    
-    setState(prev => ({
-      ...prev,
-      activeBranches: updated
-    }));
-    showToast(`Branch '${branch.name}' created!`);
-  };
-
-  const createLocalPR = (pr: { title: string; desc: string; source: string; target: string }) => {
-    if (!state.currentRepo) return;
-    const key = `local_details_${state.currentRepo}_prs`;
-    const current = getLocalRepoDetails(state.currentRepo, 'prs');
-    const newPR = {
-      id: current.length + 1,
-      title: pr.title,
-      desc: pr.desc || 'No description provided.',
-      author: state.githubUser?.login || 'User',
-      time: 'Just now',
-      status: 'Open',
-      avatar: state.githubUser?.avatar_url || '',
-      hasConflicts: false
-    };
-    const updated = [newPR, ...current];
-    localStorage.setItem(key, JSON.stringify(updated));
-    
-    setState(prev => ({
-      ...prev,
-      activePRs: updated
-    }));
-    showToast(`Pull Request #${newPR.id} opened!`);
-  };
-
-  const createLocalCommit = (commit: { msg: string; author: string; hash?: string; add?: string; del?: string }) => {
-    if (!state.currentRepo) return;
-    const key = `local_details_${state.currentRepo}_commits`;
-    const current = getLocalRepoDetails(state.currentRepo, 'commits');
-    const newCommit = {
-      hash: commit.hash || Math.random().toString(16).substring(2, 9),
-      msg: commit.msg,
-      author: commit.author || state.githubUser?.name || state.githubUser?.login || 'User',
-      time: 'Just now',
-      add: commit.add || `+${Math.floor(Math.random() * 30) + 1}`,
-      del: commit.del || `-${Math.floor(Math.random() * 10) + 1}`,
-      isPrimary: true
-    };
-    
-    // Write local commit to localStorage
-    const updatedLocal = [newCommit, ...current];
-    localStorage.setItem(key, JSON.stringify(updatedLocal));
-    
-    // Prepend to current UI commits (retaining fetched ones)
-    const updatedUI = [newCommit, ...(state.activeCommits || [])];
-    
-    setState(prev => {
-      const nextCount = prev.sessionCommitsCount + 1;
-      sessionStorage.setItem('sessionCommitsCount', nextCount.toString());
-      return {
-        ...prev,
-        activeCommits: updatedUI,
-        sessionCommitsCount: nextCount
+      // Create an initial commit for this repo so it's not empty
+      const initialCommit = {
+        hash: Math.random().toString(16).substring(2, 9),
+        msg: 'Initial commit',
+        author: state.githubUser?.name || state.githubUser?.login || 'User',
+        time: 'Just now',
+        add: '+12',
+        del: '-0',
+        isPrimary: true
       };
-    });
-    showToast(`Committed: ${newCommit.hash}`);
+      localStorage.setItem(`local_details_${repo.name}_commits`, JSON.stringify([initialCommit]));
+
+      setState(prev => {
+        const nextCount = prev.sessionCommitsCount + 1;
+        sessionStorage.setItem('sessionCommitsCount', nextCount.toString());
+        return {
+          ...prev,
+          githubRepos: updated,
+          sessionCommitsCount: nextCount
+        };
+      });
+
+      showToast(`Repository '${repo.name}' created!`);
+    }
+  };
+
+  const findBaseSha = async (owner: string, repo: string, headers: any): Promise<string> => {
+    const defaultBranch = state.activeBranches.find(b => b.isDefault)?.name || 'main';
+    try {
+      const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/ref/heads/${defaultBranch}`, { headers });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.object?.sha) return data.object.sha;
+      }
+    } catch (e) {
+      console.warn('Failed to fetch default branch ref directly:', e);
+    }
+
+    try {
+      const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/ref/heads/master`, { headers });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.object?.sha) return data.object.sha;
+      }
+    } catch (e) {}
+
+    try {
+      const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/commits?per_page=1`, { headers });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.length > 0 && data[0]?.sha) {
+          return data[0].sha;
+        }
+      }
+    } catch (e) {}
+
+    throw new Error('Could not find a base commit/branch to branch off of.');
+  };
+
+  const createLocalBranch = async (branch: { name: string; desc: string }) => {
+    if (!state.currentRepo) return;
+
+    if (state.githubToken && state.currentRepoOwner && state.currentRepoOwner !== 'mock') {
+      try {
+        const token = state.githubToken;
+        const headers = {
+          Authorization: token.startsWith('ghp_') || token.startsWith('github_pat_') || token.startsWith('gho_')
+            ? `Bearer ${token}`
+            : `token ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/vnd.github.v3+json'
+        };
+
+        const owner = state.currentRepoOwner;
+        const repo = state.currentRepo;
+        const baseSha = await findBaseSha(owner, repo, headers);
+        const branchName = branch.name.trim().replace(/\s+/g, '-');
+
+        const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/refs`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            ref: `refs/heads/${branchName}`,
+            sha: baseSha
+          })
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.message || `Status ${res.status}`);
+        }
+
+        showToast(`Branch '${branchName}' created on GitHub!`);
+        await fetchRepoDetails(repo, owner);
+      } catch (error: any) {
+        console.error('Error creating GitHub branch:', error);
+        showToast(`Failed to create branch: ${error.message || error}`);
+      }
+    } else {
+      const key = `local_details_${state.currentRepo}_branches`;
+      const current = getLocalRepoDetails(state.currentRepo, 'branches');
+      const newBranch = {
+        name: branch.name,
+        desc: branch.desc || 'Active branch',
+        isDefault: false
+      };
+      const updated = [newBranch, ...current];
+      localStorage.setItem(key, JSON.stringify(updated));
+      
+      setState(prev => ({
+        ...prev,
+        activeBranches: updated
+      }));
+      showToast(`Branch '${branch.name}' created!`);
+    }
+  };
+
+  const createLocalPR = async (pr: { title: string; desc: string; source: string; target: string }) => {
+    if (!state.currentRepo) return;
+
+    if (state.githubToken && state.currentRepoOwner && state.currentRepoOwner !== 'mock') {
+      try {
+        const token = state.githubToken;
+        const headers = {
+          Authorization: token.startsWith('ghp_') || token.startsWith('github_pat_') || token.startsWith('gho_')
+            ? `Bearer ${token}`
+            : `token ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/vnd.github.v3+json'
+        };
+
+        const owner = state.currentRepoOwner;
+        const repo = state.currentRepo;
+
+        const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/pulls`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            title: pr.title,
+            body: pr.desc || 'No description provided.',
+            head: pr.source,
+            base: pr.target
+          })
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.message || `Status ${res.status}`);
+        }
+
+        const prData = await res.json();
+        showToast(`Pull Request #${prData.number} opened on GitHub!`);
+        await fetchRepoDetails(repo, owner);
+      } catch (error: any) {
+        console.error('Error creating GitHub Pull Request:', error);
+        showToast(`Failed to open Pull Request: ${error.message || error}`);
+      }
+    } else {
+      const key = `local_details_${state.currentRepo}_prs`;
+      const current = getLocalRepoDetails(state.currentRepo, 'prs');
+      const newPR = {
+        id: current.length + 1,
+        title: pr.title,
+        desc: pr.desc || 'No description provided.',
+        author: state.githubUser?.login || 'User',
+        time: 'Just now',
+        status: 'Open',
+        avatar: state.githubUser?.avatar_url || '',
+        hasConflicts: false
+      };
+      const updated = [newPR, ...current];
+      localStorage.setItem(key, JSON.stringify(updated));
+      
+      setState(prev => ({
+        ...prev,
+        activePRs: updated
+      }));
+      showToast(`Pull Request #${newPR.id} opened!`);
+    }
+  };
+
+  const createLocalCommit = async (commit: { msg: string; author: string; hash?: string; add?: string; del?: string; filePath?: string; fileContent?: string }) => {
+    if (!state.currentRepo) return;
+
+    if (state.githubToken && state.currentRepoOwner && state.currentRepoOwner !== 'mock') {
+      try {
+        const token = state.githubToken;
+        const headers = {
+          Authorization: token.startsWith('ghp_') || token.startsWith('github_pat_') || token.startsWith('gho_')
+            ? `Bearer ${token}`
+            : `token ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/vnd.github.v3+json'
+        };
+
+        const owner = state.currentRepoOwner;
+        const repo = state.currentRepo;
+        const branch = state.activeBranches.find(b => b.isDefault)?.name || 'main';
+
+        const path = commit.filePath?.trim() || 'README.md';
+        const contentStr = commit.fileContent || `# ${repo}\n\nActivity log commit: ${commit.msg}\n\n_Committed via Git Manager App at ${new Date().toISOString()}_`;
+
+        const utf8Bytes = new TextEncoder().encode(contentStr);
+        let binaryStr = '';
+        for (let i = 0; i < utf8Bytes.length; i++) {
+          binaryStr += String.fromCharCode(utf8Bytes[i]);
+        }
+        const b64Content = btoa(binaryStr);
+
+        let sha: string | undefined = undefined;
+        try {
+          const fileRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`, { headers });
+          if (fileRes.ok) {
+            const fileData = await fileRes.json();
+            sha = fileData.sha;
+          }
+        } catch (e) {
+          console.warn('File might not exist yet, creating a new one.', e);
+        }
+
+        const commitRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify({
+            message: commit.msg,
+            content: b64Content,
+            sha,
+            branch
+          })
+        });
+
+        if (!commitRes.ok) {
+          const errData = await commitRes.json().catch(() => ({}));
+          throw new Error(errData.message || `Status ${commitRes.status}`);
+        }
+
+        const commitData = await commitRes.json();
+        showToast(`Commit successfully pushed to GitHub! SHA: ${commitData.commit.sha.substring(0, 7)}`);
+        await fetchRepoDetails(repo, owner);
+      } catch (error: any) {
+        console.error('Error committing to GitHub:', error);
+        showToast(`Failed to commit to GitHub: ${error.message || error}`);
+      }
+    } else {
+      const key = `local_details_${state.currentRepo}_commits`;
+      const current = getLocalRepoDetails(state.currentRepo, 'commits');
+      const newCommit = {
+        hash: commit.hash || Math.random().toString(16).substring(2, 9),
+        msg: commit.msg,
+        author: commit.author || state.githubUser?.name || state.githubUser?.login || 'User',
+        time: 'Just now',
+        add: commit.add || `+${Math.floor(Math.random() * 30) + 1}`,
+        del: commit.del || `-${Math.floor(Math.random() * 10) + 1}`,
+        isPrimary: true
+      };
+      
+      const updatedLocal = [newCommit, ...current];
+      localStorage.setItem(key, JSON.stringify(updatedLocal));
+      
+      const updatedUI = [newCommit, ...(state.activeCommits || [])];
+      
+      setState(prev => {
+        const nextCount = prev.sessionCommitsCount + 1;
+        sessionStorage.setItem('sessionCommitsCount', nextCount.toString());
+        return {
+          ...prev,
+          activeCommits: updatedUI,
+          sessionCommitsCount: nextCount
+        };
+      });
+      showToast(`Committed: ${newCommit.hash}`);
+    }
   };
 
   const editCommitMessage = (hash: string, newMsg: string) => {

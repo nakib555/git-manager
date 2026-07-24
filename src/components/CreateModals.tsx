@@ -282,13 +282,23 @@ const PRForm: React.FC<{ onSubmit: (data: any) => void }> = ({ onSubmit }) => {
 };
 
 const CommitForm: React.FC<{ onSubmit: (data: any) => void }> = ({ onSubmit }) => {
+  const { githubToken, currentRepoOwner } = useAppContext();
   const [msg, setMsg] = useState('');
   const [author, setAuthor] = useState('');
+  const [filePath, setFilePath] = useState('README.md');
+  const [fileContent, setFileContent] = useState('');
+
+  const isRealGitHub = githubToken && currentRepoOwner && currentRepoOwner !== 'mock';
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!msg.trim()) return;
-    onSubmit({ msg: msg.trim(), author: author.trim() });
+    onSubmit({ 
+      msg: msg.trim(), 
+      author: author.trim(),
+      filePath: isRealGitHub ? filePath : undefined,
+      fileContent: isRealGitHub ? fileContent : undefined
+    });
   };
 
   return (
@@ -304,22 +314,53 @@ const CommitForm: React.FC<{ onSubmit: (data: any) => void }> = ({ onSubmit }) =
           className="w-full bg-main border border-border rounded-xl px-3.5 py-2.5 text-sm text-text-main outline-none focus:border-primary transition-colors placeholder:text-text-muted/60"
         />
       </div>
-      <div>
-        <label className="block text-xs font-semibold text-text-muted mb-1.5 uppercase tracking-wider">Author (Optional)</label>
-        <input 
-          type="text" 
-          placeholder="e.g. Tanvir Ahmed" 
-          value={author}
-          onChange={(e) => setAuthor(e.target.value)}
-          className="w-full bg-main border border-border rounded-xl px-3.5 py-2.5 text-sm text-text-main outline-none focus:border-primary transition-colors placeholder:text-text-muted/60"
-        />
-      </div>
+
+      {isRealGitHub && (
+        <div className="p-3 bg-primary/5 border border-primary/10 rounded-xl space-y-3">
+          <span className="block text-[11px] font-bold text-primary uppercase tracking-wider">GitHub Real-Commit Staging</span>
+          <div>
+            <label className="block text-[10px] font-semibold text-text-muted mb-1 uppercase">Target File Path</label>
+            <input 
+              type="text" 
+              placeholder="e.g. README.md or activity.log" 
+              value={filePath}
+              onChange={(e) => setFilePath(e.target.value)}
+              required
+              className="w-full bg-main border border-border rounded-lg px-2.5 py-1.5 text-xs text-text-main outline-none focus:border-primary transition-colors font-mono"
+            />
+          </div>
+          <div>
+            <label className="block text-[10px] font-semibold text-text-muted mb-1 uppercase">File Contents</label>
+            <textarea 
+              placeholder="Type the contents you want to commit to GitHub..." 
+              value={fileContent}
+              onChange={(e) => setFileContent(e.target.value)}
+              rows={3}
+              className="w-full bg-main border border-border rounded-lg px-2.5 py-1.5 text-xs text-text-main outline-none focus:border-primary transition-colors resize-none font-mono"
+            />
+          </div>
+        </div>
+      )}
+
+      {!isRealGitHub && (
+        <div>
+          <label className="block text-xs font-semibold text-text-muted mb-1.5 uppercase tracking-wider">Author (Optional)</label>
+          <input 
+            type="text" 
+            placeholder="e.g. Tanvir Ahmed" 
+            value={author}
+            onChange={(e) => setAuthor(e.target.value)}
+            className="w-full bg-main border border-border rounded-xl px-3.5 py-2.5 text-sm text-text-main outline-none focus:border-primary transition-colors placeholder:text-text-muted/60"
+          />
+        </div>
+      )}
+
       <button 
         type="submit" 
         disabled={!msg.trim()}
         className="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold text-sm py-3 rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
       >
-        <Check size={16} strokeWidth={3} /> Commit to branch
+        <Check size={16} strokeWidth={3} /> {isRealGitHub ? 'Push Real Commit to GitHub' : 'Commit to branch'}
       </button>
     </form>
   );

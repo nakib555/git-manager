@@ -272,8 +272,10 @@ export const RepoDetails: React.FC = () => {
 };
 
 const FilesScreen = () => {
-  const { activeFiles, currentRepo } = useAppContext();
-  const [selectedFile, setSelectedFile] = useState<string>(activeFiles[0]?.name || '');
+  const { activeFiles, currentRepo, githubToken, currentRepoOwner } = useAppContext();
+  const [selectedFile, setSelectedFile] = useState<string>('');
+  const [fileContent, setFileContent] = useState<string>('');
+  const [isLoadingFile, setIsLoadingFile] = useState<boolean>(false);
 
   const getSimulatedCode = (fileName: string) => {
     if (!fileName) return '// Select a file to view content';
@@ -284,6 +286,47 @@ const FilesScreen = () => {
   };
 
   const filesToDisplay = activeFiles;
+  const activeFileName = selectedFile || filesToDisplay[0]?.name || '';
+
+  React.useEffect(() => {
+    const fileName = selectedFile || filesToDisplay[0]?.name;
+    if (!fileName) return;
+
+    if (githubToken && currentRepoOwner && currentRepoOwner !== 'mock') {
+      const fetchFileContent = async () => {
+        setIsLoadingFile(true);
+        try {
+          const headers = {
+            Authorization: githubToken.startsWith('ghp_') || githubToken.startsWith('github_pat_') || githubToken.startsWith('gho_')
+              ? `Bearer ${githubToken}`
+              : `token ${githubToken}`
+          };
+          const res = await fetch(`https://api.github.com/repos/${currentRepoOwner}/${currentRepo}/contents/${fileName}`, { headers });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.encoding === 'base64') {
+              const decoded = decodeURIComponent(atob(data.content.replace(/\s/g, '')).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+              }).join(''));
+              setFileContent(decoded);
+            } else {
+              setFileContent(data.content || '');
+            }
+          } else {
+            setFileContent(`// Error loading file from GitHub (status ${res.status})`);
+          }
+        } catch (err: any) {
+          console.error(err);
+          setFileContent(`// Error loading file: ${err.message || err}`);
+        } finally {
+          setIsLoadingFile(false);
+        }
+      };
+      fetchFileContent();
+    } else {
+      setFileContent(getSimulatedCode(fileName));
+    }
+  }, [selectedFile, filesToDisplay, githubToken, currentRepo, currentRepoOwner]);
 
   if (filesToDisplay.length === 0) {
     return (
@@ -298,11 +341,11 @@ const FilesScreen = () => {
   return (
     <div className="bg-card rounded-2xl border border-border overflow-hidden flex flex-col h-[60vh]">
       <div className="px-4 py-3.5 text-xs text-text-muted border-b border-border flex items-center gap-1.5 font-medium">
-        <Home size={14} className="text-primary" /> / <span className="text-text-main font-semibold">{currentRepo || 'repo'}</span> / <span className="text-text-main font-semibold">{selectedFile || filesToDisplay[0]?.name}</span>
+        <Home size={14} className="text-primary" /> / <span className="text-text-main font-semibold">{currentRepo || 'repo'}</span> / <span className="text-text-main font-semibold">{activeFileName}</span>
       </div>
       <div className="flex overflow-x-auto p-3 gap-2 border-b border-border bg-hover/20 no-scrollbar shrink-0">
         {filesToDisplay.map(file => {
-          const isSelected = (selectedFile || filesToDisplay[0]?.name) === file.name;
+          const isSelected = activeFileName === file.name;
           const Icon = file.type === 'dir' ? Folder : file.name.endsWith('.md') ? FileText : FileCode;
           const iconColor = file.type === 'dir' ? 'text-info' : 'text-primary';
           return (
@@ -321,12 +364,19 @@ const FilesScreen = () => {
         })}
       </div>
       <div className="flex-1 font-mono text-[11px] leading-relaxed p-4 overflow-auto bg-hover/10">
-        {getSimulatedCode(selectedFile || filesToDisplay[0]?.name).trim().split('\n').map((line, idx) => (
-          <div key={idx} className="flex">
-            <span className="text-[#4B4B5E] w-6 select-none shrink-0">{idx + 1}</span>
-            <span className="text-text-main/90 whitespace-pre">{line}</span>
+        {isLoadingFile ? (
+          <div className="flex items-center justify-center h-full gap-2 text-text-muted">
+            <span className="w-4 h-4 rounded-full border border-primary border-t-transparent animate-spin"></span>
+            Loading file contents from GitHub...
           </div>
-        ))}
+        ) : (
+          fileContent.trim().split('\n').map((line, idx) => (
+            <div key={idx} className="flex">
+              <span className="text-[#4B4B5E] w-6 select-none shrink-0">{idx + 1}</span>
+              <span className="text-text-main/90 whitespace-pre">{line}</span>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
