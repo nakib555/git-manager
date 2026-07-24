@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useAppContext } from '../AppContext';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   Search, Lock, Globe, Square, FolderGit2, Folder, GitBranch, 
   GitPullRequest, GitCommit, Check, Key, ExternalLink, ShieldAlert, 
@@ -438,19 +439,27 @@ const DesktopDashboard: React.FC<{ globalSearch: string }> = ({ globalSearch }) 
                 <ChevronDown size={14} />
               </button>
 
-              {showDropdown && (
-                <div className="absolute right-0 top-9 bg-card border border-border rounded-xl shadow-xl overflow-hidden z-20 w-36 py-1">
-                  {(['Day', 'Week', 'Month', 'Year'] as const).map(t => (
-                    <button 
-                      key={t}
-                      onClick={() => { setTimeframe(t); setShowDropdown(false); }}
-                      className={`w-full text-left px-4 py-2 text-xs transition-colors hover:bg-hover/40 ${timeframe === t ? 'text-primary font-bold bg-primary/5' : 'text-text-main'}`}
-                    >
-                      {t === 'Day' ? 'Today' : `This ${t}`}
-                    </button>
-                  ))}
-                </div>
-              )}
+              <AnimatePresence>
+                {showDropdown && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 top-9 bg-card border border-border rounded-xl shadow-xl overflow-hidden z-20 w-36 py-1"
+                  >
+                    {(['Day', 'Week', 'Month', 'Year'] as const).map(t => (
+                      <button 
+                        key={t}
+                        onClick={() => { setTimeframe(t); setShowDropdown(false); }}
+                        className={`w-full text-left px-4 py-2 text-xs transition-colors hover:bg-hover/40 ${timeframe === t ? 'text-primary font-bold bg-primary/5' : 'text-text-main'}`}
+                      >
+                        {t === 'Day' ? 'Today' : `This ${t}`}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
 
@@ -522,9 +531,17 @@ const DesktopDashboard: React.FC<{ globalSearch: string }> = ({ globalSearch }) 
             </div>
           </div>
 
-          {isSlidersOpen && (
-            <div className="mt-4 p-4 rounded-xl bg-hover/15 border border-border grid grid-cols-2 gap-5 animate-fade-in text-xs">
-              <div className="space-y-2">
+          <AnimatePresence>
+            {isSlidersOpen && (
+              <motion.div 
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="mt-4 p-4 rounded-xl bg-hover/15 border border-border grid grid-cols-2 gap-5 text-xs">
+                  <div className="space-y-2">
                 <span className="block font-bold text-text-main mb-1">Series Visibility</span>
                 <div className="flex flex-wrap gap-2">
                   <button 
@@ -576,8 +593,10 @@ const DesktopDashboard: React.FC<{ globalSearch: string }> = ({ globalSearch }) 
                   </button>
                 </div>
               </div>
-            </div>
-          )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Right column: Recent Activity list */}
@@ -1215,9 +1234,17 @@ const DesktopCommitsView: React.FC = () => {
                 </button>
               </div>
 
-              {showAmend && (
-                <form onSubmit={handleAmendSubmit} className="space-y-3 pt-3.5 border-t border-border/50 animate-fade-in">
-                  <div className="flex gap-2">
+              <AnimatePresence>
+                {showAmend && (
+                  <motion.div 
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <form onSubmit={handleAmendSubmit} className="space-y-3 pt-3.5 border-t border-border/50">
+                      <div className="flex gap-2">
                     <input 
                       type="text" 
                       placeholder="Type new commit message..." 
@@ -1229,9 +1256,11 @@ const DesktopCommitsView: React.FC = () => {
                     <button type="submit" className="bg-primary hover:bg-primary-hover text-white text-xs font-bold px-4 py-2 rounded-xl cursor-pointer">
                       Save
                     </button>
-                  </div>
-                </form>
-              )}
+                      </div>
+                    </form>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Simulated Git Diff Visualizer Panel */}
@@ -1672,9 +1701,17 @@ const DesktopSettings: React.FC = () => {
                 <ChevronRight size={16} className={`text-text-muted transition-transform ${showTokenForm ? 'rotate-90' : ''}`} />
               </div>
 
-              {showTokenForm && (
-                <form onSubmit={handleSaveToken} className="space-y-3.5 pt-3 border-t border-border/50 animate-fade-in">
-                  <p className="text-[11px] text-text-muted leading-relaxed">
+              <AnimatePresence>
+                {showTokenForm && (
+                  <motion.div 
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <form onSubmit={handleSaveToken} className="space-y-3.5 pt-3 border-t border-border/50">
+                      <p className="text-[11px] text-text-muted leading-relaxed">
                     Generate a token with <code className="bg-hover px-1 rounded font-mono">repo</code> & <code className="bg-hover px-1 rounded font-mono">user</code> scopes on GitHub settings and paste below.
                   </p>
                   <div className="flex gap-2">
@@ -1689,9 +1726,11 @@ const DesktopSettings: React.FC = () => {
                     <button type="submit" className="bg-primary hover:bg-primary-hover text-white text-xs font-bold px-4 py-2 rounded-xl cursor-pointer">
                       Save Token
                     </button>
-                  </div>
-                </form>
-              )}
+                      </div>
+                    </form>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           )}
 
