@@ -74,7 +74,7 @@ const defaultState: AppState = {
   isDrawerOpen: false,
   toastMessage: null,
   isSearchFocused: false,
-  theme: (localStorage.getItem("theme") as "dark" | "light") || "dark",
+  theme: (localStorage.getItem("theme") as "dark" | "light") || "light",
   githubToken: localStorage.getItem("githubToken") || null,
   githubUser: localStorage.getItem("githubUser") ? JSON.parse(localStorage.getItem("githubUser")!) : null,
   githubRepos: getLocalRepos(),
@@ -101,12 +101,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
 
   // Apply theme to both document root and body
   useEffect(() => {
-    if (state.theme === "light") {
-      document.documentElement.classList.add("light-theme");
-      document.body.classList.add("light-theme");
+    if (state.theme === "dark") {
+      document.documentElement.classList.add("dark-theme");
+      document.body.classList.add("dark-theme");
     } else {
-      document.documentElement.classList.remove("light-theme");
-      document.body.classList.remove("light-theme");
+      document.documentElement.classList.remove("dark-theme");
+      document.body.classList.remove("dark-theme");
     }
   }, [state.theme]);
 
@@ -129,18 +129,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         throw new Error(errorData.error || "Failed to get auth URL");
       }
       const { url } = await response.json();
-      console.log("Opening OAuth window:", url);
-
-      const authWindow = window.open(
-        url,
-        "oauth_popup",
-        "width=600,height=700",
-      );
-
-      if (!authWindow) {
-        console.warn("Popup blocked by browser");
-        showToast("Please allow popups to connect your GitHub account.");
-      }
+      console.log("Redirecting to OAuth URL:", url);
+      window.location.href = url;
     } catch (error: any) {
       console.error("OAuth error:", error);
       showToast(error.message || "Error connecting to GitHub");

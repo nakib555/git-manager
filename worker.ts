@@ -84,6 +84,7 @@ export default {
           <html>
             <body>
               <script>
+                localStorage.setItem('githubToken', '${accessToken}');
                 if (window.opener) {
                   window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS', token: '${accessToken}' }, '*');
                   window.close();
@@ -91,7 +92,7 @@ export default {
                   window.location.href = '/';
                 }
               </script>
-              <p>Authentication successful. This window should close automatically.</p>
+              <p>Authentication successful. Redirecting...</p>
             </body>
           </html>
         `;
