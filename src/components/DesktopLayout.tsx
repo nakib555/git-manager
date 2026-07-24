@@ -1013,11 +1013,11 @@ const DesktopCommitsView: React.FC = () => {
   const [newBranchName, setNewBranchName] = useState('');
   const [newTagName, setNewTagName] = useState('');
   
-  const parentRef = useRef<HTMLDivElement>(null);
+  const [parentRef, setParentRef] = useState<HTMLDivElement | null>(null);
 
   const rowVirtualizer = useVirtualizer({
     count: activeCommits.length,
-    getScrollElement: () => parentRef.current,
+    getScrollElement: () => parentRef,
     estimateSize: () => 90, // approx height of each item in desktop
     overscan: 5,
   });
@@ -1070,7 +1070,7 @@ const DesktopCommitsView: React.FC = () => {
         </div>
 
         <div 
-          ref={parentRef}
+          ref={setParentRef}
           className="flex-1 overflow-y-auto pl-4 border-l-2 border-border/60 relative no-scrollbar pb-6"
         >
           <div style={{ height: activeCommits.length > 0 ? `${rowVirtualizer.getTotalSize()}px` : 'auto', position: 'relative' }}>
