@@ -67,16 +67,16 @@ export const getLocalRepoDetails = (
 };
 
 const defaultState: AppState = {
-  currentScreen: "dash",
-  currentRepo: null,
-  currentRepoOwner: null,
+  currentScreen: (sessionStorage.getItem("currentScreen") as Screen) || "dash",
+  currentRepo: sessionStorage.getItem("currentRepo") || null,
+  currentRepoOwner: sessionStorage.getItem("currentRepoOwner") || null,
   isActionSheetOpen: false,
   isDrawerOpen: false,
   toastMessage: null,
   isSearchFocused: false,
   theme: (localStorage.getItem("theme") as "dark" | "light") || "dark",
   githubToken: localStorage.getItem("githubToken") || null,
-  githubUser: null,
+  githubUser: sessionStorage.getItem("githubUser") ? JSON.parse(sessionStorage.getItem("githubUser")!) : null,
   githubRepos: getLocalRepos(),
 
   activeCommits: [],
@@ -120,13 +120,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
 
   const connectGitHub = async () => {
     try {
+      console.log("Initiating GitHub OAuth flow...");
       const response = await fetch("/api/auth/url");
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        console.error("Failed to get auth URL:", errorData);
         openModal("oauth_setup");
         throw new Error(errorData.error || "Failed to get auth URL");
       }
       const { url } = await response.json();
+      console.log("Opening OAuth window:", url);
 
       const authWindow = window.open(
         url,
@@ -135,6 +138,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
       );
 
       if (!authWindow) {
+        console.warn("Popup blocked by browser");
         showToast("Please allow popups to connect your GitHub account.");
       }
     } catch (error: any) {
@@ -144,7 +148,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
   };
 
   const disconnectGitHub = () => {
+    console.log("Disconnecting GitHub and clearing token");
     localStorage.removeItem("githubToken");
+    sessionStorage.removeItem("githubUser");
+    sessionStorage.removeItem("currentRepo");
+    sessionStorage.removeItem("currentRepoOwner");
     setState((prev) => ({
       ...prev,
       githubToken: null,
@@ -157,6 +165,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
   };
 
   const setManualToken = (token: string) => {
+    console.log("Setting manual GitHub token");
     localStorage.setItem("githubToken", token);
     setState((prev) => ({ ...prev, githubToken: token }));
     showToast("GitHub token saved manually");
@@ -164,6 +173,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
 
   const fetchGitHubData = async (token: string) => {
     try {
+      console.log("Fetching GitHub user data with token:", token.substring(0, 4) + "...");
       const headers = {
         Authorization: `Bearer ${token}`,
         Accept: "application/vnd.github.v3+json",
@@ -171,10 +181,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
 
       // Fetch user profile
       const userRes = await fetch("https://api.github.com/user", { headers });
+      console.log("GitHub user profile response status:", userRes.status);
       if (!userRes.ok) {
         let errorMsg = `Status ${userRes.status}`;
         try {
           const errBody = await userRes.json();
+          console.error("GitHub user profile error response:", errBody);
           if (errBody.message) {
             errorMsg = errBody.message;
           }
@@ -182,16 +194,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         throw new Error(`Profile: ${errorMsg}`);
       }
       const userData = await userRes.json();
+      console.log("GitHub user data fetched successfully", userData.login);
+      sessionStorage.setItem("githubUser", JSON.stringify(userData));
 
       // Fetch user repos
       const reposRes = await fetch(
         "https://api.github.com/user/repos?sort=updated&per_page=20",
         { headers },
       );
+      console.log("GitHub user repos response status:", reposRes.status);
       if (!reposRes.ok) {
         let errorMsg = `Status ${reposRes.status}`;
         try {
           const errBody = await reposRes.json();
+          console.error("GitHub user repos error response:", errBody);
           if (errBody.message) {
             errorMsg = errBody.message;
           }
@@ -199,6 +215,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         throw new Error(`Repositories: ${errorMsg}`);
       }
       const reposData = await reposRes.json();
+      console.log(`Fetched ${reposData.length} GitHub repositories`);
 
       setState((prev) => ({
         ...prev,
@@ -208,12 +225,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
     } catch (error: any) {
       console.error("GitHub fetch error:", error);
       showToast(`Error loading GitHub data: ${error.message || error}`);
-      // Do not clear the token immediately if it's a manual entry error, let the user check it
+      
+      // If unauthorized, the token might be invalid or revoked
+      if (error.message.includes("401") || error.message.includes("Bad credentials")) {
+        console.warn("GitHub token seems invalid or expired. Consider clearing it.");
+      }
     }
   };
 
   const fetchRepoDetails = async (repoName: string, owner: string) => {
     if (!state.githubToken) return;
+    console.log(`Fetching repo details for ${owner}/${repoName}`);
     setState((prev) => ({ ...prev, isLoadingRepoDetails: true }));
     try {
       const token = state.githubToken;
@@ -222,10 +244,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
       };
 
       // 1. Fetch Commits
+      console.log(`Fetching commits for ${owner}/${repoName}...`);
       const commitsRes = await fetch(
         `https://api.github.com/repos/${owner}/${repoName}/commits?per_page=15`,
         { headers },
       );
+      if (!commitsRes.ok) {
+        console.warn(`Commits fetch failed with status: ${commitsRes.status}`);
+      }
       let commitsData = [];
       if (commitsRes.ok) {
         const rawCommits = await commitsRes.json();
@@ -384,10 +410,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         return;
       }
       if (event.data?.type === "OAUTH_AUTH_SUCCESS") {
+        console.log("Received OAUTH_AUTH_SUCCESS from window message", event.data);
         const token = event.data.token;
-        localStorage.setItem("githubToken", token);
-        setState((prev) => ({ ...prev, githubToken: token }));
-        showToast("Successfully connected to GitHub");
+        if (token && token !== "undefined" && token !== "null") {
+          localStorage.setItem("githubToken", token);
+          setState((prev) => ({ ...prev, githubToken: token }));
+          showToast("Successfully connected to GitHub");
+        } else {
+          console.error("Received invalid token from OAuth callback", event.data);
+          showToast("Failed to connect to GitHub. Invalid token received.");
+        }
       }
     };
     window.addEventListener("message", handleMessage);
@@ -423,6 +455,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
   }, [state.currentRepo, state.githubToken]);
 
   const navigate = (screen: Screen) => {
+    sessionStorage.setItem("currentScreen", screen);
     setState((prev) => ({ ...prev, currentScreen: screen }));
   };
 
@@ -430,6 +463,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
     setState((prev) => {
       const actualOwner =
         owner || (prev.githubToken ? prev.githubUser?.login : null) || "mock";
+      sessionStorage.setItem("currentRepo", repoName);
+      sessionStorage.setItem("currentRepoOwner", actualOwner);
+      sessionStorage.setItem("currentScreen", "files");
       return {
         ...prev,
         currentRepo: repoName,

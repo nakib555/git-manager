@@ -77,10 +77,12 @@ async function startServer() {
       });
 
       const tokenData = await tokenResponse.json();
+      console.log('GitHub Token Exchange Response:', tokenData);
       const accessToken = tokenData.access_token;
 
       if (!accessToken) {
-        throw new Error("Failed to get access token");
+        console.error('GitHub token exchange failed. No access_token returned. Response:', tokenData);
+        throw new Error("Failed to get access token: " + JSON.stringify(tokenData));
       }
 
       res.send(`
