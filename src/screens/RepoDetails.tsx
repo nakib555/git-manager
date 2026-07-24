@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { AreaChart, Area, ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 import { useAppContext } from '../AppContext';
-import { Home, FileCode, FileText, Copy, GitMerge, AlertTriangle, GitPullRequest, Search, Folder, GitCommit, GitBranch } from 'lucide-react';
+import { Home, FileCode, FileText, Copy, GitMerge, AlertTriangle, GitPullRequest, Search, Folder, GitCommit, GitBranch, Edit2, Trash2, Check, X } from 'lucide-react';
 
 const getLanguageColor = (lang: string | null) => {
   if (!lang) return '#8F8F9D';
@@ -333,9 +333,39 @@ const FilesScreen = () => {
 };
 
 const CommitsScreen = () => {
-  const { activeCommits, openModal } = useAppContext();
+  const { activeCommits, openModal, deleteCommit, editCommitMessage, currentRepo } = useAppContext();
+  
+  // Custom interactive modal states
+  const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
+  const [editTarget, setEditTarget] = useState<any | null>(null);
+  const [editedMsg, setEditedMsg] = useState('');
+
+  const handleDeleteClick = (commit: any) => {
+    setDeleteTarget(commit);
+  };
+
+  const handleEditClick = (commit: any) => {
+    setEditTarget(commit);
+    setEditedMsg(commit.msg);
+  };
+
+  const confirmDelete = () => {
+    if (deleteTarget) {
+      deleteCommit(deleteTarget.hash);
+      setDeleteTarget(null);
+    }
+  };
+
+  const saveEdit = () => {
+    if (editTarget && editedMsg.trim()) {
+      editCommitMessage(editTarget.hash, editedMsg.trim());
+      setEditTarget(null);
+      setEditedMsg('');
+    }
+  };
+
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 relative">
       <div className="flex justify-between items-center bg-card border border-border rounded-xl p-3 mb-1">
         <span className="text-xs text-text-muted font-semibold uppercase tracking-wider">Ready to record state?</span>
         <button 
@@ -358,30 +388,141 @@ const CommitsScreen = () => {
             del={commit.del} 
             isPrimary={idx === 0} 
             avatar={commit.avatar}
+            onDeleteTrigger={() => handleDeleteClick(commit)}
+            onEditTrigger={() => handleEditClick(commit)}
           />
         ))}
         {activeCommits.length === 0 && (
           <div className="text-center py-8 text-text-muted text-xs font-semibold uppercase tracking-wider">No commits yet. Make your first staging commit!</div>
         )}
       </div>
+
+      {/* Beautiful Custom Delete Confirmation Dialog */}
+      {deleteTarget && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-[999] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl animate-scale-up">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-danger/10 text-danger flex items-center justify-center shrink-0">
+                <AlertTriangle size={24} />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-text-main">Delete Commit?</h3>
+                <p className="text-[11px] text-text-muted font-mono bg-hover/40 px-2 py-0.5 rounded border border-border inline-block mt-0.5">{deleteTarget.hash}</p>
+              </div>
+            </div>
+            
+            <p className="text-xs text-text-muted mb-5 leading-relaxed">
+              Are you sure you want to delete this commit? This will remove the commit from your current workspace dashboard. 
+              <span className="block mt-2 font-medium text-text-main/80">Note: To maintain repository integrity on GitHub, edits and deletions are fully synchronized on this client-side virtual Git interface.</span>
+            </p>
+
+            <div className="flex gap-2.5 justify-end">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                className="px-4 py-2 bg-hover hover:bg-hover/80 border border-border rounded-xl text-xs font-bold text-text-main active:scale-95 transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-danger hover:bg-danger/90 text-white rounded-xl text-xs font-bold active:scale-95 transition-all shadow-sm cursor-pointer"
+              >
+                Confirm Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Beautiful Custom Edit Dialog */}
+      {editTarget && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-[999] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl animate-scale-up">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                <Edit2 size={20} />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-text-main">Edit Commit Description</h3>
+                <p className="text-[11px] text-text-muted font-mono bg-hover/40 px-2 py-0.5 rounded border border-border inline-block mt-0.5">{editTarget.hash}</p>
+              </div>
+            </div>
+
+            <div className="mb-5">
+              <label className="block text-[10px] uppercase tracking-wider font-bold text-text-muted mb-1.5">Commit Message</label>
+              <textarea
+                value={editedMsg}
+                onChange={(e) => setEditedMsg(e.target.value)}
+                rows={3}
+                placeholder="Enter new commit description..."
+                className="w-full bg-hover/40 border border-border focus:border-primary/50 focus:ring-2 focus:ring-primary/10 outline-none rounded-xl p-3 text-xs text-text-main placeholder:text-text-muted transition-all font-medium resize-none"
+              />
+              <p className="text-[10px] text-text-muted mt-1.5 leading-normal">
+                Modifying this description alters your active history records in this environment, reflecting the change throughout your repository logs.
+              </p>
+            </div>
+
+            <div className="flex gap-2.5 justify-end">
+              <button
+                onClick={() => {
+                  setEditTarget(null);
+                  setEditedMsg('');
+                }}
+                className="px-4 py-2 bg-hover hover:bg-hover/80 border border-border rounded-xl text-xs font-bold text-text-main active:scale-95 transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveEdit}
+                disabled={!editedMsg.trim() || editedMsg.trim() === editTarget.msg}
+                className="px-4 py-2 bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:pointer-events-none text-white rounded-xl text-xs font-bold active:scale-95 transition-all shadow-sm cursor-pointer"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-const CommitItem = ({ hash, msg, author, time, add, del, isPrimary = false, avatar }: any) => {
+const CommitItem = ({ hash, msg, author, time, add, del, isPrimary = false, avatar, onDeleteTrigger, onEditTrigger }: any) => {
   const { showToast } = useAppContext();
   return (
-    <div className="relative">
+    <div className="relative group/commit">
       <div className={`absolute -left-[27px] top-1 w-3 h-3 bg-main border-2 rounded-full z-10 transition-colors ${isPrimary ? 'border-primary' : 'border-text-muted'}`}></div>
-      <div 
-        className="font-mono font-bold mb-1.5 inline-flex items-center gap-1 px-2.5 py-1 bg-card border border-border rounded-lg cursor-pointer hover:border-primary/40 active:opacity-75 text-xs text-primary transition-all"
-        onClick={() => {
-          navigator.clipboard.writeText(hash);
-          showToast(`Hash ${hash} copied to clipboard`);
-        }}
-      >
-        {hash} <Copy size={11} className="text-text-muted" />
+      
+      <div className="flex justify-between items-start mb-1.5 gap-2">
+        <div 
+          className="font-mono font-bold inline-flex items-center gap-1 px-2.5 py-1 bg-card border border-border rounded-lg cursor-pointer hover:border-primary/40 active:opacity-75 text-xs text-primary transition-all"
+          onClick={() => {
+            navigator.clipboard.writeText(hash);
+            showToast(`Hash ${hash} copied to clipboard`);
+          }}
+        >
+          {hash} <Copy size={11} className="text-text-muted" />
+        </div>
+        
+        {/* Actions Button Group */}
+        <div className="flex items-center gap-1 opacity-60 group-hover/commit:opacity-100 transition-opacity">
+          <button 
+            onClick={onEditTrigger}
+            className="p-1.5 text-text-muted hover:text-primary hover:bg-hover/60 rounded-lg active:scale-95 transition-all cursor-pointer"
+            title="Edit Description"
+          >
+            <Edit2 size={12} />
+          </button>
+          <button 
+            onClick={onDeleteTrigger}
+            className="p-1.5 text-text-muted hover:text-danger hover:bg-hover/60 rounded-lg active:scale-95 transition-all cursor-pointer"
+            title="Delete Commit"
+          >
+            <Trash2 size={12} />
+          </button>
+        </div>
       </div>
+
       <div className="text-[13px] text-text-main font-semibold mb-2 leading-relaxed">{msg}</div>
       <div className="text-xs text-text-muted flex justify-between items-center">
         <div className="flex items-center gap-1.5">

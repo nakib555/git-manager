@@ -499,6 +499,40 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     showToast(`Committed: ${newCommit.hash}`);
   };
 
+  const editCommitMessage = (hash: string, newMsg: string) => {
+    if (!state.currentRepo) return;
+    const key = `local_details_${state.currentRepo}_commits`;
+    
+    const updatedCommits = state.activeCommits.map((c: any) => {
+      if (c.hash === hash) {
+        return { ...c, msg: newMsg };
+      }
+      return c;
+    });
+
+    localStorage.setItem(key, JSON.stringify(updatedCommits));
+
+    setState(prev => ({
+      ...prev,
+      activeCommits: updatedCommits
+    }));
+    showToast(`Commit message updated!`);
+  };
+
+  const deleteCommit = (hash: string) => {
+    if (!state.currentRepo) return;
+    const key = `local_details_${state.currentRepo}_commits`;
+
+    const updatedCommits = state.activeCommits.filter((c: any) => c.hash !== hash);
+    localStorage.setItem(key, JSON.stringify(updatedCommits));
+
+    setState(prev => ({
+      ...prev,
+      activeCommits: updatedCommits
+    }));
+    showToast(`Commit deleted successfully!`);
+  };
+
   const refreshData = async () => {
     setState(prev => ({ ...prev, isLoadingRepoDetails: true }));
     // Simulate brief refreshing delay to show the loader feedback
@@ -576,6 +610,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         createLocalBranch,
         createLocalPR,
         createLocalCommit,
+        editCommitMessage,
+        deleteCommit,
       }}
     >
       {children}

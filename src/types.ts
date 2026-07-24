@@ -65,5 +65,7 @@ export type AppContextType = AppState & {
   createLocalBranch: (branch: { name: string; desc: string }) => void;
   createLocalPR: (pr: { title: string; desc: string; source: string; target: string }) => void;
   createLocalCommit: (commit: { msg: string; author: string; hash?: string; add?: string; del?: string }) => void;
+  editCommitMessage: (hash: string, newMsg: string) => void;
+  deleteCommit: (hash: string) => void;
 };
 
