@@ -39,6 +39,7 @@ export interface AppState {
   activeLanguages: Record<string, number>;
   isLoadingRepoDetails: boolean;
   activeModal: 'repo' | 'branch' | 'pr' | 'commit' | 'oauth_setup' | null;
+  sessionCommitsCount: number;
 }
 
 export type AppContextType = AppState & {

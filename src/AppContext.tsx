@@ -66,6 +66,7 @@ const defaultState: AppState = {
   activeLanguages: {},
   isLoadingRepoDetails: false,
   activeModal: null,
+  sessionCommitsCount: parseInt(sessionStorage.getItem('sessionCommitsCount') || '0', 10),
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -447,10 +448,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const updated = [newCommit, ...current];
     localStorage.setItem(key, JSON.stringify(updated));
     
-    setState(prev => ({
-      ...prev,
-      activeCommits: updated
-    }));
+    setState(prev => {
+      const nextCount = prev.sessionCommitsCount + 1;
+      sessionStorage.setItem('sessionCommitsCount', nextCount.toString());
+      return {
+        ...prev,
+        activeCommits: updated,
+        sessionCommitsCount: nextCount
+      };
+    });
     showToast(`Committed: ${newCommit.hash}`);
   };
 

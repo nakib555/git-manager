@@ -14,9 +14,24 @@ const emptyChartData = [
 ];
 
 export const Dashboard: React.FC = () => {
-  const { githubUser, githubRepos, connectGitHub, githubToken, activeCommits, openRepo } = useAppContext();
+  const { githubUser, githubRepos, connectGitHub, githubToken, activeCommits, openRepo, sessionCommitsCount } = useAppContext();
 
-  const totalCommits = activeCommits?.length || 0;
+  // Sum of commits across all repos in localStorage
+  let totalCommitsCount = 0;
+  githubRepos.forEach(repo => {
+    const key = `local_details_${repo.name}_commits`;
+    const local = localStorage.getItem(key);
+    if (local) {
+      try {
+        const parsed = JSON.parse(local);
+        if (Array.isArray(parsed)) {
+          totalCommitsCount += parsed.length;
+        }
+      } catch (e) {}
+    }
+  });
+
+  const displayCommitsCount = Math.max(totalCommitsCount, sessionCommitsCount);
 
   return (
     <div className="animate-fade-up">
@@ -58,7 +73,7 @@ export const Dashboard: React.FC = () => {
         </div>
         <div className="rounded-2xl p-4 flex flex-col gap-2 bg-blue-500/10 border border-blue-500/20">
           <span className="text-xs text-text-muted">Commits</span>
-          <span className="text-[28px] font-bold text-text-main">{totalCommits}</span>
+          <span className="text-[28px] font-bold text-text-main">{displayCommitsCount}</span>
           <span className="text-[11px] text-info flex items-center font-medium">
             <ArrowUpRight size={14} className="mr-1" strokeWidth={3} /> Current Session
           </span>
