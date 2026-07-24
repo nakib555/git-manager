@@ -19,11 +19,13 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, setState] = useState<AppState>(defaultState);
 
-  // Apply theme to document body
+  // Apply theme to both document root and body
   useEffect(() => {
     if (state.theme === 'light') {
+      document.documentElement.classList.add('light-theme');
       document.body.classList.add('light-theme');
     } else {
+      document.documentElement.classList.remove('light-theme');
       document.body.classList.remove('light-theme');
     }
   }, [state.theme]);
@@ -102,7 +104,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       const origin = event.origin;
-      if (!origin.endsWith('.run.app') && !origin.includes('localhost')) {
+      if (!origin.endsWith('.run.app') && !origin.includes('localhost') && !origin.endsWith('.workers.dev') && !origin.endsWith('.pages.dev')) {
         return;
       }
       if (event.data?.type === 'OAUTH_AUTH_SUCCESS') {

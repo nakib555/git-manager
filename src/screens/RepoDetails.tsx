@@ -111,9 +111,9 @@ const BranchesScreen = () => (
         <path d="M15 40 C 35 60, 35 120, 35 160 C 35 220, 15 240, 15 260" stroke="#10B981" strokeWidth="2"/>
         <path d="M35 100 C 55 120, 55 160, 35 180" stroke="#A78BFA" strokeWidth="2"/>
         <path d="M15 220 C 40 230, 40 250, 15 270" stroke="#EF4444" strokeWidth="2"/>
-        <circle cx="15" cy="20" r="6" fill="#0B0B14" stroke="#38BDF8" strokeWidth="3"/>
+        <circle cx="15" cy="20" r="6" fill="var(--main)" stroke="#38BDF8" strokeWidth="3"/>
         <circle cx="35" cy="70" r="6" fill="#10B981"/>
-        <circle cx="55" cy="140" r="6" fill="#0B0B14" stroke="#A78BFA" strokeWidth="3"/>
+        <circle cx="55" cy="140" r="6" fill="var(--main)" stroke="#A78BFA" strokeWidth="3"/>
         <circle cx="35" cy="190" r="6" fill="#10B981"/>
         <circle cx="40" cy="245" r="6" fill="#EF4444"/>
       </svg>
@@ -199,7 +199,7 @@ const InsightsScreen = () => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip contentStyle={{ backgroundColor: '#151522', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '12px' }} itemStyle={{ color: '#fff' }} />
+              <Tooltip contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-main)', fontSize: '12px' }} itemStyle={{ color: 'var(--text-main)' }} />
             </PieChart>
           </ResponsiveContainer>
         </div>
@@ -229,7 +229,7 @@ const PRsScreen = () => {
           >
             {tab}
             {i === 0 && <span className="bg-primary/20 text-primary px-1.5 py-0.5 rounded-full text-[10px] ml-1">3</span>}
-            {i === 1 && <span className="bg-white/10 text-white px-1.5 py-0.5 rounded-full text-[10px] ml-1">12</span>}
+            {i === 1 && <span className="bg-success/20 text-success px-1.5 py-0.5 rounded-full text-[10px] ml-1">12</span>}
             {activeTab === tab && <div className="absolute -bottom-[1px] left-0 w-full h-[2px] bg-primary rounded-t-sm"></div>}
           </div>
         ))}
@@ -259,7 +259,7 @@ const PRsScreen = () => {
             <div className="flex items-center">
               <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Tanvir" className="w-5 h-5 rounded-full border-2 border-card" alt="" />
             </div>
-            <span className="text-[10px] bg-white/10 text-white px-2 py-0.5 rounded-full border border-border">Draft</span>
+            <span className="text-[10px] bg-hover text-text-muted px-2 py-0.5 rounded-full border border-border">Draft</span>
           </div>
         </div>
       </div>

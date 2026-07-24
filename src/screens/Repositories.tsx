@@ -104,7 +104,7 @@ export const Repositories: React.FC = () => {
           return (
             <div 
               key={repo.id}
-              className="bg-card p-4 rounded-2xl mb-3 cursor-pointer transition-transform duration-200 active:scale-95 active:bg-[#1a1a2e] border border-transparent active:border-border"
+              className="bg-card p-4 rounded-2xl mb-3 cursor-pointer transition-transform duration-200 active:scale-95 active:bg-hover border border-transparent active:border-border"
               onClick={() => openRepo(repo.id)}
             >
               <div className="flex justify-between mb-2">
