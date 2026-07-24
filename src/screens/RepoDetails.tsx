@@ -397,9 +397,15 @@ const CommitsScreen = () => {
     showToast 
   } = useAppContext();
 
+  const [scrollElement, setScrollElement] = useState<HTMLElement | null>(null);
+
+  React.useEffect(() => {
+    setScrollElement(document.getElementById('mobile-scroll-container'));
+  }, []);
+
   const rowVirtualizer = useVirtualizer({
     count: activeCommits.length,
-    getScrollElement: () => typeof document !== 'undefined' ? document.getElementById('mobile-scroll-container') : null,
+    getScrollElement: () => scrollElement,
     estimateSize: () => 110,
     overscan: 5,
   });

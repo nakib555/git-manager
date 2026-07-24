@@ -1121,6 +1121,9 @@ const DesktopCommitsView: React.FC = () => {
               );
             })}
           </div>
+          {activeCommits.length === 0 && (
+            <div className="text-center py-8 text-text-muted text-[10px] font-semibold uppercase tracking-wider">No commits yet.</div>
+          )}
         </div>
       </div>
 
