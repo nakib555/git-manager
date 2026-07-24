@@ -67,16 +67,16 @@ export const getLocalRepoDetails = (
 };
 
 const defaultState: AppState = {
-  currentScreen: (sessionStorage.getItem("currentScreen") as Screen) || "dash",
-  currentRepo: sessionStorage.getItem("currentRepo") || null,
-  currentRepoOwner: sessionStorage.getItem("currentRepoOwner") || null,
+  currentScreen: (localStorage.getItem("currentScreen") as Screen) || "dash",
+  currentRepo: localStorage.getItem("currentRepo") || null,
+  currentRepoOwner: localStorage.getItem("currentRepoOwner") || null,
   isActionSheetOpen: false,
   isDrawerOpen: false,
   toastMessage: null,
   isSearchFocused: false,
   theme: (localStorage.getItem("theme") as "dark" | "light") || "dark",
   githubToken: localStorage.getItem("githubToken") || null,
-  githubUser: sessionStorage.getItem("githubUser") ? JSON.parse(sessionStorage.getItem("githubUser")!) : null,
+  githubUser: localStorage.getItem("githubUser") ? JSON.parse(localStorage.getItem("githubUser")!) : null,
   githubRepos: getLocalRepos(),
 
   activeCommits: [],
@@ -87,7 +87,7 @@ const defaultState: AppState = {
   isLoadingRepoDetails: false,
   activeModal: null,
   sessionCommitsCount: parseInt(
-    sessionStorage.getItem("sessionCommitsCount") || "0",
+    localStorage.getItem("sessionCommitsCount") || "0",
     10,
   ),
 };
@@ -150,9 +150,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
   const disconnectGitHub = () => {
     console.log("Disconnecting GitHub and clearing token");
     localStorage.removeItem("githubToken");
-    sessionStorage.removeItem("githubUser");
-    sessionStorage.removeItem("currentRepo");
-    sessionStorage.removeItem("currentRepoOwner");
+    localStorage.removeItem("githubUser");
+    localStorage.removeItem("currentRepo");
+    localStorage.removeItem("currentRepoOwner");
     setState((prev) => ({
       ...prev,
       githubToken: null,
@@ -195,7 +195,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
       }
       const userData = await userRes.json();
       console.log("GitHub user data fetched successfully", userData.login);
-      sessionStorage.setItem("githubUser", JSON.stringify(userData));
+      localStorage.setItem("githubUser", JSON.stringify(userData));
 
       // Fetch user repos
       const reposRes = await fetch(
@@ -455,7 +455,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
   }, [state.currentRepo, state.githubToken]);
 
   const navigate = (screen: Screen) => {
-    sessionStorage.setItem("currentScreen", screen);
+    localStorage.setItem("currentScreen", screen);
     setState((prev) => ({ ...prev, currentScreen: screen }));
   };
 
@@ -463,9 +463,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
     setState((prev) => {
       const actualOwner =
         owner || (prev.githubToken ? prev.githubUser?.login : null) || "mock";
-      sessionStorage.setItem("currentRepo", repoName);
-      sessionStorage.setItem("currentRepoOwner", actualOwner);
-      sessionStorage.setItem("currentScreen", "files");
+      localStorage.setItem("currentRepo", repoName);
+      localStorage.setItem("currentRepoOwner", actualOwner);
+      localStorage.setItem("currentScreen", "files");
       return {
         ...prev,
         currentRepo: repoName,
@@ -586,7 +586,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
 
       setState((prev) => {
         const nextCount = prev.sessionCommitsCount + 1;
-        sessionStorage.setItem("sessionCommitsCount", nextCount.toString());
+        localStorage.setItem("sessionCommitsCount", nextCount.toString());
         return {
           ...prev,
           githubRepos: updated,
@@ -889,7 +889,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
 
       setState((prev) => {
         const nextCount = prev.sessionCommitsCount + 1;
-        sessionStorage.setItem("sessionCommitsCount", nextCount.toString());
+        localStorage.setItem("sessionCommitsCount", nextCount.toString());
         return {
           ...prev,
           activeCommits: updatedUI,
