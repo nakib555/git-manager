@@ -100,10 +100,10 @@ export const Header: React.FC = () => {
 };
 
 export const RepoTabs: React.FC = () => {
-  const { currentScreen, navigate } = useAppContext();
+  const { currentScreen, navigate, currentRepo } = useAppContext();
   const isRepoScreen = ['files', 'commits', 'branches', 'insights', 'prs'].includes(currentScreen);
 
-  if (!isRepoScreen) return null;
+  if (!isRepoScreen || !currentRepo) return null;
 
   const tabs = [
     { id: 'commits', label: 'Commits' },

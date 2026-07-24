@@ -262,12 +262,29 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }));
       }
 
+      // Merge any local commits created in the app for this repository
+      const localCommits = getLocalRepoDetails(repoName, 'commits');
+      const uniqueLocal = localCommits.filter((lc: any) => !commitsData.some((gc: any) => gc.hash === lc.hash));
+      const mergedCommits = [...uniqueLocal, ...commitsData];
+
+      // Cache all fetched/merged details in localStorage for persistence and offline display
+      localStorage.setItem(`local_details_${repoName}_commits`, JSON.stringify(mergedCommits));
+      if (branchesData.length) {
+        localStorage.setItem(`local_details_${repoName}_branches`, JSON.stringify(branchesData));
+      }
+      if (prsData.length) {
+        localStorage.setItem(`local_details_${repoName}_prs`, JSON.stringify(prsData));
+      }
+      if (filesData.length) {
+        localStorage.setItem(`local_details_${repoName}_files`, JSON.stringify(filesData));
+      }
+
       setState(prev => ({
         ...prev,
-        activeCommits: commitsData,
+        activeCommits: mergedCommits,
         activeBranches: branchesData.length ? branchesData : getLocalRepoDetails(repoName, 'branches'),
-        activePRs: prsData,
-        activeFiles: filesData,
+        activePRs: prsData.length ? prsData : getLocalRepoDetails(repoName, 'prs'),
+        activeFiles: filesData.length ? filesData : getLocalRepoDetails(repoName, 'files'),
         activeLanguages: langData,
         isLoadingRepoDetails: false
       }));
@@ -381,10 +398,27 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const updated = [newRepo, ...existing];
     localStorage.setItem('localRepos', JSON.stringify(updated));
 
-    setState(prev => ({
-      ...prev,
-      githubRepos: prev.githubToken ? prev.githubRepos : updated
-    }));
+    // Create an initial commit for this repo so it's not empty
+    const initialCommit = {
+      hash: Math.random().toString(16).substring(2, 9),
+      msg: 'Initial commit',
+      author: state.githubUser?.name || state.githubUser?.login || 'User',
+      time: 'Just now',
+      add: '+12',
+      del: '-0',
+      isPrimary: true
+    };
+    localStorage.setItem(`local_details_${repo.name}_commits`, JSON.stringify([initialCommit]));
+
+    setState(prev => {
+      const nextCount = prev.sessionCommitsCount + 1;
+      sessionStorage.setItem('sessionCommitsCount', nextCount.toString());
+      return {
+        ...prev,
+        githubRepos: prev.githubToken ? prev.githubRepos : updated,
+        sessionCommitsCount: nextCount
+      };
+    });
 
     showToast(`Repository '${repo.name}' created!`);
   };
@@ -445,15 +479,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       del: commit.del || `-${Math.floor(Math.random() * 10) + 1}`,
       isPrimary: true
     };
-    const updated = [newCommit, ...current];
-    localStorage.setItem(key, JSON.stringify(updated));
+    
+    // Write local commit to localStorage
+    const updatedLocal = [newCommit, ...current];
+    localStorage.setItem(key, JSON.stringify(updatedLocal));
+    
+    // Prepend to current UI commits (retaining fetched ones)
+    const updatedUI = [newCommit, ...(state.activeCommits || [])];
     
     setState(prev => {
       const nextCount = prev.sessionCommitsCount + 1;
       sessionStorage.setItem('sessionCommitsCount', nextCount.toString());
       return {
         ...prev,
-        activeCommits: updated,
+        activeCommits: updatedUI,
         sessionCommitsCount: nextCount
       };
     });

@@ -131,7 +131,7 @@ export const Dashboard: React.FC = () => {
           <span className="text-xs text-text-muted">Commits</span>
           <span className="text-[28px] font-bold text-text-main">{displayCommitsCount}</span>
           <span className="text-[11px] text-info flex items-center font-medium">
-            <ArrowUpRight size={14} className="mr-1" strokeWidth={3} /> Current Session
+            <ArrowUpRight size={14} className="mr-1" strokeWidth={3} /> {totalCommitsCount > sessionCommitsCount ? 'Total Synced Commits' : 'Current Session'}
           </span>
         </div>
       </div>
