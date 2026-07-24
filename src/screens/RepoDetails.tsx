@@ -44,96 +44,36 @@ export const RepoDetails: React.FC = () => {
 
 const FilesScreen = () => {
   const { activeFiles, currentRepo } = useAppContext();
-  const [selectedFile, setSelectedFile] = useState<string>('README.md');
+  const [selectedFile, setSelectedFile] = useState<string>(activeFiles[0]?.name || '');
 
   const getSimulatedCode = (fileName: string) => {
+    if (!fileName) return '// Select a file to view content';
     if (fileName.toLowerCase().endsWith('.md')) {
-      return `
-# ${currentRepo || 'Repository'}
-
-This repository is powered by **Git Manager**.
-
-## Getting Started
-
-First, install dependencies:
-\`\`\`bash
-npm install
-\`\`\`
-
-Then run the development server:
-\`\`\`bash
-npm run dev
-\`\`\`
-
-## Architecture
-This app follows a modern, highly responsive design with robust offline and cloud stage staging capabilities.
-      `;
+      return `# ${currentRepo || 'Repository'}\n\nNo detailed documentation added yet.`;
     }
-    if (fileName.toLowerCase().endsWith('.tsx') || fileName.toLowerCase().endsWith('.ts')) {
-      return `
-import React, { useState, useEffect } from 'react';
-
-export const MainApp: React.FC = () => {
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 800);
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (loading) {
-    return <div className="loader">Initializing...</div>;
-  }
-
-  return (
-    <div className="container p-6 bg-main">
-      <h1 className="text-xl font-bold">Git Staging Loaded</h1>
-      <p className="text-sm text-text-muted">Changes staged successfully.</p>
-    </div>
-  );
-};
-      `;
-    }
-    if (fileName.toLowerCase().endsWith('.html')) {
-      return `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Git Manager App</title>
-</head>
-<body>
-  <div id="root"></div>
-</body>
-</html>
-      `;
-    }
-    return `
-// Configured settings for ${fileName}
-{
-  "name": "${currentRepo || 'git-app'}",
-  "version": "1.0.0",
-  "private": true,
-  "dependencies": {
-    "react": "^19.0.0"
-  }
-}
-    `;
+    return `// Content for ${fileName}\n// No preview content available for this file.`;
   };
 
-  const filesToDisplay = activeFiles.length > 0 ? activeFiles : [
-    { name: 'App.tsx', type: 'file' },
-    { name: 'README.md', type: 'file' }
-  ];
+  const filesToDisplay = activeFiles;
+
+  if (filesToDisplay.length === 0) {
+    return (
+      <div className="bg-card rounded-2xl border border-border p-8 text-center flex flex-col items-center justify-center my-4">
+        <Folder size={32} className="text-text-muted mb-2" />
+        <p className="font-semibold text-sm mb-1 text-text-main">No files found</p>
+        <p className="text-xs text-text-muted max-w-[260px]">This repository currently has no files loaded.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-card rounded-2xl border border-border overflow-hidden flex flex-col h-[60vh]">
       <div className="px-4 py-3.5 text-xs text-text-muted border-b border-border flex items-center gap-1.5 font-medium">
-        <Home size={14} className="text-primary" /> / <span className="text-text-main font-semibold">{currentRepo || 'repo'}</span> / <span className="text-text-main font-semibold">{selectedFile}</span>
+        <Home size={14} className="text-primary" /> / <span className="text-text-main font-semibold">{currentRepo || 'repo'}</span> / <span className="text-text-main font-semibold">{selectedFile || filesToDisplay[0]?.name}</span>
       </div>
       <div className="flex overflow-x-auto p-3 gap-2 border-b border-border bg-hover/20 no-scrollbar shrink-0">
         {filesToDisplay.map(file => {
-          const isSelected = selectedFile === file.name;
+          const isSelected = (selectedFile || filesToDisplay[0]?.name) === file.name;
           const Icon = file.type === 'dir' ? Folder : file.name.endsWith('.md') ? FileText : FileCode;
           const iconColor = file.type === 'dir' ? 'text-info' : 'text-primary';
           return (
@@ -152,7 +92,7 @@ export const MainApp: React.FC = () => {
         })}
       </div>
       <div className="flex-1 font-mono text-[11px] leading-relaxed p-4 overflow-auto bg-hover/10">
-        {getSimulatedCode(selectedFile).trim().split('\n').map((line, idx) => (
+        {getSimulatedCode(selectedFile || filesToDisplay[0]?.name).trim().split('\n').map((line, idx) => (
           <div key={idx} className="flex">
             <span className="text-[#4B4B5E] w-6 select-none shrink-0">{idx + 1}</span>
             <span className="text-text-main/90 whitespace-pre">{line}</span>
@@ -285,17 +225,13 @@ const BranchLabel = ({ title, desc, isDefault = false, borderColor = 'transparen
   </div>
 );
 
-const insightsData = [
-  { name: '1 Jun', uv: 30 },
-  { name: '10 Jun', uv: 45 },
-  { name: '20 Jun', uv: 40 },
-  { name: '30 Jun', uv: 68 },
-];
-
 const InsightsScreen = () => {
-  const { activeLanguages } = useAppContext();
+  const { activeLanguages, activeCommits, activePRs } = useAppContext();
 
-  const total = (Object.values(activeLanguages) as number[]).reduce((a, b) => a + b, 0) || 1;
+  const commitCount = activeCommits.length;
+  const uniqueAuthors = new Set(activeCommits.map(c => c.author)).size;
+  const mergedPRsCount = activePRs.filter(pr => pr.status === 'Merged').length;
+
   const pieData = Object.entries(activeLanguages).map(([name, val]) => ({
     name,
     value: val as number,
@@ -304,35 +240,38 @@ const InsightsScreen = () => {
 
   const displayPie = pieData.length > 4 
     ? [...pieData.slice(0, 3), { name: 'Others', value: pieData.slice(3).reduce((acc, curr) => acc + curr.value, 0), color: '#262636' }]
-    : pieData.length > 0 ? pieData : [{ name: 'TypeScript', value: 100, color: '#3178c6' }];
+    : pieData;
 
   const finalTotal = displayPie.reduce((acc, curr) => acc + curr.value, 0) || 1;
+
+  const chartData = commitCount > 0 ? [
+    { name: 'Commits', uv: commitCount }
+  ] : [
+    { name: 'No data', uv: 0 }
+  ];
 
   return (
     <>
       <div className="grid grid-cols-3 gap-3 mb-5">
         <div className="bg-card rounded-2xl p-3 border border-border flex flex-col items-center text-center">
           <span className="text-[10px] text-text-muted font-semibold uppercase tracking-wider mb-1">Commits</span>
-          <span className="text-lg font-bold">68</span>
-          <span className="text-[10px] text-success font-bold mt-0.5">+15%</span>
+          <span className="text-lg font-bold text-text-main">{commitCount}</span>
         </div>
         <div className="bg-card rounded-2xl p-3 border border-border flex flex-col items-center text-center">
           <span className="text-[10px] text-text-muted font-semibold uppercase tracking-wider mb-1">Contributors</span>
-          <span className="text-lg font-bold text-warning">12</span>
-          <span className="text-[10px] text-success font-bold mt-0.5">+8%</span>
+          <span className="text-lg font-bold text-warning">{uniqueAuthors}</span>
         </div>
         <div className="bg-card rounded-2xl p-3 border border-border flex flex-col items-center text-center">
           <span className="text-[10px] text-text-muted font-semibold uppercase tracking-wider mb-1">PRs Merged</span>
-          <span className="text-lg font-bold">24</span>
-          <span className="text-[10px] text-success font-bold mt-0.5">+20%</span>
+          <span className="text-lg font-bold text-text-main">{mergedPRsCount}</span>
         </div>
       </div>
       
       <div className="bg-card rounded-2xl p-4 mb-5 border border-border">
-        <div className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">Commits Over Time</div>
+        <div className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">Activity Overview</div>
         <div className="h-[120px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={insightsData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+            <AreaChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorUvIns" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#7C3AED" stopOpacity={0.4}/>
@@ -345,33 +284,37 @@ const InsightsScreen = () => {
         </div>
       </div>
 
-      <div className="bg-card rounded-2xl p-4 flex items-center justify-between border border-border">
-        <div>
-          <div className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-4">Languages</div>
-          <div className="w-[100px] h-[100px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={displayPie} innerRadius={28} outerRadius={46} paddingAngle={0} dataKey="value" stroke="none">
-                  {displayPie.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-main)', fontSize: '11px' }} itemStyle={{ color: 'var(--text-main)' }} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-        <div className="text-xs flex flex-col gap-2 w-[50%]">
-          {displayPie.map(lang => (
-            <div key={lang.name} className="flex justify-between items-center text-text-main/90 font-medium">
-              <span className="font-bold flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: lang.color }} />
-                {lang.name}
-              </span> 
-              <span className="text-text-muted font-bold">{Math.round((lang.value / finalTotal) * 100)}%</span>
+      <div className="bg-card rounded-2xl p-4 border border-border">
+        <div className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-4">Languages</div>
+        {displayPie.length === 0 ? (
+          <div className="text-xs text-text-muted text-center py-4">No language breakdown available.</div>
+        ) : (
+          <div className="flex items-center justify-between">
+            <div className="w-[100px] h-[100px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={displayPie} innerRadius={28} outerRadius={46} paddingAngle={0} dataKey="value" stroke="none">
+                    {displayPie.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-main)', fontSize: '11px' }} itemStyle={{ color: 'var(--text-main)' }} />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
-          ))}
-        </div>
+            <div className="text-xs flex flex-col gap-2 w-[50%]">
+              {displayPie.map(lang => (
+                <div key={lang.name} className="flex justify-between items-center text-text-main/90 font-medium">
+                  <span className="font-bold flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: lang.color }} />
+                    {lang.name}
+                  </span> 
+                  <span className="text-text-muted font-bold">{Math.round((lang.value / finalTotal) * 100)}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </>
   );

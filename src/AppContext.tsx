@@ -1,13 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { AppContextType, AppState, Screen, GitHubRepo, GitHubUser } from './types';
 
-export const INITIAL_MOCK_REPOS: GitHubRepo[] = [
-  { id: 101, name: 'rocket-launcher', private: true, description: 'A rocket launcher simulation app built with React.', language: 'TypeScript', pushed_at: new Date(Date.now() - 2 * 3600 * 1000).toISOString() },
-  { id: 102, name: 'e-commerce-web', private: false, description: 'Full stack e-commerce platform for digital goods.', language: 'JavaScript', pushed_at: new Date(Date.now() - 5 * 3600 * 1000).toISOString() },
-  { id: 103, name: 'backend-api', private: true, description: 'RESTful Python API backend powered by FastAPI.', language: 'Python', pushed_at: new Date(Date.now() - 24 * 3600 * 1000).toISOString() },
-  { id: 104, name: 'rust-parser', private: false, description: 'High performance JSON parser built with Rust.', language: 'Rust', pushed_at: new Date(Date.now() - 3 * 24 * 3600 * 1000).toISOString() },
-  { id: 105, name: 'ios-wallet', private: true, description: 'Crypto wallet app for iOS.', language: 'Swift', pushed_at: new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString() },
-];
+export const INITIAL_MOCK_REPOS: GitHubRepo[] = [];
 
 export const formatTime = (dateStr: string) => {
   const date = new Date(dateStr);
@@ -29,10 +23,10 @@ const getLocalRepos = (): GitHubRepo[] => {
     try {
       return JSON.parse(local);
     } catch (e) {
-      return INITIAL_MOCK_REPOS;
+      return [];
     }
   }
-  return INITIAL_MOCK_REPOS;
+  return [];
 };
 
 export const getLocalRepoDetails = (repoId: string, type: 'commits' | 'branches' | 'prs' | 'files') => {
@@ -44,38 +38,9 @@ export const getLocalRepoDetails = (repoId: string, type: 'commits' | 'branches'
     } catch (e) {}
   }
   
-  if (type === 'commits') {
-    return [
-      { hash: 'a1b2c3d', msg: 'feat: add rocket engine controls', author: 'Tanvir Ahmed', time: '2h ago', add: '+24', del: '-8', isPrimary: true },
-      { hash: 'd4e5f6g', msg: 'fix: update ignition thrust', author: 'Minnat Uddin', time: '5h ago', add: '+12', del: '-3' },
-      { hash: 'h7i8j9k', msg: 'refactor: optimize fuel consumption logic', author: 'Hridoy Hasan', time: '1d ago', add: '+18', del: '-4' },
-      { hash: 'l0m1n2o', msg: 'docs: update API documentation', author: 'Jubayer Hossain', time: '1d ago', add: '+6', del: '-1' },
-      { hash: 'p3q4r5s', msg: 'chore: update dependencies', author: 'Mim Akter', time: '1d ago', add: '+3', del: '-0' }
-    ];
-  }
   if (type === 'branches') {
     return [
-      { name: 'main', desc: 'Production ready environment', isDefault: true, borderColor: '#38BDF8' },
-      { name: 'develop', desc: 'Active development branch' },
-      { name: 'feature/auth', desc: 'Add OAuth2 authentication' },
-      { name: 'feature/rocket-ui', desc: 'Improve UI design elements' },
-      { name: 'hotfix/engine-bug', desc: 'Fix engine thrust calculation issue' }
-    ];
-  }
-  if (type === 'prs') {
-    return [
-      { id: 42, title: 'Add authentication system via OAuth2', desc: 'Integrate full GitHub OAuth flow', author: 'Tanvir Ahmed', time: '2h ago', status: 'Approved', comments: 3 },
-      { id: 41, title: 'Fix UI responsiveness issues on mobile', desc: 'Fix margins and scroll behaviors', author: 'Mim Akter', time: '5h ago', status: 'Draft', comments: 0 },
-      { id: 40, title: 'Update dependencies and packages', desc: 'Conflict resolution needed', author: 'Hridoy Hasan', time: '1d ago', status: 'Review Req.', comments: 1, hasConflicts: true }
-    ];
-  }
-  if (type === 'files') {
-    return [
-      { name: 'hooks', type: 'dir' },
-      { name: 'utils', type: 'dir' },
-      { name: 'App.tsx', type: 'file' },
-      { name: 'Rocket.tsx', type: 'file', isCurrent: true },
-      { name: 'README.md', type: 'file' }
+      { name: 'main', desc: 'Default branch', isDefault: true, borderColor: '#38BDF8' }
     ];
   }
   return [];
@@ -132,6 +97,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const response = await fetch('/api/auth/url');
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        openModal('oauth_setup');
         throw new Error(errorData.error || 'Failed to get auth URL');
       }
       const { url } = await response.json();
@@ -297,11 +263,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
       setState(prev => ({
         ...prev,
-        activeCommits: commitsData.length ? commitsData : getLocalRepoDetails(repoName, 'commits'),
+        activeCommits: commitsData,
         activeBranches: branchesData.length ? branchesData : getLocalRepoDetails(repoName, 'branches'),
-        activePRs: prsData.length ? prsData : getLocalRepoDetails(repoName, 'prs'),
-        activeFiles: filesData.length ? filesData : getLocalRepoDetails(repoName, 'files'),
-        activeLanguages: Object.keys(langData).length ? langData : { TypeScript: 60, CSS: 20, HTML: 20 },
+        activePRs: prsData,
+        activeFiles: filesData,
+        activeLanguages: langData,
         isLoadingRepoDetails: false
       }));
     } catch (error) {
@@ -312,7 +278,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         activeBranches: getLocalRepoDetails(repoName, 'branches'),
         activePRs: getLocalRepoDetails(repoName, 'prs'),
         activeFiles: getLocalRepoDetails(repoName, 'files'),
-        activeLanguages: { TypeScript: 70, JavaScript: 20, Others: 10 },
+        activeLanguages: {},
         isLoadingRepoDetails: false
       }));
     }
@@ -352,7 +318,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           activeBranches: getLocalRepoDetails(prev.currentRepo!, 'branches'),
           activePRs: getLocalRepoDetails(prev.currentRepo!, 'prs'),
           activeFiles: getLocalRepoDetails(prev.currentRepo!, 'files'),
-          activeLanguages: { TypeScript: 45, JavaScript: 35, Python: 15, Others: 5 },
+          activeLanguages: {},
           isLoadingRepoDetails: false
         }));
       }
@@ -389,7 +355,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setState((prev) => ({ ...prev, toastMessage: msg }));
   };
 
-  const openModal = (modalType: 'repo' | 'branch' | 'pr' | 'commit') => {
+  const openModal = (modalType: 'repo' | 'branch' | 'pr' | 'commit' | 'oauth_setup') => {
     setState(prev => ({ ...prev, activeModal: modalType, isActionSheetOpen: false }));
   };
 
@@ -446,13 +412,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const key = `local_details_${state.currentRepo}_prs`;
     const current = getLocalRepoDetails(state.currentRepo, 'prs');
     const newPR = {
-      id: current.length + 43,
+      id: current.length + 1,
       title: pr.title,
       desc: pr.desc || 'No description provided.',
-      author: state.githubUser?.login || 'Tanvir Ahmed',
+      author: state.githubUser?.login || 'User',
       time: 'Just now',
       status: 'Open',
-      avatar: state.githubUser?.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Tanvir',
+      avatar: state.githubUser?.avatar_url || '',
       hasConflicts: false
     };
     const updated = [newPR, ...current];
@@ -472,7 +438,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const newCommit = {
       hash: commit.hash || Math.random().toString(16).substring(2, 9),
       msg: commit.msg,
-      author: commit.author || state.githubUser?.name || 'Tanvir Ahmed',
+      author: commit.author || state.githubUser?.name || state.githubUser?.login || 'User',
       time: 'Just now',
       add: commit.add || `+${Math.floor(Math.random() * 30) + 1}`,
       del: commit.del || `-${Math.floor(Math.random() * 10) + 1}`,

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../AppContext';
-import { X, Folder, GitBranch, GitPullRequest, GitCommit, Check } from 'lucide-react';
+import { X, Folder, GitBranch, GitPullRequest, GitCommit, Check, Key, ExternalLink, ShieldAlert } from 'lucide-react';
 
 export const CreateModals: React.FC = () => {
   const { activeModal, closeModal, createLocalRepo, createLocalBranch, createLocalPR, createLocalCommit } = useAppContext();
@@ -13,7 +13,7 @@ export const CreateModals: React.FC = () => {
         className="absolute inset-0 bg-black/60 backdrop-blur-sm z-[200] transition-opacity duration-300 opacity-100"
         onClick={closeModal}
       />
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-[400px] bg-card rounded-2xl border border-border z-[201] p-6 shadow-2xl animate-fade-up">
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[92%] max-w-[420px] max-h-[85vh] overflow-y-auto bg-card rounded-2xl border border-border z-[201] p-6 shadow-2xl animate-fade-up">
         <div className="flex justify-between items-center mb-5">
           <div className="flex items-center gap-2.5 font-semibold text-text-main text-base">
             {activeModal === 'repo' && (
@@ -48,6 +48,14 @@ export const CreateModals: React.FC = () => {
                 <span>Commit Changes</span>
               </>
             )}
+            {activeModal === 'oauth_setup' && (
+              <>
+                <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center">
+                  <Key size={18} />
+                </div>
+                <span>Connect GitHub</span>
+              </>
+            )}
           </div>
           <button 
             onClick={closeModal}
@@ -61,6 +69,7 @@ export const CreateModals: React.FC = () => {
         {activeModal === 'branch' && <BranchForm onSubmit={(data) => { createLocalBranch(data); closeModal(); }} />}
         {activeModal === 'pr' && <PRForm onSubmit={(data) => { createLocalPR(data); closeModal(); }} />}
         {activeModal === 'commit' && <CommitForm onSubmit={(data) => { createLocalCommit(data); closeModal(); }} />}
+        {activeModal === 'oauth_setup' && <OAuthSetupForm />}
       </div>
     </>
   );
@@ -313,5 +322,126 @@ const CommitForm: React.FC<{ onSubmit: (data: any) => void }> = ({ onSubmit }) =
         <Check size={16} strokeWidth={3} /> Commit to branch
       </button>
     </form>
+  );
+};
+
+const OAuthSetupForm: React.FC = () => {
+  const { setManualToken, closeModal } = useAppContext();
+  const [token, setToken] = useState('');
+  const [tab, setTab] = useState<'pat' | 'oauth'>('pat');
+
+  const handlePatSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token.trim()) return;
+    setManualToken(token.trim());
+    closeModal();
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Navigation tabs */}
+      <div className="flex border-b border-border text-xs font-semibold">
+        <button
+          type="button"
+          onClick={() => setTab('pat')}
+          className={`pb-2.5 px-3 border-b-2 transition-colors ${
+            tab === 'pat'
+              ? 'border-primary text-primary font-bold'
+              : 'border-transparent text-text-muted hover:text-text-main'
+          }`}
+        >
+          1-Click Access Token (Recommended)
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab('oauth')}
+          className={`pb-2.5 px-3 border-b-2 transition-colors ${
+            tab === 'oauth'
+              ? 'border-primary text-primary font-bold'
+              : 'border-transparent text-text-muted hover:text-text-main'
+          }`}
+        >
+          OAuth Setup Guide
+        </button>
+      </div>
+
+      {tab === 'pat' ? (
+        <form onSubmit={handlePatSubmit} className="space-y-3.5">
+          <div className="p-3 bg-primary/5 rounded-xl border border-primary/20 text-xs text-text-main leading-relaxed">
+            <p className="font-semibold text-primary mb-1">Fastest Way to Connect</p>
+            You can connect your GitHub account in 10 seconds using a Personal Access Token (PAT).
+          </div>
+
+          <div>
+            <a 
+              href="https://github.com/settings/tokens/new?scopes=repo,user,read:org&description=Git%20Manager%20App"
+              target="_blank"
+              rel="noreferrer"
+              className="w-full bg-hover border border-border hover:border-primary/50 text-text-main font-semibold text-xs py-2.5 px-3 rounded-xl transition-all flex items-center justify-center gap-2 text-center"
+            >
+              <span>Generate New Token on GitHub</span>
+              <ExternalLink size={14} className="text-primary" />
+            </a>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-text-muted mb-1.5 uppercase tracking-wider">
+              Paste GitHub Token
+            </label>
+            <input 
+              type="password" 
+              placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" 
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+              required
+              className="w-full bg-main border border-border rounded-xl px-3.5 py-2.5 text-sm text-text-main outline-none focus:border-primary transition-colors placeholder:text-text-muted/60"
+            />
+          </div>
+
+          <button 
+            type="submit" 
+            disabled={!token.trim()}
+            className="w-full bg-primary hover:bg-primary-hover text-white font-semibold text-sm py-3 rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
+          >
+            <Check size={16} strokeWidth={3} /> Connect GitHub Account
+          </button>
+        </form>
+      ) : (
+        <div className="space-y-3 text-xs text-text-main">
+          <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-500 flex gap-2">
+            <ShieldAlert size={18} className="shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold">OAuth Secrets Missing</p>
+              <p className="text-[11px] opacity-90 mt-0.5">
+                GitHub OAuth flow requires <code className="bg-amber-500/20 px-1 py-0.5 rounded font-mono">GITHUB_CLIENT_ID</code> and <code className="bg-amber-500/20 px-1 py-0.5 rounded font-mono">GITHUB_CLIENT_SECRET</code> to be configured on your server/worker.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <p className="font-semibold text-text-main">For Cloudflare Workers:</p>
+            <div className="bg-main border border-border p-2.5 rounded-xl font-mono text-[11px] text-primary space-y-1 overflow-x-auto">
+              <p>npx wrangler secret put GITHUB_CLIENT_ID</p>
+              <p>npx wrangler secret put GITHUB_CLIENT_SECRET</p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <p className="font-semibold text-text-main">For Local Development / Cloud Run:</p>
+            <p className="text-text-muted">
+              Add <code className="text-text-main font-mono bg-hover px-1 rounded">GITHUB_CLIENT_ID</code> and <code className="text-text-main font-mono bg-hover px-1 rounded">GITHUB_CLIENT_SECRET</code> to your <code className="text-text-main font-mono bg-hover px-1 rounded">.env</code> file.
+            </p>
+          </div>
+
+          <button 
+            type="button" 
+            onClick={() => setTab('pat')}
+            className="w-full bg-hover hover:bg-border text-text-main font-semibold text-xs py-2.5 rounded-xl transition-all mt-2"
+          >
+            Use Personal Access Token Instead
+          </button>
+        </div>
+      )}
+    </div>
   );
 };

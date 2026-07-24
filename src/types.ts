@@ -38,7 +38,7 @@ export interface AppState {
   activeFiles: any[];
   activeLanguages: Record<string, number>;
   isLoadingRepoDetails: boolean;
-  activeModal: 'repo' | 'branch' | 'pr' | 'commit' | null;
+  activeModal: 'repo' | 'branch' | 'pr' | 'commit' | 'oauth_setup' | null;
 }
 
 export type AppContextType = AppState & {
@@ -57,7 +57,7 @@ export type AppContextType = AppState & {
   setManualToken: (token: string) => void;
   
   // Details and local creation actions
-  openModal: (modalType: 'repo' | 'branch' | 'pr' | 'commit') => void;
+  openModal: (modalType: 'repo' | 'branch' | 'pr' | 'commit' | 'oauth_setup') => void;
   closeModal: () => void;
   createLocalRepo: (repo: { name: string; desc: string; isPrivate: boolean; lang: string }) => void;
   createLocalBranch: (branch: { name: string; desc: string }) => void;

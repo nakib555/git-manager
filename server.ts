@@ -35,7 +35,30 @@ async function startServer() {
   app.get(['/auth/callback', '/auth/callback/'], async (req, res) => {
     const { code } = req.query;
     if (!code) {
-      res.status(400).send("No code provided");
+      res.status(400).send(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <title>Git Manager - OAuth Callback</title>
+            <style>
+              body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; text-align: center; }
+              .card { background: #1e293b; padding: 32px; border-radius: 16px; border: 1px solid #334155; max-width: 420px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); }
+              h2 { margin-top: 0; color: #38bdf8; font-size: 20px; }
+              p { color: #94a3b8; line-height: 1.5; font-size: 14px; margin-bottom: 24px; }
+              a { display: inline-block; background: #0284c7; color: white; padding: 12px 24px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 14px; }
+              a:hover { background: #0369a1; }
+            </style>
+          </head>
+          <body>
+            <div class="card">
+              <h2>OAuth Authentication Callback</h2>
+              <p>This endpoint receives authorization codes during GitHub OAuth login. To log in, please open the app and click <strong>Connect GitHub</strong>.</p>
+              <a href="/">Open Git Manager App</a>
+            </div>
+          </body>
+        </html>
+      `);
       return;
     }
 

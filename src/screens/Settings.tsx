@@ -21,12 +21,12 @@ export const Settings: React.FC = () => {
         {githubUser ? (
           <img src={githubUser.avatar_url} alt="Profile" className="w-14 h-14 rounded-full border border-border" />
         ) : (
-          <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-primary to-info border-2 border-white flex items-center justify-center text-2xl font-bold">
-            T
+          <div className="w-14 h-14 rounded-full bg-hover text-text-muted border border-border flex items-center justify-center text-xl font-bold">
+            <User size={24} />
           </div>
         )}
         <div className="flex-1">
-          <h3 className="text-base font-semibold">{githubUser ? (githubUser.name || githubUser.login) : 'Tanvir Ahmed'}</h3>
+          <h3 className="text-base font-semibold">{githubUser ? (githubUser.name || githubUser.login) : 'Guest User'}</h3>
           {githubUser ? (
             <div className="text-xs text-text-muted mt-1 space-y-1">
               {githubUser.bio && <div>{githubUser.bio}</div>}
@@ -36,8 +36,8 @@ export const Settings: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="bg-primary/15 text-primary text-[10px] font-semibold px-2 py-1 rounded-full inline-block mt-1">
-              Pro Plan
+            <div className="text-xs text-text-muted mt-0.5">
+              Not connected
             </div>
           )}
         </div>
@@ -73,20 +73,33 @@ export const Settings: React.FC = () => {
             </div>
             
             {showTokenInput && (
-              <div className="mt-4 flex gap-2 animate-fade-in">
-                <input 
-                  type="password" 
-                  placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" 
-                  value={tempToken}
-                  onChange={(e) => setTempToken(e.target.value)}
-                  className="flex-1 bg-main border border-border rounded-lg px-3 py-2 text-sm text-text-main outline-none focus:border-primary"
-                />
-                <button 
-                  onClick={handleSaveToken}
-                  className="bg-primary text-white rounded-lg px-3 flex items-center justify-center active:bg-primary-hover"
-                >
-                  <Check size={18} />
-                </button>
+              <div className="mt-3 space-y-2 animate-fade-in">
+                <p className="text-xs text-text-muted">
+                  Paste your GitHub Personal Access Token (PAT). Need one?{' '}
+                  <a 
+                    href="https://github.com/settings/tokens/new?scopes=repo,user,read:org&description=Git%20Manager%20Mobile" 
+                    target="_blank" 
+                    rel="noreferrer"
+                    className="text-primary underline font-medium"
+                  >
+                    Generate a Token on GitHub
+                  </a>
+                </p>
+                <div className="flex gap-2">
+                  <input 
+                    type="password" 
+                    placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" 
+                    value={tempToken}
+                    onChange={(e) => setTempToken(e.target.value)}
+                    className="flex-1 bg-main border border-border rounded-lg px-3 py-2 text-sm text-text-main outline-none focus:border-primary"
+                  />
+                  <button 
+                    onClick={handleSaveToken}
+                    className="bg-primary text-white rounded-lg px-4 py-2 text-sm font-semibold flex items-center justify-center active:bg-primary-hover transition-colors"
+                  >
+                    Save
+                  </button>
+                </div>
               </div>
             )}
           </div>

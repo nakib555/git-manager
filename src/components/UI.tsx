@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAppContext } from '../AppContext';
-import { Folder, GitBranch, GitPullRequest, X, XCircle, CheckCircle2, MessageSquare } from 'lucide-react';
+import { Folder, GitBranch, GitPullRequest, X, XCircle, CheckCircle2, MessageSquare, Bell } from 'lucide-react';
 
 export const ActionSheet: React.FC = () => {
   const { isActionSheetOpen, closeModals, showToast, openModal } = useAppContext();
@@ -73,31 +73,12 @@ export const NotificationDrawer: React.FC = () => {
           <X size={24} className="cursor-pointer text-text-main" onClick={closeModals} />
         </div>
 
-        <div className="p-4 bg-card rounded-xl mb-3 flex gap-3">
-          <XCircle size={20} className="text-danger mt-0.5 shrink-0" />
-          <div>
-            <div className="text-sm font-medium text-text-main">Build Failed: backend-api</div>
-            <div className="text-xs text-text-muted mt-1 leading-relaxed">Pipeline #4092 failed on deploy stage. Check logs.</div>
-            <div className="text-[11px] text-text-muted mt-1.5">10 mins ago</div>
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="w-12 h-12 rounded-full bg-hover flex items-center justify-center text-text-muted mb-3 border border-border">
+            <Bell size={20} />
           </div>
-        </div>
-
-        <div className="p-4 bg-card rounded-xl mb-3 flex gap-3">
-          <CheckCircle2 size={20} className="text-success mt-0.5 shrink-0" />
-          <div>
-            <div className="text-sm font-medium text-text-main">PR Approved</div>
-            <div className="text-xs text-text-muted mt-1 leading-relaxed">Hridoy approved your pull request #42.</div>
-            <div className="text-[11px] text-text-muted mt-1.5">2 hours ago</div>
-          </div>
-        </div>
-
-        <div className="p-4 bg-card rounded-xl flex gap-3">
-          <MessageSquare size={20} className="text-primary mt-0.5 shrink-0" />
-          <div>
-            <div className="text-sm font-medium text-text-main">New Comment</div>
-            <div className="text-xs text-text-muted mt-1 leading-relaxed">@tanvir please resolve the merge conflicts in App.tsx</div>
-            <div className="text-[11px] text-text-muted mt-1.5">Yesterday</div>
-          </div>
+          <p className="text-sm font-semibold text-text-main mb-1">No notifications</p>
+          <p className="text-xs text-text-muted max-w-[200px]">You're all caught up! New alerts and updates will appear here.</p>
         </div>
       </div>
     </>
