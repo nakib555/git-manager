@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useAppContext } from '../AppContext';
-import { Search, Lock, Globe, Square, FolderGit2, Plus, Github } from 'lucide-react';
+import { Search, Lock, Globe, Square, FolderGit2 } from 'lucide-react';
 import { GitHubRepo } from '../types';
+import { useVirtualizer } from '@tanstack/react-virtual';
 
 const getLanguageColor = (lang: string | null) => {
   if (!lang) return '#8F8F9D';
@@ -33,6 +34,7 @@ export const Repositories: React.FC = () => {
   const [filter, setFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const parentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isSearchFocused && searchInputRef.current) {
@@ -64,6 +66,13 @@ export const Repositories: React.FC = () => {
     if (filter === 'Private' && !repo.isPrivate) return false;
     if (filter === 'Public' && repo.isPrivate) return false;
     return true;
+  });
+
+  const rowVirtualizer = useVirtualizer({
+    count: filteredRepos.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 142,
+    overscan: 5,
   });
 
   return (
@@ -104,36 +113,64 @@ export const Repositories: React.FC = () => {
             </p>
           </div>
         ) : (
-          filteredRepos.map(repo => {
-            const Icon = repo.icon;
-            return (
-              <div 
-                key={repo.id}
-                className="bg-card p-4 rounded-2xl mb-3 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 active:scale-95 border border-border"
-                onClick={() => openRepo(repo.id, repo.owner)}
-              >
-                <div className="flex justify-between mb-2">
-                  <div className="text-[15px] font-semibold flex items-center gap-2.5">
-                    <div className={`w-8 h-8 rounded-lg ${repo.bg} ${repo.iconColor} flex items-center justify-center`}>
-                      <Icon size={18} />
+          <div 
+            ref={parentRef} 
+            className="overflow-y-auto no-scrollbar"
+            style={{ height: 'calc(100vh - 250px)', width: '100%' }}
+          >
+            <div
+              style={{
+                height: `${rowVirtualizer.getTotalSize()}px`,
+                width: '100%',
+                position: 'relative',
+              }}
+            >
+              {rowVirtualizer.getVirtualItems().map((virtualItem) => {
+                const repo = filteredRepos[virtualItem.index];
+                if (!repo) return null;
+                const Icon = repo.icon;
+                return (
+                  <div
+                    key={virtualItem.key}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: `${virtualItem.size}px`,
+                      transform: `translateY(${virtualItem.start}px)`,
+                      paddingBottom: '12px',
+                    }}
+                  >
+                    <div 
+                      className="bg-card p-4 rounded-2xl cursor-pointer transition-all duration-200 hover:-translate-y-0.5 active:scale-95 border border-border h-full flex flex-col justify-between"
+                      onClick={() => openRepo(repo.id, repo.owner)}
+                    >
+                      <div className="flex justify-between mb-2">
+                        <div className="text-[15px] font-semibold flex items-center gap-2.5 truncate">
+                          <div className={`w-8 h-8 rounded-lg ${repo.bg} ${repo.iconColor} flex items-center justify-center shrink-0`}>
+                            <Icon size={18} />
+                          </div>
+                          <span className="truncate">{repo.name}</span>
+                        </div>
+                        <div className="text-[10px] px-2 py-0.5 rounded-full border border-border text-text-muted flex items-center gap-1 h-fit shrink-0">
+                          {repo.isPrivate ? <Lock size={10} /> : <Globe size={10} />}
+                          {repo.isPrivate ? 'Private' : 'Public'}
+                        </div>
+                      </div>
+                      <div className="text-[13px] text-text-muted mb-3 line-clamp-1 truncate">{repo.desc}</div>
+                      <div className="flex justify-between text-xs text-text-muted mt-auto">
+                        <span className="flex items-center gap-1.5">
+                          <Square size={12} fill={repo.langColor} color={repo.langColor} /> {repo.lang}
+                        </span>
+                        <span>Updated {repo.updated}</span>
+                      </div>
                     </div>
-                    {repo.name}
                   </div>
-                  <div className="text-[10px] px-2 py-0.5 rounded-full border border-border text-text-muted flex items-center gap-1 h-fit">
-                    {repo.isPrivate ? <Lock size={10} /> : <Globe size={10} />}
-                    {repo.isPrivate ? 'Private' : 'Public'}
-                  </div>
-                </div>
-                <div className="text-[13px] text-text-muted mb-3">{repo.desc}</div>
-                <div className="flex justify-between text-xs text-text-muted">
-                  <span className="flex items-center gap-1.5">
-                    <Square size={12} fill={repo.langColor} color={repo.langColor} /> {repo.lang}
-                  </span>
-                  <span>Updated {repo.updated}</span>
-                </div>
-              </div>
-            );
-          })
+                );
+              })}
+            </div>
+          </div>
         )}
       </div>
     </div>

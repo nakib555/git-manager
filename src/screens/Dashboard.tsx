@@ -1,11 +1,30 @@
-import React, { useState } from 'react';
-import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { ArrowUpRight, GitMerge, GitCommit, AlertCircle, ChevronDown, Github, FolderGit2 } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { ArrowUpRight, GitMerge, GitCommit, AlertCircle, ChevronDown, Github, FolderGit2, Settings, Sliders, RefreshCw, Eye, EyeOff } from 'lucide-react';
 import { useAppContext } from '../AppContext';
 
 export const Dashboard: React.FC = () => {
   const { githubUser, githubRepos, connectGitHub, githubToken, activeCommits, openRepo, sessionCommitsCount } = useAppContext();
-  const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month' | 'year'>('week');
+  const [timeframe, setTimeframe] = useState<'Day' | 'Week' | 'Month' | 'Year'>('Week');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Graph custom adjustments states
+  const [showCommitsLine, setShowCommitsLine] = useState(true);
+  const [showPRsLine, setShowPRsLine] = useState(true);
+  const [dataMultiplier, setDataMultiplier] = useState(1.0);
+  const [showGrid, setShowGrid] = useState(false);
+  const [isAdjustmentPanelOpen, setIsAdjustmentPanelOpen] = useState(false);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Sum of commits across all repos in localStorage
   let totalCommitsCount = 0;
@@ -24,41 +43,46 @@ export const Dashboard: React.FC = () => {
 
   const displayCommitsCount = Math.max(totalCommitsCount, sessionCommitsCount);
 
-  // Generate dynamic chart data based on displayCommitsCount and selected period
+  // Generate dynamic chart data based on displayCommitsCount (from live repo / current session)
   const getChartData = () => {
-    let baseDistribution: number[] = [];
-    let intervals: string[] = [];
+    // Provide a dynamic minimum preview curve if there are repositories, so it looks active
+    const multiplier = (displayCommitsCount > 0 ? displayCommitsCount : (githubRepos.length > 0 ? 12 : 0)) * dataMultiplier;
     
-    if (selectedPeriod === 'day') {
-      intervals = ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '23:59'];
-      baseDistribution = [0.02, 0.05, 0.15, 0.35, 0.25, 0.15, 0.03];
-    } else if (selectedPeriod === 'week') {
-      intervals = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      baseDistribution = [0.10, 0.25, 0.15, 0.30, 0.12, 0.05, 0.03];
-    } else if (selectedPeriod === 'month') {
-      intervals = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
-      baseDistribution = [0.20, 0.35, 0.25, 0.20];
-    } else { // year
-      intervals = ['Jan-Feb', 'Mar-Apr', 'May-Jun', 'Jul-Aug', 'Sep-Oct', 'Nov-Dec'];
-      baseDistribution = [0.12, 0.18, 0.22, 0.15, 0.20, 0.13];
+    let labels: string[] = [];
+    let baseDistribution: number[] = [];
+
+    switch (timeframe) {
+      case 'Day':
+        labels = ['12am', '4am', '8am', '12pm', '4pm', '8pm'];
+        baseDistribution = [0.05, 0.02, 0.1, 0.3, 0.4, 0.13];
+        break;
+      case 'Week':
+        labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        baseDistribution = [0.10, 0.25, 0.15, 0.30, 0.12, 0.05, 0.03];
+        break;
+      case 'Month':
+        labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+        baseDistribution = [0.2, 0.3, 0.25, 0.25];
+        break;
+      case 'Year':
+        labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        baseDistribution = [0.05, 0.08, 0.1, 0.07, 0.12, 0.08, 0.05, 0.04, 0.1, 0.15, 0.1, 0.06];
+        break;
     }
     
-    // Provide a dynamic minimum preview curve if there are repositories, so it looks active
-    const multiplier = displayCommitsCount > 0 ? displayCommitsCount : (githubRepos.length > 0 ? 12 : 0);
-    
-    return intervals.map((label, idx) => {
-      const commitsOnThisDay = multiplier > 0 
-        ? Math.max(multiplier > 5 ? 1 : 0, Math.round(multiplier * baseDistribution[idx]))
+    return labels.map((label, idx) => {
+      const commitsOnThisLabel = multiplier > 0 
+        ? Math.max(1, Math.round(multiplier * baseDistribution[idx]))
         : 0;
       
       const secondaryActivity = multiplier > 0
-        ? Math.max(0, Math.round(commitsOnThisDay * 0.4))
+        ? Math.max(0, Math.round(commitsOnThisLabel * 0.4))
         : 0;
         
       return {
         name: label,
-        Commits: commitsOnThisDay,
-        PullRequests: secondaryActivity
+        uv: commitsOnThisLabel,
+        pv: secondaryActivity
       };
     });
   };
@@ -113,30 +137,32 @@ export const Dashboard: React.FC = () => {
       </div>
 
       <div className="bg-card rounded-3xl p-5 pb-4 mb-5 border border-border">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+        <div className="flex justify-between mb-4 relative" ref={dropdownRef}>
           <span className="text-[15px] font-semibold text-text-main">Activity Overview</span>
+          <button 
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className="text-xs text-text-muted flex items-center hover:text-text-main transition-colors"
+          >
+            {timeframe === 'Day' ? 'Today' : `This ${timeframe}`} <ChevronDown size={14} className="ml-1" />
+          </button>
           
-          {/* Elegant pill selector */}
-          <div className="flex bg-hover/40 p-1 rounded-xl border border-border">
-            {(['day', 'week', 'month', 'year'] as const).map((period) => (
-              <button
-                key={period}
-                onClick={() => setSelectedPeriod(period)}
-                className={`text-[11px] font-bold px-3 py-1.5 rounded-lg capitalize transition-all duration-200 ${
-                  selectedPeriod === period
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'text-text-muted hover:text-text-main'
-                }`}
-              >
-                {period}
-              </button>
-            ))}
-          </div>
+          {isDropdownOpen && (
+            <div className="absolute right-0 top-6 bg-card border border-border rounded-xl shadow-lg overflow-hidden z-10 w-32 py-1">
+              {(['Day', 'Week', 'Month', 'Year'] as const).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => { setTimeframe(t); setIsDropdownOpen(false); }}
+                  className={`w-full text-left px-4 py-2 text-xs hover:bg-hover transition-colors ${timeframe === t ? 'text-primary font-semibold' : 'text-text-main'}`}
+                >
+                  {t === 'Day' ? 'Today' : `This ${t}`}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
-        
-        <div className="h-[160px] w-full mt-2">
+        <div className="h-[150px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <AreaChart data={chartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#7C3AED" stopOpacity={0.4}/>
@@ -147,29 +173,142 @@ export const Dashboard: React.FC = () => {
                   <stop offset="95%" stopColor="#38BDF8" stopOpacity={0}/>
                 </linearGradient>
               </defs>
+              {showGrid && <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.5} />}
               <XAxis 
                 dataKey="name" 
-                axisLine={false} 
+                stroke="var(--text-muted)" 
+                fontSize={9} 
                 tickLine={false} 
-                tick={{ fill: '#8F8F9D', fontSize: 10, fontWeight: 500 }}
+                axisLine={false} 
                 dy={8}
               />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'var(--card)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '12px',
-                  color: 'var(--text-main)',
+              <YAxis 
+                stroke="var(--text-muted)" 
+                fontSize={9} 
+                tickLine={false} 
+                axisLine={false} 
+                dx={-8}
+              />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'var(--card)', 
+                  borderColor: 'var(--border)', 
+                  borderRadius: '12px', 
                   fontSize: '11px',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                  color: 'var(--text-main)',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
                 }}
                 itemStyle={{ color: 'var(--text-main)' }}
-                labelStyle={{ fontWeight: 'bold', color: 'var(--text-muted)', marginBottom: '4px' }}
               />
-              <Area type="monotone" dataKey="Commits" stroke="#7C3AED" strokeWidth={2.5} fillOpacity={1} fill="url(#colorUv)" />
-              <Area type="monotone" dataKey="PullRequests" stroke="#38BDF8" strokeWidth={2.5} fillOpacity={1} fill="url(#colorPv)" />
+              {showCommitsLine && (
+                <Area type="monotone" dataKey="uv" name="Commits" stroke="#7C3AED" strokeWidth={2.5} fillOpacity={1} fill="url(#colorUv)" />
+              )}
+              {showPRsLine && (
+                <Area type="monotone" dataKey="pv" name="PRs/PR Activity" stroke="#38BDF8" strokeWidth={2.5} fillOpacity={1} fill="url(#colorPv)" />
+              )}
             </AreaChart>
           </ResponsiveContainer>
+        </div>
+
+        {/* Adjustment Controls Section */}
+        <div className="mt-4 pt-4 border-t border-border/80 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => setIsAdjustmentPanelOpen(!isAdjustmentPanelOpen)}
+              className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary-hover transition-colors"
+            >
+              <Sliders size={13} />
+              <span>{isAdjustmentPanelOpen ? 'Hide Controls' : 'Adjust Chart & Data'}</span>
+            </button>
+            <div className="flex items-center gap-2 text-[11px] text-text-muted font-medium">
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#7C3AED]" /> Commits
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#38BDF8]" /> PRs
+              </span>
+            </div>
+          </div>
+
+          {isAdjustmentPanelOpen && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-hover/10 p-3 rounded-2xl border border-border animate-fade-in text-xs">
+              {/* Toggles */}
+              <div className="flex flex-col gap-2">
+                <span className="font-semibold text-text-main">Series Visibility</span>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setShowCommitsLine(!showCommitsLine)}
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border text-[11px] font-medium transition-colors cursor-pointer ${
+                      showCommitsLine 
+                        ? 'bg-[#7C3AED]/10 text-[#7C3AED] border-[#7C3AED]/30' 
+                        : 'border-border text-text-muted bg-card'
+                    }`}
+                  >
+                    {showCommitsLine ? <Eye size={12} /> : <EyeOff size={12} />}
+                    Commits
+                  </button>
+                  <button
+                    onClick={() => setShowPRsLine(!showPRsLine)}
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border text-[11px] font-medium transition-colors cursor-pointer ${
+                      showPRsLine 
+                        ? 'bg-[#38BDF8]/10 text-[#38BDF8] border-[#38BDF8]/30' 
+                        : 'border-border text-text-muted bg-card'
+                    }`}
+                  >
+                    {showPRsLine ? <Eye size={12} /> : <EyeOff size={12} />}
+                    PRs/Activity
+                  </button>
+                  <button
+                    onClick={() => setShowGrid(!showGrid)}
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border text-[11px] font-medium transition-colors cursor-pointer ${
+                      showGrid 
+                        ? 'bg-primary/10 text-primary border-primary/30' 
+                        : 'border-border text-text-muted bg-card'
+                    }`}
+                  >
+                    Grid Lines
+                  </button>
+                </div>
+              </div>
+
+              {/* Data Scale adjustments */}
+              <div className="flex flex-col gap-2">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold text-text-main">Simulation Scaling</span>
+                  <span className="text-[11px] font-bold text-primary">{dataMultiplier.toFixed(1)}x Scale</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    disabled={dataMultiplier <= 0.5}
+                    onClick={() => setDataMultiplier(prev => Math.max(0.5, prev - 0.5))}
+                    className="w-7 h-7 rounded-lg border border-border flex items-center justify-center font-bold text-sm bg-card active:scale-95 transition-all text-text-main hover:border-primary/30 disabled:opacity-50 cursor-pointer"
+                  >
+                    -
+                  </button>
+                  <div className="flex-1 h-1.5 bg-border rounded-full relative">
+                    <div 
+                      className="absolute top-0 bottom-0 left-0 bg-primary rounded-full transition-all duration-150"
+                      style={{ width: `${((dataMultiplier - 0.5) / 2.5) * 100}%` }}
+                    />
+                  </div>
+                  <button
+                    disabled={dataMultiplier >= 3.0}
+                    onClick={() => setDataMultiplier(prev => Math.min(3.0, prev + 0.5))}
+                    className="w-7 h-7 rounded-lg border border-border flex items-center justify-center font-bold text-sm bg-card active:scale-95 transition-all text-text-main hover:border-primary/30 disabled:opacity-50 cursor-pointer"
+                  >
+                    +
+                  </button>
+                  <button
+                    onClick={() => setDataMultiplier(1.0)}
+                    className="p-1.5 rounded-lg border border-border bg-card text-text-muted hover:text-text-main transition-colors cursor-pointer"
+                    title="Reset to 1.0x"
+                  >
+                    <RefreshCw size={13} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
