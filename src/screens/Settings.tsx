@@ -25,11 +25,21 @@ export const Settings: React.FC = () => {
             T
           </div>
         )}
-        <div>
+        <div className="flex-1">
           <h3 className="text-base font-semibold">{githubUser ? (githubUser.name || githubUser.login) : 'Tanvir Ahmed'}</h3>
-          <div className="bg-primary/15 text-primary text-[10px] font-semibold px-2 py-1 rounded-full inline-block mt-1">
-            Pro Plan
-          </div>
+          {githubUser ? (
+            <div className="text-xs text-text-muted mt-1 space-y-1">
+              {githubUser.bio && <div>{githubUser.bio}</div>}
+              <div className="flex gap-3">
+                <span><strong className="text-text-main">{githubUser.followers}</strong> followers</span>
+                <span><strong className="text-text-main">{githubUser.following}</strong> following</span>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-primary/15 text-primary text-[10px] font-semibold px-2 py-1 rounded-full inline-block mt-1">
+              Pro Plan
+            </div>
+          )}
         </div>
       </div>
 

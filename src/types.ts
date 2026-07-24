@@ -6,6 +6,7 @@ export interface GitHubUser {
   name: string;
   followers: number;
   following: number;
+  bio?: string;
 }
 
 export interface GitHubRepo {
