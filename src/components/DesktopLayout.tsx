@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { CommitList } from './commit/CommitList';
 import { DiffViewer } from './commit/DiffViewer';
 import { CiCdPipelineFlow } from './commit/CiCdStatus';
+import { PRsScreen } from '../screens/repodetails/PRsScreen';
 import { 
   Search, Lock, Globe, Square, FolderGit2, Folder, GitBranch, 
   GitPullRequest, GitCommit, Check, Key, ExternalLink, ShieldAlert, 
@@ -953,7 +954,11 @@ const DesktopRepoWorkspace: React.FC = () => {
         <div className="flex-1 min-h-0 flex flex-col">
           {currentScreen === 'files' && <DesktopFilesView />}
           {currentScreen === 'commits' && <DesktopCommitsView />}
-          {currentScreen === 'prs' && <DesktopPRsView />}
+          {currentScreen === 'prs' && (
+            <div className="flex-1 overflow-y-auto pr-1 no-scrollbar">
+              <PRsScreen />
+            </div>
+          )}
           {currentScreen === 'branches' && <DesktopBranchesView />}
           {currentScreen === 'insights' && <DesktopInsightsView />}
         </div>
@@ -1443,109 +1448,6 @@ const DesktopCommitsView: React.FC = () => {
             <span className="font-semibold text-sm text-text-main">No Commit Selected</span>
             <span className="text-xs text-text-muted mt-1">Select a commit from the version timeline pane to inspect.</span>
           </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-/**
- * 3.3 DESKTOP PULL REQUESTS VIEW
- */
-const DesktopPRsView: React.FC = () => {
-  const { activePRs, openModal } = useAppContext();
-  const [activeTab, setActiveTab] = useState<'Open' | 'Merged' | 'Closed'>('Open');
-
-  const filteredPRs = activePRs.filter(pr => {
-    if (activeTab === 'Open') return pr.status === 'Open' || pr.status === 'Review Req.' || pr.status === 'Draft' || pr.status === 'Approved';
-    if (activeTab === 'Merged') return pr.status === 'Merged';
-    if (activeTab === 'Closed') return pr.status === 'Closed';
-    return true;
-  });
-
-  return (
-    <div className="space-y-5 flex-1 flex flex-col min-h-0">
-      {/* Top action header bar */}
-      <div className="flex justify-between items-center shrink-0">
-        {/* Navigation tabs */}
-        <div className="flex border-b border-border w-fit">
-          {(['Open', 'Merged', 'Closed'] as const).map(tab => {
-            const count = activePRs.filter(pr => {
-              if (tab === 'Open') return pr.status === 'Open' || pr.status === 'Review Req.' || pr.status === 'Draft' || pr.status === 'Approved';
-              if (tab === 'Merged') return pr.status === 'Merged';
-              if (tab === 'Closed') return pr.status === 'Closed';
-              return false;
-            }).length;
-
-            return (
-              <button 
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-5 py-3.5 text-xs font-bold relative transition-colors cursor-pointer ${activeTab === tab ? 'text-primary' : 'text-text-muted hover:text-text-main'}`}
-              >
-                <span>{tab} Pull Requests</span>
-                <span className={`px-1.5 py-0.5 rounded-full text-[10px] ml-1.5 font-bold ${activeTab === tab ? 'bg-primary/20 text-primary border border-primary/25' : 'bg-hover/50 text-text-muted border border-border'}`}>
-                  {count}
-                </span>
-                {activeTab === tab && <div className="absolute bottom-0 left-0 w-full h-[2px] bg-primary rounded-t" />}
-              </button>
-            );
-          })}
-        </div>
-
-        <button 
-          onClick={() => openModal('pr')}
-          className="bg-success hover:bg-success/80 text-white text-xs font-bold px-4 py-2.5 rounded-xl active:scale-95 transition-all shadow-sm shadow-success/15 cursor-pointer flex items-center gap-1.5"
-        >
-          <GitPullRequest size={14} />
-          <span>Open Pull Request</span>
-        </button>
-      </div>
-
-      {/* PR Card list */}
-      <div className="flex-1 overflow-y-auto space-y-4 pr-1">
-        {filteredPRs.length === 0 ? (
-          <div className="h-64 flex flex-col items-center justify-center text-center bg-card border border-border rounded-2xl">
-            <GitPullRequest size={32} className="text-text-muted mb-2" />
-            <span className="font-semibold text-xs text-text-main">No pull requests found</span>
-            <span className="text-[10px] text-text-muted mt-1">Open a pull request to review changes.</span>
-          </div>
-        ) : (
-          filteredPRs.map(pr => (
-            <div 
-              key={pr.id}
-              className="p-5 bg-card border border-border rounded-2xl flex justify-between items-center hover:border-primary/35 transition-colors gap-4"
-            >
-              <div className="flex items-start gap-4 truncate">
-                <GitPullRequest size={18} className={`${pr.status === 'Open' || pr.status === 'Approved' ? 'text-success' : pr.status === 'Merged' ? 'text-purple-500' : 'text-text-muted'} shrink-0 mt-0.5`} />
-                <div className="truncate">
-                  <h3 className="text-sm font-bold text-text-main leading-snug truncate hover:text-primary cursor-pointer transition-colors">
-                    {pr.title}
-                  </h3>
-                  <div className="flex items-center gap-2 text-[11px] text-text-muted mt-1.5">
-                    <span>#{pr.id} opened</span>
-                    <span>{pr.time}</span>
-                    <span>by</span>
-                    <span className="font-semibold text-text-main">{pr.author}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4 shrink-0">
-                {pr.avatar ? (
-                  <img src={pr.avatar} className="w-5.5 h-5.5 rounded-full border border-border" alt="" />
-                ) : (
-                  <div className="w-5.5 h-5.5 rounded-full bg-primary/20 text-[9px] font-bold flex items-center justify-center text-primary border border-primary/10">
-                    {pr.author.substring(0, 2).toUpperCase()}
-                  </div>
-                )}
-
-                <span className={`text-[10px] px-3 py-1 rounded-full border font-bold uppercase tracking-wider ${pr.status === 'Approved' || pr.status === 'Open' ? 'bg-success/15 border-success/30 text-success' : pr.status === 'Merged' ? 'bg-primary/15 border-primary/30 text-primary' : 'bg-hover text-text-muted border-border'}`}>
-                  {pr.status}
-                </span>
-              </div>
-            </div>
-          ))
         )}
       </div>
     </div>
