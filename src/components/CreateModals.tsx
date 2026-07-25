@@ -309,7 +309,7 @@ const CommitForm: React.FC<{ onSubmit: (data: any) => void }> = ({ onSubmit }) =
   const [filePath, setFilePath] = useState('README.md');
   const [fileContent, setFileContent] = useState('');
 
-  const isRealGitHub = githubToken && currentRepoOwner && currentRepoOwner !== 'mock';
+  const isRealGitHub = githubToken && currentRepoOwner;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

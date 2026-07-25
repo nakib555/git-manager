@@ -267,7 +267,28 @@ const DesktopDashboard: React.FC<{ globalSearch: string }> = ({ globalSearch }) 
   const [showPRsLine, setShowPRsLine] = useState(true);
   const [dataMultiplier, setDataMultiplier] = useState(1.0);
   const [showGrid, setShowGrid] = useState(true);
-  const [isSlidersOpen, setIsSlidersOpen] = useState(false);
+    const [isSlidersOpen, setIsSlidersOpen] = useState(false);
+
+  const [actualEvents, setActualEvents] = useState<any[]>([]);
+  const [isLoadingEvents, setIsLoadingEvents] = useState(false);
+
+  useEffect(() => {
+    if (githubUser && githubToken) {
+      setIsLoadingEvents(true);
+      const headers = {
+        Authorization: githubToken.startsWith('gh') ? `Bearer ${githubToken}` : `token ${githubToken}`
+      };
+      fetch(`https://api.github.com/users/${githubUser.login}/events?per_page=100`, { headers })
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            setActualEvents(data);
+          }
+        })
+        .catch(console.error)
+        .finally(() => setIsLoadingEvents(false));
+    }
+  }, [githubUser, githubToken]);
 
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
@@ -297,42 +318,94 @@ const DesktopDashboard: React.FC<{ globalSearch: string }> = ({ globalSearch }) 
 
   // Generate dynamic chart data
   const getChartData = () => {
-    const multiplier = (displayCommits > 0 ? displayCommits : (githubRepos.length > 0 ? 12 : 0)) * dataMultiplier;
+    const now = new Date();
     let labels: string[] = [];
-    let baseDistribution: number[] = [];
+    let commitsData: number[] = [];
+    let prsData: number[] = [];
 
     switch (timeframe) {
-      case 'Day':
+      case 'Day': {
         labels = ['12am', '4am', '8am', '12pm', '4pm', '8pm'];
-        baseDistribution = [0.05, 0.02, 0.1, 0.3, 0.4, 0.13];
+        commitsData = [0, 0, 0, 0, 0, 0];
+        prsData = [0, 0, 0, 0, 0, 0];
+        
+        actualEvents.forEach(ev => {
+          const d = new Date(ev.created_at);
+          if (now.getTime() - d.getTime() <= 24 * 60 * 60 * 1000) {
+             const hour = d.getHours();
+             let bucket = Math.floor(hour / 4);
+             if (ev.type === 'PushEvent') commitsData[bucket] += (ev.payload?.commits?.length || 1);
+             if (ev.type === 'PullRequestEvent') prsData[bucket]++;
+          }
+        });
         break;
-      case 'Week':
-        labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-        baseDistribution = [0.10, 0.25, 0.15, 0.30, 0.12, 0.05, 0.03];
+      }
+      case 'Week': {
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        labels = [];
+        commitsData = [0, 0, 0, 0, 0, 0, 0];
+        prsData = [0, 0, 0, 0, 0, 0, 0];
+        
+        for(let i=6; i>=0; i--) {
+          const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+          labels.push(dayNames[d.getDay()]);
+        }
+        
+        actualEvents.forEach(ev => {
+          const d = new Date(ev.created_at);
+          const daysAgo = Math.floor((now.getTime() - d.getTime()) / (24 * 60 * 60 * 1000));
+          if (daysAgo < 7 && daysAgo >= 0) {
+            const bucket = 6 - daysAgo;
+            if (ev.type === 'PushEvent') commitsData[bucket] += (ev.payload?.commits?.length || 1);
+            if (ev.type === 'PullRequestEvent') prsData[bucket]++;
+          }
+        });
         break;
-      case 'Month':
+      }
+      case 'Month': {
         labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
-        baseDistribution = [0.2, 0.3, 0.25, 0.25];
+        commitsData = [0, 0, 0, 0];
+        prsData = [0, 0, 0, 0];
+        actualEvents.forEach(ev => {
+          const d = new Date(ev.created_at);
+          const daysAgo = Math.floor((now.getTime() - d.getTime()) / (24 * 60 * 60 * 1000));
+          if (daysAgo < 28 && daysAgo >= 0) {
+            const bucket = 3 - Math.floor(daysAgo / 7);
+            if (ev.type === 'PushEvent') commitsData[bucket] += (ev.payload?.commits?.length || 1);
+            if (ev.type === 'PullRequestEvent') prsData[bucket]++;
+          }
+        });
         break;
-      case 'Year':
-        labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        baseDistribution = [0.05, 0.08, 0.1, 0.07, 0.12, 0.08, 0.05, 0.04, 0.1, 0.15, 0.1, 0.06];
+      }
+      case 'Year': {
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        labels = [];
+        commitsData = new Array(12).fill(0);
+        prsData = new Array(12).fill(0);
+        
+        for(let i=11; i>=0; i--) {
+           const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+           labels.push(monthNames[d.getMonth()]);
+        }
+        
+        actualEvents.forEach(ev => {
+          const d = new Date(ev.created_at);
+          const monthsAgo = (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth());
+          if (monthsAgo < 12 && monthsAgo >= 0) {
+             const bucket = 11 - monthsAgo;
+             if (ev.type === 'PushEvent') commitsData[bucket] += (ev.payload?.commits?.length || 1);
+             if (ev.type === 'PullRequestEvent') prsData[bucket]++;
+          }
+        });
         break;
+      }
     }
     
-    return labels.map((label, idx) => {
-      const commitsOnThisLabel = multiplier > 0 
-        ? Math.max(1, Math.round(multiplier * baseDistribution[idx]))
-        : 0;
-      const secondaryActivity = multiplier > 0
-        ? Math.max(0, Math.round(commitsOnThisLabel * 0.4))
-        : 0;
-      return {
-        name: label,
-        commits: commitsOnThisLabel,
-        prs: secondaryActivity
-      };
-    });
+    return labels.map((label, idx) => ({
+      name: label,
+      commits: commitsData[idx] * dataMultiplier,
+      prs: showPRsLine ? prsData[idx] * dataMultiplier : 0
+    }));
   };
 
   const chartData = getChartData();
@@ -415,7 +488,7 @@ const DesktopDashboard: React.FC<{ globalSearch: string }> = ({ globalSearch }) 
             </span>
           </div>
           <span className="block text-[10px] text-text-muted font-semibold mt-4">
-            {githubUser ? '✓ Verified Account Session' : '✗ Local Mock Engine'}
+            {githubUser ? '✓ Verified Account Session' : '✗ Offline Mode'}
           </span>
         </div>
       </div>
@@ -492,10 +565,10 @@ const DesktopDashboard: React.FC<{ globalSearch: string }> = ({ globalSearch }) 
                   axisLine={false} 
                   dx={-8}
                 />
-                <Tooltip 
+                <Tooltip cursor={false} 
                   contentStyle={{ 
                     backgroundColor: 'var(--card)', 
-                    borderColor: 'var(--border)', 
+                    border: 'none', 
                     borderRadius: '12px', 
                     fontSize: '11px',
                     color: 'var(--text-main)',
@@ -823,7 +896,7 @@ const DesktopRepositories: React.FC<{ globalSearch: string }> = ({ globalSearch 
                 <div className="border border-border p-4 rounded-xl bg-hover/10 space-y-1">
                   <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider block">Repository Directory Owner</span>
                   <span className="text-xs font-bold text-text-main flex items-center gap-2">
-                    <User size={12} className="text-purple-500" /> {selectedRepo.owner || 'Offline Context Mock'}
+                    <User size={12} className="text-purple-500" /> {selectedRepo.owner || 'Offline Mode'}
                   </span>
                 </div>
               </div>
@@ -889,19 +962,89 @@ const DesktopRepoWorkspace: React.FC = () => {
 /**
  * 3.1 DESKTOP CODE FILES EXPLORER VIEW (IDE SIDEBAR + CODE PREVIEW PANEL)
  */
+
+const buildTree = (files: any[]) => {
+  const root: any[] = [];
+  
+  files.forEach(file => {
+    const parts = file.name.split('/');
+    let currentLevel = root;
+    
+    parts.forEach((part: string, index: number) => {
+      const isLast = index === parts.length - 1;
+      const path = parts.slice(0, index + 1).join('/');
+      
+      let existing = currentLevel.find(item => item.name === part);
+      if (!existing) {
+        existing = {
+          name: part,
+          path: path,
+          type: isLast ? file.type : 'dir',
+          children: isLast && file.type === 'file' ? undefined : []
+        };
+        currentLevel.push(existing);
+      }
+      if (existing.children) {
+        currentLevel = existing.children;
+      }
+    });
+  });
+  
+  const sortTree = (nodes: any[]) => {
+    nodes.sort((a, b) => {
+      if (a.type === 'dir' && b.type !== 'dir') return -1;
+      if (a.type !== 'dir' && b.type === 'dir') return 1;
+      return a.name.localeCompare(b.name);
+    });
+    nodes.forEach(node => {
+      if (node.children) sortTree(node.children);
+    });
+  };
+  
+  sortTree(root);
+  return root;
+};
+
+const FileTreeItem = ({ item, depth, activeFileName, onSelect }: any) => {
+  const [isOpen, setIsOpen] = useState(depth === 0);
+  const isSelected = activeFileName === item.path;
+  const isDir = item.type === 'dir';
+  const Icon = isDir ? Folder : (item.name.endsWith('.md') ? FileText : FileCode);
+  
+  return (
+    <div className="select-none">
+      <div 
+        onClick={() => {
+          if (isDir) setIsOpen(!isOpen);
+          else onSelect(item.path);
+        }}
+        className={`flex items-center gap-1.5 py-1.5 pr-2 rounded-lg cursor-pointer transition-all text-xs font-semibold ${isSelected ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text-main hover:bg-hover/20'}`}
+        style={{ paddingLeft: `${depth * 12 + 8}px` }}
+      >
+        <div className="flex items-center justify-center w-4 h-4 shrink-0 text-text-muted/70">
+          {isDir && (
+            isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />
+          )}
+        </div>
+        <Icon size={14} className={isDir ? 'text-info' : 'text-primary'} />
+        <span className="truncate">{item.name}</span>
+      </div>
+      {isDir && isOpen && item.children && (
+        <div>
+          {item.children.map((child: any) => (
+            <FileTreeItem key={child.path} item={child} depth={depth + 1} activeFileName={activeFileName} onSelect={onSelect} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const DesktopFilesView: React.FC = () => {
   const { activeFiles, currentRepo, githubToken, currentRepoOwner, showToast } = useAppContext();
   const [selectedFile, setSelectedFile] = useState<string>('');
   const [fileContent, setFileContent] = useState<string>('');
   const [isLoadingFile, setIsLoadingFile] = useState<boolean>(false);
-
-  const getSimulatedCode = (fileName: string) => {
-    if (!fileName) return '// Select a file from sidebar to view source code.';
-    if (fileName.toLowerCase().endsWith('.md')) {
-      return `# ${currentRepo || 'Repository Documentation'}\n\nThis is a simulation markdown file. Open local/remote resources on your workspace to review actual files.`;
-    }
-    return `// Code source of: ${fileName}\n\nexport function initWorkstation() {\n  console.log("Git Manager Desktop System Booting...");\n  return {\n    status: 'Ready',\n    context: '${currentRepo || 'master'}'\n  };\n}`;
-  };
 
   const filesToDisplay = activeFiles;
   const activeFileName = selectedFile || filesToDisplay[0]?.name || '';
@@ -910,7 +1053,7 @@ const DesktopFilesView: React.FC = () => {
     const fileName = selectedFile || filesToDisplay[0]?.name;
     if (!fileName) return;
 
-    if (githubToken && currentRepoOwner && currentRepoOwner !== 'mock') {
+    if (githubToken && currentRepoOwner) {
       const fetchFileContent = async () => {
         setIsLoadingFile(true);
         try {
@@ -942,7 +1085,7 @@ const DesktopFilesView: React.FC = () => {
       };
       fetchFileContent();
     } else {
-      setFileContent(getSimulatedCode(fileName));
+      setFileContent('// Please connect your GitHub account to fetch file content.');
     }
   }, [selectedFile, filesToDisplay, githubToken, currentRepo, currentRepoOwner]);
 
@@ -962,23 +1105,10 @@ const DesktopFilesView: React.FC = () => {
       <div className="w-80 bg-card border border-border rounded-2xl p-4 flex flex-col h-full shrink-0 min-h-0">
         <span className="block text-[10px] font-bold text-text-muted uppercase tracking-widest mb-4 px-1">WORKSPACE DIRECTORY</span>
         
-        <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 no-scrollbar">
-          {filesToDisplay.map(file => {
-            const isSelected = activeFileName === file.name;
-            const Icon = file.type === 'dir' ? Folder : file.name.endsWith('.md') ? FileText : FileCode;
-            return (
-              <div 
-                key={file.name}
-                onClick={() => {
-                  if (file.type === 'file') setSelectedFile(file.name);
-                }}
-                className={`flex items-center gap-2.5 p-2.5 rounded-xl cursor-pointer border transition-all text-xs font-semibold ${isSelected ? 'bg-primary/10 border-primary/45 text-primary' : 'border-transparent text-text-muted hover:text-text-main hover:bg-hover/20'}`}
-              >
-                <Icon size={14} className={file.type === 'dir' ? 'text-info' : 'text-primary'} />
-                <span className="truncate">{file.name}</span>
-              </div>
-            );
-          })}
+        <div className="flex-1 overflow-y-auto pr-1 no-scrollbar space-y-0.5">
+          {buildTree(filesToDisplay).map(item => (
+            <FileTreeItem key={item.path} item={item} depth={0} activeFileName={activeFileName} onSelect={setSelectedFile} />
+          ))}
         </div>
       </div>
 
@@ -1029,12 +1159,15 @@ const DesktopFilesView: React.FC = () => {
  */
 const DesktopCommitsView: React.FC = () => {
   const { 
+    githubToken, currentRepoOwner, currentRepo, activeFiles,
     activeCommits, openModal, deleteCommit, undoLatestCommit, 
     amendLatestCommit, resetBranchToCommit, createBranchAtCommit, 
     createTagAtCommit, showToast 
   } = useAppContext();
 
   const [selectedCommit, setSelectedCommit] = useState<any | null>(null);
+  const [commitDetailData, setCommitDetailData] = useState<any>(null);
+  const [isLoadingCommitDetail, setIsLoadingCommitDetail] = useState<boolean>(false);
   const [showAmend, setShowAmend] = useState(false);
   const [amendMsg, setAmendMsg] = useState('');
   const [newBranchName, setNewBranchName] = useState('');
@@ -1055,6 +1188,30 @@ const DesktopCommitsView: React.FC = () => {
       setSelectedCommit(activeCommits[0]);
     }
   }, [activeCommits, selectedCommit]);
+
+  useEffect(() => {
+    if (!selectedCommit) {
+      setCommitDetailData(null);
+      return;
+    }
+    const sha = selectedCommit.fullHash || selectedCommit.hash;
+    if (githubToken && currentRepoOwner && sha && currentRepo) {
+      setIsLoadingCommitDetail(true);
+      fetch(`https://api.github.com/repos/${currentRepoOwner}/${currentRepo}/commits/${sha}`, {
+        headers: { Authorization: `Bearer ${githubToken}` }
+      })
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data) {
+            setCommitDetailData(data);
+          }
+        })
+        .catch(err => console.error("Error fetching commit details:", err))
+        .finally(() => setIsLoadingCommitDetail(false));
+    } else {
+      setCommitDetailData(null);
+    }
+  }, [selectedCommit?.hash, selectedCommit?.fullHash, githubToken, currentRepoOwner, currentRepo]);
 
   const commitToInspect = activeCommits.find(c => c.hash === selectedCommit?.hash) || activeCommits[0];
 
@@ -1263,22 +1420,44 @@ const DesktopCommitsView: React.FC = () => {
               </AnimatePresence>
             </div>
 
-            {/* Simulated Git Diff Visualizer Panel */}
-            <div className="border border-border rounded-xl overflow-hidden">
+            {/* Diff Visualizer Panel */}
+            <div className="border border-border rounded-xl overflow-hidden flex flex-col">
               <div className="px-4 py-2.5 bg-hover/10 border-b border-border text-[10px] font-bold text-text-muted flex items-center justify-between">
-                <span>SIMULATED DIFF PREVIEW</span>
-                <span className="font-mono text-primary text-[9px] font-semibold">diff --git a/README.md b/README.md</span>
+                <span>DIFF PREVIEW</span>
               </div>
-              <div className="p-4 bg-main font-mono text-[11px] leading-6 space-y-1">
-                <div className="text-text-muted">@@ -12,4 +12,11 @@</div>
-                <div className="bg-danger/10 text-danger pl-2">- const server = initMockServer();</div>
-                <div className="bg-danger/10 text-danger pl-2">- server.listen();</div>
-                <div className="bg-success/10 text-success pl-2">+ const workstation = initDesktopLayout();</div>
-                <div className="bg-success/10 text-success pl-2">{"+ workstation.configure({"}</div>
-                <div className="bg-success/10 text-success pl-2">{"+   separations: true,"}</div>
-                <div className="bg-success/10 text-success pl-2">{"+   theme: 'premium_cool_slate'"}</div>
-                <div className="bg-success/10 text-success pl-2">{"+ });"}</div>
-                <div className="bg-success/10 text-success pl-2">+ console.log("System booted perfectly.");</div>
+              <div className="p-4 bg-main font-mono text-[11px] leading-6 space-y-4 max-h-[400px] overflow-y-auto">
+                {commitDetailData?.files && commitDetailData.files.length > 0 ? (
+                  commitDetailData.files.map((file: any, fIdx: number) => (
+                    <div key={fIdx} className="mb-4">
+                      <div className="text-text-muted border-b border-border/50 pb-1 mb-2 font-bold">diff --git a/{file.filename} b/{file.filename}</div>
+                      {file.patch ? (
+                        file.patch.split('\n').map((line: string, lIdx: number) => {
+                          if (line.startsWith('+')) {
+                            return <div key={lIdx} className="bg-success/10 text-success pl-2.5 py-0.5 whitespace-pre-wrap border-l-2 border-success/60">{line}</div>;
+                          } else if (line.startsWith('-')) {
+                            return <div key={lIdx} className="bg-danger/10 text-danger pl-2.5 py-0.5 whitespace-pre-wrap">{line}</div>;
+                          } else if (line.startsWith('@@')) {
+                            return <div key={lIdx} className="text-info font-bold my-1">{line}</div>;
+                          }
+                          return <div key={lIdx} className="text-text-main/80 pl-2 whitespace-pre-wrap">{line}</div>;
+                        })
+                      ) : (
+                        <div className="text-text-muted italic pl-2">Binary or empty file change.</div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="space-y-1">
+                    <div className="text-text-muted border-b border-border pb-2 mb-3">diff --git a/commit-{commitToInspect.hash} b/commit-{commitToInspect.hash}</div>
+                    <div className="text-text-main/80 font-bold mb-1">Commit Message: "{commitToInspect.msg}"</div>
+                    <div className="bg-success/10 text-success pl-2.5 py-0.5 whitespace-pre border-l-4 border-success/60">
+                      + Author: {commitToInspect.author}
+                    </div>
+                    <div className="bg-success/10 text-success pl-2.5 py-0.5 whitespace-pre border-l-4 border-success/60">
+                      + Changes: {commitDetailData?.stats?.additions ?? commitToInspect.add} insertions, {commitDetailData?.stats?.deletions ?? commitToInspect.del} deletions
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1522,9 +1701,21 @@ const DesktopInsightsView: React.FC = () => {
   const finalTotal = displayPie.reduce((acc, curr) => acc + curr.value, 0) || 1;
 
   const chartData = commitCount > 0 ? [
-    { name: 'Commits', uv: commitCount }
+    { name: 'Mon', uv: Math.max(1, Math.floor(commitCount * 0.1)) },
+    { name: 'Tue', uv: Math.max(1, Math.floor(commitCount * 0.25)) },
+    { name: 'Wed', uv: Math.max(1, Math.floor(commitCount * 0.15)) },
+    { name: 'Thu', uv: Math.max(1, Math.floor(commitCount * 0.3)) },
+    { name: 'Fri', uv: Math.max(0, Math.floor(commitCount * 0.12)) },
+    { name: 'Sat', uv: Math.max(0, Math.floor(commitCount * 0.05)) },
+    { name: 'Sun', uv: Math.max(0, Math.floor(commitCount * 0.03)) }
   ] : [
-    { name: 'No Data', uv: 0 }
+    { name: 'Mon', uv: 0 },
+    { name: 'Tue', uv: 0 },
+    { name: 'Wed', uv: 0 },
+    { name: 'Thu', uv: 0 },
+    { name: 'Fri', uv: 0 },
+    { name: 'Sat', uv: 0 },
+    { name: 'Sun', uv: 0 }
   ];
 
   return (
@@ -1560,10 +1751,10 @@ const DesktopInsightsView: React.FC = () => {
                   <PieChart>
                     <Pie data={displayPie} innerRadius={35} outerRadius={60} paddingAngle={2} dataKey="value" stroke="none">
                       {displayPie.map((entry, idx) => (
-                        <Cell key={`cell-${idx}`} fill={entry.color} />
+                        <Cell key={`cell-${idx}`} fill={entry.color} stroke="none" />
                       ))}
                     </Pie>
-                    <Tooltip contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', fontSize: '11px', color: 'var(--text-main)' }} />
+                    <Tooltip cursor={false} contentStyle={{ backgroundColor: 'var(--card)', border: 'none', borderRadius: '12px', fontSize: '11px', color: 'var(--text-main)' }} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>

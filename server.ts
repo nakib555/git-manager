@@ -2,11 +2,48 @@ import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 
+// Set to hold SSE clients
+const clients = new Set<express.Response>();
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use(express.json());
+  // Use JSON parsing with a larger limit for GitHub webhook payloads
+  app.use(express.json({ limit: '50mb' }));
+
+  // SSE endpoint for real-time updates
+  app.get('/api/events', (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders(); // flush the headers to establish SSE
+
+    // Tell the client we are connected
+    res.write('event: connected\ndata: {}\n\n');
+
+    clients.add(res);
+
+    req.on('close', () => {
+      clients.delete(res);
+    });
+  });
+
+  // Webhook receiver endpoint
+  app.post('/api/webhooks/github', (req, res) => {
+    const event = req.headers['x-github-event'];
+    const payload = req.body;
+
+    console.log(`Received GitHub Webhook: ${event}`);
+
+    // Broadcast the event to all connected SSE clients
+    const message = JSON.stringify({ event, payload });
+    for (const client of clients) {
+      client.write(`event: github\ndata: ${message}\n\n`);
+    }
+
+    res.status(200).send('OK');
+  });
 
   // OAuth endpoints
   app.get('/api/auth/url', (req, res) => {

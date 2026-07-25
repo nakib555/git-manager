@@ -104,3 +104,10 @@ body {
   background-color: #ffffff !important;
   border: 1px solid #d4d4d8 !important;
 }
+
+.recharts-wrapper, .recharts-surface {
+  outline: none !important;
+}
+.recharts-wrapper *:focus, .recharts-surface *:focus {
+  outline: none !important;
+}

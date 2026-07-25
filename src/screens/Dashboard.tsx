@@ -217,10 +217,10 @@ export const Dashboard: React.FC = () => {
                 axisLine={false} 
                 dx={-8}
               />
-              <Tooltip 
+              <Tooltip cursor={false} 
                 contentStyle={{ 
                   backgroundColor: 'var(--card)', 
-                  borderColor: 'var(--border)', 
+                  border: 'none', 
                   borderRadius: '12px', 
                   fontSize: '11px',
                   color: 'var(--text-main)',

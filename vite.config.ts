@@ -20,22 +20,19 @@ export default defineConfig(() => {
           short_name: 'GitManager',
           description: 'Git Manager Desktop System Workstation',
           theme_color: '#1a1a2e',
+          background_color: '#1a1a2e',
           icons: [
             {
               src: 'git-manager-logo.png',
               sizes: '192x192',
-              type: 'image/png'
-            },
-            {
-              src: 'git-manager-logo.png',
-              sizes: '512x512',
-              type: 'image/png'
+              type: 'image/png',
+              purpose: 'any'
             },
             {
               src: 'git-manager-logo.png',
               sizes: '512x512',
               type: 'image/png',
-              purpose: 'any maskable'
+              purpose: 'any'
             }
           ]
         }
