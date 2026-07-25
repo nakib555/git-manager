@@ -1154,12 +1154,16 @@ const CommitsScreen = () => {
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/60 backdrop-blur-md z-[995] flex items-center justify-center p-4"
           >
+            <div 
+              className="absolute inset-0 z-0 cursor-pointer" 
+              onClick={() => setShowDetailsModal(false)}
+            />
             <motion.div 
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl max-h-[85vh] overflow-y-auto no-scrollbar"
+              className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl max-h-[85vh] overflow-y-auto no-scrollbar relative z-10"
             >
               <div className="flex justify-between items-start mb-5">
                 <div className="flex items-center gap-3">
@@ -1230,12 +1234,16 @@ const CommitsScreen = () => {
               exit={{ opacity: 0 }}
               className="fixed inset-0 bg-black/60 backdrop-blur-md z-[10000] flex flex-col justify-end p-0"
             >
+              <div 
+                className="absolute inset-0 z-0 cursor-pointer" 
+                onClick={() => setShowDetailsModal(false)}
+              />
               <motion.div 
                 initial={{ y: "100%" }}
                 animate={{ y: 0 }}
                 exit={{ y: "100%" }}
                 transition={{ type: "spring", damping: 24, stiffness: 200 }}
-                className="bg-card w-full max-w-md mx-auto h-[92vh] h-[92dvh] rounded-t-[24px] border-t border-x border-border flex flex-col shadow-[0_12px_40px_rgba(0,0,0,0.3)] overflow-hidden"
+                className="bg-card w-full max-w-md mx-auto h-[92vh] h-[92dvh] rounded-t-[24px] border-t border-x border-border flex flex-col shadow-[0_12px_40px_rgba(0,0,0,0.3)] overflow-hidden relative z-10"
               >
                 {/* Drag Handle */}
                 <div className="flex justify-center pt-3 pb-2 shrink-0 bg-card">
@@ -1967,7 +1975,8 @@ const CommitsScreen = () => {
       {/* Amend Latest Commit Modal (Supports Edit Message, Content, Both) */}
       {showAmendModal && selectedCommit && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-[995] flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl animate-scale-up max-h-[85vh] overflow-y-auto no-scrollbar">
+          <div className="absolute inset-0 cursor-pointer" onClick={() => setShowAmendModal(false)} />
+          <div className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl animate-scale-up max-h-[85vh] overflow-y-auto no-scrollbar relative z-10">
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-2.5">
                 <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
@@ -2074,7 +2083,8 @@ const CommitsScreen = () => {
       {/* Delete Latest Commit Destructive Warning Confirmation Modal */}
       {showDeleteConfirm && selectedCommit && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-[995] flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl animate-scale-up max-h-[85vh] overflow-y-auto no-scrollbar">
+          <div className="absolute inset-0 cursor-pointer" onClick={() => setShowDeleteConfirm(false)} />
+          <div className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl animate-scale-up max-h-[85vh] overflow-y-auto no-scrollbar relative z-10">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 rounded-full bg-danger/10 text-danger flex items-center justify-center shrink-0">
                 <AlertTriangle size={24} />
@@ -2110,7 +2120,8 @@ const CommitsScreen = () => {
       {/* Undo Latest Commit Warning Confirmation Modal */}
       {showUndoConfirm && selectedCommit && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-[995] flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl animate-scale-up max-h-[85vh] overflow-y-auto no-scrollbar">
+          <div className="absolute inset-0 cursor-pointer" onClick={() => setShowUndoConfirm(false)} />
+          <div className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl animate-scale-up max-h-[85vh] overflow-y-auto no-scrollbar relative z-10">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 rounded-full bg-warning/10 text-warning flex items-center justify-center shrink-0">
                 <Undo size={22} />
@@ -2146,7 +2157,8 @@ const CommitsScreen = () => {
       {/* Create Branch at Commit Modal */}
       {showBranchModal && selectedCommit && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-[995] flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl animate-scale-up max-h-[85vh] overflow-y-auto no-scrollbar">
+          <div className="absolute inset-0 cursor-pointer" onClick={() => setShowBranchModal(false)} />
+          <div className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl animate-scale-up max-h-[85vh] overflow-y-auto no-scrollbar relative z-10">
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-2.5">
                 <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center">
@@ -2200,7 +2212,8 @@ const CommitsScreen = () => {
       {/* Create Tag at Commit Modal */}
       {showTagModal && selectedCommit && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-[995] flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl animate-scale-up max-h-[85vh] overflow-y-auto no-scrollbar">
+          <div className="absolute inset-0 cursor-pointer" onClick={() => setShowTagModal(false)} />
+          <div className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl animate-scale-up max-h-[85vh] overflow-y-auto no-scrollbar relative z-10">
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-2.5">
                 <div className="w-10 h-10 rounded-xl bg-pink-500/10 text-pink-500 flex items-center justify-center">
@@ -2254,7 +2267,8 @@ const CommitsScreen = () => {
       {/* Changed Files Explorer Modal */}
       {showFilesModal && selectedCommit && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-[995] flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl animate-scale-up max-h-[85vh] overflow-y-auto no-scrollbar">
+          <div className="absolute inset-0 cursor-pointer" onClick={() => setShowFilesModal(false)} />
+          <div className="bg-card rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl animate-scale-up max-h-[85vh] overflow-y-auto no-scrollbar relative z-10">
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-2.5">
                 <div className="w-10 h-10 rounded-xl bg-info/10 text-info flex items-center justify-center">
@@ -2308,7 +2322,8 @@ const CommitsScreen = () => {
       {/* Diff Visualizer Modal */}
       {showDiffModal && selectedCommit && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-[995] flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-card rounded-2xl border border-border p-6 max-w-2xl w-full shadow-2xl animate-scale-up max-h-[85vh] flex flex-col">
+          <div className="absolute inset-0 cursor-pointer" onClick={() => setShowDiffModal(false)} />
+          <div className="bg-card rounded-2xl border border-border p-6 max-w-2xl w-full shadow-2xl animate-scale-up max-h-[85vh] flex flex-col relative z-10">
             <div className="flex justify-between items-start mb-4 shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="w-10 h-10 rounded-xl bg-success/10 text-success flex items-center justify-center">

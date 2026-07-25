@@ -126,6 +126,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         const errorData = await response.json().catch(() => ({}));
         console.error("Failed to get auth URL:", errorData);
         openModal("oauth_setup");
+        if (errorData.error && errorData.error.includes("GITHUB_CLIENT_ID")) {
+          throw new Error("GitHub OAuth is not configured yet. Opening fallback Personal Access Token (PAT) login...");
+        }
         throw new Error(errorData.error || "Failed to get auth URL");
       }
       const { url } = await response.json();

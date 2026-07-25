@@ -1,8 +1,60 @@
+// Store active SSE controllers
+const clients = new Set<ReadableStreamDefaultController>();
+
 export default {
   async fetch(request: Request, env: any, ctx: any) {
     const url = new URL(request.url);
 
     const path = url.pathname.replace(/\/$/, '');
+
+    // SSE endpoint for real-time updates
+    if (path === '/api/events') {
+      const stream = new ReadableStream({
+        start(controller) {
+          // Tell the client we are connected
+          controller.enqueue(new TextEncoder().encode('event: connected\ndata: {}\n\n'));
+          clients.add(controller);
+        },
+        cancel(controller) {
+          clients.delete(controller);
+        }
+      });
+
+      return new Response(stream, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+        }
+      });
+    }
+
+    // Webhook receiver endpoint
+    if (path === '/api/webhooks/github' && request.method === 'POST') {
+      const event = request.headers.get('x-github-event');
+      let payload: any;
+      try {
+        payload = await request.json();
+      } catch (e) {
+        payload = {};
+      }
+
+      console.log(`Received GitHub Webhook: ${event}`);
+
+      // Broadcast the event to all connected SSE clients
+      const message = JSON.stringify({ event, payload });
+      const data = new TextEncoder().encode(`event: github\ndata: ${message}\n\n`);
+
+      for (const client of clients) {
+        try {
+          client.enqueue(data);
+        } catch (e) {
+          clients.delete(client);
+        }
+      }
+
+      return new Response('OK', { status: 200 });
+    }
     
     if (path === '/api/auth/url') {
       if (!env.GITHUB_CLIENT_ID || !env.GITHUB_CLIENT_SECRET) {
@@ -108,6 +160,24 @@ export default {
 
     // Serve static assets for all other requests
     // (Requires wrangler.toml to have [assets] section)
-    return env.ASSETS.fetch(request);
+    try {
+      const response = await env.ASSETS.fetch(request);
+      
+      // If the asset was not found (404) and this is not a static file path (no extension)
+      // or if it returns 404, we fallback to index.html to allow client-side routing.
+      if (response.status === 404 && !url.pathname.includes('.')) {
+        const indexRequest = new Request(`${url.origin}/index.html`, request);
+        return await env.ASSETS.fetch(indexRequest);
+      }
+      return response;
+    } catch (err) {
+      // Direct fallback to index.html on any fetch errors for non-static assets
+      try {
+        const indexRequest = new Request(`${url.origin}/index.html`, request);
+        return await env.ASSETS.fetch(indexRequest);
+      } catch (innerErr) {
+        return new Response("Asset not found", { status: 404 });
+      }
+    }
   }
 };
