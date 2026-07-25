@@ -1,8 +1,7 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { useVirtualizer } from '@tanstack/react-virtual';
+import React, { useRef, useState, useEffect } from 'react';
 import { useCommits, CommitFilter } from '../../hooks/useCommits';
 import { CommitItem } from './CommitItem';
-import { Search, Loader2, RefreshCw, X, GitCommit } from 'lucide-react';
+import { Search, Loader2, RefreshCw, X, Filter, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import emptyStateImage from '../../assets/images/empty_commits_state_1784913881320.jpg';
 
@@ -13,85 +12,144 @@ export const CommitList = ({
   selectedCommitId,
   parentRef 
 }: any) => {
-  const [filters, setFilters] = useState<CommitFilter>({ query: '', branch: '', author: '' });
+  const [filters, setFilters] = useState<CommitFilter>({ query: '', branch: '', author: '', since: '', until: '', page: 1 });
   const [searchInput, setSearchInput] = useState('');
+  const [authorInput, setAuthorInput] = useState('');
+  const [branchInput, setBranchInput] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
 
-  // Debounce search input
+  // Debounce search inputs
   useEffect(() => {
     const handler = setTimeout(() => {
-      setFilters(prev => ({ ...prev, query: searchInput }));
-    }, 400);
+      setFilters(prev => ({ ...prev, query: searchInput, author: authorInput, branch: branchInput, page: 1 }));
+    }, 500);
     return () => clearTimeout(handler);
-  }, [searchInput]);
+  }, [searchInput, authorInput, branchInput]);
 
   const {
     data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
     isFetching,
     isLoading,
     isError,
     refetch,
   } = useCommits(filters);
 
-  const commits = data?.pages.flatMap((page) => page.items) || [];
+  const commits = data?.items || [];
+  const totalPages = data?.totalPages || 1;
+  const currentPage = filters.page;
   
   const scrollElementRef = useRef<HTMLDivElement>(null);
-  const resolvedParentRef = parentRef || scrollElementRef;
 
-  const rowVirtualizer = useVirtualizer({
-    count: hasNextPage ? commits.length + 1 : commits.length,
-    getScrollElement: () => {
-      if (typeof resolvedParentRef === 'function') return resolvedParentRef();
-      if (resolvedParentRef && 'current' in resolvedParentRef) return resolvedParentRef.current;
-      return resolvedParentRef;
-    },
-    estimateSize: () => isDesktop ? 90 : 130,
-    overscan: 10,
-  });
-
-  // Infinite scroll hook-up
-  const virtualItems = rowVirtualizer.getVirtualItems();
-  
+  // Preserve scroll position by scrolling to top of the list when page changes, 
+  // or keeping it in view. Since we replace the list, we can just scroll top.
   useEffect(() => {
-    const lastItem = virtualItems[virtualItems.length - 1];
-    if (!lastItem) return;
-    
-    if (
-      lastItem.index >= commits.length - 1 &&
-      hasNextPage &&
-      !isFetchingNextPage &&
-      !isFetching
-    ) {
-      fetchNextPage();
+    if (scrollElementRef.current) {
+      scrollElementRef.current.scrollTop = 0;
     }
-  }, [virtualItems, commits.length, hasNextPage, isFetchingNextPage, isFetching, fetchNextPage]);
+  }, [currentPage, commits]);
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setFilters(prev => ({ ...prev, page: newPage }));
+    }
+  };
 
   return (
     <div className={`flex flex-col ${parentRef ? '' : 'h-full overflow-hidden'}`}>
       {/* Search and Filters */}
-      <div className={`shrink-0 flex gap-2 ${isDesktop ? 'mb-4' : 'mb-3'}`}>
-        <div className="relative flex-1">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search size={14} className="text-text-muted" />
+      <div className={`shrink-0 flex flex-col gap-2 ${isDesktop ? 'mb-4' : 'mb-3'}`}>
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search size={14} className="text-text-muted" />
+            </div>
+            <input
+              type="text"
+              className="w-full bg-card border border-border text-text-main text-xs rounded-xl pl-9 pr-8 py-2.5 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-text-muted/60"
+              placeholder="Search by message or SHA..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
+            {searchInput && (
+              <button 
+                onClick={() => setSearchInput('')}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-text-muted hover:text-text-main"
+              >
+                <X size={14} />
+              </button>
+            )}
           </div>
-          <input
-            type="text"
-            className="w-full bg-card border border-border text-text-main text-xs rounded-xl pl-9 pr-8 py-2.5 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-text-muted/60"
-            placeholder="Search commits by message or hash..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-          />
-          {searchInput && (
-            <button 
-              onClick={() => setSearchInput('')}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-text-muted hover:text-text-main"
-            >
-              <X size={14} />
-            </button>
-          )}
+          <button 
+            onClick={() => setShowFilters(!showFilters)}
+            className={`px-3 py-2 border rounded-xl flex items-center justify-center transition-colors ${showFilters || authorInput || branchInput || filters.since || filters.until ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-card border-border text-text-muted hover:text-text-main'}`}
+          >
+            <Filter size={16} />
+          </button>
         </div>
+
+        <AnimatePresence>
+          {showFilters && (
+            <motion.div 
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="flex flex-col gap-2 overflow-hidden"
+            >
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="text"
+                  className="w-full bg-card border border-border text-text-main text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 placeholder:text-text-muted/60"
+                  placeholder="Filter by Author..."
+                  value={authorInput}
+                  onChange={(e) => setAuthorInput(e.target.value)}
+                />
+                <input
+                  type="text"
+                  className="w-full bg-card border border-border text-text-main text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 placeholder:text-text-muted/60"
+                  placeholder="Filter by Branch..."
+                  value={branchInput}
+                  onChange={(e) => setBranchInput(e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2 items-center">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                     <Calendar size={12} className="text-text-muted" />
+                  </div>
+                  <input
+                    type="date"
+                    className="w-full bg-card border border-border text-text-main text-xs rounded-xl pl-8 pr-3 py-2 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 text-text-muted"
+                    value={filters.since}
+                    onChange={(e) => setFilters(prev => ({ ...prev, since: e.target.value, page: 1 }))}
+                  />
+                </div>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                     <Calendar size={12} className="text-text-muted" />
+                  </div>
+                  <input
+                    type="date"
+                    className="w-full bg-card border border-border text-text-main text-xs rounded-xl pl-8 pr-3 py-2 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 text-text-muted"
+                    value={filters.until}
+                    onChange={(e) => setFilters(prev => ({ ...prev, until: e.target.value, page: 1 }))}
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end">
+                 <button 
+                   onClick={() => {
+                     setAuthorInput('');
+                     setBranchInput('');
+                     setFilters(prev => ({ ...prev, author: '', branch: '', since: '', until: '', page: 1 }));
+                   }}
+                   className="text-[11px] text-text-muted hover:text-text-main"
+                 >
+                   Clear Filters
+                 </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* List Container */}
@@ -99,7 +157,7 @@ export const CommitList = ({
         ref={scrollElementRef} 
         className={`${parentRef ? '' : 'flex-1 overflow-y-auto no-scrollbar'} relative ${isDesktop ? 'pl-4 border-l-2 border-border/60' : 'pl-5 border-l-2 border-border/60'}`}
       >
-        {isLoading ? (
+        {isLoading || isFetching ? (
           <div className="flex flex-col gap-4 animate-pulse pt-2">
             {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="relative">
@@ -130,57 +188,96 @@ export const CommitList = ({
           <div className="flex flex-col items-center justify-center py-12 px-4 animate-fade-in h-full">
             <img src={emptyStateImage} alt="Empty repository" className="w-40 h-40 mb-6 rounded-2xl shadow-sm opacity-90 object-cover pointer-events-none" />
             <div className="text-sm font-bold text-text-main mb-2">
-              {filters.query ? 'No matching commits' : 'It is quiet here...'}
+              {filters.query || filters.author || filters.branch || filters.since || filters.until ? 'No matching commits' : 'It is quiet here...'}
             </div>
             <div className="text-center text-text-muted text-xs leading-relaxed max-w-[250px]">
-              {filters.query 
+              {filters.query || filters.author || filters.branch || filters.since || filters.until 
                 ? 'Try adjusting your search terms or filters.'
                 : 'This repository has no commits yet. Make your first staging commit to start tracking changes!'}
             </div>
           </div>
         ) : (
-          <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, position: 'relative' }}>
+          <div className="flex flex-col gap-6 relative pb-6 pt-2">
             <AnimatePresence>
-              {virtualItems.map((virtualRow) => {
-                const isLoaderRow = virtualRow.index > commits.length - 1;
-                const commit = commits[virtualRow.index];
-                const isLatest = virtualRow.index === 0 && !filters.query;
+              {commits.map((commit: any, index: number) => {
+                const isLatest = index === 0 && !filters.query && filters.page === 1;
 
                 return (
-                  <div
-                    key={virtualRow.key}
-                    data-index={virtualRow.index}
-                    ref={rowVirtualizer.measureElement}
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      width: '100%',
-                      transform: `translateY(${virtualRow.start}px)`,
-                      paddingBottom: '1.5rem',
-                    }}
+                  <motion.div
+                    key={commit.hash}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.03 }}
                   >
-                    {isLoaderRow ? (
-                      <div className="flex justify-center p-4">
-                        <Loader2 size={20} className="text-primary animate-spin" />
-                      </div>
-                    ) : (
-                      <CommitItem
-                        commit={commit}
-                        isLatest={isLatest}
-                        isSelected={selectedCommitId === commit.hash}
-                        onSelect={onSelectCommit}
-                        onActionClick={onActionClick}
-                        isDesktop={isDesktop}
-                      />
-                    )}
-                  </div>
+                    <CommitItem
+                      commit={commit}
+                      isLatest={isLatest}
+                      isSelected={selectedCommitId === commit.hash}
+                      onSelect={onSelectCommit}
+                      onActionClick={onActionClick}
+                      isDesktop={isDesktop}
+                    />
+                  </motion.div>
                 );
               })}
             </AnimatePresence>
           </div>
         )}
       </div>
+
+      {/* Pagination Footer */}
+      {!isLoading && !isError && totalPages > 0 && (
+        <div className="shrink-0 flex items-center justify-between py-3 mt-2 border-t border-border">
+          <div className="text-xs text-text-muted">
+             Page {currentPage} of {totalPages}
+          </div>
+          <div className="flex items-center gap-1">
+            <button 
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1 || isFetching}
+              className="p-1.5 rounded-lg border border-border text-text-main disabled:opacity-30 disabled:cursor-not-allowed hover:bg-hover/10 transition-colors"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <div className="flex items-center gap-1 mx-1">
+               {/* Display some page numbers */}
+               {[...Array(totalPages)].map((_, i) => {
+                 const pageNum = i + 1;
+                 // Show first, last, current, and adjacent
+                 if (
+                   pageNum === 1 || 
+                   pageNum === totalPages || 
+                   (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                 ) {
+                   return (
+                     <button
+                       key={pageNum}
+                       onClick={() => handlePageChange(pageNum)}
+                       disabled={isFetching}
+                       className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs transition-colors disabled:opacity-50 ${currentPage === pageNum ? 'bg-primary text-white font-bold' : 'text-text-main hover:bg-hover/10'}`}
+                     >
+                       {pageNum}
+                     </button>
+                   );
+                 } else if (
+                   pageNum === currentPage - 2 || 
+                   pageNum === currentPage + 2
+                 ) {
+                   return <span key={pageNum} className="text-text-muted text-xs">...</span>;
+                 }
+                 return null;
+               })}
+            </div>
+            <button 
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages || isFetching}
+              className="p-1.5 rounded-lg border border-border text-text-main disabled:opacity-30 disabled:cursor-not-allowed hover:bg-hover/10 transition-colors"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
