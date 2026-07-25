@@ -5,7 +5,6 @@ import { AreaChart, Area, ResponsiveContainer, PieChart, Pie, Cell, Tooltip } fr
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useAppContext } from '../AppContext';
 import { useIsDesktop } from '../hooks/useIsDesktop';
-import { CommitList } from '../components/CommitComponents';
 import { Home, FileCode, FileText, Copy, GitMerge, AlertTriangle, GitPullRequest, Search, Folder, GitCommit, GitBranch, Edit2, Trash2, Check, X, MoreVertical, Undo, Eye, BookOpen, FileSearch, Tag, RotateCcw, HelpCircle, Terminal, Sliders, Clock, User, Info, Code2, Shield, TrendingUp, ChevronRight, ChevronDown } from 'lucide-react';
 import emptyStateImage from '../assets/images/empty_commits_state_1784913881320.jpg';
 
@@ -749,18 +748,54 @@ const CommitsScreen = () => {
   };
 
   return (
-    <div className="flex flex-col gap-4 relative h-full">
-      <CommitList
-        selectedCommit={selectedCommit}
-        onSelectCommit={(commit) => {
-          setSelectedCommit(commit);
-          if (!isDesktop) {
-            setShowDetailsModal(true);
-          }
-        }}
-        onOpenActions={handleOpenActions}
-        isDesktop={false}
-      />
+    <div className="flex flex-col gap-4 relative">
+      <div className="flex justify-between items-center bg-card border border-border rounded-xl p-3 mb-1">
+        <span className="text-xs text-text-muted font-semibold uppercase tracking-wider">Ready to record state?</span>
+        <button 
+          onClick={() => openModal('commit')}
+          className="bg-primary hover:bg-primary-hover text-white text-xs font-bold px-3 py-2 rounded-xl active:scale-95 transition-all flex items-center gap-1.5 shadow-sm"
+        >
+          <GitCommit size={14} strokeWidth={2.5} /> Commit Changes
+        </button>
+      </div>
+
+      <div className="pl-5 border-l-2 border-border relative pt-2" style={{ height: activeCommits.length > 0 ? `${rowVirtualizer.getTotalSize()}px` : 'auto' }}>
+        {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+          const commit = activeCommits[virtualRow.index];
+          const idx = virtualRow.index;
+          return (
+            <div
+              key={virtualRow.key}
+              data-index={virtualRow.index}
+              ref={rowVirtualizer.measureElement}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                transform: `translateY(${virtualRow.start}px)`,
+                paddingLeft: '1.25rem', // pl-5 equivalent for positioning children correctly relative to the line
+                paddingBottom: '1.5rem', // gap-6 equivalent
+              }}
+            >
+              <CommitItem 
+                hash={commit.hash} 
+                msg={commit.msg} 
+                author={commit.author} 
+                time={commit.time} 
+                add={commit.add} 
+                del={commit.del} 
+                isPrimary={idx === 0} 
+                avatar={commit.avatar}
+                onActionTrigger={() => handleOpenActions(commit)}
+              />
+            </div>
+          );
+        })}
+        {activeCommits.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-16 px-4 animate-fade-in"><img src={emptyStateImage} alt="Empty repository" className="w-48 h-48 mb-6 rounded-2xl shadow-sm opacity-90 object-cover pointer-events-none" /><div className="text-base font-bold text-text-main mb-2">It is quiet here...</div><div className="text-center text-text-muted text-xs leading-relaxed max-w-[250px]">This repository has no commits yet. Make your first staging commit to start tracking changes!</div></div>
+        )}
+      </div>
 
       {/* Git Operation Action Progress overlay loader */}
       {gitOperationMessage && (

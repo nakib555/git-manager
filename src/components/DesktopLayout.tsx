@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useAppContext } from '../AppContext';
 import { motion, AnimatePresence } from 'motion/react';
-import { CommitList } from './CommitComponents';
 import { 
   Search, Lock, Globe, Square, FolderGit2, Folder, GitBranch, 
   GitPullRequest, GitCommit, Check, Key, ExternalLink, ShieldAlert, 
@@ -1243,13 +1242,73 @@ const DesktopCommitsView: React.FC = () => {
   return (
     <div className="flex-1 min-h-0 flex gap-5">
       {/* Timeline panel */}
-      <div className="w-100 shrink-0 h-full min-h-0">
-        <CommitList
-          selectedCommit={selectedCommit}
-          onSelectCommit={setSelectedCommit}
-          onOpenActions={(commit) => setSelectedCommit(commit)}
-          isDesktop={true}
-        />
+      <div className="w-96 bg-card border border-border rounded-2xl p-5 flex flex-col h-full shrink-0 min-h-0">
+        <div className="flex justify-between items-center mb-5 shrink-0">
+          <span className="block text-[10px] font-bold text-text-muted uppercase tracking-widest">VERSION TIMELINE</span>
+          <button 
+            onClick={() => openModal('commit')}
+            className="bg-purple-500 hover:bg-purple-600 text-white text-[10px] font-bold py-1.5 px-3 rounded-lg active:scale-95 transition-all shadow-sm shadow-purple-500/15 cursor-pointer"
+          >
+            + Commit Changes
+          </button>
+        </div>
+
+        <div 
+          ref={setParentRef}
+          className="flex-1 overflow-y-auto pl-4 border-l-2 border-border/60 relative no-scrollbar pb-6"
+        >
+          <div style={{ height: activeCommits.length > 0 ? `${rowVirtualizer.getTotalSize()}px` : 'auto', position: 'relative' }}>
+            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+              const commit = activeCommits[virtualRow.index];
+              const idx = virtualRow.index;
+              const isSelected = commitToInspect?.hash === commit.hash;
+              const isLatest = idx === 0;
+              return (
+                <div
+                  key={virtualRow.key}
+                  data-index={virtualRow.index}
+                  ref={rowVirtualizer.measureElement}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    transform: `translateY(${virtualRow.start}px)`,
+                    paddingBottom: '1.5rem', // Replaces space-y-6
+                  }}
+                >
+                  <div 
+                    onClick={() => setSelectedCommit(commit)}
+                    className={`relative cursor-pointer p-3 border rounded-xl transition-all ${isSelected ? 'bg-primary/5 border-primary/45' : 'border-transparent bg-hover/10 hover:bg-hover/30'}`}
+                  >
+                    {/* Bullet node marker */}
+                    <div className={`absolute -left-[24px] top-4.5 w-3 h-3 bg-main border-2 rounded-full z-10 transition-colors ${isSelected ? 'border-primary' : 'border-text-muted'}`} />
+
+                    <div className="flex justify-between items-center gap-2 mb-1.5">
+                      <span className="font-mono text-[10px] font-bold bg-card border border-border px-1.5 py-0.5 rounded text-primary">
+                        {commit.hash}
+                      </span>
+                      {isLatest && (
+                        <span className="text-[8px] uppercase tracking-wider bg-primary/10 border border-primary/25 px-1.5 py-0.5 rounded font-extrabold text-primary">
+                          LATEST
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="text-[11px] font-bold text-text-main line-clamp-1 truncate">{commit.msg}</p>
+                    <div className="flex justify-between text-[9px] text-text-muted mt-2">
+                      <span className="font-semibold">{commit.author}</span>
+                      <span>{commit.time}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {activeCommits.length === 0 && (
+            <div className="text-center py-8 text-text-muted text-[10px] font-semibold uppercase tracking-wider">No commits yet.</div>
+          )}
+        </div>
       </div>
 
       {/* Inspector details panel */}

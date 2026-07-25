@@ -55,42 +55,6 @@
   color: var(--text-main);
 }
 
-.amoled-theme {
-  --main: #000000;
-  --card: #0A0A0A;
-  --hover: #141414;
-  --primary: #8B5CF6;
-  --primary-hover: #7C3AED;
-  --text-main: #FFFFFF;
-  --text-muted: #737373;
-  --border: #1F1F1F;
-  --success: #10B981;
-  --danger: #EF4444;
-  --warning: #F59E0B;
-  --info: #38BDF8;
-  
-  background-color: var(--main);
-  color: var(--text-main);
-}
-
-.custom-theme {
-  --main: #0D1B11;
-  --card: #14261A;
-  --hover: #1C3324;
-  --primary: #10B981;
-  --primary-hover: #059669;
-  --text-main: #E6FDF0;
-  --text-muted: #76A886;
-  --border: #223D2B;
-  --success: #34D399;
-  --danger: #F87171;
-  --warning: #FBBF24;
-  --info: #60A5FA;
-  
-  background-color: var(--main);
-  color: var(--text-main);
-}
-
 html, body, #root {
   margin: 0;
   padding: 0;

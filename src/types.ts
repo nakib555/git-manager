@@ -26,7 +26,7 @@ export interface AppState {
   isDrawerOpen: boolean;
   toastMessage: string | null;
   isSearchFocused: boolean;
-  theme: 'dark' | 'light' | 'amoled' | 'custom';
+  theme: 'dark' | 'light';
   githubToken: string | null;
   githubUser: GitHubUser | null;
   githubRepos: GitHubRepo[];
