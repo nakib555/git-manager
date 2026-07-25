@@ -19,10 +19,21 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({ children }) => {
   const threshold = 70; // px
   const maxPull = 120; // px
 
-  const handleStart = (y: number) => {
+  const handleStart = (y: number, target: EventTarget) => {
     if (isRefreshing) return;
     const container = containerRef.current;
-    if (container && container.scrollTop === 0) {
+    
+    let node = target as HTMLElement | null;
+    let isNestedScrolling = false;
+    while (node && node !== container) {
+      if (node.scrollHeight > node.clientHeight && node.scrollTop > 0) {
+        isNestedScrolling = true;
+        break;
+      }
+      node = node.parentElement;
+    }
+
+    if (container && container.scrollTop === 0 && !isNestedScrolling) {
       startY.current = y;
       isPulling.current = true;
     }
@@ -65,7 +76,7 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({ children }) => {
 
   // Touch handlers
   const onTouchStart = (e: React.TouchEvent) => {
-    handleStart(e.touches[0].clientY);
+    handleStart(e.touches[0].clientY, e.target);
   };
 
   const onTouchMove = (e: React.TouchEvent) => {
@@ -86,7 +97,7 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({ children }) => {
 
   // Mouse handlers for desktop cursor usage
   const onMouseDown = (e: React.MouseEvent) => {
-    handleStart(e.clientY);
+    handleStart(e.clientY, e.target);
   };
 
   const onMouseMove = (e: React.MouseEvent) => {

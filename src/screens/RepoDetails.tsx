@@ -742,7 +742,7 @@ const CommitsScreen = () => {
   };
 
   return (
-    <div className="flex flex-col gap-4 relative h-full min-h-[70vh]">
+    <div className="flex flex-col gap-4 relative">
       <div className="flex justify-between items-center bg-card border border-border rounded-xl p-3 mb-1 shrink-0">
         <span className="text-xs text-text-muted font-semibold uppercase tracking-wider">Ready to record state?</span>
         <button 
@@ -753,7 +753,7 @@ const CommitsScreen = () => {
         </button>
       </div>
 
-      <div className="flex-1 min-h-0 pb-10">
+      <div className="pb-10">
         <CommitList 
           isDesktop={isDesktop} 
           parentRef={scrollElement}

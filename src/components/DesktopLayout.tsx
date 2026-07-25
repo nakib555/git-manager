@@ -1173,8 +1173,6 @@ const DesktopCommitsView: React.FC = () => {
   const [amendMsg, setAmendMsg] = useState('');
   const [newBranchName, setNewBranchName] = useState('');
   const [newTagName, setNewTagName] = useState('');
-  
-  const [parentRef, setParentRef] = useState<HTMLDivElement | null>(null);
 
   // Auto-select latest commit if none is selected
   useEffect(() => {
@@ -1250,7 +1248,6 @@ const DesktopCommitsView: React.FC = () => {
         <div className="flex-1 overflow-hidden min-h-0 flex flex-col pb-6">
           <CommitList 
             isDesktop={true}
-            parentRef={setParentRef}
             onSelectCommit={setSelectedCommit}
             onActionClick={setSelectedCommit}
             selectedCommitId={commitToInspect?.hash}

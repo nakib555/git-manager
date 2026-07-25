@@ -67,7 +67,7 @@ export const CommitList = ({
   }, [virtualItems, commits.length, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className={`flex flex-col ${parentRef ? '' : 'h-full overflow-hidden'}`}>
       {/* Search and Filters */}
       <div className={`shrink-0 flex gap-2 ${isDesktop ? 'mb-4' : 'mb-3'}`}>
         <div className="relative flex-1">
