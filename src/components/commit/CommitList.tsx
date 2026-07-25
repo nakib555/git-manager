@@ -111,28 +111,34 @@ export const CommitList = ({
                   onChange={(e) => setBranchInput(e.target.value)}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-2 items-center">
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                     <Calendar size={12} className="text-text-muted" />
+              <div className="grid grid-cols-2 gap-2 items-start">
+                <div className="flex flex-col gap-1">
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                       <Calendar size={12} className="text-text-muted" />
+                    </div>
+                    <input
+                      type="date"
+                      className="w-full bg-card border border-border text-text-main text-xs rounded-xl pl-8 pr-3 py-2 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 text-text-muted"
+                      value={filters.since}
+                      onChange={(e) => setFilters(prev => ({ ...prev, since: e.target.value, page: 1 }))}
+                    />
                   </div>
-                  <input
-                    type="date"
-                    className="w-full bg-card border border-border text-text-main text-xs rounded-xl pl-8 pr-3 py-2 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 text-text-muted"
-                    value={filters.since}
-                    onChange={(e) => setFilters(prev => ({ ...prev, since: e.target.value, page: 1 }))}
-                  />
+                  <span className="text-[10px] text-text-muted/80 pl-2">Show commits from this date</span>
                 </div>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                     <Calendar size={12} className="text-text-muted" />
+                <div className="flex flex-col gap-1">
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                       <Calendar size={12} className="text-text-muted" />
+                    </div>
+                    <input
+                      type="date"
+                      className="w-full bg-card border border-border text-text-main text-xs rounded-xl pl-8 pr-3 py-2 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 text-text-muted"
+                      value={filters.until}
+                      onChange={(e) => setFilters(prev => ({ ...prev, until: e.target.value, page: 1 }))}
+                    />
                   </div>
-                  <input
-                    type="date"
-                    className="w-full bg-card border border-border text-text-main text-xs rounded-xl pl-8 pr-3 py-2 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 text-text-muted"
-                    value={filters.until}
-                    onChange={(e) => setFilters(prev => ({ ...prev, until: e.target.value, page: 1 }))}
-                  />
+                  <span className="text-[10px] text-text-muted/80 pl-2">Show commits up to this date</span>
                 </div>
               </div>
               <div className="flex justify-end">
