@@ -77,6 +77,17 @@ export const Header: React.FC = () => {
             </button>
           )
         };
+      case 'clone':
+        return {
+          title: 'Clone Repository',
+          sub: currentRepo,
+          left: <AnimatedChevronLeft onClick={() => navigate('repos')} />,
+          right: (
+            <button className="bg-primary rounded-lg px-3 py-1.5 text-[13px] font-semibold text-white" onClick={() => navigate('repos')}>
+              Back
+            </button>
+          )
+        };
       default:
         return { title: 'App', left: null, right: null, sub: '' };
     }
@@ -84,7 +95,7 @@ export const Header: React.FC = () => {
 
   const content = getHeaderContent();
 
-  const isRepoScreen = ['files', 'commits', 'branches', 'insights', 'prs'].includes(currentScreen);
+  const isRepoScreen = ['files', 'commits', 'branches', 'insights', 'prs', 'clone'].includes(currentScreen);
 
   return (
     <header className="flex-shrink-0 flex items-center px-5 pb-4 pt-[max(1rem,env(safe-area-inset-top))] bg-main z-10 gap-3">
@@ -140,8 +151,8 @@ export const Header: React.FC = () => {
 };
 
 export const RepoTabs: React.FC = () => {
-  const { currentScreen, navigate, currentRepo } = useAppContext();
-  const isRepoScreen = ['files', 'commits', 'branches', 'insights', 'prs'].includes(currentScreen);
+  const { currentScreen, navigate, currentRepo, openModal } = useAppContext();
+  const isRepoScreen = ['files', 'commits', 'branches', 'insights', 'prs', 'clone'].includes(currentScreen);
 
   if (!isRepoScreen || !currentRepo) return null;
 
@@ -150,7 +161,7 @@ export const RepoTabs: React.FC = () => {
     { id: 'prs', label: 'Pull Requests' },
     { id: 'branches', label: 'Branches' },
     { id: 'files', label: 'Files' },
-    { id: 'insights', label: 'Insights' },
+    { id: 'insights', label: 'Insights' }, { id: 'clone', label: 'Clone' },
   ] as const;
 
   return (

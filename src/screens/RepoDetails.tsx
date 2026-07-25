@@ -8,6 +8,7 @@ import { CommitsScreen } from './repodetails/CommitsScreen';
 import { BranchesScreen } from './repodetails/BranchesScreen';
 import { InsightsScreen } from './repodetails/InsightsScreen';
 import { PRsScreen } from './repodetails/PRsScreen';
+import { CloneScreen } from './CloneScreen';
 
 export const RepoDetails: React.FC = () => {
   const { currentScreen, isLoadingRepoDetails, currentRepo, navigate } = useAppContext();
@@ -41,6 +42,7 @@ export const RepoDetails: React.FC = () => {
           {currentScreen === 'branches' && <BranchesScreen />}
           {currentScreen === 'insights' && <InsightsScreen />}
           {currentScreen === 'prs' && <PRsScreen />}
+          {currentScreen === 'clone' && <CloneScreen />}
         </>
       )}
     </div>

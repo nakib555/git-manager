@@ -1,4 +1,4 @@
-export type Screen = 'dash' | 'repos' | 'commits' | 'prs' | 'branches' | 'files' | 'insights' | 'settings';
+export type Screen = 'dash' | 'repos' | 'commits' | 'prs' | 'branches' | 'files' | 'insights' | 'settings' | 'clone';
 
 export interface GitHubUser {
   login: string;

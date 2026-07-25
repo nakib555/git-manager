@@ -12,7 +12,40 @@ import {
   GitHubRepo,
   GitHubUser,
 } from "./types";
-export const INITIAL_MOCK_REPOS: GitHubRepo[] = [];
+export const INITIAL_MOCK_REPOS: GitHubRepo[] = [
+  {
+    id: 1001,
+    name: "react-ui-components",
+    private: false,
+    description: "A collection of reusable React UI components built with Tailwind CSS.",
+    language: "TypeScript",
+    pushed_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+  },
+  {
+    id: 1002,
+    name: "backend-api-service",
+    private: true,
+    description: "Core backend service for handling user authentication and data processing.",
+    language: "Go",
+    pushed_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(),
+  },
+  {
+    id: 1003,
+    name: "data-analysis-scripts",
+    private: false,
+    description: "Python scripts for analyzing sales data and generating weekly reports.",
+    language: "Python",
+    pushed_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10).toISOString(),
+  },
+  {
+    id: 1004,
+    name: "mobile-app-frontend",
+    private: true,
+    description: "React Native frontend for the customer-facing mobile application.",
+    language: "TypeScript",
+    pushed_at: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+  }
+];
 export const formatTime = (dateStr: string) => {
   const date = new Date(dateStr);
   const now = new Date();
@@ -57,9 +90,61 @@ export const getLocalRepoDetails = (
   const local = localStorage.getItem(key);
   if (local) {
     try {
-      return JSON.parse(local);
+      const parsed = JSON.parse(local);
+      if (parsed && parsed.length > 0) return parsed;
     } catch (e) {}
   }
+  
+  // Return dummy data if empty
+  if (type === "commits") {
+    return [
+      {
+        hash: "a1b2c3d4e5f6",
+        fullHash: "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0",
+        msg: "Initial commit",
+        author: "John Doe",
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString(),
+        files: [{ filename: "README.md", status: "added", additions: 50, deletions: 0 }]
+      },
+      {
+        hash: "f6e5d4c3b2a1",
+        fullHash: "f6e5d4c3b2a10987654321fedcba987654321012",
+        msg: "Update documentation and add setup guide",
+        author: "Jane Smith",
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
+        files: [{ filename: "README.md", status: "modified", additions: 15, deletions: 5 }]
+      },
+      {
+        hash: "1a2b3c4d5e6f",
+        fullHash: "1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t",
+        msg: "Fix critical bug in authentication flow",
+        author: "Alex Johnson",
+        timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+        files: [{ filename: "src/auth.ts", status: "modified", additions: 10, deletions: 2 }, { filename: "tests/auth.test.ts", status: "modified", additions: 25, deletions: 0 }]
+      }
+    ];
+  } else if (type === "branches") {
+    return [
+      { name: "main", isDefault: true, lastCommit: "Fix critical bug in authentication flow", lastCommitTime: new Date(Date.now() - 1000 * 60 * 30).toISOString() },
+      { name: "feature/new-dashboard", isDefault: false, lastCommit: "Add initial dashboard layout", lastCommitTime: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString() },
+      { name: "hotfix/login-issue", isDefault: false, lastCommit: "Fix login token expiration", lastCommitTime: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString() }
+    ];
+  } else if (type === "prs") {
+    return [
+      { id: 101, title: "Feature: New Analytics Dashboard", author: "Jane Smith", status: "Open", sourceBranch: "feature/new-dashboard", targetBranch: "main", createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString() },
+      { id: 102, title: "Hotfix: Resolve login timeout", author: "John Doe", status: "Merged", sourceBranch: "hotfix/login-issue", targetBranch: "main", createdAt: new Date(Date.now() - 1000 * 60 * 60 * 10).toISOString() },
+      { id: 103, title: "Update dependencies", author: "Dependabot", status: "Closed", sourceBranch: "deps/update-react", targetBranch: "main", createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString() }
+    ];
+  } else if (type === "files") {
+    return [
+      { name: "src", type: "dir", path: "src" },
+      { name: "public", type: "dir", path: "public" },
+      { name: "package.json", type: "file", path: "package.json", size: 1024, lastModified: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString() },
+      { name: "README.md", type: "file", path: "README.md", size: 2048, lastModified: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString() },
+      { name: "vite.config.ts", type: "file", path: "vite.config.ts", size: 512, lastModified: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString() }
+    ];
+  }
+  
   return [];
 };
 const defaultState: AppState = {
@@ -543,11 +628,38 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
     });
   };
 
-  const cloneRepository = (repo: { url: string; destFolder: string; branch: string; shallow: boolean; submodules: boolean }) => {
-    const parts = repo.url.split('/');
-    let name = parts[parts.length - 1];
-    if (name.endsWith('.git')) name = name.slice(0, -4);
-    
+  const cloneRepository = async (repo: { url: string; destFolder: string; branch: string; shallow: boolean; submodules: boolean }) => {
+    let owner = 'custom-owner';
+    let name = 'custom-repo';
+    try {
+      const cleanUrl = repo.url.trim().replace(/\.git$/, '');
+      if (cleanUrl.startsWith('git@github.com:')) {
+        const parts = cleanUrl.replace('git@github.com:', '').split('/');
+        if (parts.length >= 2) {
+          owner = parts[0];
+          name = parts[1];
+        }
+      } else {
+        const urlStr = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
+        const urlObj = new URL(urlStr);
+        const pathParts = urlObj.pathname.split('/').filter(Boolean);
+        if (pathParts.length >= 2) {
+          owner = pathParts[pathParts.length - 2];
+          name = pathParts[pathParts.length - 1];
+        } else if (pathParts.length === 1) {
+          name = pathParts[0];
+        }
+      }
+    } catch (e) {
+      const parts = repo.url.split('/');
+      if (parts.length >= 2) {
+        owner = parts[parts.length - 2];
+        name = parts[parts.length - 1].replace(/\.git$/, '');
+      } else if (parts.length === 1) {
+        name = parts[0].replace(/\.git$/, '');
+      }
+    }
+
     addRecentClone({
       name,
       url: repo.url,
@@ -555,17 +667,188 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
       timestamp: Date.now()
     });
 
-    const newRepo: GitHubRepo = {
+    const newRepo: any = {
       id: Date.now(),
       name,
       private: false,
       description: `Cloned from ${repo.url}`,
       language: 'TypeScript',
       pushed_at: new Date().toISOString(),
+      owner: {
+        login: owner
+      }
     };
 
+    // If we have a token, attempt to fetch actual repository info to seed localStorage
+    let fetchedCommits = null;
+    let fetchedBranches = null;
+    let fetchedPrs = null;
+    let fetchedFiles = null;
+
+    if (state.githubToken) {
+      const headers = { Authorization: `Bearer ${state.githubToken}` };
+      try {
+        // Fetch commits
+        const commitsRes = await fetch(`https://api.github.com/repos/${owner}/${name}/commits?per_page=15`, { headers });
+        if (commitsRes.ok) {
+          const rawCommits = await commitsRes.json();
+          fetchedCommits = rawCommits.map((c: any) => ({
+            hash: c.sha.substring(0, 7),
+            fullHash: c.sha,
+            msg: c.commit.message,
+            author: c.commit.author.name || c.commit.author.email || "Author",
+            timestamp: c.commit.author.date,
+            files: []
+          }));
+        }
+
+        // Fetch branches
+        const branchesRes = await fetch(`https://api.github.com/repos/${owner}/${name}/branches?per_page=15`, { headers });
+        if (branchesRes.ok) {
+          const rawBranches = await branchesRes.json();
+          fetchedBranches = rawBranches.map((b: any) => ({
+            name: b.name,
+            isDefault: b.name === (repo.branch || 'main'),
+            lastCommit: b.commit.sha.substring(0, 7),
+            lastCommitTime: new Date().toISOString()
+          }));
+        }
+
+        // Fetch PRs
+        const prsRes = await fetch(`https://api.github.com/repos/${owner}/${name}/pulls?state=all&per_page=15`, { headers });
+        if (prsRes.ok) {
+          const rawPrs = await prsRes.json();
+          fetchedPrs = rawPrs.map((p: any) => ({
+            id: p.number,
+            title: p.title,
+            author: p.user?.login || "User",
+            status: p.state === 'open' ? 'Open' : (p.merged_at ? 'Merged' : 'Closed'),
+            sourceBranch: p.head?.ref || "source",
+            targetBranch: p.base?.ref || "main",
+            createdAt: p.created_at
+          }));
+        }
+
+        // Fetch Files
+        const filesRes = await fetch(`https://api.github.com/repos/${owner}/${name}/git/trees/HEAD?recursive=1`, { headers });
+        if (filesRes.ok) {
+          const treeData = await filesRes.json();
+          fetchedFiles = treeData.tree.map((item: any) => ({
+            name: item.path,
+            type: item.type === 'blob' ? 'file' : 'dir',
+            path: item.path,
+            size: item.size || 0,
+            lastModified: new Date().toISOString()
+          }));
+        }
+      } catch (e) {
+        console.warn("Error fetching real Git repository metadata:", e);
+      }
+    }
+
+    if (fetchedFiles) {
+      localStorage.setItem(`local_details_${name}_files`, JSON.stringify(fetchedFiles));
+      localStorage.setItem(`local_details_${name}_commits`, JSON.stringify(fetchedCommits || []));
+      localStorage.setItem(`local_details_${name}_branches`, JSON.stringify(fetchedBranches || []));
+      localStorage.setItem(`local_details_${name}_prs`, JSON.stringify(fetchedPrs || []));
+    } else {
+      const getHash = () => Math.random().toString(16).substring(2, 9);
+      const getFullHash = () => getHash() + getHash() + getHash() + getHash() + getHash() + getHash();
+      
+      // Offline/local backup custom data generator based on name
+      let files = [
+        { name: "README.md", type: "file", path: "README.md", size: 1450, lastModified: new Date().toISOString() },
+        { name: "package.json", type: "file", path: "package.json", size: 840, lastModified: new Date().toISOString() },
+        { name: ".gitignore", type: "file", path: ".gitignore", size: 210, lastModified: new Date().toISOString() },
+        { name: "src", type: "dir", path: "src" },
+        { name: "src/index.ts", type: "file", path: "src/index.ts", size: 450, lastModified: new Date().toISOString() },
+      ];
+
+      let commits = [
+        {
+          hash: getHash(),
+          fullHash: getFullHash(),
+          msg: "Initial commit",
+          author: "Git Manager Workstation",
+          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString(),
+          files: [{ filename: "README.md", status: "added", additions: 50, deletions: 0 }]
+        },
+        {
+          hash: getHash(),
+          fullHash: getFullHash(),
+          msg: `Set up basic architecture for ${name}`,
+          author: "Git Manager Workstation",
+          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(),
+          files: [{ filename: "package.json", status: "added", additions: 25, deletions: 0 }, { filename: "src/index.ts", status: "added", additions: 15, deletions: 0 }]
+        },
+        {
+          hash: getHash(),
+          fullHash: getFullHash(),
+          msg: "Improve README layout and update configuration",
+          author: "Git Manager Workstation",
+          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString(),
+          files: [{ filename: "README.md", status: "modified", additions: 12, deletions: 2 }]
+        }
+      ];
+
+      let branches = [
+        { name: "main", isDefault: true, lastCommit: "Improve README layout and update configuration", lastCommitTime: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString() },
+        { name: "develop", isDefault: false, lastCommit: "Set up basic architecture", lastCommitTime: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString() },
+      ];
+
+      let prs = [
+        { id: 101, title: `Configure CI/CD pipelines for ${name}`, author: "Git Manager Workstation", status: "Open", sourceBranch: "develop", targetBranch: "main", createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString() }
+      ];
+
+      const lower = name.toLowerCase();
+      if (lower.includes('react') || lower.includes('ui') || lower.includes('frontend')) {
+        files = [
+          { name: "README.md", type: "file", path: "README.md", size: 1820, lastModified: new Date().toISOString() },
+          { name: "package.json", type: "file", path: "package.json", size: 1120, lastModified: new Date().toISOString() },
+          { name: "vite.config.ts", type: "file", path: "vite.config.ts", size: 420, lastModified: new Date().toISOString() },
+          { name: "src", type: "dir", path: "src" },
+          { name: "src/main.tsx", type: "file", path: "src/main.tsx", size: 340, lastModified: new Date().toISOString() },
+          { name: "src/App.tsx", type: "file", path: "src/App.tsx", size: 1420, lastModified: new Date().toISOString() },
+          { name: "src/components", type: "dir", path: "src/components" },
+          { name: "src/components/Button.tsx", type: "file", path: "src/components/Button.tsx", size: 850, lastModified: new Date().toISOString() },
+          { name: "src/index.css", type: "file", path: "src/index.css", size: 230, lastModified: new Date().toISOString() },
+        ];
+        
+        localStorage.setItem(`local_file_content_${name}_README.md`, `# ${name}\n\nA premium React component library compiled with Vite and Tailwind CSS.\n\n## Getting Started\n\n\`\`\`bash\nnpm install\nnpm run dev\n\`\`\``);
+        localStorage.setItem(`local_file_content_${name}_package.json`, `{\n  "name": "${name}",\n  "version": "1.0.0",\n  "dependencies": {\n    "react": "^18.2.0",\n    "react-dom": "^18.2.0",\n    "lucide-react": "^0.300.0"\n  }\n}`);
+        localStorage.setItem(`local_file_content_${name}_vite.config.ts`, `import { defineConfig } from 'vite';\nimport react from '@vitejs/plugin-react';\n\nexport default defineConfig({\n  plugins: [react()]\n});`);
+        localStorage.setItem(`local_file_content_${name}_src/App.tsx`, `import React from 'react';\nimport { Button } from './components/Button';\n\nexport default function App() {\n  return (\n    <div className="p-8 text-center bg-gray-50 min-h-screen">\n      <h1 className="text-3xl font-extrabold tracking-tight">${name} Ready</h1>\n      <p className="text-gray-500 my-4">Your modern component workspace is ready.</p>\n      <Button>Explore Components</Button>\n    </div>\n  );\n}`);
+        localStorage.setItem(`local_file_content_${name}_src/components/Button.tsx`, `import React from 'react';\n\nexport const Button: React.FC<{ children: React.ReactNode }> = ({ children }) => {\n  return (\n    <button className="px-5 py-2.5 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors">\n      {children}\n    </button>\n  );\n};`);
+      } else if (lower.includes('api') || lower.includes('backend') || lower.includes('server')) {
+        files = [
+          { name: "README.md", type: "file", path: "README.md", size: 1200, lastModified: new Date().toISOString() },
+          { name: "package.json", type: "file", path: "package.json", size: 980, lastModified: new Date().toISOString() },
+          { name: "src", type: "dir", path: "src" },
+          { name: "src/server.ts", type: "file", path: "src/server.ts", size: 1280, lastModified: new Date().toISOString() },
+          { name: "src/routes.ts", type: "file", path: "src/routes.ts", size: 840, lastModified: new Date().toISOString() },
+          { name: "src/db.ts", type: "file", path: "src/db.ts", size: 520, lastModified: new Date().toISOString() },
+        ];
+
+        localStorage.setItem(`local_file_content_${name}_README.md`, `# ${name}\n\nScalable Express backend API server. Out of the box TypeScript setup.\n\n## REST API Endpoints\n- \`GET /api/health\`\n- \`GET /api/v1/users\``);
+        localStorage.setItem(`local_file_content_${name}_package.json`, `{\n  "name": "${name}",\n  "version": "1.0.0",\n  "scripts": {\n    "start": "ts-node src/server.ts"\n  },\n  "dependencies": {\n    "express": "^4.18.2",\n    "cors": "^2.8.5"\n  }\n}`);
+        localStorage.setItem(`local_file_content_${name}_src/server.ts`, `import express from 'express';\nimport cors from 'cors';\nimport { router } from './routes';\n\nconst app = express();\napp.use(cors());\napp.use(express.json());\napp.use('/api/v1', router);\n\napp.listen(3001, () => {\n  console.log('Server running on port 3001');\n});`);
+        localStorage.setItem(`local_file_content_${name}_src/routes.ts`, `import { Router } from 'express';\n\nexport const router = Router();\n\nrouter.get('/health', (req, res) => {\n  res.json({ status: 'healthy', timestamp: new Date() });\n});`);
+        localStorage.setItem(`local_file_content_${name}_src/db.ts`, `// Core DB client setup\nexport const db = {\n  connect: async () => {\n    console.log('Connected to local database instance.');\n  }\n};`);
+      } else {
+        localStorage.setItem(`local_file_content_${name}_README.md`, `# ${name}\n\nLocal cloned repository repository built and checked out via Git Manager Workstation.\n\nEnjoy browsing and making local commits, branches, and merging pull requests!`);
+        localStorage.setItem(`local_file_content_${name}_package.json`, `{\n  "name": "${name}",\n  "version": "1.0.0",\n  "description": "Local workspace package."\n}`);
+        localStorage.setItem(`local_file_content_${name}_.gitignore`, `node_modules/\ndist/\n.env\n.DS_Store`);
+        localStorage.setItem(`local_file_content_${name}_src/index.ts`, `console.log("Welcome to ${name}!");\n// Implement your core application functions here`);
+      }
+
+      localStorage.setItem(`local_details_${name}_files`, JSON.stringify(files));
+      localStorage.setItem(`local_details_${name}_commits`, JSON.stringify(commits));
+      localStorage.setItem(`local_details_${name}_branches`, JSON.stringify(branches));
+      localStorage.setItem(`local_details_${name}_prs`, JSON.stringify(prs));
+    }
+
     setState((prev) => {
-      const newRepos = [newRepo, ...prev.githubRepos];
+      const newRepos = [newRepo, ...prev.githubRepos.filter(r => r.name !== name)];
       localStorage.setItem("localRepos", JSON.stringify(newRepos));
       return { ...prev, githubRepos: newRepos };
     });

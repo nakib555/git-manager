@@ -7,10 +7,21 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 
 export const CloneModal = () => {
-  const { closeModal, cloneRepository, recentClones, openRepo } = useAppContext();
+  const { closeModal, cloneRepository, recentClones, openRepo, currentRepo, currentRepoOwner, githubUser } = useAppContext();
   
-  const [url, setUrl] = useState('');
-  const [dest, setDest] = useState('/Documents/Projects/');
+  const getRepoUrl = () => {
+    if (currentRepo && currentRepoOwner) {
+      return `https://github.com/${currentRepoOwner}/${currentRepo}.git`;
+    }
+    if (currentRepo) {
+      const owner = githubUser?.login || "mockuser";
+      return `https://github.com/${owner}/${currentRepo}.git`;
+    }
+    return '';
+  };
+  
+  const [url, setUrl] = useState(getRepoUrl());
+  const [dest, setDest] = useState(currentRepo ? `/Documents/Projects/${currentRepo}` : '/Documents/Projects/');
   const [branch, setBranch] = useState('');
   const [depth, setDepth] = useState<'full' | 'shallow'>('full');
   const [submodules, setSubmodules] = useState(true);

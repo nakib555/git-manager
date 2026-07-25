@@ -6,6 +6,7 @@ import { CommitList } from './commit/CommitList';
 import { DiffViewer } from './commit/DiffViewer';
 import { CiCdPipelineFlow } from './commit/CiCdStatus';
 import { PRsScreen } from '../screens/repodetails/PRsScreen';
+import { CloneScreen } from '../screens/CloneScreen';
 import { 
   Search, Lock, Globe, Square, FolderGit2, Folder, GitBranch, 
   GitPullRequest, GitCommit, Check, Key, ExternalLink, ShieldAlert, 
@@ -13,7 +14,7 @@ import {
   Sliders, ArrowLeft, MoreVertical, Activity, Grid, Home, Eye, 
   EyeOff, RefreshCw, ChevronDown, BookOpen, Clock, FileText, 
   FileCode, Terminal, HelpCircle, Edit2, Trash2, Undo, Tag, RotateCcw,
-  AlertCircle
+  AlertCircle, HardDrive
 } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 
@@ -44,7 +45,7 @@ export const DesktopLayout: React.FC = () => {
   const [globalSearch, setGlobalSearch] = useState('');
 
   // Handle active sub-tab for Repository details screen
-  const isRepoScreen = ['files', 'commits', 'branches', 'insights', 'prs'].includes(currentScreen);
+  const isRepoScreen = ['files', 'commits', 'branches', 'insights', 'prs', 'clone'].includes(currentScreen);
 
   return (
     <div className="flex w-full h-full bg-main overflow-hidden text-text-main animate-fade-up">
@@ -154,7 +155,7 @@ export const DesktopLayout: React.FC = () => {
                 { id: 'prs', label: 'Pull Requests', icon: GitPullRequest },
                 { id: 'branches', label: 'Branch Manager', icon: GitBranch },
                 { id: 'files', label: 'Code Explorer', icon: FileCode },
-                { id: 'insights', label: 'Repository Insights', icon: Activity },
+                { id: 'insights', label: 'Repository Insights', icon: Activity }, { id: 'clone', label: 'Clone Repository', icon: HardDrive },
               ].map(item => {
                 const isActive = currentScreen === item.id;
                 const Icon = item.icon;
@@ -205,7 +206,7 @@ export const DesktopLayout: React.FC = () => {
           <div className="flex items-center gap-3">
             {/* Quick Clone repo button */}
             <button 
-              onClick={() => openModal('clone')}
+              onClick={() => navigate('clone')}
               className="bg-card border border-border hover:border-primary/50 text-text-main hover:text-primary text-xs font-bold py-2 px-4 rounded-xl active:scale-95 transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
             >
               <span>Clone Repository</span>
@@ -284,7 +285,7 @@ const DesktopDashboard: React.FC<{ globalSearch: string }> = ({ globalSearch }) 
   const [isLoadingEvents, setIsLoadingEvents] = useState(false);
 
   useEffect(() => {
-    if (githubUser && githubToken) {
+    if (githubUser && githubToken && typeof githubToken === 'string') {
       setIsLoadingEvents(true);
       const headers = {
         Authorization: githubToken.startsWith('gh') ? `Bearer ${githubToken}` : `token ${githubToken}`
@@ -968,6 +969,7 @@ const DesktopRepoWorkspace: React.FC = () => {
           )}
           {currentScreen === 'branches' && <DesktopBranchesView />}
           {currentScreen === 'insights' && <DesktopInsightsView />}
+          {currentScreen === 'clone' && <CloneScreen />}
         </div>
       )}
     </div>
@@ -1068,7 +1070,7 @@ const DesktopFilesView: React.FC = () => {
     const fileName = selectedFile || filesToDisplay[0]?.name;
     if (!fileName) return;
 
-    if (githubToken && currentRepoOwner) {
+    if (githubToken && typeof githubToken === 'string' && currentRepoOwner) {
       const fetchFileContent = async () => {
         setIsLoadingFile(true);
         try {

@@ -3,7 +3,7 @@ import { useAppContext } from '../AppContext';
 import { Folder, GitBranch, GitPullRequest, X, XCircle, CheckCircle2, MessageSquare, Bell, HardDrive } from 'lucide-react';
 
 export const ActionSheet: React.FC = () => {
-  const { isActionSheetOpen, closeModals, showToast, openModal } = useAppContext();
+  const { isActionSheetOpen, closeModals, showToast, openModal, navigate, closeActionSheet } = useAppContext();
 
   return (
     <>
@@ -29,7 +29,7 @@ export const ActionSheet: React.FC = () => {
         </div>
         <div 
           className="flex items-center gap-4 py-4 border-b border-border cursor-pointer active:opacity-70"
-          onClick={() => { openModal('clone'); }}
+          onClick={() => { closeActionSheet(); navigate('clone'); }}
         >
           <div className="w-10 h-10 rounded-xl bg-teal-500/10 text-teal-500 flex items-center justify-center">
             <HardDrive size={20} />

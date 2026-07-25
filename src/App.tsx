@@ -30,7 +30,7 @@ const MainApp = () => {
           <PullToRefresh>
             {currentScreen === 'dash' && <Dashboard />}
             {currentScreen === 'repos' && <Repositories />}
-            {['commits', 'prs', 'branches', 'files', 'insights'].includes(currentScreen) && <RepoDetails />}
+            {['commits', 'prs', 'branches', 'files', 'insights', 'clone'].includes(currentScreen) && <RepoDetails />}
             {currentScreen === 'settings' && <Settings />}
           </PullToRefresh>
           <BottomNav />

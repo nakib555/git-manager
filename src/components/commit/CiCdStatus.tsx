@@ -918,7 +918,7 @@ export const CiCdPipelineFlow = ({ hash }: { hash: string }) => {
                         <div className="text-[10px] text-text-muted/70 italic py-1">No log checkpoints recorded yet.</div>
                       ) : (
                         parsedLines.map((parsed, lIdx) => {
-                          const isUrl = parsed.text.startsWith('http');
+                          const isUrl = parsed && parsed.text && typeof parsed.text === 'string' && parsed.text.startsWith('http');
                           
                           return (
                             <div key={lIdx} className="flex items-start gap-2 text-[10px] leading-relaxed animate-fade-down" style={{ animationDelay: `${lIdx * 40}ms` }}>

@@ -93,7 +93,7 @@ export const FilesScreen = () => {
     const fileName = selectedFile;
     if (!fileName) return;
 
-    if (githubToken && currentRepoOwner) {
+    if (githubToken && typeof githubToken === 'string' && currentRepoOwner) {
       const fetchFileContent = async () => {
         setIsLoadingFile(true);
         try {
