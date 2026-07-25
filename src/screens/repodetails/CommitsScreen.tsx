@@ -740,7 +740,7 @@ export const CommitsScreen = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-md z-[10000] flex flex-col justify-end p-0"
+              className="fixed inset-0 bg-black/60 z-[10000] flex flex-col justify-end p-0"
             >
               <div 
                 className="absolute inset-0 z-0 cursor-pointer" 
