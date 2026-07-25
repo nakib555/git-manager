@@ -741,7 +741,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         );
         if (!res.ok) {
           const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.message || `Status ${res.status}`);
+          let errMsg = errData.message || `Status ${res.status}`;
+          if (errData.errors && Array.isArray(errData.errors)) {
+            const details = errData.errors.map((e: any) => e.message || e.code).filter(Boolean).join(", ");
+            if (details) {
+              errMsg = `${errMsg}: ${details}`;
+            }
+          }
+          throw new Error(errMsg);
         }
         const prData = await res.json();
         showToast(`Pull Request #${prData.number} opened on GitHub!`);
