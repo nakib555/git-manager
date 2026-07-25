@@ -103,19 +103,28 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
   }, []);
   // Apply theme to both document root and body
   useEffect(() => {
+    // Remove all classes first
+    document.documentElement.classList.remove("dark-theme", "amoled-theme", "custom-theme");
+    document.body.classList.remove("dark-theme", "amoled-theme", "custom-theme");
+
     if (state.theme === "dark") {
       document.documentElement.classList.add("dark-theme");
       document.body.classList.add("dark-theme");
-    } else {
-      document.documentElement.classList.remove("dark-theme");
-      document.body.classList.remove("dark-theme");
+    } else if (state.theme === "amoled") {
+      document.documentElement.classList.add("dark-theme", "amoled-theme");
+      document.body.classList.add("dark-theme", "amoled-theme");
+    } else if (state.theme === "custom") {
+      document.documentElement.classList.add("custom-theme");
+      document.body.classList.add("custom-theme");
     }
   }, [state.theme]);
   const toggleTheme = () => {
     setState((prev) => {
-      const newTheme = prev.theme === "dark" ? "light" : "dark";
-      localStorage.setItem("theme", newTheme);
-      return { ...prev, theme: newTheme };
+      const themeOrder: ('light' | 'dark' | 'amoled' | 'custom')[] = ['light', 'dark', 'amoled', 'custom'];
+      const currentIndex = themeOrder.indexOf(prev.theme);
+      const nextTheme = themeOrder[(currentIndex + 1) % themeOrder.length];
+      localStorage.setItem("theme", nextTheme);
+      return { ...prev, theme: nextTheme };
     });
   };
   const connectGitHub = async () => {
