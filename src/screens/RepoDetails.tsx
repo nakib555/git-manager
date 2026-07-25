@@ -477,6 +477,7 @@ const FilesScreen = () => {
   );
 };
 
+import { CommitList } from '../components/commit/CommitList';
 const CommitsScreen = () => {
   const { 
     githubToken,
@@ -502,13 +503,6 @@ const CommitsScreen = () => {
     setScrollElement(document.getElementById('mobile-scroll-container'));
   }, []);
 
-  const rowVirtualizer = useVirtualizer({
-    count: activeCommits.length,
-    getScrollElement: () => scrollElement,
-    estimateSize: () => 110,
-    overscan: 5,
-  });
-  
   // Interactive Dialog and Action Sheet States
   const [selectedCommit, setSelectedCommit] = useState<any | null>(null);
   const [commitDetailData, setCommitDetailData] = useState<any>(null);
@@ -748,8 +742,8 @@ const CommitsScreen = () => {
   };
 
   return (
-    <div className="flex flex-col gap-4 relative">
-      <div className="flex justify-between items-center bg-card border border-border rounded-xl p-3 mb-1">
+    <div className="flex flex-col gap-4 relative h-full min-h-[70vh]">
+      <div className="flex justify-between items-center bg-card border border-border rounded-xl p-3 mb-1 shrink-0">
         <span className="text-xs text-text-muted font-semibold uppercase tracking-wider">Ready to record state?</span>
         <button 
           onClick={() => openModal('commit')}
@@ -759,42 +753,14 @@ const CommitsScreen = () => {
         </button>
       </div>
 
-      <div className="pl-5 border-l-2 border-border relative pt-2" style={{ height: activeCommits.length > 0 ? `${rowVirtualizer.getTotalSize()}px` : 'auto' }}>
-        {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-          const commit = activeCommits[virtualRow.index];
-          const idx = virtualRow.index;
-          return (
-            <div
-              key={virtualRow.key}
-              data-index={virtualRow.index}
-              ref={rowVirtualizer.measureElement}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                transform: `translateY(${virtualRow.start}px)`,
-                paddingLeft: '1.25rem', // pl-5 equivalent for positioning children correctly relative to the line
-                paddingBottom: '1.5rem', // gap-6 equivalent
-              }}
-            >
-              <CommitItem 
-                hash={commit.hash} 
-                msg={commit.msg} 
-                author={commit.author} 
-                time={commit.time} 
-                add={commit.add} 
-                del={commit.del} 
-                isPrimary={idx === 0} 
-                avatar={commit.avatar}
-                onActionTrigger={() => handleOpenActions(commit)}
-              />
-            </div>
-          );
-        })}
-        {activeCommits.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 px-4 animate-fade-in"><img src={emptyStateImage} alt="Empty repository" className="w-48 h-48 mb-6 rounded-2xl shadow-sm opacity-90 object-cover pointer-events-none" /><div className="text-base font-bold text-text-main mb-2">It is quiet here...</div><div className="text-center text-text-muted text-xs leading-relaxed max-w-[250px]">This repository has no commits yet. Make your first staging commit to start tracking changes!</div></div>
-        )}
+      <div className="flex-1 min-h-0 pb-10">
+        <CommitList 
+          isDesktop={isDesktop} 
+          parentRef={scrollElement}
+          onSelectCommit={handleOpenActions}
+          onActionClick={handleOpenActions}
+          selectedCommitId={selectedCommit?.hash}
+        />
       </div>
 
       {/* Git Operation Action Progress overlay loader */}
@@ -2385,47 +2351,7 @@ const CommitsScreen = () => {
   );
 };
 
-const CommitItem = ({ hash, msg, author, time, add, del, isPrimary = false, avatar, onActionTrigger }: any) => {
-  return (
-    <div className="relative group/commit">
-      {/* Timeline Bullet Indicator */}
-      <div className={`absolute -left-[27px] top-1.5 w-3.5 h-3.5 bg-main border-2 rounded-full z-10 transition-colors ${isPrimary ? 'border-primary' : 'border-text-muted'}`}></div>
-      
-      <div className="flex justify-between items-start mb-1 gap-2">
-        <div className="flex items-center gap-1.5">
-          <div className="font-mono font-bold inline-flex items-center px-2 py-0.5 bg-card border border-border rounded-lg text-xs text-primary">
-            {hash}
-          </div>
-          {isPrimary && (
-            <span className="text-[9px] uppercase font-extrabold bg-primary/10 border border-primary/20 text-primary px-1.5 py-0.5 rounded">
-              Latest
-            </span>
-          )}
-        </div>
-        
-        {/* Actions Button */}
-        <button 
-          onClick={onActionTrigger}
-          className="p-1 rounded-lg bg-hover border border-border/80 hover:bg-hover/80 text-text-muted hover:text-text-main transition-all cursor-pointer active:scale-90"
-          title="Commit Actions"
-        >
-          <MoreVertical size={13} />
-        </button>
-      </div>
 
-      <div className="text-xs text-text-main font-semibold mb-2 leading-relaxed pl-0.5 mt-1.5">{msg}</div>
-      <div className="text-[10px] text-text-muted flex justify-between items-center pl-0.5">
-        <div className="flex items-center gap-1.5">
-          <img src={avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${author.split(' ')[0]}`} className="w-4.5 h-4.5 rounded-full bg-border" alt="" /> 
-          <span className="font-bold text-text-main/75">{author}</span> · {time}
-        </div>
-        <span className="text-[10px] font-bold text-success flex items-center gap-1">
-          {add} <span className={del !== '-0' && del !== '0' ? 'text-danger' : 'text-text-muted'}>{del}</span>
-        </span>
-      </div>
-    </div>
-  );
-};
 
 const BranchesScreen = () => {
   const { activeBranches, openModal } = useAppContext();

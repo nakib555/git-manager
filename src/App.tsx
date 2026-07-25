@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppProvider, useAppContext } from './AppContext';
 import { Header, BottomNav, RepoTabs } from './components/Layout';
 import { ActionSheet, NotificationDrawer, Toast } from './components/UI';
@@ -7,11 +8,12 @@ import { CreateModals } from './components/CreateModals';
 import { PullToRefresh } from './components/PullToRefresh';
 import { useIsDesktop } from './hooks/useIsDesktop';
 import { DesktopLayout } from './components/DesktopLayout';
-
 import { Dashboard } from './screens/Dashboard';
 import { Repositories } from './screens/Repositories';
 import { RepoDetails } from './screens/RepoDetails';
 import { Settings } from './screens/Settings';
+
+const queryClient = new QueryClient();
 
 const MainApp = () => {
   const { currentScreen } = useAppContext();
@@ -46,14 +48,16 @@ export default function App() {
   const [showSplash, setShowSplash] = useState(true);
 
   return (
-    <AppProvider>
-      <div className="w-full h-full relative bg-main">
-        {showSplash ? (
-          <Splash onComplete={() => setShowSplash(false)} />
-        ) : (
-          <MainApp />
-        )}
-      </div>
-    </AppProvider>
+    <QueryClientProvider client={queryClient}>
+      <AppProvider>
+        <div className="w-full h-full relative bg-main">
+          {showSplash ? (
+            <Splash onComplete={() => setShowSplash(false)} />
+          ) : (
+            <MainApp />
+          )}
+        </div>
+      </AppProvider>
+    </QueryClientProvider>
   );
 }
