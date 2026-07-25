@@ -4,6 +4,7 @@ import { useAppContext } from '../AppContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { CommitList } from './commit/CommitList';
 import { DiffViewer } from './commit/DiffViewer';
+import { CiCdPipelineFlow } from './commit/CiCdStatus';
 import { 
   Search, Lock, Globe, Square, FolderGit2, Folder, GitBranch, 
   GitPullRequest, GitCommit, Check, Key, ExternalLink, ShieldAlert, 
@@ -1364,6 +1365,9 @@ const DesktopCommitsView: React.FC = () => {
                 )}
               </AnimatePresence>
             </div>
+
+            {/* CI/CD Pipeline Visualizer */}
+            <CiCdPipelineFlow hash={commitToInspect.hash} />
 
             {/* Diff Visualizer Panel */}
             <div className="border border-border rounded-xl overflow-hidden flex flex-col">

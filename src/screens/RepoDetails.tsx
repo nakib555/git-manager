@@ -479,6 +479,7 @@ const FilesScreen = () => {
 
 import { CommitList } from '../components/commit/CommitList';
 import { DiffViewer } from '../components/commit/DiffViewer';
+import { CiCdPipelineFlow } from '../components/commit/CiCdStatus';
 const CommitsScreen = () => {
   const { 
     githubToken,
@@ -1406,6 +1407,9 @@ const CommitsScreen = () => {
                           </div>
                         </div>
                       </div>
+
+                      {/* CI/CD Pipeline Visualizer */}
+                      <CiCdPipelineFlow hash={selectedCommit.hash} />
 
                       {/* Bento Version Control Actions Grid */}
                       <div className="space-y-2 pt-1.5">

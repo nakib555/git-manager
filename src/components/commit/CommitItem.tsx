@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { motion } from 'motion/react';
 import { MoreVertical } from 'lucide-react';
+import { CiCdBadge } from './CiCdStatus';
 
 export const CommitItem = memo(({ commit, isSelected, isLatest, onSelect, onActionClick, style, isDesktop }: any) => {
   return (
@@ -41,6 +42,9 @@ export const CommitItem = memo(({ commit, isSelected, isLatest, onSelect, onActi
               )}
             </div>
             <p className="text-[11px] font-bold text-text-main line-clamp-1 truncate">{commit.msg}</p>
+            <div className="mt-1 flex">
+              <CiCdBadge hash={commit.hash} isCompact={true} />
+            </div>
             <div className="flex justify-between text-[9px] text-text-muted mt-2">
               <span className="font-semibold">{commit.author}</span>
               <span>{commit.time}</span>
@@ -62,6 +66,9 @@ export const CommitItem = memo(({ commit, isSelected, isLatest, onSelect, onActi
               <p className="text-xs font-semibold text-text-main line-clamp-2 leading-relaxed max-w-[90%]">
                 {commit.msg}
               </p>
+              <div className="mt-1.5 flex">
+                <CiCdBadge hash={commit.hash} isCompact={true} />
+              </div>
               <div className="flex justify-between items-center mt-2.5">
                 <div className="flex items-center gap-2">
                   <div className="w-5 h-5 rounded-full bg-border overflow-hidden shrink-0 border border-border">
