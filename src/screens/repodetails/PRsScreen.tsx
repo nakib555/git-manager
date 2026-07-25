@@ -46,7 +46,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { CiCdPipelineFlow, CiCdBadge, useCiCdStatus } from '../../components/commit/CiCdStatus';
 
 // ----------------------------------------------------------------------
-// Interfaces & Dummy Generators
+// Interfaces & Dummy Generators (Consistent with original model state)
 // ----------------------------------------------------------------------
 interface PRCommit {
   hash: string;
@@ -156,12 +156,12 @@ const getPRFiles = (prId: number, title: string): PRFile[] => {
 +    </div>
 +  );
 +};`
-    },
-    {
-      filename: `src/tests/${mainModule || 'Feature'}.test.tsx`,
-      additions: 18,
-      deletions: 2,
-      patch: `@@ -1,5 +1,21 @@
+     },
+     {
+       filename: `src/tests/${mainModule || 'Feature'}.test.tsx`,
+       additions: 18,
+       deletions: 2,
+       patch: `@@ -1,5 +1,21 @@
  import { describe, it, expect } from 'vitest';
 +import { render, screen } from '@testing-library/react';
 +import { ${mainModule || 'Feature'} } from '../components/${mainModule || 'Feature'}';
@@ -179,12 +179,12 @@ const getPRFiles = (prId: number, title: string): PRFile[] => {
 +    screen.getByRole('button').click();
 +  });
 +});`
-    },
-    {
-      filename: `src/docs/${mainModule || 'Feature'}.md`,
-      additions: 15,
-      deletions: 0,
-      patch: `@@ -0,0 +1,15 @@
+     },
+     {
+       filename: `src/docs/${mainModule || 'Feature'}.md`,
+       additions: 15,
+       deletions: 0,
+       patch: `@@ -0,0 +1,15 @@
 +# ${title}
 +
 +System module designed to streamline operational workflows.
@@ -199,16 +199,15 @@ const getPRFiles = (prId: number, title: string): PRFile[] => {
 +- Standard responsive light schematics
 +- Sub-millisecond lazy loading trigger hooks
 +- Deeply integrated linter validation`
-    }
-  ];
-};
+     }
+   ];
+ };
 
 export const PRsScreen = () => {
   const { 
     activePRs, 
     openModal, 
     updateLocalPRStatus, 
-    theme, 
     currentRepo, 
     githubUser 
   } = useAppContext();
@@ -392,7 +391,6 @@ export const PRsScreen = () => {
 
     // If approved, update status to "Approved" locally
     if (reviewStatus === 'approve') {
-      // Simulate review approval status locally
       const updatedPRs = activePRs.map(item => {
         if (item.id === selectedPRId) {
           return { ...item, status: 'Approved' };
@@ -538,10 +536,9 @@ export const PRsScreen = () => {
 
   const handleBulkAddLabel = (label: string) => {
     if (selectedPRIds.length === 0) return;
-    // Update local PR entries with bulk label indicator (simulate label write)
     const updatedPRs = activePRs.map(pr => {
       if (selectedPRIds.includes(pr.id)) {
-        return { ...pr, label: label }; // append mock label data internally
+        return { ...pr, label: label };
       }
       return pr;
     });
@@ -584,7 +581,6 @@ export const PRsScreen = () => {
       (pr.source && pr.source.toLowerCase().includes(query)) ||
       (pr.target && pr.target.toLowerCase().includes(query));
 
-    // Dropdown filters matches
     const authorMatches = filterAuthor === 'All' || pr.author === filterAuthor;
     const labelMatches = filterLabel === 'All' || 
       (filterLabel === 'feature' && pr.id % 3 === 0) || 
@@ -600,13 +596,11 @@ export const PRsScreen = () => {
     if (sortBy === 'oldest') return a.id - b.id;
     if (sortBy === 'comments_desc') return (b.comments || 0) - (a.comments || 0);
     if (sortBy === 'comments_asc') return (a.comments || 0) - (b.comments || 0);
-    return b.id - a.id; // default newest
+    return b.id - a.id;
   });
 
-  // Extract unique authors for dropdown filter
   const uniqueAuthors = Array.from(new Set(activePRs.map(pr => pr.author)));
 
-  // Diff parser helper
   const parseDiffPatch = (patch: string) => {
     if (!patch) return [];
     const lines = patch.split('\n');
@@ -652,27 +646,46 @@ export const PRsScreen = () => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="w-full pb-8">
       <AnimatePresence mode="wait">
         {!selectedPR ? (
           // ==================================================================
-          // LIST VIEW: DESKTOP & MOBILE INTEGRATED
+          // REDESIGNED PR LIST VIEW
           // ==================================================================
           <motion.div
             key="list"
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.15 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
             className="space-y-4"
           >
-            {/* Header and Bulk Action Banner */}
-            <div className="flex flex-col gap-3.5 bg-card border border-border rounded-2xl p-4 shadow-sm">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                
-                {/* Responsive Tab Selector */}
-                <div className="flex overflow-x-auto no-scrollbar border-b border-border/60 -mx-4 px-4 sm:mx-0 sm:px-0">
-                  {['Open', 'Merged', 'Closed'].map((tab) => {
+            {/* Elite Unified Control Center Card */}
+            <div className="bg-card border border-border/70 rounded-2xl p-5 shadow-sm space-y-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h1 className="text-xl font-black text-text-main tracking-tight flex items-center gap-2">
+                    <GitPullRequest className="text-primary" size={22} strokeWidth={2.5} />
+                    Pull Requests
+                  </h1>
+                  <p className="text-xs text-text-muted mt-1 font-medium">
+                    Manage incoming feature submissions, code reviews, and target branches.
+                  </p>
+                </div>
+
+                <button 
+                  onClick={() => openModal('pr')}
+                  className="bg-primary hover:bg-primary-hover text-white text-xs font-bold px-4 py-2.5 rounded-xl active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer self-stretch md:self-auto"
+                >
+                  <Plus size={15} strokeWidth={2.5} />
+                  <span>Draft Pull Request</span>
+                </button>
+              </div>
+
+              {/* Advanced Responsive Tab Strip */}
+              <div className="flex items-center justify-between border-b border-border/40 pt-2">
+                <div className="flex overflow-x-auto no-scrollbar -mb-[1px] gap-1">
+                  {(['Open', 'Merged', 'Closed'] as const).map((tab) => {
                     const count = activePRs.filter(pr => {
                       if (tab === 'Open') return pr.status === 'Open' || pr.status === 'Review Req.' || pr.status === 'Draft' || pr.status === 'Approved';
                       if (tab === 'Merged') return pr.status === 'Merged';
@@ -680,200 +693,234 @@ export const PRsScreen = () => {
                       return false;
                     }).length;
                     
+                    const isActive = activeTab === tab;
                     return (
                       <button 
                         key={tab}
-                        className={`px-4 py-2.5 text-[13px] font-bold relative transition-colors cursor-pointer shrink-0 ${activeTab === tab ? 'text-primary' : 'text-text-muted hover:text-text-main'}`}
-                        onClick={() => { setActiveTab(tab as any); setSelectedPRIds([]); }}
+                        className={`px-4 py-3 text-xs font-bold relative transition-all cursor-pointer shrink-0 ${
+                          isActive ? 'text-primary' : 'text-text-muted hover:text-text-main'
+                        }`}
+                        onClick={() => { setActiveTab(tab); setSelectedPRIds([]); }}
                       >
-                        {tab}
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] ml-1.5 font-bold ${activeTab === tab ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-hover/60 text-text-muted border border-border/50'}`}>
-                          {count}
+                        <span className="flex items-center gap-1.5">
+                          {tab} PRs
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            isActive ? 'bg-primary/10 text-primary border border-primary/25' : 'bg-hover/50 text-text-muted border border-border/40'
+                          }`}>
+                            {count}
+                          </span>
                         </span>
-                        {activeTab === tab && <div className="absolute -bottom-[1px] left-0 w-full h-[2px] bg-primary rounded-t-sm"></div>}
+                        {isActive && (
+                          <motion.div 
+                            layoutId="activeTabUnderline" 
+                            className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-primary rounded-t" 
+                          />
+                        )}
                       </button>
                     );
                   })}
                 </div>
 
-                <button 
-                  onClick={() => openModal('pr')}
-                  className="bg-primary hover:bg-primary-hover text-white text-xs font-bold px-4 py-2.5 rounded-xl active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer self-stretch sm:self-auto"
-                >
-                  <Plus size={14} strokeWidth={2.5} /> New Pull Request
-                </button>
+                <div className="hidden sm:flex items-center gap-2 text-xs text-text-muted font-bold px-1 select-none">
+                  <span className="w-2 h-2 rounded-full bg-success inline-block animate-pulse"></span>
+                  <span>Review Runner Live</span>
+                </div>
               </div>
 
-              {/* Main Filtering Bar */}
-              <div className="flex flex-col lg:flex-row gap-2.5">
+              {/* Filter and Search Bar */}
+              <div className="flex flex-col lg:flex-row gap-3">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3.5 top-3.5 text-text-muted" size={15} />
+                  <Search className="absolute left-3.5 top-[13px] text-text-muted" size={15} />
                   <input 
                     type="text" 
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search pull requests by title, author, branch or ID..."
-                    className="w-full bg-main/50 text-xs font-semibold pl-10 pr-4 py-3 rounded-xl border border-border/60 focus:outline-none focus:border-primary/50 text-text-main placeholder:text-text-muted/70"
+                    placeholder="Filter by title, author, branch or number..."
+                    className="w-full bg-main/40 text-xs font-semibold pl-10 pr-4 py-3 rounded-xl border border-border/50 focus:outline-none focus:border-primary/50 text-text-main placeholder:text-text-muted/60 transition-colors"
                   />
                   {searchQuery && (
                     <button 
                       onClick={() => setSearchQuery('')}
-                      className="absolute right-3 top-3.5 text-xs text-text-muted hover:text-text-main font-bold"
+                      className="absolute right-3.5 top-[13px] text-xs text-text-muted hover:text-text-main font-bold"
                     >
-                      Clear
+                      <X size={14} />
                     </button>
                   )}
                 </div>
 
-                {/* Filters Toggle Button for Desktop / Mobile trigger */}
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => {
-                      setIsFilterExpanded(!isFilterExpanded);
-                      setIsMobileFilterOpen(true);
+                      if (window.innerWidth < 1024) {
+                        setIsMobileFilterOpen(true);
+                      } else {
+                        setIsFilterExpanded(!isFilterExpanded);
+                      }
                     }}
                     className={`flex items-center justify-center gap-1.5 px-4 py-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
-                      isFilterExpanded ? 'bg-primary/10 border-primary/40 text-primary' : 'bg-main/50 border-border/60 text-text-muted hover:bg-hover'
+                      (isFilterExpanded || isMobileFilterOpen)
+                        ? 'bg-primary/5 border-primary/40 text-primary shadow-sm' 
+                        : 'bg-main/30 border-border/50 text-text-muted hover:bg-hover hover:text-text-main'
                     }`}
                   >
                     <SlidersHorizontal size={14} />
-                    <span>Filters</span>
+                    <span>Options</span>
+                    {isFilterExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
                   </button>
                   
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as any)}
-                    className="bg-main/50 border border-border/60 text-xs font-bold px-3 py-3 rounded-xl text-text-muted focus:outline-none cursor-pointer hover:bg-hover"
+                    className="bg-main/30 border border-border/50 text-xs font-bold px-3 py-3 rounded-xl text-text-muted focus:outline-none cursor-pointer hover:bg-hover max-w-[150px]"
                   >
                     <option value="newest">Newest first</option>
                     <option value="oldest">Oldest first</option>
-                    <option value="comments_desc">Most commented</option>
-                    <option value="comments_asc">Least commented</option>
+                    <option value="comments_desc">Comments: High</option>
+                    <option value="comments_asc">Comments: Low</option>
                   </select>
                 </div>
               </div>
 
-              {/* Desktop Collapsible Filters Row */}
-              {isFilterExpanded && (
-                <div className="hidden lg:grid grid-cols-4 gap-3 pt-3.5 border-t border-border/40 animate-fade-up">
-                  <div>
-                    <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Author</label>
-                    <select
-                      value={filterAuthor}
-                      onChange={(e) => setFilterAuthor(e.target.value)}
-                      className="w-full bg-main border border-border/80 rounded-xl px-3 py-2 text-xs font-semibold text-text-main focus:outline-none focus:border-primary/50"
-                    >
-                      <option value="All">All Authors</option>
-                      {uniqueAuthors.map(author => (
-                        <option key={author} value={author}>{author}</option>
-                      ))}
-                    </select>
-                  </div>
+              {/* Expanded Advanced Desktop Filters Grid */}
+              <AnimatePresence>
+                {isFilterExpanded && (
+                  <motion.div 
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.18 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-4 border-t border-border/30">
+                      <div>
+                        <label className="block text-[10px] font-extrabold text-text-muted uppercase tracking-wider mb-1.5">Author</label>
+                        <select
+                          value={filterAuthor}
+                          onChange={(e) => setFilterAuthor(e.target.value)}
+                          className="w-full bg-main border border-border/50 rounded-xl px-3 py-2 text-xs font-bold text-text-main focus:outline-none focus:border-primary/40"
+                        >
+                          <option value="All">All Authors</option>
+                          {uniqueAuthors.map(author => (
+                            <option key={author} value={author}>{author}</option>
+                          ))}
+                        </select>
+                      </div>
 
-                  <div>
-                    <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Label</label>
-                    <select
-                      value={filterLabel}
-                      onChange={(e) => setFilterLabel(e.target.value)}
-                      className="w-full bg-main border border-border/80 rounded-xl px-3 py-2 text-xs font-semibold text-text-main focus:outline-none focus:border-primary/50"
-                    >
-                      <option value="All">All Labels</option>
-                      <option value="feature">feature</option>
-                      <option value="bug">bug</option>
-                      <option value="high-priority">high-priority</option>
-                    </select>
-                  </div>
+                      <div>
+                        <label className="block text-[10px] font-extrabold text-text-muted uppercase tracking-wider mb-1.5">Label</label>
+                        <select
+                          value={filterLabel}
+                          onChange={(e) => setFilterLabel(e.target.value)}
+                          className="w-full bg-main border border-border/50 rounded-xl px-3 py-2 text-xs font-bold text-text-main focus:outline-none focus:border-primary/40"
+                        >
+                          <option value="All">All Labels</option>
+                          <option value="feature">feature</option>
+                          <option value="bug">bug</option>
+                          <option value="high-priority">high-priority</option>
+                        </select>
+                      </div>
 
-                  <div>
-                    <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Assignee</label>
-                    <select
-                      value={filterAssignee}
-                      onChange={(e) => setFilterAssignee(e.target.value)}
-                      className="w-full bg-main border border-border/80 rounded-xl px-3 py-2 text-xs font-semibold text-text-main focus:outline-none focus:border-primary/50"
-                    >
-                      <option value="All">All Assignees</option>
-                      <option value="git-manager-workstation">git-manager-workstation</option>
-                      <option value="lead-architect">lead-architect</option>
-                    </select>
-                  </div>
+                      <div>
+                        <label className="block text-[10px] font-extrabold text-text-muted uppercase tracking-wider mb-1.5">Assignee</label>
+                        <select
+                          value={filterAssignee}
+                          onChange={(e) => setFilterAssignee(e.target.value)}
+                          className="w-full bg-main border border-border/50 rounded-xl px-3 py-2 text-xs font-bold text-text-main focus:outline-none focus:border-primary/40"
+                        >
+                          <option value="All">All Assignees</option>
+                          <option value="git-manager-workstation">git-manager-workstation</option>
+                          <option value="lead-architect">lead-architect</option>
+                        </select>
+                      </div>
 
-                  <div>
-                    <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Milestones</label>
-                    <select
-                      value={filterMilestone}
-                      onChange={(e) => setFilterMilestone(e.target.value)}
-                      className="w-full bg-main border border-border/80 rounded-xl px-3 py-2 text-xs font-semibold text-text-main focus:outline-none focus:border-primary/50"
-                    >
-                      <option value="All">All Milestones</option>
-                      <option value="v1.2.0">v1.2.0 Integration</option>
-                      <option value="v1.3.0">v1.3.0 Redux Core</option>
-                    </select>
-                  </div>
-                </div>
-              )}
+                      <div>
+                        <label className="block text-[10px] font-extrabold text-text-muted uppercase tracking-wider mb-1.5">Milestone</label>
+                        <select
+                          value={filterMilestone}
+                          onChange={(e) => setFilterMilestone(e.target.value)}
+                          className="w-full bg-main border border-border/50 rounded-xl px-3 py-2 text-xs font-bold text-text-main focus:outline-none focus:border-primary/40"
+                        >
+                          <option value="All">All Milestones</option>
+                          <option value="v1.2.0">v1.2.0 Integration</option>
+                          <option value="v1.3.0">v1.3.0 Redux Core</option>
+                        </select>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
-            {/* Bulk Toolbar for PR Selection */}
-            {selectedPRIds.length > 0 && (
-              <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-sm animate-fade-up">
-                <div className="flex items-center gap-2 text-xs font-bold text-primary">
-                  <CheckSquare size={16} />
-                  <span>{selectedPRIds.length} Pull Requests selected</span>
-                </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <button
-                    onClick={() => handleBulkStatusChange('Merged')}
-                    className="bg-purple-600 hover:bg-purple-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg transition-all"
-                  >
-                    Bulk Merge
-                  </button>
-                  <button
-                    onClick={() => handleBulkStatusChange('Closed')}
-                    className="bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg transition-all"
-                  >
-                    Bulk Close
-                  </button>
-                  <button
-                    onClick={() => handleBulkStatusChange('Open')}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg transition-all"
-                  >
-                    Reopen Selected
-                  </button>
-                  <button
-                    onClick={() => handleBulkAddLabel('high-priority')}
-                    className="bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg transition-all"
-                  >
-                    Mark High Priority
-                  </button>
-                  <button
-                    onClick={() => setSelectedPRIds([])}
-                    className="text-xs font-bold text-text-muted hover:text-text-main px-2 py-1.5"
-                  >
-                    Deselect
-                  </button>
-                </div>
+            {/* Floating Bulk Action Center */}
+            <AnimatePresence>
+              {selectedPRIds.length > 0 && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 15, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 15, scale: 0.98 }}
+                  className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-md"
+                >
+                  <div className="flex items-center gap-2.5 text-xs font-extrabold text-primary">
+                    <CheckSquare size={16} />
+                    <span>{selectedPRIds.length} Pull Requests Selected</span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap justify-center">
+                    <button
+                      onClick={() => handleBulkStatusChange('Merged')}
+                      className="bg-purple-600 hover:bg-purple-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl transition-all cursor-pointer shadow-sm active:scale-[0.97]"
+                    >
+                      Bulk Merge
+                    </button>
+                    <button
+                      onClick={() => handleBulkStatusChange('Closed')}
+                      className="bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl transition-all cursor-pointer shadow-sm active:scale-[0.97]"
+                    >
+                      Bulk Close
+                    </button>
+                    <button
+                      onClick={() => handleBulkStatusChange('Open')}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl transition-all cursor-pointer shadow-sm active:scale-[0.97]"
+                    >
+                      Reopen Selected
+                    </button>
+                    <button
+                      onClick={() => handleBulkAddLabel('high-priority')}
+                      className="bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl transition-all cursor-pointer shadow-sm active:scale-[0.97]"
+                    >
+                      Mark High Priority
+                    </button>
+                    <button
+                      onClick={() => setSelectedPRIds([])}
+                      className="text-xs font-bold text-text-muted hover:text-text-main px-2 py-1.5 transition-colors cursor-pointer"
+                    >
+                      Deselect
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* List Selection Header Helper */}
+            {filteredPRs.length > 0 && (
+              <div className="flex items-center justify-between px-1 text-xs text-text-muted font-bold select-none">
+                <button 
+                  onClick={() => toggleSelectAll(filteredPRs)}
+                  className="flex items-center gap-2 hover:text-text-main transition-colors"
+                >
+                  {filteredPRs.every(pr => selectedPRIds.includes(pr.id)) ? (
+                    <CheckSquare size={14} className="text-primary" />
+                  ) : (
+                    <Square size={14} />
+                  )}
+                  <span>Select All Visible</span>
+                </button>
+                <span>{filteredPRs.length} matching PRs</span>
               </div>
             )}
 
-            {/* List of PRs */}
+            {/* Pull Requests List */}
             <div className="space-y-3">
-              {filteredPRs.length > 0 && (
-                <div className="flex items-center gap-3 px-3 py-1 text-xs text-text-muted font-bold">
-                  <button 
-                    onClick={() => toggleSelectAll(filteredPRs)}
-                    className="flex items-center gap-2 hover:text-text-main select-none"
-                  >
-                    {filteredPRs.every(pr => selectedPRIds.includes(pr.id)) ? (
-                      <CheckSquare size={14} className="text-primary" />
-                    ) : (
-                      <Square size={14} />
-                    )}
-                    <span>Select All Visible</span>
-                  </button>
-                </div>
-              )}
-
-              {filteredPRs.map(pr => {
+              {filteredPRs.map((pr) => {
                 const isApproved = pr.status === 'Approved' || pr.status === 'Merged';
                 const isDraft = pr.status === 'Draft';
                 const isClosed = pr.status === 'Closed';
@@ -882,100 +929,106 @@ export const PRsScreen = () => {
                 return (
                   <div 
                     key={pr.id} 
-                    className={`flex items-stretch border rounded-2xl transition-all hover:shadow-sm ${
-                      isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/40'
+                    className={`flex items-stretch border rounded-2xl overflow-hidden transition-all duration-150 ${
+                      isSelected 
+                        ? 'border-primary/80 bg-primary/5 shadow-sm' 
+                        : 'border-border/60 bg-card hover:border-primary/45 hover:shadow-sm'
                     }`}
                   >
-                    {/* Multiselect Checkbox Margin area */}
+                    {/* Multiselect Column */}
                     <div 
                       onClick={() => toggleSelectPR(pr.id)}
-                      className="flex items-center justify-center pl-4 pr-1 cursor-pointer hover:bg-hover/20"
+                      className="flex items-center justify-center pl-4 pr-1 cursor-pointer hover:bg-hover/10 select-none shrink-0"
                     >
                       {isSelected ? (
                         <CheckSquare size={16} className="text-primary" />
                       ) : (
-                        <Square size={16} className="text-text-muted/60 hover:text-text-main" />
+                        <Square size={16} className="text-text-muted/50 hover:text-text-main transition-colors" />
                       )}
                     </div>
 
+                    {/* PR Body Trigger Column */}
                     <div 
                       onClick={() => { setSelectedPRId(pr.id); setDetailTab('conversation'); }}
                       className="flex-1 p-4 pl-3 flex gap-3.5 items-start cursor-pointer min-w-0"
                     >
-                      <div className="mt-0.5">
+                      <div className="mt-0.5 shrink-0">
                         {pr.status === 'Merged' ? (
-                          <div className="w-8 h-8 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-500 flex items-center justify-center shrink-0">
+                          <div className="w-8 h-8 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-500 flex items-center justify-center">
                             <GitPullRequest size={15} strokeWidth={2.5} />
                           </div>
                         ) : isClosed ? (
-                          <div className="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 flex items-center justify-center shrink-0">
+                          <div className="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 flex items-center justify-center">
                             <GitPullRequest size={15} strokeWidth={2.5} />
                           </div>
                         ) : (
-                          <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 flex items-center justify-center shrink-0">
+                          <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 flex items-center justify-center">
                             <GitPullRequest size={15} strokeWidth={2.5} />
                           </div>
                         )}
                       </div>
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2">
-                          <h4 className="text-sm font-bold text-text-main leading-snug truncate hover:text-primary transition-colors">
+                      <div className="flex-1 min-w-0 space-y-1.5">
+                        <div className="flex items-start justify-between gap-3">
+                          <h4 className="text-sm font-bold text-text-main leading-tight hover:text-primary transition-colors truncate">
                             {pr.title}
                           </h4>
-                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-md border shrink-0 ${
+                          
+                          <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full border tracking-wide uppercase shrink-0 ${
                             pr.status === 'Merged' ? 'bg-purple-500/10 text-purple-500 border-purple-500/20' :
                             isClosed ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' :
-                            isDraft ? 'bg-neutral-500/10 text-text-muted border-border' :
+                            isDraft ? 'bg-hover text-text-muted border-border/70' :
+                            isApproved ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/25' :
                             'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
                           }`}>
                             {pr.status}
                           </span>
                         </div>
 
-                        <div className="text-xs text-text-muted font-semibold mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-                          <span>#{pr.id}</span>
-                          <span>•</span>
+                        <div className="text-[11px] text-text-muted font-semibold flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <span className="text-text-main font-mono">#{pr.id}</span>
+                          <span className="text-border/80">•</span>
                           <span>opened {pr.time}</span>
+                          <span className="text-border/80">•</span>
                           <span>by</span>
                           <span className="text-text-main font-bold">{pr.author}</span>
                           
-                          {/* Label Chip Fallback Indicators */}
+                          {/* Label Badges */}
                           {pr.id % 3 === 0 && (
-                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-500 border border-amber-500/15">feature</span>
+                            <span className="text-[9px] font-extrabold px-2 py-0.1 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/15">feature</span>
                           )}
                           {pr.id % 3 === 1 && (
-                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-rose-500/10 text-rose-500 border border-rose-500/15">bug</span>
+                            <span className="text-[9px] font-extrabold px-2 py-0.1 rounded-full bg-rose-500/10 text-rose-500 border border-rose-500/15">bug</span>
+                          )}
+                          {pr.id % 2 === 0 && (
+                            <span className="text-[9px] font-extrabold px-2 py-0.1 rounded-full bg-indigo-500/10 text-indigo-500 border border-indigo-500/15">high-priority</span>
                           )}
                         </div>
 
-                        {/* Branch mapping visual info row */}
-                        <div className="flex flex-wrap items-center justify-between gap-2 mt-3.5 pt-3.5 border-t border-border/40">
+                        {/* Branch flow and details connector */}
+                        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 mt-1.5 border-t border-border/40">
                           <div className="flex items-center gap-1.5">
-                            <span className="font-mono text-[10px] px-2 py-0.5 rounded-md bg-main border border-border/60 text-text-muted max-w-[120px] truncate">
-                              {pr.source || 'feature-branch'}
+                            <span className="font-mono text-[10px] px-2 py-0.5 rounded-lg bg-main border border-border/50 text-text-muted max-w-[140px] truncate">
+                              {pr.source || 'feature'}
                             </span>
                             <CornerDownRight size={10} className="text-text-muted shrink-0" />
-                            <span className="font-mono text-[10px] px-2 py-0.5 rounded-md bg-main border border-border/60 text-text-main font-bold max-w-[120px] truncate">
+                            <span className="font-mono text-[10px] px-2 py-0.5 rounded-lg bg-main border border-border/50 text-text-main font-bold max-w-[140px] truncate">
                               {pr.target || 'main'}
                             </span>
                           </div>
 
                           <div className="flex items-center gap-3">
-                            {/* Comments counter */}
                             <div className="flex items-center gap-1 text-[11px] text-text-muted font-bold">
                               <MessageSquare size={12} />
                               <span>{pr.comments || 0}</span>
                             </div>
                             
-                            {/* CI/CD status compact icon */}
                             <CiCdBadge hash={pr.title} isCompact />
 
-                            {/* Avatar */}
                             {pr.avatar ? (
-                              <img src={pr.avatar} className="w-5 h-5 rounded-full border border-border object-cover" alt="" referrerPolicy="no-referrer" />
+                              <img src={pr.avatar} className="w-5.5 h-5.5 rounded-full border border-border object-cover" alt="" referrerPolicy="no-referrer" />
                             ) : (
-                              <div className="w-5 h-5 rounded-full bg-primary/10 text-[8px] font-extrabold flex items-center justify-center text-primary border border-primary/20">
+                              <div className="w-5.5 h-5.5 rounded-full bg-primary/10 text-[8px] font-extrabold flex items-center justify-center text-primary border border-primary/20">
                                 {pr.author.substring(0, 2).toUpperCase()}
                               </div>
                             )}
@@ -988,11 +1041,11 @@ export const PRsScreen = () => {
               })}
 
               {filteredPRs.length === 0 && (
-                <div className="bg-card border border-border rounded-2xl py-12 px-4 text-center">
-                  <GitPullRequest size={36} className="text-text-muted/40 mx-auto mb-3" />
+                <div className="bg-card border border-border rounded-2xl py-14 px-4 text-center">
+                  <GitPullRequest size={40} className="text-text-muted/40 mx-auto mb-3" />
                   <p className="text-xs text-text-main font-bold uppercase tracking-wider">No Pull Requests Found</p>
-                  <p className="text-xs text-text-muted mt-1 max-w-sm mx-auto">
-                    No results match your current tab selection or search filter. Clear your filters or draft a new pull request!
+                  <p className="text-xs text-text-muted mt-1 max-w-sm mx-auto leading-relaxed">
+                    We couldn't find any pull requests matching your current tab filter or search keyword. Try clearing filters to start fresh!
                   </p>
                   <button 
                     onClick={() => {
@@ -1002,9 +1055,9 @@ export const PRsScreen = () => {
                       setFilterAssignee('All');
                       setFilterMilestone('All');
                     }}
-                    className="mt-4 text-xs font-bold text-primary hover:underline cursor-pointer"
+                    className="mt-5 text-xs font-bold text-primary hover:underline cursor-pointer"
                   >
-                    Clear All Filters
+                    Reset All Filters
                   </button>
                 </div>
               )}
@@ -1012,217 +1065,231 @@ export const PRsScreen = () => {
           </motion.div>
         ) : (
           // ==================================================================
-          // PR DETAIL VIEW: UNIFIED HIGH PERFORMANCE DESKTOP & MOBILE
+          // REDESIGNED PR DETAIL VIEW
           // ==================================================================
           <motion.div
             key="details"
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.15 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
             className="space-y-4"
           >
-            {/* PR Details upper navigation status board */}
-            <div className="bg-card border border-border rounded-2xl p-4.5 sm:p-5 shadow-sm space-y-4">
-              <div className="flex items-center justify-between">
+            {/* Elegant Header Action Strip */}
+            <div className="bg-card border border-border/70 rounded-2xl p-5 shadow-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-border/30 pb-3">
                 <button 
                   onClick={() => setSelectedPRId(null)}
                   className="inline-flex items-center gap-1 text-xs font-bold text-text-muted hover:text-text-main transition-colors cursor-pointer"
                 >
-                  <ArrowLeft size={14} /> Back to PR List
+                  <ArrowLeft size={14} /> Back to Hub
                 </button>
 
-                {/* Submit Review Button in Header (Visible on Desktop) */}
                 <button
                   onClick={() => setIsReviewFormOpen(!isReviewFormOpen)}
-                  className="bg-primary hover:bg-primary-hover text-white text-[11px] font-bold px-3.5 py-1.5 rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                  className="bg-primary hover:bg-primary-hover text-white text-[11px] font-bold px-3.5 py-2 rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
                 >
                   <CheckCircle size={13} />
-                  <span>Review Changes</span>
+                  <span>Review Code Changes</span>
                 </button>
               </div>
 
+              {/* Title & Stats */}
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <div className="space-y-2 flex-1 min-w-0">
                   <div className="flex items-center flex-wrap gap-2">
-                    <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-xl border ${
-                      selectedPR.status === 'Merged' ? 'bg-purple-500/10 text-purple-500 border-purple-500/20' :
-                      selectedPR.status === 'Closed' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' :
-                      selectedPR.status === 'Approved' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
-                      'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                    <span className={`inline-flex items-center gap-1 text-xs font-bold px-3 py-1 rounded-full border ${
+                      selectedPR.status === 'Merged' ? 'bg-purple-500/15 text-purple-500 border-purple-500/25' :
+                      selectedPR.status === 'Closed' ? 'bg-rose-500/15 text-rose-500 border-rose-500/25' :
+                      selectedPR.status === 'Approved' ? 'bg-emerald-500/15 text-emerald-500 border-emerald-500/25' :
+                      'bg-emerald-500/15 text-emerald-500 border-emerald-500/25'
                     }`}>
                       <GitPullRequest size={13} strokeWidth={2.5} />
                       {selectedPR.status}
                     </span>
-                    <span className="text-sm text-text-muted font-mono font-bold">#{selectedPR.id}</span>
+                    <span className="text-xs text-text-muted font-mono font-bold bg-hover/50 px-2.5 py-0.5 rounded-lg border border-border/30">#{selectedPR.id}</span>
                   </div>
                   
-                  <h2 className="text-lg sm:text-xl font-extrabold text-text-main leading-snug break-words">
+                  <h2 className="text-lg md:text-xl font-black text-text-main leading-snug break-words">
                     {selectedPR.title}
                   </h2>
 
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-text-muted font-semibold">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-text-muted font-semibold">
                     <span>opened {selectedPR.time}</span>
+                    <span className="text-border/60">•</span>
                     <span>by</span>
                     <span className="text-text-main font-bold">{selectedPR.author}</span>
-                    <span>•</span>
+                    <span className="text-border/60">•</span>
                     <span className="text-text-main font-bold">{getPRCommits(selectedPR.id, selectedPR.title).length} commits</span>
-                    <span>•</span>
+                    <span className="text-border/60">•</span>
                     <span className="text-text-main font-bold">{getPRFiles(selectedPR.id, selectedPR.title).length} files changed</span>
                   </div>
                 </div>
 
-                {/* Branches mapping connector widget */}
-                <div className="bg-main/40 border border-border/60 rounded-xl p-3 flex flex-col justify-center max-w-sm shrink-0">
-                  <div className="text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2">Branches Map</div>
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-1 bg-card border border-border/50 px-2 py-1 rounded-lg">
-                      <span className="font-mono text-[10px] text-text-muted max-w-[120px] truncate">{selectedPR.source || 'feature-branch'}</span>
-                    </div>
+                {/* Branches Visual Map */}
+                <div className="bg-main/30 border border-border/50 rounded-xl p-3 flex flex-col justify-center min-w-[240px] shrink-0">
+                  <div className="text-[9px] font-extrabold text-text-muted uppercase tracking-widest mb-1.5">Branch Target Connection</div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-mono text-[10px] px-2 py-1 rounded bg-card border border-border/50 text-text-muted truncate max-w-[110px]" title={selectedPR.source}>
+                      {selectedPR.source || 'feature'}
+                    </span>
                     <CornerDownRight size={13} className="text-text-muted shrink-0 rotate-[-45deg]" />
-                    <div className="flex items-center gap-1 bg-card border border-border/50 px-2 py-1 rounded-lg">
-                      <span className="font-mono text-[10px] text-text-main font-bold max-w-[120px] truncate">{selectedPR.target || 'main'}</span>
-                    </div>
+                    <span className="font-mono text-[10px] px-2 py-1 rounded bg-card border border-border/50 text-text-main font-extrabold truncate max-w-[110px]" title={selectedPR.target}>
+                      {selectedPR.target || 'main'}
+                    </span>
                   </div>
                 </div>
               </div>
 
-              {/* Review Form Drawer Accordion */}
-              {isReviewFormOpen && (
-                <div className="bg-main/30 border border-border/80 rounded-2xl p-4.5 animate-fade-up space-y-3.5">
-                  <span className="text-xs font-bold text-text-main block uppercase tracking-wider">Draft Pull Request Review</span>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                    {[
-                      { id: 'comment', label: 'Comment Only', desc: 'Submit general feedback' },
-                      { id: 'approve', label: 'Approve Changes', desc: 'Authorise merge eligibility' },
-                      { id: 'request_changes', label: 'Request Changes', desc: 'Block merge until fixed' }
-                    ].map((opt) => (
-                      <div
-                        key={opt.id}
-                        onClick={() => setReviewStatus(opt.id as any)}
-                        className={`p-3 rounded-xl border cursor-pointer select-none transition-all ${
-                          reviewStatus === opt.id 
-                            ? 'bg-primary/5 border-primary text-primary' 
-                            : 'bg-card border-border/60 hover:bg-hover/30 text-text-muted'
-                        }`}
-                      >
-                        <span className={`block text-xs font-bold ${reviewStatus === opt.id ? 'text-primary' : 'text-text-main'}`}>{opt.label}</span>
-                        <span className="block text-[10px] opacity-75 mt-0.5 leading-normal">{opt.desc}</span>
+              {/* Review Accordion Overlay Drawer */}
+              <AnimatePresence>
+                {isReviewFormOpen && (
+                  <motion.div 
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="bg-main/40 border border-border/60 rounded-2xl p-5 mt-3 space-y-4">
+                      <span className="text-xs font-black text-text-main block uppercase tracking-wider">Draft Pull Request Review Feedback</span>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        {[
+                          { id: 'comment', label: 'Comment Only', desc: 'Submit general questions or feedback' },
+                          { id: 'approve', label: 'Approve changes', desc: 'Certify files and authorize merging' },
+                          { id: 'request_changes', label: 'Request Changes', desc: 'Require changes before merge' }
+                        ].map((opt) => (
+                          <div
+                            key={opt.id}
+                            onClick={() => setReviewStatus(opt.id as any)}
+                            className={`p-3.5 rounded-xl border cursor-pointer select-none transition-all ${
+                              reviewStatus === opt.id 
+                                ? 'bg-primary/5 border-primary text-primary shadow-sm' 
+                                : 'bg-card border-border/40 hover:bg-hover/20 text-text-muted'
+                            }`}
+                          >
+                            <span className={`block text-xs font-bold ${reviewStatus === opt.id ? 'text-primary' : 'text-text-main'}`}>{opt.label}</span>
+                            <span className="block text-[10px] opacity-75 mt-1 leading-relaxed">{opt.desc}</span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
 
-                  <textarea
-                    rows={3}
-                    value={reviewBody}
-                    onChange={(e) => setReviewBody(e.target.value)}
-                    placeholder="Add an optional message summarizing your code review details..."
-                    className="w-full bg-card text-xs font-medium p-3.5 rounded-xl border border-border/85 focus:outline-none focus:border-primary/50 text-text-main resize-none"
-                  />
+                      <textarea
+                        rows={3}
+                        value={reviewBody}
+                        onChange={(e) => setReviewBody(e.target.value)}
+                        placeholder="Add constructive comments, requirements or summary notes..."
+                        className="w-full bg-card text-xs font-semibold p-3 rounded-xl border border-border/50 focus:outline-none focus:border-primary/50 text-text-main resize-none"
+                      />
 
-                  <div className="flex justify-end gap-2">
-                    <button
-                      onClick={() => setIsReviewFormOpen(false)}
-                      className="border border-border text-text-muted text-xs font-bold px-4 py-2 rounded-xl hover:bg-hover transition-all cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleSubmitReview}
-                      className="bg-primary hover:bg-primary-hover text-white text-xs font-bold px-5 py-2 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <Send size={12} /> Submit Review
-                    </button>
-                  </div>
-                </div>
-              )}
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => setIsReviewFormOpen(false)}
+                          className="border border-border/50 text-text-muted text-xs font-bold px-4 py-2 rounded-xl hover:bg-hover transition-colors cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleSubmitReview}
+                          className="bg-primary hover:bg-primary-hover text-white text-xs font-bold px-5 py-2 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Send size={12} /> Submit Review
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-              {/* Detail Navigation Tabs */}
-              <div className="flex border-t border-border/60 pt-4 gap-1.5">
+              {/* Tab Selector Strip for Detail Panels */}
+              <div className="flex border-t border-border/30 pt-4 overflow-x-auto no-scrollbar gap-2">
                 {[
                   { id: 'conversation', label: 'Conversation', icon: <MessageSquare size={13} />, count: customComments.length },
                   { id: 'commits', label: 'Commits', icon: <GitCommit size={13} />, count: getPRCommits(selectedPR.id, selectedPR.title).length },
                   { id: 'files', label: 'Files Changed', icon: <FileCode size={13} />, count: getPRFiles(selectedPR.id, selectedPR.title).length }
-                ].map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setDetailTab(tab.id as any)}
-                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all select-none ${
-                      detailTab === tab.id 
-                        ? 'bg-primary text-white shadow-sm' 
-                        : 'bg-main/50 text-text-muted hover:bg-hover hover:text-text-main'
-                    }`}
-                  >
-                    {tab.icon}
-                    <span>{tab.label}</span>
-                    <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full ${
-                      detailTab === tab.id ? 'bg-white/20 text-white' : 'bg-hover text-text-muted'
-                    }`}>
-                      {tab.count}
-                    </span>
-                  </button>
-                ))}
+                ].map((tab) => {
+                  const isActive = detailTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setDetailTab(tab.id as any)}
+                      className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all shrink-0 select-none ${
+                        isActive 
+                          ? 'bg-primary text-white shadow-sm' 
+                          : 'bg-main/50 text-text-muted hover:bg-hover hover:text-text-main'
+                      }`}
+                    >
+                      {tab.icon}
+                      <span>{tab.label}</span>
+                      <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full ${
+                        isActive ? 'bg-white/25 text-white' : 'bg-hover text-text-muted'
+                      }`}>
+                        {tab.count}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
-            {/* Core Grid: Split columns desktop, Stacked mobile */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            {/* Split screen content area */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
               
-              {/* Left Core Panel (9 Columns desktop) */}
+              {/* Left Core Module (9 Columns) */}
               <div className="lg:col-span-9 space-y-4">
                 
-                {/* 1. CONVERSATION TAB */}
+                {/* 1. CONVERSATION VIEW MODULE */}
                 {detailTab === 'conversation' && (
                   <div className="space-y-4">
                     
-                    {/* PR Initial Description */}
-                    <div className="bg-card border border-border rounded-2xl p-4.5 sm:p-5 shadow-sm">
-                      <div className="flex items-center gap-2.5 border-b border-border/50 pb-3 mb-4">
+                    {/* Opened description container */}
+                    <div className="bg-card border border-border/70 rounded-2xl p-5 shadow-sm space-y-3.5">
+                      <div className="flex items-center gap-2.5 border-b border-border/30 pb-3">
                         {selectedPR.avatar ? (
-                          <img src={selectedPR.avatar} className="w-6 h-6 rounded-full border border-border object-cover" alt="" referrerPolicy="no-referrer" />
+                          <img src={selectedPR.avatar} className="w-6.5 h-6.5 rounded-full border border-border object-cover" alt="" referrerPolicy="no-referrer" />
                         ) : (
-                          <div className="w-6 h-6 rounded-full bg-primary/10 text-[10px] font-extrabold flex items-center justify-center text-primary">
+                          <div className="w-6.5 h-6.5 rounded-full bg-primary/10 text-[10px] font-extrabold flex items-center justify-center text-primary border border-primary/25">
                             {selectedPR.author.substring(0, 2).toUpperCase()}
                           </div>
                         )}
                         <div>
                           <span className="text-xs font-bold text-text-main">{selectedPR.author}</span>
-                          <span className="text-[10px] text-text-muted ml-2 font-medium">authored description</span>
+                          <span className="text-[10px] text-text-muted ml-2 font-medium">opened this pull request {selectedPR.time}</span>
                         </div>
                       </div>
 
-                      <div className="space-y-2 text-xs leading-relaxed text-text-main font-medium">
-                        <p className="font-bold text-sm mb-1">Description</p>
-                        <p className="whitespace-pre-wrap text-text-muted">{selectedPR.desc || "No description provided."}</p>
+                      <div className="space-y-2 text-xs text-text-main leading-relaxed">
+                        <p className="font-extrabold text-sm">Specification & Details</p>
+                        <p className="whitespace-pre-wrap text-text-muted font-semibold">{selectedPR.desc || "No description provided."}</p>
                       </div>
                     </div>
 
-                    {/* Timeline Activity Flow */}
-                    <div className="space-y-3.5">
-                      <div className="text-[10px] font-bold text-text-muted uppercase tracking-wider pl-1.5">Timeline Activity</div>
+                    {/* Timeline Activity Loop */}
+                    <div className="space-y-3">
+                      <span className="text-[10px] font-extrabold text-text-muted uppercase tracking-widest pl-1.5 block">Review Discussion timeline</span>
                       
-                      <div className="space-y-3 relative before:absolute before:top-2 before:bottom-2 before:left-[17px] before:w-[2px] before:bg-border/40">
+                      <div className="space-y-3 relative before:absolute before:top-2 before:bottom-2 before:left-[17px] before:w-[2px] before:bg-border/30">
                         
-                        {/* Open Event */}
-                        <div className="flex gap-4 items-start relative z-10">
-                          <div className="w-9 h-9 rounded-full bg-main border border-border flex items-center justify-center shrink-0">
+                        {/* Event list start */}
+                        <div className="flex gap-4 items-start relative z-10 animate-fade-up">
+                          <div className="w-9 h-9 rounded-full bg-main border border-border flex items-center justify-center shrink-0 shadow-sm">
                             <Plus size={14} className="text-text-muted" />
                           </div>
                           <div className="bg-card border border-border/60 rounded-xl p-3 flex-1 min-w-0">
                             <p className="text-xs text-text-muted font-medium">
-                              <span className="font-bold text-text-main">{selectedPR.author}</span> opened this pull request {selectedPR.time}.
+                              <span className="font-bold text-text-main">{selectedPR.author}</span> initialized branch merger pipeline yesterday.
                             </p>
                           </div>
                         </div>
 
-                        {/* Interactive Timeline Entries */}
+                        {/* Stored Timeline Events */}
                         {customComments.map((comment) => {
                           if (comment.isSystem) {
                             const isApp = comment.type === 'approve';
                             const isReq = comment.type === 'request_changes';
                             return (
-                              <div key={comment.id} className="flex gap-4 items-start relative z-10">
-                                <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 border ${
+                              <div key={comment.id} className="flex gap-4 items-start relative z-10 animate-fade-up">
+                                <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 border shadow-sm ${
                                   isApp ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' :
                                   isReq ? 'bg-rose-500/10 border-rose-500/20 text-rose-500' :
                                   'bg-purple-500/10 border-purple-500/20 text-purple-500'
@@ -1242,37 +1309,36 @@ export const PRsScreen = () => {
                             );
                           }
 
-                          // Review Box timeline card
                           const isApprove = comment.type === 'approve';
                           const isReq = comment.type === 'request_changes';
                           
                           return (
-                            <div key={comment.id} className="flex gap-4 items-start relative z-10">
+                            <div key={comment.id} className="flex gap-4 items-start relative z-10 animate-fade-up">
                               {comment.avatar ? (
-                                <img src={comment.avatar} className="w-9 h-9 rounded-full border border-border object-cover shrink-0" alt="" referrerPolicy="no-referrer" />
+                                <img src={comment.avatar} className="w-9 h-9 rounded-full border border-border/70 object-cover shrink-0 shadow-sm" alt="" referrerPolicy="no-referrer" />
                               ) : (
-                                <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/25 text-xs font-bold flex items-center justify-center text-primary shrink-0">
+                                <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/20 text-xs font-bold flex items-center justify-center text-primary shrink-0 shadow-sm">
                                   {comment.author.substring(0, 2).toUpperCase()}
                                 </div>
                               )}
-                              <div className={`border rounded-xl p-4 flex-1 min-w-0 space-y-1.5 shadow-sm ${
+                              <div className={`border rounded-xl p-4 flex-1 min-w-0 space-y-2 shadow-sm ${
                                 isApprove ? 'border-emerald-500/30 bg-emerald-500/5' :
                                 isReq ? 'border-rose-500/30 bg-rose-500/5' :
-                                'border-border bg-card'
+                                'border-border/60 bg-card'
                               }`}>
-                                <div className="flex items-center justify-between gap-2 border-b border-border/45 pb-1.5">
+                                <div className="flex items-center justify-between gap-2 border-b border-border/30 pb-2">
                                   <div className="flex items-center gap-2">
                                     <span className="text-xs font-bold text-text-main">{comment.author}</span>
                                     {isApprove && (
-                                      <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-500">Approved review</span>
+                                      <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-500">Approved review</span>
                                     )}
                                     {isReq && (
-                                      <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-rose-500/10 border border-rose-500/20 text-rose-500">Requested changes</span>
+                                      <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-500">Changes requested</span>
                                     )}
                                   </div>
-                                  <span className="text-[10px] text-text-muted font-semibold">{comment.time}</span>
+                                  <span className="text-[10px] text-text-muted font-bold">{comment.time}</span>
                                 </div>
-                                <p className="text-xs text-text-muted font-medium leading-relaxed whitespace-pre-wrap">
+                                <p className="text-xs text-text-muted font-semibold leading-relaxed whitespace-pre-wrap">
                                   {comment.text}
                                 </p>
                               </div>
@@ -1280,9 +1346,9 @@ export const PRsScreen = () => {
                           );
                         })}
 
-                        {/* Live CI/CD Status */}
-                        <div className="flex gap-4 items-start relative z-10">
-                          <div className="w-9 h-9 rounded-full bg-main border border-border flex items-center justify-center shrink-0">
+                        {/* Live Automated Runners Integration */}
+                        <div className="flex gap-4 items-start relative z-10 animate-fade-up">
+                          <div className="w-9 h-9 rounded-full bg-main border border-border flex items-center justify-center shrink-0 shadow-sm">
                             <Clock size={14} className="text-primary animate-pulse" />
                           </div>
                           <div className="flex-1 min-w-0">
@@ -1293,50 +1359,50 @@ export const PRsScreen = () => {
                       </div>
                     </div>
 
-                    {/* New Comment submission */}
-                    <div className="bg-card border border-border rounded-2xl p-4.5 shadow-sm space-y-3">
-                      <div className="text-xs font-bold text-text-main flex items-center gap-1.5">
-                        <MessageCircle size={14} /> Leave a comment
+                    {/* New General Comment Submission */}
+                    <div className="bg-card border border-border/70 rounded-2xl p-5 shadow-sm space-y-3.5">
+                      <div className="text-xs font-bold text-text-main flex items-center gap-1.5 uppercase tracking-wide">
+                        <MessageCircle size={15} className="text-primary" /> Leave General comment
                       </div>
                       <textarea 
                         rows={3}
                         value={newCommentText}
                         onChange={(e) => setNewCommentText(e.target.value)}
-                        placeholder="Type your general comment here..."
-                        className="w-full bg-main/40 text-xs font-medium p-3.5 rounded-xl border border-border/80 focus:outline-none focus:border-primary/50 text-text-main resize-none"
+                        placeholder="Type standard developer logs or reviews here..."
+                        className="w-full bg-main/35 text-xs font-semibold p-3 rounded-xl border border-border/50 focus:outline-none focus:border-primary/50 text-text-main resize-none"
                       />
                       <div className="flex justify-end">
                         <button
                           onClick={handleAddComment}
                           disabled={!newCommentText.trim()}
-                          className="bg-primary hover:bg-primary-hover disabled:opacity-40 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+                          className="bg-primary hover:bg-primary-hover disabled:opacity-40 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
                         >
-                          <Send size={12} /> Comment
+                          <Send size={12} /> Submit Comment
                         </button>
                       </div>
                     </div>
 
-                    {/* Interactive Merge Box Area with strategic merge commit forms */}
-                    <div className="bg-card border border-border rounded-2xl p-4.5 sm:p-5 shadow-sm space-y-4">
-                      <div className="text-xs font-bold text-text-main uppercase tracking-wider flex items-center gap-1.5">
-                        <GitMerge size={14} className="text-primary" />
-                        <span>Merge Status & Configurations</span>
+                    {/* Elite Merging Control Block */}
+                    <div className="bg-card border border-border/70 rounded-2xl p-5 shadow-sm space-y-4">
+                      <div className="text-xs font-extrabold text-text-main uppercase tracking-widest flex items-center gap-1.5 border-b border-border/30 pb-3">
+                        <GitMerge size={15} className="text-primary animate-pulse" />
+                        <span>Integration Merger Control panel</span>
                       </div>
 
                       {selectedPR.status === 'Merged' ? (
-                        <div className="bg-purple-500/5 border border-purple-500/15 rounded-xl p-4 space-y-3">
+                        <div className="bg-purple-500/5 border border-purple-500/15 rounded-xl p-4.5 space-y-3">
                           <div className="flex items-start gap-3">
-                            <div className="w-8 h-8 rounded-full bg-purple-500/15 border border-purple-500/35 text-purple-500 flex items-center justify-center shrink-0">
+                            <div className="w-8 h-8 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-500 flex items-center justify-center shrink-0">
                               <Check size={14} strokeWidth={3} />
                             </div>
                             <div className="space-y-1">
-                              <span className="block text-xs font-bold text-purple-500">Merged successfully</span>
-                              <p className="text-xs text-text-muted font-medium">
-                                This pull request was merged successfully. Source branch {selectedPR.source} is integrated into {selectedPR.target}.
+                              <span className="block text-xs font-bold text-purple-500">PR Merged Successfully</span>
+                              <p className="text-xs text-text-muted font-semibold">
+                                Git merged source branch into checkout target branch. Local workspace updated.
                               </p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 pt-1 border-t border-purple-500/10">
+                          <div className="pt-2 border-t border-purple-500/10">
                             <button 
                               onClick={handleReopenPR}
                               className="text-xs font-bold text-primary hover:underline cursor-pointer"
@@ -1346,64 +1412,63 @@ export const PRsScreen = () => {
                           </div>
                         </div>
                       ) : selectedPR.status === 'Closed' ? (
-                        <div className="bg-rose-500/5 border border-rose-500/15 rounded-xl p-4 space-y-3">
+                        <div className="bg-rose-500/5 border border-rose-500/15 rounded-xl p-4.5 space-y-3">
                           <div className="flex items-start gap-3">
                             <div className="w-8 h-8 rounded-full bg-rose-500/15 border border-rose-500/35 text-rose-500 flex items-center justify-center shrink-0">
                               <X size={14} strokeWidth={3} />
                             </div>
                             <div className="space-y-1">
-                              <span className="block text-xs font-bold text-rose-500">Closed without merging</span>
-                              <p className="text-xs text-text-muted font-medium">
-                                This pull request was closed manually. No code changes have been integrated.
+                              <span className="block text-xs font-bold text-rose-500">PR Closed Without Merging</span>
+                              <p className="text-xs text-text-muted font-semibold">
+                                Review logs are closed manually. Code was not integrated.
                               </p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 pt-1 border-t border-rose-500/10">
+                          <div className="pt-2 border-t border-rose-500/10">
                             <button 
                               onClick={handleReopenPR}
-                              className="bg-primary text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-primary-hover transition-colors cursor-pointer"
+                              className="bg-primary hover:bg-primary-hover text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer"
                             >
-                              Reopen PR
+                              Reopen Pull Request
                             </button>
                           </div>
                         </div>
                       ) : (
-                        // OPEN PR: ACTIVE MERGE CONFIGURATION
-                        <div className="border border-border/80 rounded-xl overflow-hidden bg-main/20">
-                          {/* Code Review State check banner */}
-                          <div className={`p-3.5 border-b border-border/60 flex items-start gap-3 ${
+                        // Active Open PR merge card
+                        <div className="border border-border/50 rounded-xl overflow-hidden bg-main/10">
+                          <div className={`p-4 border-b border-border/50 flex items-start gap-3 ${
                             selectedPR.status === 'Approved' ? 'bg-emerald-500/5' : 'bg-amber-500/5'
                           }`}>
-                            <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
+                            <div className={`w-5.5 h-5.5 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
                               selectedPR.status === 'Approved' ? 'bg-emerald-500/15 text-emerald-500' : 'bg-amber-500/15 text-amber-500'
                             }`}>
                               <Check size={11} strokeWidth={3} />
                             </div>
                             <div className="space-y-0.5">
                               <span className={`block text-xs font-bold ${selectedPR.status === 'Approved' ? 'text-emerald-500' : 'text-amber-500'}`}>
-                                {selectedPR.status === 'Approved' ? 'Changes approved by reviewers' : 'Review requested'}
+                                {selectedPR.status === 'Approved' ? 'Merger authorized by reviewers' : 'Review requested'}
                               </span>
-                              <span className="block text-[10px] text-text-muted font-medium">
-                                {selectedPR.status === 'Approved' ? 'All review guidelines are successfully satisfied.' : 'You can merge this pull request, but reviewer approval is recommended.'}
+                              <span className="block text-[10px] text-text-muted font-semibold">
+                                {selectedPR.status === 'Approved' ? 'Satisfied reviewer specifications.' : 'Merges are unlocked but approved reviews are highly recommended.'}
                               </span>
                             </div>
                           </div>
 
                           <div className="p-4 space-y-4">
-                            {/* Strategy options */}
+                            {/* Merge Strategy Options */}
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                               {[
-                                { id: 'merge', title: 'Merge Commit', desc: 'Add all commits to base' },
-                                { id: 'squash', title: 'Squash & Merge', desc: 'Combine commits into 1' },
-                                { id: 'rebase', title: 'Rebase & Merge', desc: 'Rebase commits individually' }
+                                { id: 'merge', title: 'Merge Commit', desc: 'Preserve full timeline graph' },
+                                { id: 'squash', title: 'Squash & Merge', desc: 'Combine commits into 1 block' },
+                                { id: 'rebase', title: 'Rebase & Merge', desc: 'Rebase commits sequentially' }
                               ].map((strategy) => (
                                 <div 
                                   key={strategy.id}
                                   onClick={() => setMergeStrategy(strategy.id as any)}
                                   className={`p-3 rounded-xl border cursor-pointer select-none transition-all ${
                                     mergeStrategy === strategy.id 
-                                      ? 'bg-primary/5 border-primary text-primary' 
-                                      : 'bg-card border-border/60 text-text-muted hover:border-border'
+                                      ? 'bg-primary/5 border-primary text-primary shadow-sm' 
+                                      : 'bg-card border-border/50 text-text-muted hover:border-border hover:bg-hover/10'
                                   }`}
                                 >
                                   <span className={`block text-[11px] font-extrabold ${mergeStrategy === strategy.id ? 'text-primary' : 'text-text-main'}`}>
@@ -1414,38 +1479,36 @@ export const PRsScreen = () => {
                               ))}
                             </div>
 
-                            {/* Customizable merge text fields */}
-                            <div className="space-y-3 bg-card border border-border/50 rounded-xl p-3.5">
-                              <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider block">Commit Details</span>
-                              <div className="space-y-2">
-                                <input 
-                                  type="text" 
-                                  value={customMergeTitle}
-                                  onChange={(e) => setCustomMergeTitle(e.target.value)}
-                                  placeholder="Merge commit title"
-                                  className="w-full bg-main/50 text-xs font-bold p-2.5 rounded-lg border border-border/60 focus:outline-none focus:border-primary/50 text-text-main"
-                                />
-                                <textarea 
-                                  rows={2}
-                                  value={customMergeDesc}
-                                  onChange={(e) => setCustomMergeDesc(e.target.value)}
-                                  placeholder="Merge commit description"
-                                  className="w-full bg-main/50 text-xs font-medium p-2.5 rounded-lg border border-border/60 focus:outline-none focus:border-primary/50 text-text-main resize-none"
-                                />
-                              </div>
+                            {/* Message Customization */}
+                            <div className="space-y-2.5 bg-card border border-border/50 rounded-xl p-3.5">
+                              <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider block">Commit Specs</span>
+                              <input 
+                                type="text" 
+                                value={customMergeTitle}
+                                onChange={(e) => setCustomMergeTitle(e.target.value)}
+                                placeholder="Commit message title"
+                                className="w-full bg-main/40 text-xs font-bold p-2.5 rounded-lg border border-border/50 focus:outline-none focus:border-primary/40 text-text-main"
+                              />
+                              <textarea 
+                                rows={2}
+                                value={customMergeDesc}
+                                onChange={(e) => setCustomMergeDesc(e.target.value)}
+                                placeholder="Commit message description..."
+                                className="w-full bg-main/40 text-xs font-semibold p-2.5 rounded-lg border border-border/50 focus:outline-none focus:border-primary/40 text-text-main resize-none"
+                              />
                             </div>
 
-                            {/* Trigger actions */}
-                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2 border-t border-border/30">
+                            {/* Actions */}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-border/20">
                               <button 
                                 onClick={handleMergePR}
                                 disabled={isMerging}
-                                className="bg-success hover:bg-emerald-600 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                                className="bg-success hover:bg-emerald-600 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 shadow-sm active:scale-[0.98]"
                               >
                                 {isMerging ? (
                                   <>
                                     <RefreshCw size={13} className="animate-spin" />
-                                    <span>Merging changes...</span>
+                                    <span>Syncing code merge...</span>
                                   </>
                                 ) : (
                                   <>
@@ -1457,7 +1520,7 @@ export const PRsScreen = () => {
 
                               <button 
                                 onClick={handleClosePR}
-                                className="border border-border hover:bg-rose-500/10 hover:border-rose-500 hover:text-rose-500 text-text-muted text-xs font-bold px-4 py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                                className="border border-border/70 hover:bg-rose-500/10 hover:border-rose-500 hover:text-rose-500 text-text-muted text-xs font-bold px-4 py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                               >
                                 <X size={13} /> Close Pull Request
                               </button>
@@ -1467,42 +1530,42 @@ export const PRsScreen = () => {
                       )}
                     </div>
 
-                    {/* Metadata Trigger Button for Mobile ONLY */}
+                    {/* Mobile metadata bottom triggers */}
                     <button
                       onClick={() => setIsMobileMetadataOpen(true)}
-                      className="block lg:hidden w-full bg-main text-text-muted border border-border hover:text-text-main hover:bg-hover/40 text-xs font-bold py-3.5 rounded-2xl transition-all cursor-pointer"
+                      className="block lg:hidden w-full bg-main text-text-muted border border-border/50 hover:text-text-main hover:bg-hover/40 text-xs font-bold py-3.5 rounded-2xl transition-all cursor-pointer"
                     >
-                      View Reviewers, Labels & Milestones
+                      View PR Specifications & Metadata
                     </button>
                   </div>
                 )}
 
-                {/* 2. COMMITS TAB */}
+                {/* 2. COMMITS VIEW MODULE */}
                 {detailTab === 'commits' && (
-                  <div className="bg-card border border-border rounded-2xl p-4.5 sm:p-5 shadow-sm space-y-4">
-                    <div className="text-xs font-bold text-text-main uppercase tracking-wider flex items-center gap-1.5">
-                      <GitCommit size={14} className="text-primary" />
-                      <span>Linked Commits</span>
+                  <div className="bg-card border border-border/70 rounded-2xl p-5 shadow-sm space-y-4.5">
+                    <div className="text-xs font-bold text-text-main uppercase tracking-wider flex items-center gap-1.5 border-b border-border/30 pb-3">
+                      <GitCommit size={15} className="text-primary" />
+                      <span>Timeline Commits</span>
                     </div>
 
-                    <div className="relative pl-6 space-y-5 before:absolute before:top-1.5 before:bottom-1.5 before:left-[11px] before:w-[2px] before:bg-border/50">
+                    <div className="relative pl-6 space-y-5 before:absolute before:top-2 before:bottom-2 before:left-[11px] before:w-[2px] before:bg-border/40">
                       {getPRCommits(selectedPR.id, selectedPR.title).map((commit) => (
-                        <div key={commit.hash} className="relative group">
-                          <div className="absolute -left-[20px] top-1.5 w-3.5 h-3.5 rounded-full bg-card border-2 border-primary group-hover:bg-primary transition-colors shrink-0 z-10" />
+                        <div key={commit.hash} className="relative group animate-fade-up">
+                          <div className="absolute -left-[20px] top-1.5 w-3.5 h-3.5 rounded-full bg-card border-2 border-primary group-hover:bg-primary transition-all shrink-0 z-10" />
                           
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                             <div className="space-y-0.5">
-                              <span className="block text-xs font-bold text-text-main hover:text-primary transition-colors break-words">
+                              <span className="block text-xs font-bold text-text-main hover:text-primary transition-colors leading-relaxed">
                                 {commit.msg}
                               </span>
-                              <div className="flex items-center gap-1.5 text-[10px] text-text-muted font-semibold">
+                              <div className="flex items-center gap-1.5 text-[10px] text-text-muted font-bold">
                                 <span className="text-text-main font-bold">{commit.author}</span>
                                 <span>committed</span>
                                 <span>{commit.time}</span>
                               </div>
                             </div>
 
-                            <span className="font-mono text-[10px] bg-main border border-border/60 text-primary font-bold px-2 py-0.5 rounded-md self-start sm:self-center shadow-sm select-all">
+                            <span className="font-mono text-[10px] bg-main border border-border/50 text-primary font-bold px-2 py-0.5 rounded-md self-start sm:self-center shadow-sm select-all">
                               {commit.hash}
                             </span>
                           </div>
@@ -1512,23 +1575,21 @@ export const PRsScreen = () => {
                   </div>
                 )}
 
-                {/* 3. FILES CHANGED & INTERACTIVE DIFF TAB */}
+                {/* 3. FILES CHANGED VIEW MODULE (Unified interactive diff code) */}
                 {detailTab === 'files' && (
                   <div className="space-y-4">
-                    {/* Files Tab Header: progress tracking */}
-                    <div className="bg-card border border-border rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+                    {/* Progress strip */}
+                    <div className="bg-card border border-border/70 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
                       <div className="space-y-1">
                         <div className="text-xs font-bold text-text-main uppercase tracking-wider flex items-center gap-1.5">
                           <FileCode size={14} className="text-primary" />
-                          <span>Code Files Diff Explorer</span>
+                          <span>Code Difference Reviewer</span>
                         </div>
-                        {/* Viewed count indicator */}
-                        <div className="text-[10px] text-text-muted font-semibold">
-                          {Object.values(viewedFiles).filter(Boolean).length} of {getPRFiles(selectedPR.id, selectedPR.title).length} files marked viewed
+                        <div className="text-[10px] text-text-muted font-bold">
+                          {Object.values(viewedFiles).filter(Boolean).length} of {getPRFiles(selectedPR.id, selectedPR.title).length} files reviewed
                         </div>
                       </div>
 
-                      {/* Visual Progress bar */}
                       <div className="w-full sm:w-44 flex flex-col gap-1 shrink-0">
                         <div className="w-full bg-main h-2 rounded-full overflow-hidden border border-border/40">
                           <div 
@@ -1536,21 +1597,20 @@ export const PRsScreen = () => {
                             style={{ width: `${(Object.values(viewedFiles).filter(Boolean).length / getPRFiles(selectedPR.id, selectedPR.title).length) * 100}%` }}
                           />
                         </div>
-                        <span className="text-[9px] text-text-muted font-bold text-right block">
-                          {Math.round((Object.values(viewedFiles).filter(Boolean).length / getPRFiles(selectedPR.id, selectedPR.title).length) * 100)}% viewed
+                        <span className="text-[9px] text-text-muted font-extrabold text-right block">
+                          {Math.round((Object.values(viewedFiles).filter(Boolean).length / getPRFiles(selectedPR.id, selectedPR.title).length) * 100)}% complete
                         </span>
                       </div>
                     </div>
 
-                    {/* Left Sidebar and main area diff box (Split only for desktop, swipeable picker for mobile) */}
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                       
-                      {/* Interactive File Tree Selector Panel */}
-                      <div className="lg:col-span-3 bg-card border border-border rounded-2xl p-3.5 shadow-sm space-y-2.5">
-                        <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider block border-b border-border/50 pb-2 mb-2">Files Changed</span>
+                      {/* Left Sidebar Files tree picker */}
+                      <div className="lg:col-span-3 bg-card border border-border/70 rounded-2xl p-3.5 shadow-sm space-y-2">
+                        <span className="text-[10px] font-extrabold text-text-muted uppercase tracking-widest block border-b border-border/30 pb-2 mb-2">Files Changed</span>
                         
-                        {/* Mobile Swipe selector */}
-                        <div className="flex lg:flex-col overflow-x-auto lg:overflow-visible gap-1.5 no-scrollbar -mx-1.5 px-1.5">
+                        {/* Mobile horizontal file picker / Desktop vertical sidebar tree */}
+                        <div className="flex lg:flex-col overflow-x-auto lg:overflow-visible gap-1.5 no-scrollbar -mx-3.5 px-3.5 lg:mx-0 lg:px-0">
                           {getPRFiles(selectedPR.id, selectedPR.title).map((file) => {
                             const isSelected = activeFileInTree === file.filename;
                             const isViewed = viewedFiles[file.filename];
@@ -1562,7 +1622,7 @@ export const PRsScreen = () => {
                                 className={`flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl cursor-pointer select-none shrink-0 lg:shrink transition-all border ${
                                   isSelected 
                                     ? 'bg-primary/5 border-primary text-primary' 
-                                    : 'bg-main/30 border-transparent hover:border-border/60 text-text-muted'
+                                    : 'bg-main/20 border-transparent hover:border-border/40 text-text-muted'
                                 }`}
                               >
                                 <div className="flex items-center gap-1.5 min-w-0">
@@ -1581,42 +1641,39 @@ export const PRsScreen = () => {
                         </div>
                       </div>
 
-                      {/* Main Interactive Diff code panel */}
+                      {/* Code Diff Display Module */}
                       <div className="lg:col-span-9 space-y-4">
                         {getPRFiles(selectedPR.id, selectedPR.title).filter(f => f.filename === activeFileInTree).map((file) => {
                           const isFileViewed = viewedFiles[file.filename];
                           const parsedLines = parseDiffPatch(file.patch);
 
                           return (
-                            <div key={file.filename} className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+                            <div key={file.filename} className="bg-card border border-border/70 rounded-2xl overflow-hidden shadow-sm animate-fade-up">
                               
-                              {/* File Header */}
-                              <div className="bg-main/50 px-4 py-3 border-b border-border flex items-center justify-between gap-3 flex-wrap">
+                              {/* Diff Header Panel */}
+                              <div className="bg-main/40 px-4 py-3 border-b border-border/50 flex items-center justify-between gap-3 flex-wrap">
                                 <div className="flex items-center gap-2 min-w-0">
-                                  <span className="font-mono text-xs font-bold text-text-main truncate">{file.filename}</span>
-                                  <div className="flex items-center gap-1.5 text-[10px] font-bold">
+                                  <span className="font-mono text-[11px] font-bold text-text-main truncate">{file.filename}</span>
+                                  <div className="flex items-center gap-1 text-[10px] font-bold">
                                     <span className="text-success">+{file.additions}</span>
                                     <span className="text-danger">-{file.deletions}</span>
                                   </div>
                                 </div>
 
-                                <div className="flex items-center gap-2">
-                                  {/* Viewed Toggle */}
-                                  <button
-                                    onClick={() => toggleFileViewed(file.filename)}
-                                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[10px] font-bold transition-all cursor-pointer ${
-                                      isFileViewed 
-                                        ? 'bg-success/10 border-success/30 text-success' 
-                                        : 'bg-card border-border hover:bg-hover text-text-muted'
-                                    }`}
-                                  >
-                                    <Check size={11} />
-                                    <span>{isFileViewed ? 'Viewed' : 'Mark Viewed'}</span>
-                                  </button>
-                                </div>
+                                <button
+                                  onClick={() => toggleFileViewed(file.filename)}
+                                  className={`flex items-center gap-1 px-3 py-1.5 rounded-xl border text-[10px] font-bold transition-all cursor-pointer ${
+                                    isFileViewed 
+                                      ? 'bg-success/15 border-success/30 text-success' 
+                                      : 'bg-card border-border hover:bg-hover text-text-muted'
+                                  }`}
+                                >
+                                  <Check size={11} />
+                                  <span>{isFileViewed ? 'Viewed' : 'Mark Viewed'}</span>
+                                </button>
                               </div>
 
-                              {/* Interactive Line-by-Line Unified Diff with expand collapsible viewed container */}
+                              {/* Interactive diff core code blocks */}
                               <AnimatePresence initial={false}>
                                 {!isFileViewed ? (
                                   <motion.div
@@ -1625,18 +1682,17 @@ export const PRsScreen = () => {
                                     exit={{ height: 0, opacity: 0 }}
                                     className="overflow-x-auto w-full"
                                   >
-                                    <table className="w-full text-xs font-mono border-collapse divide-y divide-border/10">
+                                    <table className="w-full text-[11px] font-mono border-collapse divide-y divide-border/10">
                                       <tbody>
                                         {parsedLines.map((line, idx) => {
                                           const isHeader = line.type === 'header';
                                           const isAdd = line.type === 'add';
                                           const isDel = line.type === 'del';
                                           
-                                          // Style variables
-                                          const bgStyle = isHeader ? 'bg-sky-500/5 text-primary/80 font-bold border-b border-border/20' :
-                                                            isAdd ? 'bg-emerald-500/10 text-emerald-500 border-l-3 border-emerald-500/60' :
-                                                            isDel ? 'bg-rose-500/10 text-rose-500 border-l-3 border-rose-500/60' :
-                                                            'hover:bg-hover/20';
+                                          const bgStyle = isHeader ? 'bg-sky-500/5 text-primary/85 font-bold border-b border-border/15' :
+                                                            isAdd ? 'bg-emerald-500/10 text-emerald-500 border-l-[3px] border-emerald-500/60' :
+                                                            isDel ? 'bg-rose-500/10 text-rose-500 border-l-[3px] border-rose-500/60' :
+                                                            'hover:bg-hover/15';
 
                                           const lineKey = `${file.filename}_${idx}`;
                                           const lineComments = inlineComments[lineKey] || [];
@@ -1644,51 +1700,50 @@ export const PRsScreen = () => {
 
                                           return (
                                             <React.Fragment key={idx}>
-                                              {/* Diff row */}
                                               <tr className={`group relative transition-colors ${bgStyle}`}>
-                                                {/* Old Line Number */}
-                                                <td className="w-10 text-right pr-2 text-[10px] text-text-muted/60 select-none bg-main/20 border-r border-border/40 font-semibold py-0.5">
+                                                {/* Line number cols */}
+                                                <td className="w-10 text-right pr-2 text-[10px] text-text-muted/60 select-none bg-main/15 border-r border-border/30 font-semibold py-0.5">
                                                   {line.oldNum}
                                                 </td>
-                                                {/* New Line Number */}
-                                                <td className="w-10 text-right pr-2 text-[10px] text-text-muted/60 select-none bg-main/20 border-r border-border/40 font-semibold py-0.5">
+                                                <td className="w-10 text-right pr-2 text-[10px] text-text-muted/60 select-none bg-main/15 border-r border-border/30 font-semibold py-0.5">
                                                   {line.newNum}
                                                 </td>
                                                 
-                                                {/* Interactive Row Plus Indicator Column */}
+                                                {/* Inline comments trigger action column */}
                                                 <td className="w-6 text-center select-none py-0.5 relative">
                                                   {!isHeader && (
                                                     <button
                                                       onClick={() => setInlineInputLine(isFormOpen ? null : { filename: file.filename, lineIndex: idx })}
-                                                      className="absolute left-1.5 top-0.5 w-4 h-4 bg-primary text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow-sm active:scale-90"
+                                                      className="absolute left-1.5 top-0.5 w-4.5 h-4.5 bg-primary text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow active:scale-90"
+                                                      title="Add inline review comments"
                                                     >
                                                       <Plus size={10} strokeWidth={3} />
                                                     </button>
                                                   )}
                                                 </td>
 
-                                                {/* Diff Content Column */}
+                                                {/* Code diff characters line */}
                                                 <td className="pl-3 pr-4 whitespace-pre select-text font-medium py-0.5 tracking-wide leading-normal">
                                                   {line.text}
                                                 </td>
                                               </tr>
 
-                                              {/* Inline review thread comments if present under line */}
+                                              {/* Inline review discussion comments thread */}
                                               {lineComments.length > 0 && (
                                                 <tr>
-                                                  <td colSpan={3} className="bg-main/20 border-r border-border/40"></td>
-                                                  <td className="p-3 bg-main/10 border-b border-border/20">
-                                                    <div className="space-y-2.5">
+                                                  <td colSpan={3} className="bg-main/15 border-r border-border/30"></td>
+                                                  <td className="p-3.5 bg-main/5 border-b border-border/10">
+                                                    <div className="space-y-2.5 max-w-xl">
                                                       {lineComments.map((c) => (
-                                                        <div key={c.id} className="bg-card border border-border/60 rounded-xl p-3 shadow-sm max-w-xl">
+                                                        <div key={c.id} className="bg-card border border-border/50 rounded-xl p-3 shadow-sm animate-fade-up">
                                                           <div className="flex items-center justify-between border-b border-border/30 pb-1.5 mb-2">
                                                             <div className="flex items-center gap-1.5">
                                                               {c.avatar ? (
-                                                                <img src={c.avatar} className="w-4 h-4 rounded-full border border-border" alt="" referrerPolicy="no-referrer" />
+                                                                <img src={c.avatar} className="w-4 h-4 rounded-full border border-border/70" alt="" referrerPolicy="no-referrer" />
                                                               ) : (
-                                                                <div className="w-4 h-4 rounded-full bg-primary/10 text-[8px] font-bold flex items-center justify-center text-primary">US</div>
+                                                                <div className="w-4 h-4 rounded-full bg-primary/10 text-[8px] font-extrabold flex items-center justify-center text-primary">US</div>
                                                               )}
-                                                              <span className="text-[10px] font-bold text-text-main">{c.author}</span>
+                                                              <span className="text-[10px] font-extrabold text-text-main">{c.author}</span>
                                                             </div>
                                                             <span className="text-[9px] text-text-muted font-bold">{c.time}</span>
                                                           </div>
@@ -1700,36 +1755,36 @@ export const PRsScreen = () => {
                                                 </tr>
                                               )}
 
-                                              {/* Expandable Inline Comment Submission Input Field */}
+                                              {/* Form to submit inline comments thread */}
                                               {isFormOpen && (
                                                 <tr>
-                                                  <td colSpan={3} className="bg-main/20 border-r border-border/40"></td>
-                                                  <td className="p-4 bg-main/30 border-b border-border/20">
-                                                    <div className="bg-card border border-border rounded-xl p-3 space-y-3.5 max-w-xl shadow-md">
-                                                      <div className="text-[10px] font-bold text-text-main flex items-center gap-1.5 uppercase tracking-wide">
+                                                  <td colSpan={3} className="bg-main/15 border-r border-border/30"></td>
+                                                  <td className="p-4 bg-main/10 border-b border-border/10">
+                                                    <div className="bg-card border border-border/75 rounded-xl p-3.5 space-y-3 max-w-xl shadow-md">
+                                                      <div className="text-[10px] font-black text-text-main flex items-center gap-1.5 uppercase tracking-wider">
                                                         <MessageSquare size={12} className="text-primary" />
-                                                        <span>Add inline review feedback</span>
+                                                        <span>Write inline review comment</span>
                                                       </div>
                                                       <textarea
                                                         rows={2}
                                                         value={inlineCommentText}
                                                         onChange={(e) => setInlineCommentText(e.target.value)}
-                                                        placeholder="Write your constructive code review comment here..."
-                                                        className="w-full bg-main/40 text-[11px] font-semibold p-2.5 rounded-lg border border-border/80 focus:outline-none focus:border-primary/50 text-text-main resize-none"
+                                                        placeholder="Provide constructive code architectural feedback..."
+                                                        className="w-full bg-main/30 text-[11px] font-semibold p-2.5 rounded-lg border border-border/50 focus:outline-none focus:border-primary/40 text-text-main resize-none"
                                                       />
                                                       <div className="flex justify-end gap-1.5">
                                                         <button
                                                           onClick={() => setInlineInputLine(null)}
-                                                          className="border border-border text-text-muted text-[10px] font-bold px-2.5 py-1 rounded-lg hover:bg-hover cursor-pointer"
+                                                          className="border border-border/50 text-text-muted text-[10px] font-extrabold px-3 py-1 rounded-lg hover:bg-hover cursor-pointer"
                                                         >
                                                           Cancel
                                                         </button>
                                                         <button
                                                           onClick={() => handleAddInlineComment(file.filename, idx)}
                                                           disabled={!inlineCommentText.trim()}
-                                                          className="bg-primary hover:bg-primary-hover disabled:opacity-50 text-white text-[10px] font-bold px-3.5 py-1 rounded-lg cursor-pointer"
+                                                          className="bg-primary hover:bg-primary-hover disabled:opacity-50 text-white text-[10px] font-extrabold px-4 py-1 rounded-lg cursor-pointer active:scale-95 transition-all"
                                                         >
-                                                          Submit Line Feedback
+                                                          Post Review
                                                         </button>
                                                       </div>
                                                     </div>
@@ -1743,15 +1798,14 @@ export const PRsScreen = () => {
                                     </table>
                                   </motion.div>
                                 ) : (
-                                  // FOLDED / VIEWED PANEL SCREEN
-                                  <div className="py-12 text-center bg-main/10 border-t border-border/40 select-none">
-                                    <CheckCircle size={24} className="text-success mx-auto mb-2" />
-                                    <p className="text-xs text-text-main font-bold">This file has been marked as viewed</p>
+                                  <div className="py-12 text-center bg-main/5 border-t border-border/30 select-none">
+                                    <CheckCircle size={22} className="text-success mx-auto mb-2" />
+                                    <p className="text-xs text-text-main font-bold">This file has been marked reviewed</p>
                                     <button
                                       onClick={() => toggleFileViewed(file.filename)}
                                       className="mt-3 text-[10px] font-bold text-primary hover:underline cursor-pointer"
                                     >
-                                      Expand to view code differences
+                                      Expand to check diff content
                                     </button>
                                   </div>
                                 )}
@@ -1760,28 +1814,27 @@ export const PRsScreen = () => {
                           );
                         })}
                       </div>
-
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* Right Sidebar Panel: Desktop Layout Only (Hidden on Mobile) */}
-              <div className="hidden lg:block lg:col-span-3 space-y-4.5">
+              {/* Right Sidebar Deck Panel (Desktop Only, width 3) */}
+              <div className="hidden lg:block lg:col-span-3 space-y-4">
                 
-                {/* Branch checkout card */}
-                <div className="bg-card border border-border rounded-2xl p-4 shadow-sm space-y-3.5">
-                  <div className="text-[10px] font-extrabold text-text-muted uppercase tracking-widest pb-1.5 border-b border-border/50">Branch Status</div>
+                {/* 1. checkout branch status card */}
+                <div className="bg-card border border-border/70 rounded-2xl p-4.5 shadow-sm space-y-3.5">
+                  <div className="text-[10px] font-black text-text-muted uppercase tracking-widest pb-1.5 border-b border-border/30">Checkout Target</div>
                   
-                  <div className="space-y-2.5">
+                  <div className="space-y-3">
                     <div>
-                      <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider">Source branch</span>
-                      <div className="flex items-center justify-between gap-1.5 bg-main border border-border/60 px-2 py-1.5 rounded-lg mt-1">
+                      <span className="text-[9px] font-extrabold text-text-muted uppercase tracking-wider">Source branch</span>
+                      <div className="flex items-center justify-between gap-1.5 bg-main border border-border/40 px-2 py-1.5 rounded-xl mt-1.5">
                         <span className="font-mono text-[10px] text-text-muted truncate flex-1">{selectedPR.source || 'feature-branch'}</span>
                         <button 
                           onClick={() => copyCheckoutCommand(selectedPR.source || 'feature-branch')}
                           className="p-1 hover:text-primary text-text-muted/60 transition-colors cursor-pointer"
-                          title="Copy git checkout command"
+                          title="Copy checkout command"
                         >
                           <Clipboard size={11} />
                         </button>
@@ -1789,13 +1842,13 @@ export const PRsScreen = () => {
                     </div>
 
                     <div>
-                      <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider">Checkout target</span>
-                      <div className="flex items-center justify-between gap-1.5 bg-main border border-border/60 px-2 py-1.5 rounded-lg mt-1">
-                        <span className="font-mono text-[10px] text-text-main font-bold truncate flex-1">{selectedPR.target || 'main'}</span>
+                      <span className="text-[9px] font-extrabold text-text-muted uppercase tracking-wider">Target branch</span>
+                      <div className="flex items-center justify-between gap-1.5 bg-main border border-border/40 px-2 py-1.5 rounded-xl mt-1.5">
+                        <span className="font-mono text-[10px] text-text-main font-extrabold truncate flex-1">{selectedPR.target || 'main'}</span>
                         <button 
                           onClick={() => copyCheckoutCommand(selectedPR.target || 'main')}
                           className="p-1 hover:text-primary text-text-muted/60 transition-colors cursor-pointer"
-                          title="Copy git checkout command"
+                          title="Copy checkout command"
                         >
                           <Clipboard size={11} />
                         </button>
@@ -1804,21 +1857,21 @@ export const PRsScreen = () => {
 
                     {isCopiedCommand && (
                       <span className="block text-[9px] text-primary font-bold text-center animate-pulse">
-                        Git checkout command copied!
+                        Git command copied!
                       </span>
                     )}
                   </div>
                 </div>
 
-                {/* Reviewers card */}
-                <div className="bg-card border border-border rounded-2xl p-4 shadow-sm space-y-3">
-                  <div className="text-[10px] font-extrabold text-text-muted uppercase tracking-widest pb-1.5 border-b border-border/50">Reviewers</div>
+                {/* 2. Reviewers Card */}
+                <div className="bg-card border border-border/70 rounded-2xl p-4.5 shadow-sm space-y-3">
+                  <div className="text-[10px] font-black text-text-muted uppercase tracking-widest pb-1.5 border-b border-border/30">Reviewers</div>
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-5 h-5 rounded-full bg-primary/10 border border-primary/20 text-[8px] font-extrabold flex items-center justify-center text-primary">LA</div>
-                      <span className="text-xs text-text-main font-bold">lead-architect</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-5.5 h-5.5 rounded-full bg-primary/10 border border-primary/20 text-[8px] font-extrabold flex items-center justify-center text-primary">LA</div>
+                      <span className="text-xs text-text-main font-extrabold">lead-architect</span>
                     </div>
-                    <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded border ${
+                    <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-md border ${
                       selectedPR.status === 'Approved' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : 'bg-amber-500/10 border-amber-500/20 text-amber-500'
                     }`}>
                       {selectedPR.status === 'Approved' ? 'Approved' : 'Pending'}
@@ -1826,36 +1879,36 @@ export const PRsScreen = () => {
                   </div>
                 </div>
 
-                {/* Assignees card */}
-                <div className="bg-card border border-border rounded-2xl p-4 shadow-sm space-y-3">
-                  <div className="text-[10px] font-extrabold text-text-muted uppercase tracking-widest pb-1.5 border-b border-border/50">Assignees</div>
-                  <div className="flex items-center gap-1.5">
+                {/* 3. Assignees Card */}
+                <div className="bg-card border border-border/70 rounded-2xl p-4.5 shadow-sm space-y-3">
+                  <div className="text-[10px] font-black text-text-muted uppercase tracking-widest pb-1.5 border-b border-border/30">Assignees</div>
+                  <div className="flex items-center gap-2">
                     {selectedPR.avatar ? (
-                      <img src={selectedPR.avatar} className="w-5 h-5 rounded-full border border-border object-cover" alt="" referrerPolicy="no-referrer" />
+                      <img src={selectedPR.avatar} className="w-5.5 h-5.5 rounded-full border border-border object-cover" alt="" referrerPolicy="no-referrer" />
                     ) : (
-                      <div className="w-5 h-5 rounded-full bg-primary/10 text-[8px] font-extrabold flex items-center justify-center text-primary">ME</div>
+                      <div className="w-5.5 h-5.5 rounded-full bg-primary/10 text-[8px] font-extrabold flex items-center justify-center text-primary border border-primary/20">ME</div>
                     )}
-                    <span className="text-xs text-text-main font-bold">{selectedPR.author}</span>
+                    <span className="text-xs text-text-main font-extrabold">{selectedPR.author}</span>
                   </div>
                 </div>
 
-                {/* Labels Card */}
-                <div className="bg-card border border-border rounded-2xl p-4 shadow-sm space-y-3">
-                  <div className="text-[10px] font-extrabold text-text-muted uppercase tracking-widest pb-1.5 border-b border-border/50">Labels</div>
+                {/* 4. Labels Card */}
+                <div className="bg-card border border-border/70 rounded-2xl p-4.5 shadow-sm space-y-3">
+                  <div className="text-[10px] font-black text-text-muted uppercase tracking-widest pb-1.5 border-b border-border/30">Labels</div>
                   <div className="flex items-center flex-wrap gap-1.5">
-                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20">feature</span>
-                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">high-priority</span>
-                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">automerge</span>
+                    <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20">feature</span>
+                    <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">high-priority</span>
+                    <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">automerge</span>
                   </div>
                 </div>
 
-                {/* Milestone progress card */}
-                <div className="bg-card border border-border rounded-2xl p-4 shadow-sm space-y-3">
-                  <div className="text-[10px] font-extrabold text-text-muted uppercase tracking-widest pb-1.5 border-b border-border/50">Milestone</div>
-                  <div className="space-y-2">
+                {/* 5. Milestone status card */}
+                <div className="bg-card border border-border/70 rounded-2xl p-4.5 shadow-sm space-y-3">
+                  <div className="text-[10px] font-black text-text-muted uppercase tracking-widest pb-1.5 border-b border-border/30">Milestone</div>
+                  <div className="space-y-2.5">
                     <span className="text-xs text-text-main font-extrabold block">v1.2.0 Integration</span>
-                    <div className="space-y-1">
-                      <div className="w-full bg-main h-1.5 rounded-full overflow-hidden border border-border/40">
+                    <div className="space-y-1.5">
+                      <div className="w-full bg-main h-1.5 rounded-full overflow-hidden border border-border/30">
                         <div className="bg-success h-full w-[85%]" />
                       </div>
                       <span className="text-[9px] text-text-muted font-bold block text-right">85% complete</span>
@@ -1870,10 +1923,10 @@ export const PRsScreen = () => {
       </AnimatePresence>
 
       {/* ==================================================================
-          MOBILE BOTTOM DRAWERS & DRAWER OVERLAYS (UX MASTERCLASS)
+          UX MASTERCLASS MOBILE OVERLAY SLIDER DRAWERS
           ================================================================== */}
       
-      {/* 1. Mobile Filter Settings sheet */}
+      {/* 1. Mobile Filter sheet overlay */}
       <AnimatePresence>
         {isMobileFilterOpen && (
           <div className="fixed inset-0 z-[150] block lg:hidden">
@@ -1888,16 +1941,16 @@ export const PRsScreen = () => {
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-              className="absolute bottom-0 left-0 right-0 max-h-[80vh] bg-card border-t border-border rounded-t-3xl p-5 overflow-y-auto space-y-5 shadow-2xl pb-10"
+              transition={{ type: 'spring', damping: 24, stiffness: 210 }}
+              className="absolute bottom-0 left-0 right-0 max-h-[82vh] bg-card border-t border-border rounded-t-3xl p-5 overflow-y-auto space-y-5 shadow-2xl pb-10"
             >
-              <div className="flex justify-between items-center border-b border-border/50 pb-3">
-                <span className="text-sm font-bold text-text-main">Advanced Pull Request Filters</span>
+              <div className="flex justify-between items-center border-b border-border/40 pb-3">
+                <span className="text-sm font-black text-text-main uppercase tracking-wider">Advanced PR Filters</span>
                 <button 
                   onClick={() => setIsMobileFilterOpen(false)}
-                  className="p-1 rounded-full bg-hover text-text-muted hover:text-text-main"
+                  className="p-1 rounded-full bg-hover text-text-muted hover:text-text-main transition-colors"
                 >
-                  <X size={16} />
+                  <X size={18} />
                 </button>
               </div>
 
@@ -1907,7 +1960,7 @@ export const PRsScreen = () => {
                   <select
                     value={filterAuthor}
                     onChange={(e) => setFilterAuthor(e.target.value)}
-                    className="w-full bg-main border border-border rounded-xl px-3 py-3 text-xs font-bold text-text-main focus:outline-none"
+                    className="w-full bg-main border border-border rounded-xl px-3.5 py-3 text-xs font-bold text-text-main focus:outline-none"
                   >
                     <option value="All">All Authors</option>
                     {uniqueAuthors.map(author => (
@@ -1921,7 +1974,7 @@ export const PRsScreen = () => {
                   <select
                     value={filterLabel}
                     onChange={(e) => setFilterLabel(e.target.value)}
-                    className="w-full bg-main border border-border rounded-xl px-3 py-3 text-xs font-bold text-text-main focus:outline-none"
+                    className="w-full bg-main border border-border rounded-xl px-3.5 py-3 text-xs font-bold text-text-main focus:outline-none"
                   >
                     <option value="All">All Labels</option>
                     <option value="feature">feature</option>
@@ -1935,7 +1988,7 @@ export const PRsScreen = () => {
                   <select
                     value={filterAssignee}
                     onChange={(e) => setFilterAssignee(e.target.value)}
-                    className="w-full bg-main border border-border rounded-xl px-3 py-3 text-xs font-bold text-text-main focus:outline-none"
+                    className="w-full bg-main border border-border rounded-xl px-3.5 py-3 text-xs font-bold text-text-main focus:outline-none"
                   >
                     <option value="All">All Assignees</option>
                     <option value="git-manager-workstation">git-manager-workstation</option>
@@ -1948,7 +2001,7 @@ export const PRsScreen = () => {
                   <select
                     value={filterMilestone}
                     onChange={(e) => setFilterMilestone(e.target.value)}
-                    className="w-full bg-main border border-border rounded-xl px-3 py-3 text-xs font-bold text-text-main focus:outline-none"
+                    className="w-full bg-main border border-border rounded-xl px-3.5 py-3 text-xs font-bold text-text-main focus:outline-none"
                   >
                     <option value="All">All Milestones</option>
                     <option value="v1.2.0">v1.2.0 Integration</option>
@@ -1957,7 +2010,7 @@ export const PRsScreen = () => {
                 </div>
               </div>
 
-              <div className="flex gap-2.5 pt-2">
+              <div className="flex gap-3 pt-3">
                 <button
                   onClick={() => {
                     setFilterAuthor('All');
@@ -1965,13 +2018,13 @@ export const PRsScreen = () => {
                     setFilterAssignee('All');
                     setFilterMilestone('All');
                   }}
-                  className="flex-1 border border-border text-text-muted text-xs font-bold py-3.5 rounded-xl hover:bg-hover active:scale-95 transition-all cursor-pointer"
+                  className="flex-1 border border-border text-text-muted text-xs font-bold py-3.5 rounded-xl hover:bg-hover active:scale-[0.97] transition-all cursor-pointer"
                 >
                   Reset All
                 </button>
                 <button
                   onClick={() => setIsMobileFilterOpen(false)}
-                  className="flex-1 bg-primary text-white text-xs font-bold py-3.5 rounded-xl active:scale-95 transition-all cursor-pointer"
+                  className="flex-1 bg-primary text-white text-xs font-bold py-3.5 rounded-xl active:scale-[0.97] transition-all cursor-pointer"
                 >
                   Apply Filters
                 </button>
@@ -1981,7 +2034,7 @@ export const PRsScreen = () => {
         )}
       </AnimatePresence>
 
-      {/* 2. Mobile Details Metadata checklist sheet */}
+      {/* 2. Mobile Details Metadata specifications drawer */}
       <AnimatePresence>
         {isMobileMetadataOpen && selectedPR && (
           <div className="fixed inset-0 z-[150] block lg:hidden">
@@ -1996,25 +2049,23 @@ export const PRsScreen = () => {
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+              transition={{ type: 'spring', damping: 24, stiffness: 210 }}
               className="absolute bottom-0 left-0 right-0 max-h-[85vh] bg-card border-t border-border rounded-t-3xl p-5 overflow-y-auto space-y-5 shadow-2xl pb-12"
             >
-              <div className="flex justify-between items-center border-b border-border/50 pb-3">
-                <span className="text-sm font-bold text-text-main">Review Details</span>
+              <div className="flex justify-between items-center border-b border-border/40 pb-3">
+                <span className="text-sm font-black text-text-main uppercase tracking-wider">Review Metadata specs</span>
                 <button 
                   onClick={() => setIsMobileMetadataOpen(false)}
-                  className="p-1 rounded-full bg-hover text-text-muted hover:text-text-main"
+                  className="p-1 rounded-full bg-hover text-text-muted hover:text-text-main transition-colors"
                 >
-                  <X size={16} />
+                  <X size={18} />
                 </button>
               </div>
 
-              {/* Mobile Meta Row Content */}
               <div className="space-y-4">
-                
-                {/* Branch checkout */}
-                <div className="bg-main/30 border border-border/50 rounded-xl p-3.5 space-y-2.5">
-                  <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider block">Branch Actions</span>
+                {/* Branch action paths */}
+                <div className="bg-main/30 border border-border/50 rounded-xl p-3.5 space-y-2">
+                  <span className="text-[10px] font-extrabold text-text-muted uppercase tracking-wider block">Checkout Actions</span>
                   <div className="flex items-center justify-between gap-1.5 bg-card border border-border px-2.5 py-2 rounded-lg">
                     <span className="font-mono text-xs text-text-muted truncate flex-1">{selectedPR.source}</span>
                     <button 
@@ -2029,10 +2080,10 @@ export const PRsScreen = () => {
                   )}
                 </div>
 
-                {/* Reviewers */}
-                <div className="bg-main/30 border border-border/50 rounded-xl p-3.5 space-y-2 flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Reviewer</span>
-                  <div className="flex items-center gap-1.5">
+                {/* Reviewer */}
+                <div className="bg-main/30 border border-border/50 rounded-xl p-3.5 flex items-center justify-between">
+                  <span className="text-[10px] font-extrabold text-text-muted uppercase tracking-wider">Reviewer</span>
+                  <div className="flex items-center gap-2">
                     <span className="text-xs text-text-main font-bold">lead-architect</span>
                     <span className={`text-[9px] font-bold px-2 py-0.5 rounded ${
                       selectedPR.status === 'Approved' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'
@@ -2042,24 +2093,24 @@ export const PRsScreen = () => {
                   </div>
                 </div>
 
-                {/* Assignees */}
-                <div className="bg-main/30 border border-border/50 rounded-xl p-3.5 space-y-2 flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Assignee</span>
+                {/* Assignee */}
+                <div className="bg-main/30 border border-border/50 rounded-xl p-3.5 flex items-center justify-between">
+                  <span className="text-[10px] font-extrabold text-text-muted uppercase tracking-wider">Assignee</span>
                   <span className="text-xs text-text-main font-bold">{selectedPR.author}</span>
                 </div>
 
                 {/* Labels */}
                 <div className="bg-main/30 border border-border/50 rounded-xl p-3.5 space-y-2">
-                  <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider block">Labels</span>
-                  <div className="flex items-center flex-wrap gap-1.5 mt-1">
-                    <span className="text-[9px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/15">feature</span>
-                    <span className="text-[9px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-500 border border-indigo-500/15">high-priority</span>
+                  <span className="text-[10px] font-extrabold text-text-muted uppercase tracking-wider block">Labels</span>
+                  <div className="flex items-center flex-wrap gap-1.5 mt-1.5">
+                    <span className="text-[9px] font-extrabold px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-500 border border-amber-500/20">feature</span>
+                    <span className="text-[9px] font-extrabold px-2.5 py-0.5 rounded-full bg-indigo-500/15 text-indigo-500 border border-indigo-500/20">high-priority</span>
                   </div>
                 </div>
 
                 {/* Milestone */}
-                <div className="bg-main/30 border border-border/50 rounded-xl p-3.5 space-y-2.5">
-                  <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider block">Milestone Status</span>
+                <div className="bg-main/30 border border-border/50 rounded-xl p-3.5 space-y-2">
+                  <span className="text-[10px] font-extrabold text-text-muted uppercase tracking-wider block">Milestone Status</span>
                   <span className="text-xs text-text-main font-extrabold block">v1.2.0 Integration</span>
                   <div className="w-full bg-card h-1.5 rounded-full overflow-hidden border border-border/40">
                     <div className="bg-success h-full w-[85%]" />
@@ -2069,7 +2120,7 @@ export const PRsScreen = () => {
 
               <button
                 onClick={() => setIsMobileMetadataOpen(false)}
-                className="w-full bg-primary text-white text-xs font-bold py-3.5 rounded-xl active:scale-95 transition-all mt-4 cursor-pointer"
+                className="w-full bg-primary text-white text-xs font-bold py-3.5 rounded-xl active:scale-[0.97] transition-all mt-4 cursor-pointer"
               >
                 Done
               </button>
