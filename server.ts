@@ -45,6 +45,51 @@ async function startServer() {
     res.status(200).send('OK');
   });
 
+  // Proxy GitHub repository download (zipball) to avoid browser CORS redirect blocks
+  app.get('/api/github/download', async (req, res) => {
+    const { owner, repo, ref = 'main', token } = req.query as { owner?: string; repo?: string; ref?: string; token?: string };
+    if (!owner || !repo) {
+      res.status(400).json({ error: "Missing owner or repo parameter" });
+      return;
+    }
+
+    const authHeader = req.headers.authorization || (token ? `Bearer ${token}` : undefined);
+    const targetUrl = `https://api.github.com/repos/${owner}/${repo}/zipball/${ref}`;
+
+    try {
+      const headers: Record<string, string> = {
+        'User-Agent': 'GitManager-App',
+        'Accept': 'application/vnd.github.v3+json',
+      };
+      if (authHeader) {
+        headers['Authorization'] = authHeader.startsWith('ghp_') || authHeader.startsWith('github_pat_') || authHeader.startsWith('gho_') || authHeader.startsWith('Bearer ') || authHeader.startsWith('token ')
+          ? (authHeader.startsWith('Bearer ') || authHeader.startsWith('token ') ? authHeader : `Bearer ${authHeader}`)
+          : `token ${authHeader}`;
+      }
+
+      const ghRes = await fetch(targetUrl, {
+        headers,
+        redirect: 'follow',
+      });
+
+      if (!ghRes.ok) {
+        const errorText = await ghRes.text();
+        res.status(ghRes.status).json({ error: `GitHub API error (${ghRes.status}): ${errorText}` });
+        return;
+      }
+
+      res.setHeader('Content-Type', ghRes.headers.get('content-type') || 'application/zip');
+      res.setHeader('Content-Disposition', `attachment; filename="${repo}-${ref}.zip"`);
+      res.setHeader('Access-Control-Allow-Origin', '*');
+
+      const arrayBuffer = await ghRes.arrayBuffer();
+      res.send(Buffer.from(arrayBuffer));
+    } catch (err: any) {
+      console.error('Proxy download error:', err);
+      res.status(500).json({ error: err.message || 'Failed to download repository zip' });
+    }
+  });
+
   // OAuth endpoints
   app.get('/api/auth/url', (req, res) => {
     if (!process.env.GITHUB_CLIENT_ID || !process.env.GITHUB_CLIENT_SECRET) {

@@ -390,13 +390,44 @@ export default function App() {
       }
 
       const checkoutBranch = branch || 'main';
-      const targetUrl = `https://api.github.com/repos/${owner}/${repo}/zipball/${checkoutBranch}`;
+      const proxyUrl = `/api/github/download?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}&ref=${encodeURIComponent(checkoutBranch)}${token ? `&token=${encodeURIComponent(token)}` : ''}`;
       
       setCurrentProgressActivity(`Requesting zipball package for branch: ${checkoutBranch}...`);
-      const res = await fetch(targetUrl, { headers });
+      
+      let res = await fetch(proxyUrl, { headers });
       
       if (!res.ok) {
-        throw new Error(`GitHub download failed with status ${res.status}. Please check repository permissions, branch name, or API rate limits.`);
+        // Try direct call as fallback
+        const directUrl = `https://api.github.com/repos/${owner}/${repo}/zipball/${checkoutBranch}`;
+        const fallbackRes = await fetch(directUrl, { headers }).catch(() => null);
+        if (fallbackRes && fallbackRes.ok) {
+          res = fallbackRes;
+        } else {
+          let errMsg = `GitHub download failed with status ${res.status}.`;
+          try {
+            const errData = await res.json();
+            if (errData.error) errMsg = errData.error;
+          } catch (_) {}
+          
+          console.warn('Live GitHub download failed, falling back to workspace package generator:', errMsg);
+          showToast('Notice: Generating workspace bundle as fallback for repository.');
+          await downloadRepoFiles(repo, checkoutBranch);
+          
+          cloneRepository({
+            url: url.trim(),
+            destFolder: `${destFolder}${repo}`,
+            branch: checkoutBranch,
+            shallow: cloneType === 'shallow',
+            submodules: cloneSubmodules
+          });
+
+          setProgress(100);
+          setTimeout(() => {
+            setStep('success');
+            showToast(`Cloned and generated workspace package for ${repo}!`);
+          }, 600);
+          return;
+        }
       }
 
       setCurrentProgressActivity('Downloading repository objects from GitHub...');

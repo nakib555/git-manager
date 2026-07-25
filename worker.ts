@@ -55,6 +55,70 @@ export default {
 
       return new Response('OK', { status: 200 });
     }
+
+    if (path === '/api/github/download') {
+      const owner = url.searchParams.get('owner');
+      const repo = url.searchParams.get('repo');
+      const ref = url.searchParams.get('ref') || 'main';
+      const queryToken = url.searchParams.get('token');
+
+      if (!owner || !repo) {
+        return new Response(JSON.stringify({ error: 'Missing owner or repo parameter' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
+      const authHeader = request.headers.get('authorization') || (queryToken ? `Bearer ${queryToken}` : null);
+      const targetUrl = `https://api.github.com/repos/${owner}/${repo}/zipball/${ref}`;
+
+      try {
+        const headers: Record<string, string> = {
+          'User-Agent': 'GitManager-App',
+          'Accept': 'application/vnd.github.v3+json',
+        };
+        if (authHeader) {
+          headers['Authorization'] = authHeader.startsWith('ghp_') || authHeader.startsWith('github_pat_') || authHeader.startsWith('gho_') || authHeader.startsWith('Bearer ') || authHeader.startsWith('token ')
+            ? (authHeader.startsWith('Bearer ') || authHeader.startsWith('token ') ? authHeader : `Bearer ${authHeader}`)
+            : `token ${authHeader}`;
+        }
+
+        const ghRes = await fetch(targetUrl, {
+          headers,
+          redirect: 'follow',
+        });
+
+        if (!ghRes.ok) {
+          const errorText = await ghRes.text();
+          return new Response(JSON.stringify({ error: `GitHub API error (${ghRes.status}): ${errorText}` }), {
+            status: ghRes.status,
+            headers: { 
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*'
+            }
+          });
+        }
+
+        const blob = await ghRes.blob();
+        return new Response(blob, {
+          status: 200,
+          headers: {
+            'Content-Type': ghRes.headers.get('content-type') || 'application/zip',
+            'Content-Disposition': `attachment; filename="${repo}-${ref}.zip"`,
+            'Access-Control-Allow-Origin': '*',
+          }
+        });
+      } catch (err: any) {
+        console.error('Proxy download error:', err);
+        return new Response(JSON.stringify({ error: err.message || 'Failed to download repository zip' }), {
+          status: 500,
+          headers: { 
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          }
+        });
+      }
+    }
     
     if (path === '/api/auth/url') {
       if (!env.GITHUB_CLIENT_ID || !env.GITHUB_CLIENT_SECRET) {
