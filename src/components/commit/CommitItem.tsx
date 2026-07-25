@@ -23,9 +23,9 @@ export const CommitItem = memo(({ commit, isSelected, isLatest, onSelect, onActi
       >
         {/* Timeline Bullet Indicator */}
         {isDesktop ? (
-          <div className={`absolute -left-[24px] top-4.5 w-3 h-3 bg-main border-2 rounded-full z-10 transition-colors ${isSelected ? 'border-primary' : 'border-text-muted'}`} />
+          <div className={`absolute -left-[22px] top-4.5 w-3 h-3 bg-main border-2 rounded-full z-10 transition-colors ${isSelected ? 'border-primary' : 'border-text-muted'}`} />
         ) : (
-          <div className={`absolute -left-[27px] top-1.5 w-3.5 h-3.5 bg-main border-2 rounded-full z-10 transition-colors ${isLatest ? 'border-primary' : 'border-text-muted'}`}></div>
+          <div className={`absolute -left-[23px] top-1.5 w-3.5 h-3.5 bg-main border-2 rounded-full z-10 transition-colors ${isLatest ? 'border-primary' : 'border-text-muted'}`}></div>
         )}
 
         {isDesktop ? (

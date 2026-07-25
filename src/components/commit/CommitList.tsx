@@ -161,13 +161,14 @@ export const CommitList = ({
       {/* List Container */}
       <div 
         ref={scrollElementRef} 
-        className={`${parentRef ? '' : 'flex-1 overflow-y-auto no-scrollbar'} relative ${isDesktop ? 'pl-4 border-l-2 border-border/60' : 'pl-5 border-l-2 border-border/60'}`}
+        className={`${parentRef ? '' : 'flex-1 overflow-y-auto no-scrollbar'} relative`}
       >
         {isLoading || isFetching ? (
-          <div className="flex flex-col gap-4 animate-pulse pt-2">
+          <div className="flex flex-col gap-4 animate-pulse pt-2 pl-8 relative">
+            <div className="absolute top-4 bottom-0 left-[15px] w-[2px] bg-border/60 z-0"></div>
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="relative">
-                <div className="absolute -left-[27px] top-1.5 w-3 h-3 bg-main border-2 border-border/70 rounded-full z-10"></div>
+              <div key={i} className="relative z-10">
+                <div className="absolute -left-[23px] top-1.5 w-3.5 h-3.5 bg-main border-2 border-border/70 rounded-full z-10"></div>
                 <div className="w-20 bg-border/40 border border-border/20 h-6 rounded-lg mb-2"></div>
                 <div className="w-[70%] bg-border/60 h-4 rounded mb-2.5"></div>
                 <div className="flex justify-between items-center mt-2">
@@ -203,7 +204,9 @@ export const CommitList = ({
             </div>
           </div>
         ) : (
-          <div className="flex flex-col gap-6 relative pb-6 pt-2">
+          <div className="flex flex-col gap-6 relative pb-6 pt-2 pl-8">
+            {/* The continuous timeline line */}
+            <div className="absolute top-4 bottom-6 left-[15px] w-[2px] bg-border/60 z-0"></div>
             <AnimatePresence>
               {commits.map((commit: any, index: number) => {
                 const isLatest = index === 0 && !filters.query && filters.page === 1;
