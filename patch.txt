@@ -1,0 +1,39 @@
+      const rawItems = isSearch ? data.items : data;
+      
+      const fetchWithLimit = async (items: any[], limit: number) => {
+        const results = [];
+        for (let i = 0; i < items.length; i += limit) {
+           const batch = items.slice(i, i + limit);
+           const batchResults = await Promise.all(batch.map(async (c: any) => {
+              let add = "+0";
+              let del = "-0";
+              if (c.url) { 
+                 try {
+                    const detailRes = await fetch(c.url, { headers });
+                    if (detailRes.ok) {
+                      const detailData = await detailRes.json();
+                      if (detailData.stats) {
+                        add = `+${detailData.stats.additions || 0}`;
+                        del = `-${detailData.stats.deletions || 0}`;
+                      }
+                    }
+                 } catch (_) {}
+              }
+              return {
+                hash: c.sha.substring(0, 7),
+                fullHash: c.sha,
+                timestamp: c.commit.author?.date || c.commit.committer?.date || new Date().toISOString(),
+                msg: c.commit.message,
+                author: c.commit.author?.name || c.author?.login || "GitHub User",
+                time: formatTime(c.commit.author?.date || c.commit.committer?.date),
+                avatar: c.author?.avatar_url,
+                add,
+                del,
+              };
+           }));
+           results.push(...batchResults);
+        }
+        return results;
+      };
+
+      const items = await fetchWithLimit(rawItems, 3);

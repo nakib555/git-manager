@@ -478,6 +478,7 @@ const FilesScreen = () => {
 };
 
 import { CommitList } from '../components/commit/CommitList';
+import { DiffViewer } from '../components/commit/DiffViewer';
 const CommitsScreen = () => {
   const { 
     githubToken,
@@ -493,7 +494,7 @@ const CommitsScreen = () => {
     resetBranchToCommit, 
     createBranchAtCommit, 
     createTagAtCommit, 
-    showToast 
+    showToast, theme 
   } = useAppContext();
 
   const isDesktop = useIsDesktop();
@@ -753,7 +754,7 @@ const CommitsScreen = () => {
         </button>
       </div>
 
-      <div className="pb-10">
+      <div>
         <CommitList 
           isDesktop={isDesktop} 
           parentRef={scrollElement}
@@ -2309,29 +2310,13 @@ const CommitsScreen = () => {
             </div>
 
             {/* Diff Code Viewer block */}
-            <div className="flex-1 overflow-y-auto bg-main border border-border rounded-xl font-mono text-[11px] p-4 space-y-2 select-text max-h-[60vh]">
+            <div className="flex-1 overflow-y-auto bg-main/50 border border-border rounded-xl p-4 space-y-4 max-h-[60vh]">
               {commitDetailData?.files && commitDetailData.files.length > 0 ? (
                 commitDetailData.files.map((file: any, fIdx: number) => (
-                  <div key={fIdx} className="mb-4">
-                    <div className="text-text-muted border-b border-border pb-1 mb-2 font-bold">diff --git a/{file.filename} b/{file.filename}</div>
-                    {file.patch ? (
-                      file.patch.split('\n').map((line: string, lIdx: number) => {
-                        if (line.startsWith('+')) {
-                          return <div key={lIdx} className="bg-success/10 text-success pl-2.5 py-0.5 whitespace-pre-wrap border-l-2 border-success/60">{line}</div>;
-                        } else if (line.startsWith('-')) {
-                          return <div key={lIdx} className="bg-danger/10 text-danger pl-2.5 py-0.5 whitespace-pre-wrap">{line}</div>;
-                        } else if (line.startsWith('@@')) {
-                          return <div key={lIdx} className="text-info font-bold my-1">{line}</div>;
-                        }
-                        return <div key={lIdx} className="text-text-main/80 pl-2 whitespace-pre-wrap">{line}</div>;
-                      })
-                    ) : (
-                      <div className="text-text-muted italic pl-2">Binary or empty file change.</div>
-                    )}
-                  </div>
+                  <DiffViewer key={fIdx} patch={file.patch} filename={file.filename} isDark={theme === 'dark'} />
                 ))
               ) : (
-                <div className="space-y-1">
+                <div className="space-y-1 font-mono text-[11px] select-text">
                   <div className="text-text-muted border-b border-border pb-2 mb-3">diff --git a/commit-{selectedCommit.hash} b/commit-{selectedCommit.hash}</div>
                   <div className="text-text-main/80 font-bold mb-1">Commit Message: "{selectedCommit.msg}"</div>
                   <div className="bg-success/10 text-success pl-2.5 py-0.5 whitespace-pre border-l-4 border-success/60">

@@ -3,6 +3,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { useAppContext } from '../AppContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { CommitList } from './commit/CommitList';
+import { DiffViewer } from './commit/DiffViewer';
 import { 
   Search, Lock, Globe, Square, FolderGit2, Folder, GitBranch, 
   GitPullRequest, GitCommit, Check, Key, ExternalLink, ShieldAlert, 
@@ -1163,7 +1164,7 @@ const DesktopCommitsView: React.FC = () => {
     githubToken, currentRepoOwner, currentRepo, activeFiles,
     activeCommits, openModal, deleteCommit, undoLatestCommit, 
     amendLatestCommit, resetBranchToCommit, createBranchAtCommit, 
-    createTagAtCommit, showToast 
+    createTagAtCommit, showToast, theme 
   } = useAppContext();
 
   const [selectedCommit, setSelectedCommit] = useState<any | null>(null);
@@ -1369,29 +1370,13 @@ const DesktopCommitsView: React.FC = () => {
               <div className="px-4 py-2.5 bg-hover/10 border-b border-border text-[10px] font-bold text-text-muted flex items-center justify-between">
                 <span>DIFF PREVIEW</span>
               </div>
-              <div className="p-4 bg-main font-mono text-[11px] leading-6 space-y-4 max-h-[400px] overflow-y-auto">
+              <div className="p-4 bg-main/50 space-y-4 max-h-[400px] overflow-y-auto">
                 {commitDetailData?.files && commitDetailData.files.length > 0 ? (
                   commitDetailData.files.map((file: any, fIdx: number) => (
-                    <div key={fIdx} className="mb-4">
-                      <div className="text-text-muted border-b border-border/50 pb-1 mb-2 font-bold">diff --git a/{file.filename} b/{file.filename}</div>
-                      {file.patch ? (
-                        file.patch.split('\n').map((line: string, lIdx: number) => {
-                          if (line.startsWith('+')) {
-                            return <div key={lIdx} className="bg-success/10 text-success pl-2.5 py-0.5 whitespace-pre-wrap border-l-2 border-success/60">{line}</div>;
-                          } else if (line.startsWith('-')) {
-                            return <div key={lIdx} className="bg-danger/10 text-danger pl-2.5 py-0.5 whitespace-pre-wrap">{line}</div>;
-                          } else if (line.startsWith('@@')) {
-                            return <div key={lIdx} className="text-info font-bold my-1">{line}</div>;
-                          }
-                          return <div key={lIdx} className="text-text-main/80 pl-2 whitespace-pre-wrap">{line}</div>;
-                        })
-                      ) : (
-                        <div className="text-text-muted italic pl-2">Binary or empty file change.</div>
-                      )}
-                    </div>
+                    <DiffViewer key={fIdx} patch={file.patch} filename={file.filename} isDark={theme === 'dark'} />
                   ))
                 ) : (
-                  <div className="space-y-1">
+                  <div className="space-y-1 font-mono text-[11px] p-2 bg-main rounded-xl border border-border">
                     <div className="text-text-muted border-b border-border pb-2 mb-3">diff --git a/commit-{commitToInspect.hash} b/commit-{commitToInspect.hash}</div>
                     <div className="text-text-main/80 font-bold mb-1">Commit Message: "{commitToInspect.msg}"</div>
                     <div className="bg-success/10 text-success pl-2.5 py-0.5 whitespace-pre border-l-4 border-success/60">

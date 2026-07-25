@@ -26,6 +26,7 @@ export const useCommits = (filters: CommitFilter) => {
           if (filters.until && new Date(c.timestamp) > new Date(filters.until)) return false;
           return true;
         });
+
         const PAGE_SIZE = 30;
         const start = (filters.page - 1) * PAGE_SIZE;
         const end = start + PAGE_SIZE;
@@ -75,7 +76,6 @@ export const useCommits = (filters: CommitFilter) => {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.message || 'Failed to fetch commits');
       }
-
       const data = await res.json();
       
       if (isSearch) {
@@ -96,8 +96,6 @@ export const useCommits = (filters: CommitFilter) => {
             if (match) {
               totalCount = parseInt(match[1], 10);
             } else {
-              // If there's no last page but we have results, count might just be 1, or it could be small enough to just read items length?
-              // Actually if there's no link header, there's only 1 page, so total count is items length of that 1 page
               const singleData = await countRes.json();
               totalCount = singleData.length || 0;
             }
@@ -109,37 +107,44 @@ export const useCommits = (filters: CommitFilter) => {
       }
 
       const rawItems = isSearch ? data.items : data;
+      
+      const fetchWithLimit = async (items: any[], limit: number) => {
+        const results = [];
+        for (let i = 0; i < items.length; i += limit) {
+           const batch = items.slice(i, i + limit);
+           const batchResults = await Promise.all(batch.map(async (c: any) => {
+              let add = "+0";
+              let del = "-0";
+              if (c.url) { 
+                 try {
+                    const detailRes = await fetch(c.url, { headers });
+                    if (detailRes.ok) {
+                      const detailData = await detailRes.json();
+                      if (detailData.stats) {
+                        add = `+${detailData.stats.additions || 0}`;
+                        del = `-${detailData.stats.deletions || 0}`;
+                      }
+                    }
+                 } catch (_) {}
+              }
+              return {
+                hash: c.sha.substring(0, 7),
+                fullHash: c.sha,
+                timestamp: c.commit.author?.date || c.commit.committer?.date || new Date().toISOString(),
+                msg: c.commit.message,
+                author: c.commit.author?.name || c.author?.login || "GitHub User",
+                time: formatTime(c.commit.author?.date || c.commit.committer?.date),
+                avatar: c.author?.avatar_url,
+                add,
+                del,
+              };
+           }));
+           results.push(...batchResults);
+        }
+        return results;
+      };
 
-      const items = await Promise.all(
-        rawItems.map(async (c: any, index: number) => {
-          let add = "+0";
-          let del = "-0";
-          if (index < 3 && c.url && !isSearch) {
-             try {
-                const detailRes = await fetch(c.url, { headers });
-                if (detailRes.ok) {
-                  const detailData = await detailRes.json();
-                  if (detailData.stats) {
-                    add = `+${detailData.stats.additions || 0}`;
-                    del = `-${detailData.stats.deletions || 0}`;
-                  }
-                }
-             } catch (_) {}
-          }
-          
-          return {
-            hash: c.sha.substring(0, 7),
-            fullHash: c.sha,
-            timestamp: c.commit.author?.date || c.commit.committer?.date || new Date().toISOString(),
-            msg: c.commit.message,
-            author: c.commit.author?.name || c.author?.login || "GitHub User",
-            time: formatTime(c.commit.author?.date || c.commit.committer?.date),
-            avatar: c.author?.avatar_url,
-            add,
-            del,
-          };
-        })
-      );
+      const items = await fetchWithLimit(rawItems, 5);
 
       return {
         items,
