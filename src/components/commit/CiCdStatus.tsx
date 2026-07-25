@@ -14,25 +14,35 @@ import {
   Server, 
   AlertCircle,
   Terminal,
-  Play
+  Play,
+  Activity,
+  ArrowRight
 } from 'lucide-react';
+import { useAppContext } from '../../AppContext';
 
 export interface CiCdStep {
   name: string;
   status: 'success' | 'failed' | 'running' | 'pending';
   duration: string;
   log: string;
+  externalUrl?: string;
 }
 
 export interface CiCdState {
-  status: 'success' | 'failed' | 'running';
+  status: 'success' | 'failed' | 'running' | 'pending';
   label: string;
   color: string;
   badgeBg: string;
   duration: string;
   steps: CiCdStep[];
+  isReal?: boolean;
+  totalCount?: number;
+  checkSuiteId?: number | null;
 }
 
+// ---------------------------------------------------------
+// Deterministic fallback simulated statuses
+// ---------------------------------------------------------
 export const getCiCdStatus = (hash: string): CiCdState => {
   if (!hash) {
     return {
@@ -145,6 +155,9 @@ export const getCiCdStatus = (hash: string): CiCdState => {
   }
 };
 
+// ---------------------------------------------------------
+// Global Simulator Store for sandbox demonstration
+// ---------------------------------------------------------
 type Listener = () => void;
 class CiCdLiveStore {
   private listeners = new Set<Listener>();
@@ -312,25 +325,255 @@ class CiCdLiveStore {
 
 export const ciCdStore = new CiCdLiveStore();
 
+// ---------------------------------------------------------
+// Combined Real/Fallback hook with live 5s polling
+// ---------------------------------------------------------
 export const useCiCdStatus = (hash: string) => {
-  const [cicd, setCicd] = useState<CiCdState>(() => ciCdStore.getState(hash));
+  const { githubToken, currentRepo, currentRepoOwner } = useAppContext();
+  const [realState, setRealState] = useState<CiCdState | null>(null);
+  const [simulatedState, setSimulatedState] = useState<CiCdState>(() => ciCdStore.getState(hash));
+  const [isPolling, setIsPolling] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
+  // Sync simulated store changes
   useEffect(() => {
-    // Immediate sync
-    setCicd(ciCdStore.getState(hash));
-
     const unsubscribe = ciCdStore.subscribe(() => {
-      setCicd(ciCdStore.getState(hash));
+      setSimulatedState(ciCdStore.getState(hash));
     });
-
     return unsubscribe;
   }, [hash]);
 
-  return cicd;
+  // Fetch from Real GitHub Statuses & Check Runs API
+  useEffect(() => {
+    if (!hash) return;
+
+    let isMounted = true;
+    let pollInterval: any = null;
+
+    const fetchRealData = async () => {
+      if (!githubToken || !currentRepo || !currentRepoOwner) {
+        if (isMounted) {
+          setRealState(null);
+          setIsPolling(false);
+        }
+        return;
+      }
+
+      try {
+        const headers: Record<string, string> = {
+          Authorization: `Bearer ${githubToken}`,
+          Accept: 'application/vnd.github.v3+json',
+        };
+
+        // 1. Fetch check runs for ref
+        const checkRunsRes = await fetch(
+          `https://api.github.com/repos/${currentRepoOwner}/${currentRepo}/commits/${hash}/check-runs`,
+          { headers }
+        );
+        const checkRunsData = checkRunsRes.ok ? await checkRunsRes.json() : null;
+
+        // 2. Fetch statuses for ref
+        const statusesRes = await fetch(
+          `https://api.github.com/repos/${currentRepoOwner}/${currentRepo}/commits/${hash}/status`,
+          { headers }
+        );
+        const statusesData = statusesRes.ok ? await statusesRes.json() : null;
+
+        if (!isMounted) return;
+
+        const steps: CiCdStep[] = [];
+        let checkSuiteId: number | null = null;
+
+        // Map Check Runs to our standard layout steps
+        if (checkRunsData && checkRunsData.check_runs && checkRunsData.check_runs.length > 0) {
+          for (const run of checkRunsData.check_runs) {
+            if (run.check_suite && run.check_suite.id) {
+              checkSuiteId = run.check_suite.id;
+            }
+
+            let stepStatus: 'success' | 'failed' | 'running' | 'pending' = 'pending';
+            if (run.status === 'completed') {
+              stepStatus = run.conclusion === 'success' ? 'success' : 'failed';
+            } else if (run.status === 'in_progress') {
+              stepStatus = 'running';
+            }
+
+            let duration = 'pending';
+            if (run.started_at) {
+              const start = new Date(run.started_at).getTime();
+              const end = run.completed_at ? new Date(run.completed_at).getTime() : Date.now();
+              const diffSec = Math.max(0, Math.floor((end - start) / 1000));
+              duration = diffSec >= 60 ? `${Math.floor(diffSec / 60)}m ${diffSec % 60}s` : `${diffSec}s`;
+            }
+
+            const logs = [
+              `✔ Check Name: ${run.name}`,
+              `ℹ Execution Status: ${run.status}`,
+              run.conclusion ? `✔ Result Conclusion: ${run.conclusion}` : `➡ Active background compilation...`,
+              run.output?.title ? `ℹ Output Summary: ${run.output.title}` : null,
+              run.output?.summary ? `ℹ Output Details: ${run.output.summary}` : null
+            ].filter(Boolean).join('\n');
+
+            steps.push({
+              name: run.name,
+              status: stepStatus,
+              duration,
+              log: logs,
+              externalUrl: run.html_url
+            });
+          }
+        }
+
+        // Map older combined statuses to steps too
+        if (statusesData && statusesData.statuses && statusesData.statuses.length > 0) {
+          for (const s of statusesData.statuses) {
+            let stepStatus: 'success' | 'failed' | 'running' | 'pending' = 'pending';
+            if (s.state === 'success') {
+              stepStatus = 'success';
+            } else if (s.state === 'pending') {
+              stepStatus = 'running';
+            } else if (s.state === 'failure' || s.state === 'error') {
+              stepStatus = 'failed';
+            }
+
+            steps.push({
+              name: s.context || 'status-check',
+              status: stepStatus,
+              duration: 'N/A',
+              log: `✔ Context: ${s.context}\nℹ State: ${s.state}\nℹ Description: ${s.description || 'N/A'}\n➡ Live Target URL: ${s.target_url || 'N/A'}`,
+              externalUrl: s.target_url
+            });
+          }
+        }
+
+        if (steps.length > 0) {
+          // Determine overall status
+          let overallStatus: 'success' | 'failed' | 'running' | 'pending' = 'success';
+          if (steps.some(s => s.status === 'failed')) {
+            overallStatus = 'failed';
+          } else if (steps.some(s => s.status === 'running')) {
+            overallStatus = 'running';
+          } else if (steps.some(s => s.status === 'pending')) {
+            overallStatus = 'pending';
+          }
+
+          // Compute duration
+          let overallDuration = 'N/A';
+          const validDurations = steps.filter(s => s.duration && s.duration !== 'pending' && s.duration !== 'N/A');
+          if (validDurations.length > 0) {
+            const sumSec = validDurations.reduce((acc, s) => {
+              const match = s.duration.match(/(\d+)m\s*(\d+)s/);
+              if (match) {
+                return acc + parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
+              }
+              const secMatch = s.duration.match(/(\d+)s/);
+              if (secMatch) {
+                return acc + parseInt(secMatch[1], 10);
+              }
+              return acc;
+            }, 0);
+            overallDuration = sumSec >= 60 ? `${Math.floor(sumSec / 60)}m ${sumSec % 60}s` : `${sumSec}s`;
+          }
+
+          let color = 'text-emerald-500 dark:text-emerald-400 border-emerald-500/20 bg-emerald-500/10 dark:bg-emerald-500/5';
+          let badgeBg = 'bg-emerald-500/10 dark:bg-emerald-500/5';
+          let label = 'Passed';
+
+          if (overallStatus === 'failed') {
+            color = 'text-rose-500 dark:text-rose-400 border-rose-500/20 bg-rose-500/10 dark:bg-rose-500/5';
+            badgeBg = 'bg-rose-500/10 dark:bg-rose-500/5';
+            label = 'Failed';
+          } else if (overallStatus === 'running') {
+            color = 'text-sky-500 dark:text-sky-400 border-sky-500/20 bg-sky-500/10 dark:bg-sky-500/5';
+            badgeBg = 'bg-sky-500/10 dark:bg-sky-500/5';
+            label = 'Running';
+          } else if (overallStatus === 'pending') {
+            color = 'text-amber-500 dark:text-amber-400 border-amber-500/20 bg-amber-500/10 dark:bg-amber-500/5';
+            badgeBg = 'bg-amber-500/10 dark:bg-amber-500/5';
+            label = 'Pending';
+          }
+
+          setRealState({
+            status: overallStatus,
+            label,
+            color,
+            badgeBg,
+            duration: overallDuration,
+            steps,
+            isReal: true,
+            totalCount: steps.length,
+            checkSuiteId
+          });
+        } else {
+          setRealState(null);
+        }
+        setError(null);
+      } catch (err: any) {
+        console.warn("Error loading real GitHub CI/CD:", err);
+        if (isMounted) {
+          setError(err.message || String(err));
+        }
+      }
+    };
+
+    // Immediate invoke
+    fetchRealData();
+    setIsPolling(true);
+
+    // Poll every 5 seconds for absolute real-time updates even without commit updates
+    pollInterval = setInterval(fetchRealData, 5000);
+
+    return () => {
+      isMounted = false;
+      if (pollInterval) clearInterval(pollInterval);
+    };
+  }, [hash, githubToken, currentRepo, currentRepoOwner]);
+
+  const triggerRerun = async () => {
+    if (realState && realState.isReal && realState.checkSuiteId && githubToken && currentRepoOwner && currentRepo) {
+      try {
+        const headers = {
+          Authorization: `Bearer ${githubToken}`,
+          Accept: 'application/vnd.github.v3+json',
+        };
+        const res = await fetch(
+          `https://api.github.com/repos/${currentRepoOwner}/${currentRepo}/check-suites/${realState.checkSuiteId}/rerequest`,
+          {
+            method: 'POST',
+            headers
+          }
+        );
+        if (res.ok) {
+          // Success! Temporarily show running state
+          setRealState(prev => prev ? {
+            ...prev,
+            status: 'running',
+            label: 'Re-triggering...',
+            steps: prev.steps.map(s => ({ ...s, status: 'pending' }))
+          } : null);
+          return true;
+        }
+      } catch (err) {
+        console.error("Failed to trigger check suite rerequest:", err);
+      }
+    }
+    
+    // Fallback: rerun simulation
+    ciCdStore.rerunPipeline(hash);
+    return true;
+  };
+
+  return {
+    cicd: realState || simulatedState,
+    isReal: !!realState,
+    isPolling: isPolling && !!realState,
+    triggerRerun,
+    error
+  };
 };
 
 export const CiCdBadge = ({ hash, isCompact = false }: { hash: string; isCompact?: boolean }) => {
-  const cicd = useCiCdStatus(hash);
+  const { cicd } = useCiCdStatus(hash);
   
   const getIcon = () => {
     switch (cicd.status) {
@@ -340,6 +583,8 @@ export const CiCdBadge = ({ hash, isCompact = false }: { hash: string; isCompact
         return <X size={11} className="stroke-[3]" />;
       case 'running':
         return <RefreshCw size={11} className="animate-spin stroke-[2.5]" />;
+      default:
+        return <Clock size={11} />;
     }
   };
 
@@ -398,7 +643,7 @@ const parseLogLine = (line: string) => {
 };
 
 export const CiCdPipelineFlow = ({ hash }: { hash: string }) => {
-  const cicd = useCiCdStatus(hash);
+  const { cicd, isReal, isPolling, triggerRerun } = useCiCdStatus(hash);
   const [expandedStep, setExpandedStep] = useState<number | null>(null);
 
   // Deterministic values for custom widgets
@@ -431,7 +676,7 @@ export const CiCdPipelineFlow = ({ hash }: { hash: string }) => {
             <RefreshCw size={14} className="animate-spin stroke-[2.5] relative z-10" />
           </div>
         );
-      case 'pending':
+      default:
         return (
           <div className="w-8 h-8 rounded-xl bg-neutral-500/5 border border-border text-text-muted flex items-center justify-center shrink-0">
             <Clock size={14} />
@@ -455,15 +700,29 @@ export const CiCdPipelineFlow = ({ hash }: { hash: string }) => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/50 pb-5">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <Cpu size={16} className="text-primary animate-pulse" />
+            <Cpu size={16} className="text-primary" />
             <span className="text-xs font-bold text-text-main tracking-widest uppercase">Pipeline Workflow</span>
+            {isPolling && (
+              <span className="inline-flex items-center gap-1 text-[8px] bg-sky-500/15 text-sky-500 font-bold px-2 py-0.5 rounded-full border border-sky-500/20 animate-pulse">
+                <Activity size={8} /> Live Poll 5s
+              </span>
+            )}
+            {isReal ? (
+              <span className="inline-flex items-center gap-1 text-[8px] bg-emerald-500/15 text-emerald-500 font-bold px-2 py-0.5 rounded-full border border-emerald-500/20">
+                Real GitHub Checks
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-[8px] bg-amber-500/15 text-amber-500 font-bold px-2 py-0.5 rounded-full border border-amber-500/20">
+                Sandbox Simulator Run
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <span className="text-[10px] text-text-muted font-semibold bg-main px-2 py-0.5 rounded-md border border-border">
               Ref: <span className="font-mono text-primary font-bold">{shortHash}</span>
             </span>
             <span className="text-[10px] text-text-muted font-semibold bg-main px-2 py-0.5 rounded-md border border-border">
-              Runner: <span className="font-mono text-text-main font-bold">runner-node18-x64</span>
+              Runner: <span className="font-mono text-text-main font-bold">{isReal ? 'GitHub Actions Host' : 'runner-node18-x64'}</span>
             </span>
           </div>
         </div>
@@ -471,22 +730,35 @@ export const CiCdPipelineFlow = ({ hash }: { hash: string }) => {
         <div className="flex items-center gap-2 self-start sm:self-center">
           {cicd.status !== 'running' && (
             <button
-              onClick={() => ciCdStore.rerunPipeline(hash)}
+              onClick={triggerRerun}
               className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase text-primary hover:text-white bg-primary/10 hover:bg-primary px-3 py-1.5 rounded-xl transition-all active:scale-95 cursor-pointer shadow-sm border border-primary/20"
             >
               <RefreshCw size={11} className="transition-transform group-hover:rotate-180 duration-500" />
-              <span>Rerun Pipeline</span>
+              <span>{isReal ? 'Rerun Checks' : 'Rerun Simulation'}</span>
             </button>
           )}
           <CiCdBadge hash={hash} />
         </div>
       </div>
 
+      {/* Fallback simulation warning layout */}
+      {!isReal && (
+        <div className="bg-amber-500/5 border border-amber-500/15 rounded-xl p-3.5 flex items-start gap-3">
+          <AlertCircle size={16} className="text-amber-500 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <span className="block text-[10px] font-bold text-amber-500 uppercase tracking-wider">No active GitHub workflows detected</span>
+            <p className="text-[10px] text-text-muted leading-relaxed">
+              We couldn't detect active GitHub Actions or Check Runs for this commit. Define build workflows under <code className="font-mono bg-main px-1 py-0.5 rounded border border-border">.github/workflows/*.yml</code> in your repository to enable actual live checks. In the meantime, play with our interactive sandbox runner:
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Visual Topology Pipeline Map */}
       <div className="bg-main/30 border border-border/60 rounded-xl p-4">
         <div className="text-[10px] font-bold text-text-muted uppercase tracking-wider mb-4 flex items-center justify-between">
           <span>Topology Map</span>
-          <span className="text-[9px] font-semibold text-primary">Live Connection Track</span>
+          <span className="text-[9px] font-semibold text-primary">{isReal ? 'Live Connection Track' : 'Simulated Pipeline Nodes'}</span>
         </div>
         
         <div className="grid grid-cols-4 gap-2 relative">
@@ -501,7 +773,7 @@ export const CiCdPipelineFlow = ({ hash }: { hash: string }) => {
             />
           </div>
 
-          {cicd.steps.map((step, idx) => {
+          {cicd.steps.slice(0, 4).map((step, idx) => {
             const stepNameShort = step.name.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
             const isStepActive = step.status === 'running';
             const isStepSuccess = step.status === 'success';
@@ -553,7 +825,7 @@ export const CiCdPipelineFlow = ({ hash }: { hash: string }) => {
           </div>
           <div className="min-w-0">
             <span className="block text-[8px] font-bold text-text-muted uppercase tracking-wider">Production Build</span>
-            <span className="text-xs font-extrabold text-text-main block mt-0.5">Vite Bundle CJS</span>
+            <span className="text-xs font-extrabold text-text-main block mt-0.5">{isReal ? 'GitHub Runner' : 'Vite Bundle CJS'}</span>
             <span className="text-[8px] text-text-muted font-semibold">{bundleSizeKB} kB optimized assets</span>
           </div>
         </div>
@@ -564,7 +836,7 @@ export const CiCdPipelineFlow = ({ hash }: { hash: string }) => {
           </div>
           <div className="min-w-0">
             <span className="block text-[8px] font-bold text-text-muted uppercase tracking-wider">Deploy Ingress</span>
-            <span className="text-xs font-extrabold text-text-main block mt-0.5">Cloud Run Container</span>
+            <span className="text-xs font-extrabold text-text-main block mt-0.5">{isReal ? 'GitHub Production' : 'Cloud Run Container'}</span>
             <span className="text-[8px] text-text-muted font-semibold">Region: asia-southeast1</span>
           </div>
         </div>
@@ -611,6 +883,18 @@ export const CiCdPipelineFlow = ({ hash }: { hash: string }) => {
                   </div>
 
                   <div className="flex items-center gap-2">
+                    {step.externalUrl && (
+                      <a 
+                        href={step.externalUrl} 
+                        target="_blank" 
+                        rel="noreferrer" 
+                        onClick={(e) => e.stopPropagation()}
+                        title="View execution log directly on GitHub"
+                        className="p-1 text-text-muted/60 hover:text-primary transition-colors cursor-pointer mr-1"
+                      >
+                        <ExternalLink size={12} />
+                      </a>
+                    )}
                     {isExpanded ? (
                       <ChevronUp size={14} className="text-text-muted/70" />
                     ) : (
