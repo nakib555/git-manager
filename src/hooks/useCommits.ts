@@ -16,30 +16,10 @@ export const useCommits = (filters: CommitFilter) => {
   return useQuery({
     queryKey: ['commits', currentRepoOwner, currentRepo, filters],
     queryFn: async () => {
-      // Offline / Local mocked repos
-      if (!githubToken || !currentRepoOwner || !currentRepo) {
-        const filtered = activeCommits.filter(c => {
-          if (filters.query && !c.msg.toLowerCase().includes(filters.query.toLowerCase()) && !c.hash.includes(filters.query)) return false;
-          if (filters.author && !c.author.toLowerCase().includes(filters.author.toLowerCase())) return false;
-          // Simple date filter for mock data
-          if (filters.since && new Date(c.timestamp) < new Date(filters.since)) return false;
-          if (filters.until && new Date(c.timestamp) > new Date(filters.until)) return false;
-          return true;
-        });
-
-        const PAGE_SIZE = 30;
-        const start = (filters.page - 1) * PAGE_SIZE;
-        const end = start + PAGE_SIZE;
-        return {
-          items: filtered.slice(start, end),
-          totalCount: filtered.length,
-          totalPages: Math.ceil(filtered.length / PAGE_SIZE),
-        };
+      const headers: any = {};
+      if (githubToken) {
+        headers['Authorization'] = `Bearer ${githubToken}`;
       }
-
-      const headers: any = { 
-        Authorization: `Bearer ${githubToken}`,
-      };
 
       const isSearch = !!filters.query;
       let url = '';

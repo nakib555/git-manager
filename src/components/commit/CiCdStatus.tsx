@@ -520,8 +520,8 @@ export const useCiCdStatus = (hash: string) => {
     fetchRealData();
     setIsPolling(true);
 
-    // Poll every 5 seconds for absolute real-time updates even without commit updates
-    pollInterval = setInterval(fetchRealData, 5000);
+    // Poll every 1 seconds for absolute real-time updates even without commit updates
+    pollInterval = setInterval(fetchRealData, 1000);
 
     return () => {
       isMounted = false;
@@ -704,7 +704,7 @@ export const CiCdPipelineFlow = ({ hash }: { hash: string }) => {
             <span className="text-xs font-bold text-text-main tracking-widest uppercase">Pipeline Workflow</span>
             {isPolling && (
               <span className="inline-flex items-center gap-1 text-[8px] bg-sky-500/15 text-sky-500 font-bold px-2 py-0.5 rounded-full border border-sky-500/20 animate-pulse">
-                <Activity size={8} /> Live Poll 5s
+                <Activity size={8} /> Live Poll 1s
               </span>
             )}
             {isReal ? (

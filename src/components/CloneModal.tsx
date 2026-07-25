@@ -14,7 +14,7 @@ export const CloneModal = () => {
       return `https://github.com/${currentRepoOwner}/${currentRepo}.git`;
     }
     if (currentRepo) {
-      const owner = githubUser?.login || "mockuser";
+      const owner = githubUser?.login || "user";
       return `https://github.com/${owner}/${currentRepo}.git`;
     }
     return '';
@@ -30,33 +30,27 @@ export const CloneModal = () => {
   const [progress, setProgress] = useState(0);
   const [progressText, setProgressText] = useState('Starting...');
 
-  // Mock cloning process
+  // Handle real cloning process directly
   useEffect(() => {
-    let timer: any;
     if (step === 'progress') {
-      let p = 0;
-      timer = setInterval(() => {
-        p += Math.random() * 8 + 2;
-        if (p > 100) p = 100;
-        
-        setProgress(p);
-        
-        if (p < 30) setProgressText('Receiving objects...');
-        else if (p < 60) setProgressText('Resolving deltas...');
-        else if (p < 95) setProgressText('Checking out files...');
-        else setProgressText('Finalizing...');
-
-        if (p === 100) {
-          clearInterval(timer);
+      const runClone = async () => {
+        try {
+          setProgressText('Cloning repository from GitHub...');
+          setProgress(50);
+          await cloneRepository({ url, destFolder: dest, branch, shallow: depth === 'shallow', submodules });
+          setProgressText('Finalizing...');
+          setProgress(100);
           setTimeout(() => {
-            cloneRepository({ url, destFolder: dest, branch, shallow: depth === 'shallow', submodules });
             setStep('success');
           }, 500);
+        } catch (error) {
+          console.error("Clone failed:", error);
+          setStep('config');
         }
-      }, 300);
+      };
+      runClone();
     }
-    return () => clearInterval(timer);
-  }, [step]);
+  }, [step, cloneRepository, url, dest, branch, depth, submodules]);
 
   const handleStartClone = (e: React.FormEvent) => {
     e.preventDefault();

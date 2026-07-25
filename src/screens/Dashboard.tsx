@@ -31,7 +31,6 @@ export const Dashboard: React.FC = () => {
   // Graph custom adjustments states
   const [showCommitsLine, setShowCommitsLine] = useState(true);
   const [showPRsLine, setShowPRsLine] = useState(true);
-  const [dataMultiplier, setDataMultiplier] = useState(1.0);
   const [showGrid, setShowGrid] = useState(false);
   const [isAdjustmentPanelOpen, setIsAdjustmentPanelOpen] = useState(false);
 
@@ -45,65 +44,155 @@ export const Dashboard: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Sum of commits across all repos in localStorage
-  let totalCommitsCount = 0;
+  // Gather real commits and PRs across all repositories
+  let allCommits: any[] = [];
+  let allPRs: any[] = [];
+
   githubRepos.forEach(repo => {
-    const key = `local_details_${repo.name}_commits`;
-    const local = localStorage.getItem(key);
-    if (local) {
+    const commitsKey = `local_details_${repo.name}_commits`;
+    const commitsLocal = localStorage.getItem(commitsKey);
+    if (commitsLocal) {
       try {
-        const parsed = JSON.parse(local);
+        const parsed = JSON.parse(commitsLocal);
         if (Array.isArray(parsed)) {
-          totalCommitsCount += parsed.length;
+          allCommits = allCommits.concat(parsed);
+        }
+      } catch (e) {}
+    }
+
+    const prsKey = `local_details_${repo.name}_prs`;
+    const prsLocal = localStorage.getItem(prsKey);
+    if (prsLocal) {
+      try {
+        const parsed = JSON.parse(prsLocal);
+        if (Array.isArray(parsed)) {
+          allPRs = allPRs.concat(parsed);
         }
       } catch (e) {}
     }
   });
 
-  const displayCommitsCount = Math.max(totalCommitsCount, sessionCommitsCount);
+  const displayCommitsCount = Math.max(allCommits.length, sessionCommitsCount);
 
-  // Generate dynamic chart data based on displayCommitsCount (from live repo / current session)
+  // Map timestamp to buckets
+  const getDayName = (date: Date) => {
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    return days[date.getDay()];
+  };
+
+  const getMonthName = (date: Date) => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return months[date.getMonth()];
+  };
+
+  const getDayHourBucket = (date: Date) => {
+    const hour = date.getHours();
+    if (hour >= 0 && hour < 4) return '12am';
+    if (hour >= 4 && hour < 8) return '4am';
+    if (hour >= 8 && hour < 12) return '8am';
+    if (hour >= 12 && hour < 16) return '12pm';
+    if (hour >= 16 && hour < 20) return '4pm';
+    return '8pm';
+  };
+
+  const getWeekOfMonthBucket = (date: Date) => {
+    const day = date.getDate();
+    if (day <= 7) return 'Week 1';
+    if (day <= 14) return 'Week 2';
+    if (day <= 21) return 'Week 3';
+    return 'Week 4';
+  };
+
+  // Generate dynamic chart data based on real aggregated data
   const getChartData = () => {
-    // Provide a dynamic minimum preview curve if there are repositories, so it looks active
-    const multiplier = (displayCommitsCount > 0 ? displayCommitsCount : (githubRepos.length > 0 ? 12 : 0)) * dataMultiplier;
-    
     let labels: string[] = [];
-    let baseDistribution: number[] = [];
-
     switch (timeframe) {
       case 'Day':
         labels = ['12am', '4am', '8am', '12pm', '4pm', '8pm'];
-        baseDistribution = [0.05, 0.02, 0.1, 0.3, 0.4, 0.13];
         break;
       case 'Week':
         labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-        baseDistribution = [0.10, 0.25, 0.15, 0.30, 0.12, 0.05, 0.03];
         break;
       case 'Month':
         labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
-        baseDistribution = [0.2, 0.3, 0.25, 0.25];
         break;
       case 'Year':
         labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        baseDistribution = [0.05, 0.08, 0.1, 0.07, 0.12, 0.08, 0.05, 0.04, 0.1, 0.15, 0.1, 0.06];
         break;
     }
-    
-    return labels.map((label, idx) => {
-      const commitsOnThisLabel = multiplier > 0 
-        ? Math.max(1, Math.round(multiplier * baseDistribution[idx]))
-        : 0;
-      
-      const secondaryActivity = multiplier > 0
-        ? Math.max(0, Math.round(commitsOnThisLabel * 0.4))
-        : 0;
-        
-      return {
-        name: label,
-        uv: commitsOnThisLabel,
-        pv: secondaryActivity
-      };
+
+    const commitsCount: Record<string, number> = {};
+    const prsCount: Record<string, number> = {};
+    labels.forEach(l => {
+      commitsCount[l] = 0;
+      prsCount[l] = 0;
     });
+
+    const now = new Date();
+
+    allCommits.forEach(c => {
+      const dateStr = c.timestamp;
+      if (!dateStr) return;
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return;
+
+      if (timeframe === 'Day') {
+        if (now.getTime() - date.getTime() <= 24 * 60 * 60 * 1000) {
+          const bucket = getDayHourBucket(date);
+          if (commitsCount[bucket] !== undefined) commitsCount[bucket]++;
+        }
+      } else if (timeframe === 'Week') {
+        if (now.getTime() - date.getTime() <= 7 * 24 * 60 * 60 * 1000) {
+          const bucket = getDayName(date);
+          if (commitsCount[bucket] !== undefined) commitsCount[bucket]++;
+        }
+      } else if (timeframe === 'Month') {
+        if (now.getTime() - date.getTime() <= 30 * 24 * 60 * 60 * 1000) {
+          const bucket = getWeekOfMonthBucket(date);
+          if (commitsCount[bucket] !== undefined) commitsCount[bucket]++;
+        }
+      } else if (timeframe === 'Year') {
+        if (now.getTime() - date.getTime() <= 365 * 24 * 60 * 60 * 1000) {
+          const bucket = getMonthName(date);
+          if (commitsCount[bucket] !== undefined) commitsCount[bucket]++;
+        }
+      }
+    });
+
+    allPRs.forEach(p => {
+      const dateStr = p.created_at || p.timestamp;
+      if (!dateStr) return;
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return;
+
+      if (timeframe === 'Day') {
+        if (now.getTime() - date.getTime() <= 24 * 60 * 60 * 1000) {
+          const bucket = getDayHourBucket(date);
+          if (prsCount[bucket] !== undefined) prsCount[bucket]++;
+        }
+      } else if (timeframe === 'Week') {
+        if (now.getTime() - date.getTime() <= 7 * 24 * 60 * 60 * 1000) {
+          const bucket = getDayName(date);
+          if (prsCount[bucket] !== undefined) prsCount[bucket]++;
+        }
+      } else if (timeframe === 'Month') {
+        if (now.getTime() - date.getTime() <= 30 * 24 * 60 * 60 * 1000) {
+          const bucket = getWeekOfMonthBucket(date);
+          if (prsCount[bucket] !== undefined) prsCount[bucket]++;
+        }
+      } else if (timeframe === 'Year') {
+        if (now.getTime() - date.getTime() <= 365 * 24 * 60 * 60 * 1000) {
+          const bucket = getMonthName(date);
+          if (prsCount[bucket] !== undefined) prsCount[bucket]++;
+        }
+      }
+    });
+
+    return labels.map(label => ({
+      name: label,
+      uv: commitsCount[label],
+      pv: prsCount[label]
+    }));
   };
 
   const chartData = getChartData();
@@ -136,7 +225,7 @@ export const Dashboard: React.FC = () => {
           <span className="text-xs text-text-muted">Commits</span>
           <span className="text-[28px] font-bold text-text-main">{displayCommitsCount}</span>
           <span className="text-[11px] text-info flex items-center font-medium">
-            <ArrowUpRight size={14} className="mr-1" strokeWidth={3} /> {totalCommitsCount > sessionCommitsCount ? 'Total Synced Commits' : 'Current Session'}
+            <ArrowUpRight size={14} className="mr-1" strokeWidth={3} /> {allCommits.length > sessionCommitsCount ? 'Total Synced Commits' : 'Current Session'}
           </span>
         </div>
       </div>
@@ -253,83 +342,41 @@ export const Dashboard: React.FC = () => {
               transition={{ duration: 0.2 }}
               className="overflow-hidden"
             >
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-hover/10 p-3 rounded-2xl border border-border text-xs mt-3">
-              {/* Toggles */}
-              <div className="flex flex-col gap-2">
-                <span className="font-semibold text-text-main">Series Visibility</span>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => setShowCommitsLine(!showCommitsLine)}
-                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border text-[11px] font-medium transition-colors cursor-pointer ${
-                      showCommitsLine 
-                        ? 'bg-[#7C3AED]/10 text-[#7C3AED] border-[#7C3AED]/30' 
-                        : 'border-border text-text-muted bg-card'
-                    }`}
-                  >
-                    {showCommitsLine ? <Eye size={12} /> : <EyeOff size={12} />}
-                    Commits
-                  </button>
-                  <button
-                    onClick={() => setShowPRsLine(!showPRsLine)}
-                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border text-[11px] font-medium transition-colors cursor-pointer ${
-                      showPRsLine 
-                        ? 'bg-[#38BDF8]/10 text-[#38BDF8] border-[#38BDF8]/30' 
-                        : 'border-border text-text-muted bg-card'
-                    }`}
-                  >
-                    {showPRsLine ? <Eye size={12} /> : <EyeOff size={12} />}
-                    PRs/Activity
-                  </button>
-                  <button
-                    onClick={() => setShowGrid(!showGrid)}
-                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border text-[11px] font-medium transition-colors cursor-pointer ${
-                      showGrid 
-                        ? 'bg-primary/10 text-primary border-primary/30' 
-                        : 'border-border text-text-muted bg-card'
-                    }`}
-                  >
-                    Grid Lines
-                  </button>
-                </div>
-              </div>
-
-              {/* Data Scale adjustments */}
-              <div className="flex flex-col gap-2">
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold text-text-main">Simulation Scaling</span>
-                  <span className="text-[11px] font-bold text-primary">{dataMultiplier.toFixed(1)}x Scale</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    disabled={dataMultiplier <= 0.5}
-                    onClick={() => setDataMultiplier(prev => Math.max(0.5, prev - 0.5))}
-                    className="w-7 h-7 rounded-lg border border-border flex items-center justify-center font-bold text-sm bg-card active:scale-95 transition-all text-text-main hover:border-primary/30 disabled:opacity-50 cursor-pointer"
-                  >
-                    -
-                  </button>
-                  <div className="flex-1 h-1.5 bg-border rounded-full relative">
-                    <div 
-                      className="absolute top-0 bottom-0 left-0 bg-primary rounded-full transition-all duration-150"
-                      style={{ width: `${((dataMultiplier - 0.5) / 2.5) * 100}%` }}
-                    />
-                  </div>
-                  <button
-                    disabled={dataMultiplier >= 3.0}
-                    onClick={() => setDataMultiplier(prev => Math.min(3.0, prev + 0.5))}
-                    className="w-7 h-7 rounded-lg border border-border flex items-center justify-center font-bold text-sm bg-card active:scale-95 transition-all text-text-main hover:border-primary/30 disabled:opacity-50 cursor-pointer"
-                  >
-                    +
-                  </button>
-                  <button
-                    onClick={() => setDataMultiplier(1.0)}
-                    className="p-1.5 rounded-lg border border-border bg-card text-text-muted hover:text-text-main transition-colors cursor-pointer"
-                    title="Reset to 1.0x"
-                  >
-                    <AnimateIcon animateOnHover>
-                      <RefreshCw size={13} />
-                    </AnimateIcon>
-                  </button>
-                </div>
+            <div className="bg-hover/10 p-4 rounded-2xl border border-border text-xs mt-3 flex flex-col gap-2">
+              <span className="font-semibold text-text-main mb-1">Series Visibility & Layout</span>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setShowCommitsLine(!showCommitsLine)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-medium transition-colors cursor-pointer ${
+                    showCommitsLine 
+                      ? 'bg-[#7C3AED]/10 text-[#7C3AED] border-[#7C3AED]/30' 
+                      : 'border-border text-text-muted bg-card'
+                  }`}
+                >
+                  {showCommitsLine ? <Eye size={12} /> : <EyeOff size={12} />}
+                  Commits
+                </button>
+                <button
+                  onClick={() => setShowPRsLine(!showPRsLine)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-medium transition-colors cursor-pointer ${
+                    showPRsLine 
+                      ? 'bg-[#38BDF8]/10 text-[#38BDF8] border-[#38BDF8]/30' 
+                      : 'border-border text-text-muted bg-card'
+                  }`}
+                >
+                  {showPRsLine ? <Eye size={12} /> : <EyeOff size={12} />}
+                  PRs/Activity
+                </button>
+                <button
+                  onClick={() => setShowGrid(!showGrid)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-medium transition-colors cursor-pointer ${
+                    showGrid 
+                      ? 'bg-primary/10 text-primary border-primary/30' 
+                      : 'border-border text-text-muted bg-card'
+                  }`}
+                >
+                  Grid Lines
+                </button>
               </div>
             </div>
             </motion.div>

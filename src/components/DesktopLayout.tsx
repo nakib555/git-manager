@@ -277,9 +277,8 @@ const DesktopDashboard: React.FC<{ globalSearch: string }> = ({ globalSearch }) 
   // Chart visibility parameters
   const [showCommitsLine, setShowCommitsLine] = useState(true);
   const [showPRsLine, setShowPRsLine] = useState(true);
-  const [dataMultiplier, setDataMultiplier] = useState(1.0);
   const [showGrid, setShowGrid] = useState(true);
-    const [isSlidersOpen, setIsSlidersOpen] = useState(false);
+  const [isSlidersOpen, setIsSlidersOpen] = useState(false);
 
   const [actualEvents, setActualEvents] = useState<any[]>([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(false);
@@ -312,7 +311,8 @@ const DesktopDashboard: React.FC<{ globalSearch: string }> = ({ globalSearch }) 
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
 
-  let totalCommitsCount = 0;
+  let allCommits: any[] = [];
+  let allPRs: any[] = [];
   githubRepos.forEach(repo => {
     const key = `local_details_${repo.name}_commits`;
     const local = localStorage.getItem(key);
@@ -320,15 +320,25 @@ const DesktopDashboard: React.FC<{ globalSearch: string }> = ({ globalSearch }) 
       try {
         const parsed = JSON.parse(local);
         if (Array.isArray(parsed)) {
-          totalCommitsCount += parsed.length;
+          allCommits = allCommits.concat(parsed);
+        }
+      } catch (e) {}
+    }
+    const prsKey = `local_details_${repo.name}_prs`;
+    const prsLocal = localStorage.getItem(prsKey);
+    if (prsLocal) {
+      try {
+        const parsed = JSON.parse(prsLocal);
+        if (Array.isArray(parsed)) {
+          allPRs = allPRs.concat(parsed);
         }
       } catch (e) {}
     }
   });
 
-  const displayCommits = Math.max(totalCommitsCount, sessionCommitsCount);
+  const displayCommits = Math.max(allCommits.length, sessionCommitsCount);
 
-  // Generate dynamic chart data
+  // Generate dynamic chart data based on real aggregated data
   const getChartData = () => {
     const now = new Date();
     let labels: string[] = [];
@@ -345,9 +355,27 @@ const DesktopDashboard: React.FC<{ globalSearch: string }> = ({ globalSearch }) 
           const d = new Date(ev.created_at);
           if (now.getTime() - d.getTime() <= 24 * 60 * 60 * 1000) {
              const hour = d.getHours();
-             let bucket = Math.floor(hour / 4);
+             let bucket = Math.min(5, Math.floor(hour / 4));
              if (ev.type === 'PushEvent') commitsData[bucket] += (ev.payload?.commits?.length || 1);
              if (ev.type === 'PullRequestEvent') prsData[bucket]++;
+          }
+        });
+
+        allCommits.forEach(c => {
+          const d = new Date(c.timestamp || c.created_at || c.time);
+          if (!isNaN(d.getTime()) && now.getTime() - d.getTime() <= 24 * 60 * 60 * 1000) {
+             const hour = d.getHours();
+             let bucket = Math.min(5, Math.floor(hour / 4));
+             commitsData[bucket]++;
+          }
+        });
+
+        allPRs.forEach(p => {
+          const d = new Date(p.created_at || p.timestamp || p.time);
+          if (!isNaN(d.getTime()) && now.getTime() - d.getTime() <= 24 * 60 * 60 * 1000) {
+             const hour = d.getHours();
+             let bucket = Math.min(5, Math.floor(hour / 4));
+             prsData[bucket]++;
           }
         });
         break;
@@ -372,19 +400,64 @@ const DesktopDashboard: React.FC<{ globalSearch: string }> = ({ globalSearch }) 
             if (ev.type === 'PullRequestEvent') prsData[bucket]++;
           }
         });
+
+        allCommits.forEach(c => {
+          const d = new Date(c.timestamp || c.created_at || c.time);
+          if (!isNaN(d.getTime())) {
+            const daysAgo = Math.floor((now.getTime() - d.getTime()) / (24 * 60 * 60 * 1000));
+            if (daysAgo < 7 && daysAgo >= 0) {
+              const bucket = 6 - daysAgo;
+              commitsData[bucket]++;
+            }
+          }
+        });
+
+        allPRs.forEach(p => {
+          const d = new Date(p.created_at || p.timestamp || p.time);
+          if (!isNaN(d.getTime())) {
+            const daysAgo = Math.floor((now.getTime() - d.getTime()) / (24 * 60 * 60 * 1000));
+            if (daysAgo < 7 && daysAgo >= 0) {
+              const bucket = 6 - daysAgo;
+              prsData[bucket]++;
+            }
+          }
+        });
         break;
       }
       case 'Month': {
         labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
         commitsData = [0, 0, 0, 0];
         prsData = [0, 0, 0, 0];
+
         actualEvents.forEach(ev => {
           const d = new Date(ev.created_at);
           const daysAgo = Math.floor((now.getTime() - d.getTime()) / (24 * 60 * 60 * 1000));
           if (daysAgo < 28 && daysAgo >= 0) {
-            const bucket = 3 - Math.floor(daysAgo / 7);
+            const bucket = Math.min(3, 3 - Math.floor(daysAgo / 7));
             if (ev.type === 'PushEvent') commitsData[bucket] += (ev.payload?.commits?.length || 1);
             if (ev.type === 'PullRequestEvent') prsData[bucket]++;
+          }
+        });
+
+        allCommits.forEach(c => {
+          const d = new Date(c.timestamp || c.created_at || c.time);
+          if (!isNaN(d.getTime())) {
+            const daysAgo = Math.floor((now.getTime() - d.getTime()) / (24 * 60 * 60 * 1000));
+            if (daysAgo < 28 && daysAgo >= 0) {
+              const bucket = Math.min(3, 3 - Math.floor(daysAgo / 7));
+              commitsData[bucket]++;
+            }
+          }
+        });
+
+        allPRs.forEach(p => {
+          const d = new Date(p.created_at || p.timestamp || p.time);
+          if (!isNaN(d.getTime())) {
+            const daysAgo = Math.floor((now.getTime() - d.getTime()) / (24 * 60 * 60 * 1000));
+            if (daysAgo < 28 && daysAgo >= 0) {
+              const bucket = Math.min(3, 3 - Math.floor(daysAgo / 7));
+              prsData[bucket]++;
+            }
           }
         });
         break;
@@ -409,14 +482,36 @@ const DesktopDashboard: React.FC<{ globalSearch: string }> = ({ globalSearch }) 
              if (ev.type === 'PullRequestEvent') prsData[bucket]++;
           }
         });
+
+        allCommits.forEach(c => {
+          const d = new Date(c.timestamp || c.created_at || c.time);
+          if (!isNaN(d.getTime())) {
+            const monthsAgo = (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth());
+            if (monthsAgo < 12 && monthsAgo >= 0) {
+              const bucket = 11 - monthsAgo;
+              commitsData[bucket]++;
+            }
+          }
+        });
+
+        allPRs.forEach(p => {
+          const d = new Date(p.created_at || p.timestamp || p.time);
+          if (!isNaN(d.getTime())) {
+            const monthsAgo = (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth());
+            if (monthsAgo < 12 && monthsAgo >= 0) {
+              const bucket = 11 - monthsAgo;
+              prsData[bucket]++;
+            }
+          }
+        });
         break;
       }
     }
     
     return labels.map((label, idx) => ({
       name: label,
-      commits: commitsData[idx] * dataMultiplier,
-      prs: showPRsLine ? prsData[idx] * dataMultiplier : 0
+      commits: commitsData[idx],
+      prs: showPRsLine ? prsData[idx] : 0
     }));
   };
 
@@ -481,7 +576,7 @@ const DesktopDashboard: React.FC<{ globalSearch: string }> = ({ globalSearch }) 
             <span className="text-3xl font-extrabold text-text-main">{displayCommits}</span>
           </div>
           <span className="block text-[10px] text-info font-semibold mt-4">
-            {totalCommitsCount > sessionCommitsCount ? '✓ All Sync Records Found' : '✓ Active Session Commits'}
+            {allCommits.length > sessionCommitsCount ? '✓ All Sync Records Found' : '✓ Active Session Commits'}
           </span>
         </div>
 
@@ -604,7 +699,7 @@ const DesktopDashboard: React.FC<{ globalSearch: string }> = ({ globalSearch }) 
               className="text-xs font-bold text-primary flex items-center gap-1.5 cursor-pointer hover:text-primary-hover transition-colors"
             >
               <Sliders size={14} />
-              <span>{isSlidersOpen ? 'Hide Simulation Controls' : 'Adjust Chart Variables'}</span>
+              <span>{isSlidersOpen ? 'Hide Display Options' : 'Adjust Chart Display'}</span>
             </button>
             <div className="flex gap-4 text-[10px] font-bold text-text-muted">
               <span className="flex items-center gap-1.5">
@@ -625,59 +720,30 @@ const DesktopDashboard: React.FC<{ globalSearch: string }> = ({ globalSearch }) 
                 transition={{ duration: 0.2 }}
                 className="overflow-hidden"
               >
-                <div className="mt-4 p-4 rounded-xl bg-hover/15 border border-border grid grid-cols-2 gap-5 text-xs">
-                  <div className="space-y-2">
-                <span className="block font-bold text-text-main mb-1">Series Visibility</span>
-                <div className="flex flex-wrap gap-2">
-                  <button 
-                    onClick={() => setShowCommitsLine(!showCommitsLine)}
-                    className={`px-3 py-1.5 rounded-full border text-[11px] font-bold transition-all cursor-pointer ${showCommitsLine ? 'bg-[#7C3AED]/10 border-[#7C3AED]/35 text-[#7C3AED]' : 'border-border text-text-muted'}`}
-                  >
-                    {showCommitsLine ? '✓ Commits Visible' : '✗ Commits Hidden'}
-                  </button>
-                  <button 
-                    onClick={() => setShowPRsLine(!showPRsLine)}
-                    className={`px-3 py-1.5 rounded-full border text-[11px] font-bold transition-all cursor-pointer ${showPRsLine ? 'bg-[#38BDF8]/10 border-[#38BDF8]/35 text-[#38BDF8]' : 'border-border text-text-muted'}`}
-                  >
-                    {showPRsLine ? '✓ PRs Visible' : '✗ PRs Hidden'}
-                  </button>
-                  <button 
-                    onClick={() => setShowGrid(!showGrid)}
-                    className={`px-3 py-1.5 rounded-full border text-[11px] font-bold transition-all cursor-pointer ${showGrid ? 'bg-primary/10 border-primary/35 text-primary' : 'border-border text-text-muted'}`}
-                  >
-                    {showGrid ? '✓ Grid Lines On' : '✗ Grid Lines Off'}
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between items-center mb-1">
-                  <span className="font-bold text-text-main">Simulation Scaling</span>
-                  <span className="font-extrabold text-primary">{dataMultiplier.toFixed(1)}x Scale</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <button 
-                    disabled={dataMultiplier <= 0.5}
-                    onClick={() => setDataMultiplier(p => Math.max(0.5, p - 0.5))}
-                    className="w-8 h-8 rounded-lg border border-border flex items-center justify-center font-extrabold text-text-main bg-card hover:border-primary/40 transition-colors disabled:opacity-40 cursor-pointer"
-                  >
-                    -
-                  </button>
-                  <div className="flex-1 h-1.5 bg-border rounded-full relative">
-                    <div 
-                      className="absolute top-0 bottom-0 left-0 bg-primary rounded-full transition-all duration-150"
-                      style={{ width: `${((dataMultiplier - 0.5) / 2.5) * 100}%` }}
-                    />
+                <div className="mt-4 p-4 rounded-xl bg-hover/15 border border-border flex flex-col gap-4 text-xs">
+                  <div>
+                    <span className="block font-bold text-text-main mb-2">Series Visibility & Layout</span>
+                    <div className="flex flex-wrap gap-2">
+                      <button 
+                        onClick={() => setShowCommitsLine(!showCommitsLine)}
+                        className={`px-3 py-1.5 rounded-full border text-[11px] font-bold transition-all cursor-pointer ${showCommitsLine ? 'bg-[#7C3AED]/10 border-[#7C3AED]/35 text-[#7C3AED]' : 'border-border text-text-muted bg-card'}`}
+                      >
+                        {showCommitsLine ? '✓ Commits Visible' : '✗ Commits Hidden'}
+                      </button>
+                      <button 
+                        onClick={() => setShowPRsLine(!showPRsLine)}
+                        className={`px-3 py-1.5 rounded-full border text-[11px] font-bold transition-all cursor-pointer ${showPRsLine ? 'bg-[#38BDF8]/10 border-[#38BDF8]/35 text-[#38BDF8]' : 'border-border text-text-muted bg-card'}`}
+                      >
+                        {showPRsLine ? '✓ PRs Visible' : '✗ PRs Hidden'}
+                      </button>
+                      <button 
+                        onClick={() => setShowGrid(!showGrid)}
+                        className={`px-3 py-1.5 rounded-full border text-[11px] font-bold transition-all cursor-pointer ${showGrid ? 'bg-primary/10 border-primary/35 text-primary' : 'border-border text-text-muted bg-card'}`}
+                      >
+                        {showGrid ? '✓ Grid Lines On' : '✗ Grid Lines Off'}
+                      </button>
+                    </div>
                   </div>
-                  <button 
-                    disabled={dataMultiplier >= 3.0}
-                    onClick={() => setDataMultiplier(p => Math.min(3.0, p + 0.5))}
-                    className="w-8 h-8 rounded-lg border border-border flex items-center justify-center font-extrabold text-text-main bg-card hover:border-primary/40 transition-colors disabled:opacity-40 cursor-pointer"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
                 </div>
               </motion.div>
             )}
