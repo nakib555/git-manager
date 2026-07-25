@@ -29,6 +29,7 @@ export const CommitList = ({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    isFetching,
     isLoading,
     isError,
     refetch,
@@ -60,11 +61,12 @@ export const CommitList = ({
     if (
       lastItem.index >= commits.length - 1 &&
       hasNextPage &&
-      !isFetchingNextPage
+      !isFetchingNextPage &&
+      !isFetching
     ) {
       fetchNextPage();
     }
-  }, [virtualItems, commits.length, hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [virtualItems, commits.length, hasNextPage, isFetchingNextPage, isFetching, fetchNextPage]);
 
   return (
     <div className={`flex flex-col ${parentRef ? '' : 'h-full overflow-hidden'}`}>
