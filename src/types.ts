@@ -16,6 +16,10 @@ export interface GitHubRepo {
   description: string;
   language: string;
   pushed_at: string;
+  owner?: {
+    login: string;
+    avatar_url?: string;
+  };
 }
 
 export interface AppState {

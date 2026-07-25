@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAppContext } from '../AppContext';
-import { Menu, Bell, Plus, ArrowLeft, ChevronDown, MoreVertical, Folder, Activity, Search, Grid, Home, GitBranch, ChevronLeft } from 'lucide-react';
+import { Menu, Bell, Plus, ArrowLeft, ChevronDown, MoreVertical, Folder, Activity, Search, Grid, Home, GitBranch, ChevronLeft, HardDrive } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export const Header: React.FC = () => {
@@ -80,12 +80,15 @@ export const Header: React.FC = () => {
       case 'clone':
         return {
           title: 'Clone Repository',
-          sub: currentRepo,
-          left: <AnimatedChevronLeft onClick={() => navigate('repos')} />,
+          sub: '',
+          left: <Menu size={24} onClick={openDrawer} className="cursor-pointer" />,
           right: (
-            <button className="bg-primary rounded-lg px-3 py-1.5 text-[13px] font-semibold text-white" onClick={() => navigate('repos')}>
-              Back
-            </button>
+            <div className="flex gap-3">
+              <button className="text-text-main" onClick={openDrawer}><Bell size={24}/></button>
+              <button className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-text-main header-action-btn" onClick={openActionSheet}>
+                <Plus size={18} />
+              </button>
+            </div>
           )
         };
       default:
@@ -95,7 +98,7 @@ export const Header: React.FC = () => {
 
   const content = getHeaderContent();
 
-  const isRepoScreen = ['files', 'commits', 'branches', 'insights', 'prs', 'clone'].includes(currentScreen);
+  const isRepoScreen = ['files', 'commits', 'branches', 'insights', 'prs'].includes(currentScreen);
 
   return (
     <header className="flex-shrink-0 flex items-center px-5 pb-4 pt-[max(1rem,env(safe-area-inset-top))] bg-main z-10 gap-3">
@@ -152,7 +155,7 @@ export const Header: React.FC = () => {
 
 export const RepoTabs: React.FC = () => {
   const { currentScreen, navigate, currentRepo, openModal } = useAppContext();
-  const isRepoScreen = ['files', 'commits', 'branches', 'insights', 'prs', 'clone'].includes(currentScreen);
+  const isRepoScreen = ['files', 'commits', 'branches', 'insights', 'prs'].includes(currentScreen);
 
   if (!isRepoScreen || !currentRepo) return null;
 
@@ -161,7 +164,7 @@ export const RepoTabs: React.FC = () => {
     { id: 'prs', label: 'Pull Requests' },
     { id: 'branches', label: 'Branches' },
     { id: 'files', label: 'Files' },
-    { id: 'insights', label: 'Insights' }, { id: 'clone', label: 'Clone' },
+    { id: 'insights', label: 'Insights' },
   ] as const;
 
   return (
@@ -365,6 +368,23 @@ export const BottomNav: React.FC = () => {
           <Folder size={20} className={getIconClass(currentScreen === 'repos' && !isActivity)} />
         </div>
         <span className="text-[10px]">Repos</span>
+      </div>
+
+      {/* Clone tab */}
+      <div 
+        className={`group flex flex-col items-center gap-1 text-[11px] font-semibold cursor-pointer transition-all duration-200 w-16 ${
+          currentScreen === 'clone' ? 'text-teal-500' : 'text-text-muted hover:text-text-main'
+        }`}
+        onClick={() => navigate('clone')}
+      >
+        <div className={`w-12 h-8 flex items-center justify-center rounded-2xl transition-all duration-300 ${
+          currentScreen === 'clone' 
+            ? 'bg-teal-500/10 text-teal-500' 
+            : 'hover:bg-hover'
+        }`}>
+          <HardDrive size={20} className={getIconClass(currentScreen === 'clone')} />
+        </div>
+        <span className="text-[10px]">Clone</span>
       </div>
 
       {/* Activity tab */}

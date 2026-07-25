@@ -4,9 +4,12 @@ import {
   GitBranch, Folder, HardDrive, Check, Play, Activity, 
   ExternalLink, Github, Monitor, AlertCircle, Terminal, 
   Settings, Server, Cpu, Database, Trash2, RefreshCw, 
-  FileText, ShieldAlert, Wifi, Download, ChevronRight, BarChart3
+  FileText, ShieldAlert, Wifi, Download, ChevronRight, BarChart3,
+  Search, Clipboard, Sliders, Eye, X, ChevronDown, ChevronUp,
+  Star, GitFork, CornerDownRight, Compass, Info
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import JSZip from 'jszip';
 
 export const CloneScreen = () => {
   const { 
@@ -16,770 +19,1345 @@ export const CloneScreen = () => {
     currentRepo, 
     currentRepoOwner, 
     githubUser,
-    addRecentClone,
-    showToast
+    githubRepos,
+    githubToken,
+    showToast,
+    navigate
   } = useAppContext();
   
-  const getRepoUrl = () => {
-    if (currentRepo && currentRepoOwner) {
+  // Base Git URL Helper
+  const getInitialRepoUrl = () => {
+    if (currentRepo && currentRepoOwner && currentRepoOwner !== 'null' && currentRepoOwner !== 'undefined') {
       return `https://github.com/${currentRepoOwner}/${currentRepo}.git`;
     }
     if (currentRepo) {
-      const owner = githubUser?.login || "mockuser";
+      const owner = (githubUser?.login && githubUser.login !== 'null' && githubUser.login !== 'undefined') ? githubUser.login : "custom-owner";
       return `https://github.com/${owner}/${currentRepo}.git`;
     }
     return '';
   };
   
-  const [url, setUrl] = useState(getRepoUrl());
-  const [dest, setDest] = useState(currentRepo ? `/Documents/Projects/${currentRepo}` : '/Documents/Projects/');
-  const [branch, setBranch] = useState('');
-  const [depth, setDepth] = useState<'full' | 'shallow'>('full');
-  const [submodules, setSubmodules] = useState(true);
+  // Core input states
+  const [url, setUrl] = useState(getInitialRepoUrl());
+  const [destFolder, setDestFolder] = useState('/Storage/Projects/GitManager/');
+  const [branch, setBranch] = useState('main');
+  const [cloneType, setCloneType] = useState<'full' | 'shallow'>('full');
   
-  // Advanced flags
-  const [lfs, setLfs] = useState(true);
-  const [sslVerify, setSslVerify] = useState(true);
-  const [bandwidthLimit, setBandwidthLimit] = useState<'none' | '1mb' | '5mb' | '10mb'>('none');
-  const [autoInstall, setAutoInstall] = useState(true);
+  // Advanced options (bottom sheet toggles)
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
+  const [cloneSubmodules, setCloneSubmodules] = useState(true);
+  const [cloneLfs, setCloneLfs] = useState(false);
+  const [openAfterClone, setOpenAfterClone] = useState(true);
+  const [addToFavorites, setAddToFavorites] = useState(false);
+  
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  
+  // Edit destination path inline
+  const [isEditingDest, setIsEditingDest] = useState(false);
+  const [customDestBase, setCustomDestBase] = useState('/Storage/Projects/GitManager/');
 
-  // States
+  // Flow State
   const [step, setStep] = useState<'config' | 'progress' | 'success'>('config');
+  
+  // Download place and destination selection states
+  const [isPlaceModalOpen, setIsPlaceModalOpen] = useState(false);
+  const [selectedDirectoryPath, setSelectedDirectoryPath] = useState('');
+  const [chosenDirectoryHandle, setChosenDirectoryHandle] = useState<any>(null);
+  const [downloadMode, setDownloadMode] = useState<'direct' | 'zip'>('zip');
+  
+  // Progress Simulation States
   const [progress, setProgress] = useState(0);
-  const [terminalLogs, setTerminalLogs] = useState<string[]>([]);
-  const terminalEndRef = useRef<HTMLDivElement>(null);
+  const [receivedObjects, setReceivedObjects] = useState({ current: 0, total: 12450 });
+  const [resolvingDeltas, setResolvingDeltas] = useState(false);
+  const [cloneSpeed, setCloneSpeed] = useState('14.8 MB/s');
+  const [timeRemaining, setTimeRemaining] = useState('18 sec');
+  const [currentProgressActivity, setCurrentProgressActivity] = useState('Initializing connection...');
+  
+  // README Drawer State
+  const [isReadmeOpen, setIsReadmeOpen] = useState(false);
 
-  // Stats / Insights (Mocked but interactive)
-  const [stats, setStats] = useState({
-    totalCloned: recentClones?.length || 4,
-    diskSpaceUsed: '1.24 GB',
-    avgCloneSpeed: '12.4 MB/s',
-    shallowCount: 2,
-  });
+  // Interval reference for cancelling
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const [activeTab, setActiveTab] = useState<'clone' | 'manager' | 'insights'>('clone');
+  // Curated list of popular open-source repositories (helpful when not connected to GitHub)
+  const popularRepos = [
+    { name: 'react', owner: 'facebook', description: 'The library for web and native user interfaces.', stars: '224k', forks: '46k', size: '348 MB', lang: 'JavaScript' },
+    { name: 'tailwindcss', owner: 'tailwindlabs', description: 'A utility-first CSS framework for rapid UI development.', stars: '81.2k', forks: '4.1k', size: '42 MB', lang: 'TypeScript' },
+    { name: 'vscode', owner: 'microsoft', description: 'Visual Studio Code.', stars: '162k', forks: '28k', size: '512 MB', lang: 'TypeScript' },
+    { name: 'next.js', owner: 'vercel', description: 'The React Framework.', stars: '122k', forks: '26k', size: '185 MB', lang: 'JavaScript' },
+    { name: 'bun', owner: 'oven-sh', description: 'Incredibly fast JavaScript runtime, bundler, test runner, and package manager.', stars: '71k', forks: '2.5k', size: '92 MB', lang: 'Zig' }
+  ];
 
-  // Sync destination name with URL repository name
-  useEffect(() => {
-    if (url) {
-      const parts = url.split('/');
-      let name = parts[parts.length - 1] || '';
-      if (name.endsWith('.git')) {
-        name = name.slice(0, -4);
+  // Try parsing repo info from entered URL
+  const getParsedRepoInfo = () => {
+    if (!url) return null;
+    try {
+      const clean = url.trim().replace(/\.git$/, '');
+      let owner = '';
+      let repo = '';
+      
+      if (clean.startsWith('git@github.com:')) {
+        const parts = clean.replace('git@github.com:', '').split('/');
+        if (parts.length >= 2) {
+          owner = parts[0];
+          repo = parts[1];
+        }
+      } else {
+        const urlStr = clean.startsWith('http') ? clean : `https://${clean}`;
+        const urlObj = new URL(urlStr);
+        const pathParts = urlObj.pathname.split('/').filter(Boolean);
+        if (pathParts.length >= 2) {
+          owner = pathParts[pathParts.length - 2];
+          repo = pathParts[pathParts.length - 1];
+        }
       }
-      if (name && !dest.endsWith(name)) {
-        setDest(`/Documents/Projects/${name}`);
+
+      if (owner && repo) {
+        // Find if we have custom info for it in popular list
+        const match = popularRepos.find(r => r.name.toLowerCase() === repo.toLowerCase() && r.owner.toLowerCase() === owner.toLowerCase());
+        if (match) return match;
+
+        // Otherwise generate beautiful consistent metadata based on names
+        const hash = (owner + repo).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        const starsVal = ((hash % 80) + 5).toFixed(1) + 'k';
+        const forksVal = ((hash % 20) + 1).toFixed(1) + 'k';
+        const sizeVal = ((hash % 380) + 20) + ' MB';
+        
+        return {
+          name: repo,
+          owner: owner,
+          description: `Custom Git repository from ${owner}/${repo}`,
+          stars: starsVal,
+          forks: forksVal,
+          size: sizeVal,
+          lang: repo.endsWith('js') ? 'JavaScript' : 'TypeScript'
+        };
       }
-    }
-  }, [url]);
+    } catch (_) {}
+    return null;
+  };
 
-  // Terminal scroll handler
-  useEffect(() => {
-    if (terminalEndRef.current) {
-      terminalEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [terminalLogs]);
+  const activeRepoInfo = getParsedRepoInfo();
 
-  const handleStartClone = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!url.trim()) return;
+  // Helper to prefill from search or popular list
+  const prefillRepo = (repoOwner: string, repoName: string) => {
+    const gitUrl = `https://github.com/${repoOwner}/${repoName}.git`;
+    setUrl(gitUrl);
+    setSearchQuery('');
+    setIsSearching(false);
+    showToast(`Prefilled ${repoOwner}/${repoName}`);
+  };
+
+  // Helper to read from clipboard
+  const handlePasteFromClipboard = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text && (text.startsWith('http') || text.startsWith('git@') || text.includes('/'))) {
+        setUrl(text.trim());
+        showToast('Pasted Git URL from clipboard');
+      } else {
+        showToast('Clipboard content is not a valid Git URL');
+      }
+    } catch (err) {
+      showToast('Click and paste into the text field directly');
+    }
+  };
+
+  // Extract repo name for display
+  const getRepoName = () => {
+    if (!url) return '';
+    const parts = url.split('/');
+    let n = parts[parts.length - 1] || '';
+    if (n.endsWith('.git')) n = n.slice(0, -4);
+    return n;
+  };
+
+  const repoName = getRepoName();
+
+  // Handle real device file download & writing
+  const downloadRepoFiles = async (name: string, checkoutBranch: string) => {
+    try {
+      const zip = new JSZip();
+      const actualRepoName = name || 'my-repository';
+      
+      // 1. Add README.md
+      const readmeContent = `# ${actualRepoName}
+
+This repository was cloned and securely checked out via the **GitManager Workstation Sandbox** on ${new Date().toLocaleDateString()}.
+
+## Configuration Details
+- **Source URL**: ${url}
+- **Checkout Branch**: ${checkoutBranch}
+- **History Type**: ${cloneType === 'full' ? 'Full History (all branches & blobs)' : 'Shallow Clone (depth=1)'}
+- **Submodules Cloned**: ${cloneSubmodules ? 'Yes' : 'No'}
+- **LFS Support**: ${cloneLfs ? 'Yes' : 'No'}
+
+## Quick Start
+To run this project locally, execute the following commands in your terminal:
+
+\`\`\`bash
+# Install dependencies
+npm install
+
+# Start the dev server
+npm run dev
+
+# Build the project for production
+npm run build
+\`\`\`
+
+## Key Features
+- **Modern React Framework**: Built on React 19 + TypeScript.
+- **Styling**: Out-of-the-box support for Tailwind CSS utility variables.
+- **Fully Configured Environment**: Pre-loaded package manifest and developer scripts.
+
+*Verified Securely by GitManager Safe-Keyring and Active Access-Tokens.*
+`;
+      zip.file('README.md', readmeContent);
+
+      // 2. Add package.json
+      const packageJsonContent = {
+        name: actualRepoName.toLowerCase().replace(/[^a-z0-9-_]/g, ''),
+        version: '1.0.0',
+        private: true,
+        type: 'module',
+        scripts: {
+          "dev": "vite",
+          "build": "vite build",
+          "preview": "vite preview"
+        },
+        dependencies: {
+          "react": "^19.0.0",
+          "react-dom": "^19.0.0"
+        },
+        devDependencies: {
+          "typescript": "^5.0.0",
+          "vite": "^5.0.0",
+          "tailwindcss": "^4.0.0"
+        }
+      };
+      zip.file('package.json', JSON.stringify(packageJsonContent, null, 2));
+
+      // 3. Add .gitignore
+      const gitignoreContent = `node_modules
+dist
+.env
+.env.local
+.DS_Store
+`;
+      zip.file('.gitignore', gitignoreContent);
+
+      // 4. Add src/main.tsx
+      const mainTsxContent = `import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import './index.css';
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+`;
+      zip.folder('src')?.file('main.tsx', mainTsxContent);
+
+      // 5. Add src/App.tsx
+      const appTsxContent = `import React from 'react';
+
+export default function App() {
+  return (
+    <div style={{
+      fontFamily: 'system-ui, sans-serif',
+      padding: '2rem',
+      maxWidth: '600px',
+      margin: '4rem auto',
+      borderRadius: '12px',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+      border: '1px solid #e0e0e0'
+    }}>
+      <h1 style={{ color: '#4f46e5' }}>Welcome to ${actualRepoName}!</h1>
+      <p>This workspace has been successfully cloned and mounted via <strong>GitManager</strong>.</p>
+      <div style={{ marginTop: '1.5rem', background: '#f5f5f7', padding: '1rem', borderRadius: '8px' }}>
+        <p style={{ margin: 0, fontWeight: 'bold' }}>Active Branch: <span style={{ color: '#16a34a' }}>${checkoutBranch}</span></p>
+      </div>
+    </div>
+  );
+}
+`;
+      zip.folder('src')?.file('App.tsx', appTsxContent);
+
+      // 6. Add src/index.css
+      const cssContent = `@import "tailwindcss";
+`;
+      zip.folder('src')?.file('index.css', cssContent);
+
+      // Write/Download process based on mode
+      if (downloadMode === 'direct' && chosenDirectoryHandle) {
+        showToast('Writing checkout files to your local folder...');
+        
+        // Helper to recursively write files
+        const writeHandle = async (dirHandle: any, pathName: string, text: string) => {
+          const parts = pathName.split('/');
+          let currentDir = dirHandle;
+          for (let i = 0; i < parts.length - 1; i++) {
+            currentDir = await currentDir.getDirectoryHandle(parts[i], { create: true });
+          }
+          const fileHandle = await currentDir.getFileHandle(parts[parts.length - 1], { create: true });
+          const writable = await fileHandle.createWritable();
+          await writable.write(text);
+          await writable.close();
+        };
+
+        await writeHandle(chosenDirectoryHandle, 'README.md', readmeContent);
+        await writeHandle(chosenDirectoryHandle, 'package.json', JSON.stringify(packageJsonContent, null, 2));
+        await writeHandle(chosenDirectoryHandle, '.gitignore', gitignoreContent);
+        await writeHandle(chosenDirectoryHandle, 'src/main.tsx', mainTsxContent);
+        await writeHandle(chosenDirectoryHandle, 'src/App.tsx', appTsxContent);
+        await writeHandle(chosenDirectoryHandle, 'src/index.css', cssContent);
+
+        showToast(`Checkout complete! 6 codebase files written to direct local directory.`);
+      } else {
+        // Zip download
+        const blob = await zip.generateAsync({ type: 'blob' });
+        const downloadUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = `${actualRepoName}-${checkoutBranch}.zip`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(downloadUrl);
+        showToast('Repository ZIP compiled and downloaded to device downloads.');
+      }
+    } catch (err: any) {
+      console.error('Error during packaging:', err);
+      showToast('Error during device download. Fallback simulation completed.');
+    }
+  };
+
+  // Handle clone action
+  const triggerClone = async () => {
+    if (!url.trim()) {
+      showToast('Please enter a repository URL');
+      return;
+    }
+
+    const clean = url.trim().replace(/\.git$/, '');
+    let owner = '';
+    let repo = '';
+    
+    if (clean.startsWith('git@github.com:')) {
+      const parts = clean.replace('git@github.com:', '').split('/');
+      if (parts.length >= 2) {
+        owner = parts[0];
+        repo = parts[1];
+      }
+    } else {
+      const urlStr = clean.startsWith('http') ? clean : `https://${clean}`;
+      try {
+        const urlObj = new URL(urlStr);
+        const pathParts = urlObj.pathname.split('/').filter(Boolean);
+        if (pathParts.length >= 2) {
+          owner = pathParts[pathParts.length - 2];
+          repo = pathParts[pathParts.length - 1];
+        }
+      } catch (_) {}
+    }
+
+    if (!owner || !repo) {
+      showToast('Could not parse GitHub owner and repository from URL');
+      return;
+    }
 
     setStep('progress');
     setProgress(0);
-    setTerminalLogs([]);
+    setResolvingDeltas(false);
+    setCurrentProgressActivity('Connecting to github.com...');
+    setCloneSpeed('Connecting...');
+    setTimeRemaining('Estimating...');
 
-    const repoParts = url.split('/');
-    let repoName = repoParts[repoParts.length - 1] || 'repository';
-    if (repoName.endsWith('.git')) repoName = repoName.slice(0, -4);
+    try {
+      const token = githubToken;
+      const headers: Record<string, string> = {
+        Accept: 'application/vnd.github.v3+json',
+      };
+      if (token) {
+        headers['Authorization'] = token.startsWith('ghp_') || token.startsWith('github_pat_') || token.startsWith('gho_')
+          ? `Bearer ${token}`
+          : `token ${token}`;
+      }
 
-    const logs = [
-      `$ git clone ${depth === 'shallow' ? '--depth 1 ' : ''}${submodules ? '--recursive ' : ''}${!sslVerify ? '-c http.sslVerify=false ' : ''}${url} ${dest}`,
-      `Cloning into '${dest}'...`,
-      `Looking up ${url}...`,
-      `Connecting to github.com (140.82.112.4)...`,
-      `POST git-upload-pack (gzip mode)`
-    ];
+      const checkoutBranch = branch || 'main';
+      const targetUrl = `https://api.github.com/repos/${owner}/${repo}/zipball/${checkoutBranch}`;
+      
+      setCurrentProgressActivity(`Requesting zipball package for branch: ${checkoutBranch}...`);
+      const res = await fetch(targetUrl, { headers });
+      
+      if (!res.ok) {
+        throw new Error(`GitHub download failed with status ${res.status}. Please check repository permissions, branch name, or API rate limits.`);
+      }
 
-    let currentLogIndex = 0;
-    const logInterval = setInterval(() => {
-      if (currentLogIndex < logs.length) {
-        setTerminalLogs(prev => [...prev, logs[currentLogIndex]]);
-        currentLogIndex++;
+      setCurrentProgressActivity('Downloading repository objects from GitHub...');
+      
+      const reader = res.body?.getReader();
+      const contentLengthHeader = res.headers.get('Content-Length');
+      const totalBytes = contentLengthHeader ? parseInt(contentLengthHeader, 10) : 1024 * 1024 * 3; 
+      let receivedBytes = 0;
+      const chunks: Uint8Array[] = [];
+      const startTime = Date.now();
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          if (value) {
+            chunks.push(value);
+            receivedBytes += value.length;
+            
+            const durationSec = (Date.now() - startTime) / 1000;
+            const speedMbps = durationSec > 0 ? (receivedBytes / (1024 * 1024)) / durationSec : 0;
+            setCloneSpeed(`${speedMbps.toFixed(1)} MB/s`);
+            
+            let pct = 0;
+            if (contentLengthHeader) {
+              pct = Math.round((receivedBytes / totalBytes) * 100);
+            } else {
+              pct = Math.min(95, Math.round((receivedBytes / totalBytes) * 100));
+            }
+            setProgress(pct);
+            
+            setReceivedObjects({
+              current: Math.floor(receivedBytes / 1024),
+              total: Math.floor(Math.max(receivedBytes + 1024, totalBytes) / 1024)
+            });
+
+            if (pct > 0 && speedMbps > 0) {
+              const remainingBytes = Math.max(0, totalBytes - receivedBytes);
+              const remainingSecs = Math.round((remainingBytes / (1024 * 1024)) / speedMbps);
+              setTimeRemaining(`${Math.max(1, remainingSecs)} sec`);
+            }
+          }
+        }
+      }
+
+      setProgress(98);
+      setResolvingDeltas(true);
+      setCurrentProgressActivity('Extracting downloaded ZIP archive...');
+
+      let totalLen = 0;
+      for (const chunk of chunks) totalLen += chunk.length;
+      const combined = new Uint8Array(totalLen);
+      let offset = 0;
+      for (const chunk of chunks) {
+        combined.set(chunk, offset);
+        offset += chunk.length;
+      }
+      
+      const zipBlob = new Blob([combined], { type: 'application/zip' });
+
+      if (downloadMode === 'direct' && chosenDirectoryHandle) {
+        setCurrentProgressActivity('Writing files to selected directory...');
+        
+        const zip = await JSZip.loadAsync(zipBlob);
+        const fileNames = Object.keys(zip.files);
+        const firstFile = fileNames.find(n => n.includes('/'));
+        const rootDir = firstFile ? firstFile.split('/')[0] + '/' : '';
+
+        const writeHandle = async (dirHandle: any, pathName: string, arrayBuffer: ArrayBuffer) => {
+          const parts = pathName.split('/');
+          let currentDir = dirHandle;
+          for (let i = 0; i < parts.length - 1; i++) {
+            currentDir = await currentDir.getDirectoryHandle(parts[i], { create: true });
+          }
+          const fileHandle = await currentDir.getFileHandle(parts[parts.length - 1], { create: true });
+          const writable = await fileHandle.createWritable();
+          await writable.write(arrayBuffer);
+          await writable.close();
+        };
+
+        let filesWrittenCount = 0;
+        for (const [relativePath, file] of Object.entries(zip.files)) {
+          if (file.dir) continue;
+          
+          const cleanPath = relativePath.startsWith(rootDir) 
+            ? relativePath.substring(rootDir.length) 
+            : relativePath;
+            
+          const arrBuffer = await file.async('arraybuffer');
+          await writeHandle(chosenDirectoryHandle, cleanPath, arrBuffer);
+          filesWrittenCount++;
+        }
+
+        showToast(`Checkout complete! ${filesWrittenCount} files written to direct local directory.`);
       } else {
-        clearInterval(logInterval);
-        startProgressSimulation(repoName);
+        const downloadUrl = URL.createObjectURL(zipBlob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = `${repo}-${checkoutBranch}.zip`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(downloadUrl);
+        showToast('Repository ZIP successfully compiled and downloaded to device.');
       }
-    }, 400);
+
+      setProgress(100);
+      
+      cloneRepository({
+        url: url.trim(),
+        destFolder: `${destFolder}${repo}`,
+        branch: checkoutBranch,
+        shallow: cloneType === 'shallow',
+        submodules: cloneSubmodules
+      });
+
+      setTimeout(() => {
+        setStep('success');
+        showToast(`Cloned and downloaded ${repo} successfully!`);
+      }, 600);
+
+    } catch (err: any) {
+      console.error('Download & Extract Error:', err);
+      showToast(err.message || 'Error occurred during live GitHub download.');
+      setStep('config');
+    }
   };
 
-  const startProgressSimulation = (repoName: string) => {
-    let p = 0;
-    const progressInterval = setInterval(() => {
-      p += Math.random() * 12 + 3;
-      if (p > 100) p = 100;
-
-      setProgress(Math.round(p));
-
-      // Append Git output logs dynamically based on progress
-      if (p >= 5 && p < 15 && terminalLogs.length === 5) {
-        setTerminalLogs(prev => [
-          ...prev, 
-          `remote: Enumerating objects: 4529, done.`,
-          `remote: Counting objects: 100% (4529/4529), done.`
-        ]);
-      }
-      if (p >= 20 && p < 40 && !terminalLogs.some(l => l.includes('Compressing'))) {
-        setTerminalLogs(prev => [
-          ...prev, 
-          `remote: Compressing objects: 100% (1892/1892), done.`
-        ]);
-      }
-      if (p >= 40 && p < 75 && !terminalLogs.some(l => l.includes('Receiving'))) {
-        const speed = bandwidthLimit === '1mb' ? '1.00 MB/s' : bandwidthLimit === '5mb' ? '5.00 MB/s' : '15.42 MB/s';
-        setTerminalLogs(prev => [
-          ...prev, 
-          `Receiving objects:  45% (2038/4529), 8.42 MiB | ${speed}`,
-          `Receiving objects: 100% (4529/4529), 24.15 MiB | ${speed}, done.`
-        ]);
-      }
-      if (p >= 75 && p < 90 && !terminalLogs.some(l => l.includes('Resolving'))) {
-        setTerminalLogs(prev => [
-          ...prev, 
-          `Resolving deltas: 100% (2482/2482), done.`
-        ]);
-      }
-      if (submodules && p >= 90 && !terminalLogs.some(l => l.includes('Submodule'))) {
-        setTerminalLogs(prev => [
-          ...prev,
-          `Submodule 'themes/dark-theme' registered for path 'themes/dark-theme'`,
-          `Cloning into '${dest}/themes/dark-theme'...`,
-          `remote: Enumerating objects: 120, done.`,
-          `remote: Counting objects: 100% (120/120), done.`,
-          `Submodule path 'themes/dark-theme': checked out 'e4f2b1a3d902ff67'`
-        ]);
-      }
-      if (autoInstall && p >= 95 && !terminalLogs.some(l => l.includes('npm install'))) {
-        setTerminalLogs(prev => [
-          ...prev,
-          `$ npm install --no-audit --no-fund`,
-          `added 342 packages from 180 contributors and audited 343 packages in 4.2s`,
-          `found 0 vulnerabilities`
-        ]);
-      }
-
-      if (p === 100) {
-        clearInterval(progressInterval);
-        setTimeout(() => {
-          setTerminalLogs(prev => [
-            ...prev,
-            `Checking out files: 100% (1284/1284), done.`,
-            `SUCCESS: Repository cloned successfully in 5.8s.`
-          ]);
-          // Commit to app state
-          cloneRepository({ 
-            url, 
-            destFolder: dest, 
-            branch: branch || 'main', 
-            shallow: depth === 'shallow', 
-            submodules 
-          });
-          setStep('success');
-          showToast(`Cloned ${repoName} successfully!`);
-        }, 800);
-      }
-    }, 250);
+  const cancelClone = () => {
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+    }
+    setStep('config');
+    showToast('Clone operation cancelled');
   };
 
-  const handleManualAction = (action: string, repoName: string) => {
-    showToast(`Executed mock command: git ${action} on ${repoName}`);
+  // Open the download destination picker modal
+  const handleCloneClick = () => {
+    if (!url.trim()) {
+      showToast('Please enter a repository URL');
+      return;
+    }
+    // Set a sensible default selection
+    if (!selectedDirectoryPath) {
+      setSelectedDirectoryPath(`Downloads/${repoName || 'repository'}.zip`);
+      setDownloadMode('zip');
+    }
+    setIsPlaceModalOpen(true);
   };
+
+  // Trigger local directory picking
+  const handleSelectDeviceFolder = async () => {
+    try {
+      if (!('showDirectoryPicker' in window)) {
+        throw new Error('FileSystemAccessAPINotSupported');
+      }
+      showToast('Select target folder on your local device...');
+      const handle = await (window as any).showDirectoryPicker();
+      setChosenDirectoryHandle(handle);
+      setSelectedDirectoryPath(`${handle.name} (Direct Device Sync)`);
+      setDownloadMode('direct');
+      showToast(`Selected folder: ${handle.name}`);
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        showToast('Folder selection cancelled');
+        return;
+      }
+      console.warn('Native folder selection not supported or blocked:', err);
+      // Fallback
+      setDownloadMode('zip');
+      setSelectedDirectoryPath(`Downloads/${repoName || 'repository'}.zip`);
+      showToast('Using custom web package (.zip) as default.');
+    }
+  };
+
+  // Filter user's actual GitHub repos or general suggestions
+  const filteredGitHubRepos = (githubRepos || []).filter(r => 
+    r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (r.description && r.description.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-main text-text-main">
-      {/* Page Header */}
-      <div className="flex items-center justify-between border-b border-border pb-4 mb-6 shrink-0">
-        <div>
-          <h1 className="text-xl font-bold flex items-center gap-2">
-            <HardDrive size={22} className="text-primary" />
-            Clone Repository Station
-          </h1>
-          <p className="text-xs text-text-muted mt-1">Configure advanced cloning operations, run real-time logs, and manage local checkouts.</p>
+    <div className="flex-1 flex flex-col min-h-0 bg-main text-text-main select-none">
+      
+      {/* Redesigned Premium Header */}
+      <div className="md:flex hidden items-center justify-between px-6 py-4 border-b border-border bg-card shrink-0">
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => navigate('dash')}
+            className="p-1.5 hover:bg-hover rounded-lg text-text-muted hover:text-text-main transition-colors cursor-pointer"
+          >
+            <ChevronRight size={20} className="rotate-180" />
+          </button>
+          <div>
+            <h1 className="text-base font-bold tracking-tight text-text-main">Clone Repository</h1>
+            <p className="text-[11px] text-text-muted font-medium">Download full remote tree and initialize workstation sandbox</p>
+          </div>
         </div>
-
-        {/* Action Tabs */}
-        <div className="flex border border-border bg-hover/20 rounded-xl p-0.5">
-          <button
-            onClick={() => setActiveTab('clone')}
-            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === 'clone' ? 'bg-primary text-white shadow-md' : 'text-text-muted hover:text-text-main'}`}
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => {
+              showToast('This workspace emulates git checkout over secure SSH keyrings and active access-tokens.');
+            }}
+            className="p-1.5 hover:bg-hover rounded-lg text-text-muted hover:text-text-main transition-colors cursor-pointer"
+            title="Workstation Information"
           >
-            Clone Sandbox
-          </button>
-          <button
-            onClick={() => setActiveTab('manager')}
-            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === 'manager' ? 'bg-primary text-white shadow-md' : 'text-text-muted hover:text-text-main'}`}
-          >
-            Local checkouts
-          </button>
-          <button
-            onClick={() => setActiveTab('insights')}
-            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === 'insights' ? 'bg-primary text-white shadow-md' : 'text-text-muted hover:text-text-main'}`}
-          >
-            Network Stats
+            <Info size={18} />
           </button>
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto pr-1 no-scrollbar space-y-6 pb-6">
-        {activeTab === 'clone' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            {/* Left form inputs - 7 Cols */}
-            <div className="lg:col-span-7 bg-card border border-border rounded-2xl p-6 shadow-sm space-y-6">
-              {step === 'config' && (
-                <form onSubmit={handleStartClone} className="space-y-4">
-                  <div className="border border-primary/10 bg-primary/5 p-4 rounded-xl flex gap-3">
-                    <ShieldAlert size={18} className="text-primary shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="text-xs font-bold text-primary">Intelligent Source Pre-population</h4>
-                      <p className="text-[10.5px] text-text-muted leading-relaxed mt-0.5">
-                        If you selected or browsed any repository, the system pre-fills the remote Git SSH/HTTPS endpoints and coordinates local relative paths automatically.
-                      </p>
-                    </div>
-                  </div>
+      {/* Mobile Header (Visible on Mobile Only) */}
+      <div className="flex md:hidden items-center justify-between px-5 py-3.5 border-b border-border bg-card shrink-0">
+        <div className="flex items-center gap-2.5">
+          <button 
+            onClick={() => navigate('dash')}
+            className="p-1.5 hover:bg-hover rounded-lg text-text-muted hover:text-text-main transition-colors cursor-pointer"
+          >
+            <ChevronRight size={18} className="rotate-180" />
+          </button>
+          <div>
+            <h1 className="text-sm font-bold tracking-tight text-text-main">Clone Repository</h1>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => {
+              showToast('This workspace emulates git checkout over secure SSH keyrings and active access-tokens.');
+            }}
+            className="p-1.5 hover:bg-hover rounded-lg text-text-muted hover:text-text-main transition-colors cursor-pointer"
+            title="Workstation Information"
+          >
+            <Info size={16} />
+          </button>
+        </div>
+      </div>
 
-                  {/* Repo URL */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-text-muted uppercase tracking-wider block">Repository URL</label>
-                    <div className="relative">
-                      <Github size={16} className="absolute left-3.5 top-[13px] text-text-muted" />
-                      <input 
-                        type="text" 
-                        required
-                        placeholder="https://github.com/username/repository.git"
-                        value={url}
-                        onChange={(e) => setUrl(e.target.value)}
-                        className="w-full bg-main/50 text-sm font-semibold pl-10 pr-4 py-3 rounded-xl border border-border/50 focus:outline-none focus:border-primary/50 text-text-main transition-colors"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Destination folder */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-text-muted uppercase tracking-wider block">Local Project path</label>
-                    <div className="relative">
-                      <Folder size={16} className="absolute left-3.5 top-[13px] text-text-muted" />
-                      <input 
-                        type="text" 
-                        required
-                        placeholder="/Documents/Projects/my-app"
-                        value={dest}
-                        onChange={(e) => setDest(e.target.value)}
-                        className="w-full bg-main/50 text-sm font-semibold pl-10 pr-4 py-3 rounded-xl border border-border/50 focus:outline-none focus:border-primary/50 text-text-main transition-colors"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Branch and Depth Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-text-muted uppercase tracking-wider block">Checkout Branch</label>
-                      <div className="relative">
-                        <GitBranch size={16} className="absolute left-3.5 top-[13px] text-text-muted" />
-                        <input 
-                          type="text" 
-                          placeholder="main"
-                          value={branch}
-                          onChange={(e) => setBranch(e.target.value)}
-                          className="w-full bg-main/50 text-sm font-semibold pl-10 pr-4 py-3 rounded-xl border border-border/50 focus:outline-none focus:border-primary/50 text-text-main transition-colors"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-text-muted uppercase tracking-wider block">History depth</label>
-                      <div className="flex border border-border/50 rounded-xl overflow-hidden bg-main/50 h-[46px]">
-                        <button
-                          type="button"
-                          onClick={() => setDepth('full')}
-                          className={`flex-1 text-xs font-bold transition-colors ${depth === 'full' ? 'bg-primary/10 text-primary' : 'text-text-muted hover:bg-hover'}`}
-                        >
-                          Full commits
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDepth('shallow')}
-                          className={`flex-1 text-xs font-bold border-l border-border/50 transition-colors ${depth === 'shallow' ? 'bg-primary/10 text-primary' : 'text-text-muted hover:bg-hover'}`}
-                        >
-                          Shallow (--depth 1)
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Advanced git checkboxes */}
-                  <div className="pt-2 border-t border-border/50 space-y-3">
-                    <span className="block text-[11px] font-bold text-text-muted uppercase tracking-widest mb-1">Advanced Git Directives</span>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                      <label className="flex items-center gap-2.5 cursor-pointer bg-main/30 border border-border/40 hover:bg-hover/30 p-3 rounded-xl transition-all">
-                        <input 
-                          type="checkbox" 
-                          checked={submodules}
-                          onChange={(e) => setSubmodules(e.target.checked)}
-                          className="w-4 h-4 rounded border-border text-primary focus:ring-primary accent-primary"
-                        />
-                        <div>
-                          <span className="block text-xs font-bold text-text-main">Recursive Submodules</span>
-                          <span className="block text-[9.5px] text-text-muted">Clone nested libraries</span>
-                        </div>
-                      </label>
-
-                      <label className="flex items-center gap-2.5 cursor-pointer bg-main/30 border border-border/40 hover:bg-hover/30 p-3 rounded-xl transition-all">
-                        <input 
-                          type="checkbox" 
-                          checked={lfs}
-                          onChange={(e) => setLfs(e.target.checked)}
-                          className="w-4 h-4 rounded border-border text-primary focus:ring-primary accent-primary"
-                        />
-                        <div>
-                          <span className="block text-xs font-bold text-text-main">Support Git LFS</span>
-                          <span className="block text-[9.5px] text-text-muted">Pull pointers files</span>
-                        </div>
-                      </label>
-
-                      <label className="flex items-center gap-2.5 cursor-pointer bg-main/30 border border-border/40 hover:bg-hover/30 p-3 rounded-xl transition-all">
-                        <input 
-                          type="checkbox" 
-                          checked={sslVerify}
-                          onChange={(e) => setSslVerify(e.target.checked)}
-                          className="w-4 h-4 rounded border-border text-primary focus:ring-primary accent-primary"
-                        />
-                        <div>
-                          <span className="block text-xs font-bold text-text-main">Strict SSL Check</span>
-                          <span className="block text-[9.5px] text-text-muted">Enforce secure certs</span>
-                        </div>
-                      </label>
-
-                      <label className="flex items-center gap-2.5 cursor-pointer bg-main/30 border border-border/40 hover:bg-hover/30 p-3 rounded-xl transition-all">
-                        <input 
-                          type="checkbox" 
-                          checked={autoInstall}
-                          onChange={(e) => setAutoInstall(e.target.checked)}
-                          className="w-4 h-4 rounded border-border text-primary focus:ring-primary accent-primary"
-                        />
-                        <div>
-                          <span className="block text-xs font-bold text-text-main">Auto npm install</span>
-                          <span className="block text-[9.5px] text-text-muted">Run post-clone build</span>
-                        </div>
-                      </label>
-                    </div>
-                  </div>
-
-                  {/* Speed Throttling dropdown */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-text-muted uppercase tracking-wider block">Network Bandwidth Limit</label>
-                    <div className="flex gap-2.5">
-                      {[
-                        { id: 'none', label: 'No Limit' },
-                        { id: '1mb', label: '1 MB/s Throttle' },
-                        { id: '5mb', label: '5 MB/s Throttle' },
-                        { id: '10mb', label: '10 MB/s Throttle' },
-                      ].map((bw) => (
-                        <button
-                          key={bw.id}
-                          type="button"
-                          onClick={() => setBandwidthLimit(bw.id as any)}
-                          className={`flex-1 py-2 text-xs font-semibold rounded-lg border transition-all ${bandwidthLimit === bw.id ? 'bg-primary/10 border-primary text-primary' : 'bg-main/30 border-border/60 text-text-muted hover:bg-hover'}`}
-                        >
-                          {bw.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Submission buttons */}
-                  <div className="pt-4 flex gap-3">
+      <div className="flex-1 min-h-0 overflow-y-auto p-6 md:p-8 flex justify-center">
+        <div className="w-full max-w-lg flex flex-col gap-6">
+          
+          <AnimatePresence mode="wait">
+            {/* STEP 1: CONFIGURATION SCREEN */}
+            {step === 'config' && (
+              <motion.div 
+                key="config"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                transition={{ duration: 0.2 }}
+                className="flex flex-col gap-6"
+              >
+                {/* SECTION 1: 🌐 REPOSITORY */}
+                <div className="pb-6 border-b border-border space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted flex items-center gap-2">
+                      <Github size={14} className="text-text-muted" />
+                      🌐 Repository Source
+                    </h3>
                     <button 
-                      type="submit"
-                      disabled={!url.trim()}
-                      className="w-full bg-primary hover:bg-primary-hover text-white text-sm font-bold py-3.5 rounded-xl transition-all shadow-md shadow-primary/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40"
+                      onClick={() => setIsSearching(!isSearching)}
+                      className="text-xs font-bold text-primary hover:text-primary-hover transition-colors flex items-center gap-1 cursor-pointer"
                     >
-                      <Download size={16} strokeWidth={2.5} />
-                      Initialize Clone Stream
+                      <Search size={12} />
+                      {isSearching ? 'Close Search' : 'Search GitHub'}
                     </button>
                   </div>
-                </form>
-              )}
 
-              {/* Progress and Streaming Logs View */}
-              {(step === 'progress' || step === 'success') && (
-                <div className="space-y-6">
-                  {/* Visual loader header */}
-                  <div className="flex items-center gap-4 border-b border-border/50 pb-4">
-                    <div className="w-12 h-12 rounded-xl bg-primary/15 text-primary flex items-center justify-center shrink-0">
-                      {step === 'progress' ? (
-                        <RefreshCw size={24} className="animate-spin" />
-                      ) : (
-                        <Check size={24} className="text-success stroke-[3]" />
-                      )}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-sm text-text-main">
-                        {step === 'progress' ? 'Active Remote Streaming Pipeline' : 'Cloning Operation Completed'}
-                      </h3>
-                      <p className="text-[11px] text-text-muted mt-0.5">
-                        {step === 'progress' ? `Bandwidth status: ${bandwidthLimit === 'none' ? 'Unlimited' : bandwidthLimit + ' limit'}` : 'Local workspace file indexing completed.'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Progress visual scale */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center text-xs font-semibold text-text-muted">
-                      <span>Sync status</span>
-                      <span className="font-mono text-primary font-bold">{progress}%</span>
-                    </div>
-                    <div className="h-3 bg-main border border-border/40 rounded-full overflow-hidden w-full relative">
-                      <motion.div 
-                        initial={{ width: '0%' }}
-                        animate={{ width: `${progress}%` }}
-                        className="bg-primary h-full rounded-full transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Terminal stdout stream console log */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-text-muted uppercase tracking-wider flex items-center gap-1.5">
-                        <Terminal size={14} className="text-primary" />
-                        Live git standard output stream
-                      </span>
-                      <span className="text-[10px] bg-emerald-500/10 border border-emerald-500/25 text-emerald-500 font-mono px-2 py-0.5 rounded-full font-bold animate-pulse">
-                        STDOUT CONNECTED
-                      </span>
-                    </div>
-
-                    <div className="bg-neutral-900 border border-neutral-800 text-neutral-200 font-mono text-[11px] p-4 rounded-xl h-64 overflow-y-auto no-scrollbar space-y-1.5 leading-relaxed shadow-inner">
-                      {terminalLogs.map((log, index) => {
-                        const isCmd = log && typeof log === 'string' && log.startsWith('$');
-                        const isSuccess = log && typeof log === 'string' && log.includes('SUCCESS');
-                        return (
-                          <div 
-                            key={index} 
-                            className={`${isCmd ? 'text-primary font-bold' : isSuccess ? 'text-emerald-400 font-semibold border-t border-neutral-800 pt-2.5 mt-2' : 'text-neutral-300'}`}
-                          >
-                            {log}
+                  {/* Active Search Dropdown / Mode with smooth height transition */}
+                  <AnimatePresence initial={false}>
+                    {isSearching && (
+                      <motion.div
+                        key="search-dropdown"
+                        initial={{ height: 0, opacity: 0, y: -8 }}
+                        animate={{ height: 'auto', opacity: 1, y: 0 }}
+                        exit={{ height: 0, opacity: 0, y: -8 }}
+                        transition={{ type: 'spring', stiffness: 280, damping: 26 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="space-y-3 p-3 bg-card rounded-xl border border-border my-2">
+                          <div className="relative">
+                            <Search className="absolute left-3 top-2.5 text-text-muted" size={14} />
+                            <input 
+                              type="text"
+                              autoFocus
+                              placeholder="Search your repos or type..."
+                              value={searchQuery}
+                              onChange={(e) => setSearchQuery(e.target.value)}
+                              className="w-full bg-main border border-border rounded-lg pl-9 pr-4 py-2 text-xs font-medium focus:outline-none focus:border-primary text-text-main"
+                            />
                           </div>
-                        );
-                      })}
-                      <div ref={terminalEndRef} />
+
+                          <div className="space-y-1 max-h-48 overflow-y-auto pr-1 no-scrollbar">
+                            {filteredGitHubRepos.length > 0 ? (
+                              filteredGitHubRepos.map((r, idx) => (
+                                <button
+                                  key={idx}
+                                  onClick={() => prefillRepo((r as any).owner?.login || githubUser?.login || 'owner', r.name)}
+                                  className="w-full text-left p-2 hover:bg-main rounded-lg border border-transparent hover:border-border transition-all flex items-center justify-between text-xs cursor-pointer group text-text-main"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <Folder size={14} className="text-text-muted" />
+                                    <span className="font-bold text-text-main group-hover:text-primary transition-colors">{r.name}</span>
+                                  </div>
+                                  <span className="text-[10px] text-text-muted">{r.private ? 'Private' : 'Public'}</span>
+                                </button>
+                              ))
+                            ) : (
+                              // Curated list fallback if no user repos found/connected
+                              <div className="space-y-1.5">
+                                <div className="text-[10px] font-bold text-text-muted uppercase tracking-wider px-2 pt-1">Popular Suggestions</div>
+                                {popularRepos.filter(p => p.name.includes(searchQuery.toLowerCase())).map((r, idx) => (
+                                  <button
+                                    key={idx}
+                                    type="button"
+                                    onClick={() => prefillRepo(r.owner, r.name)}
+                                    className="w-full text-left p-2 hover:bg-main rounded-lg border border-transparent hover:border-border transition-all flex items-center justify-between text-xs cursor-pointer group text-text-main"
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <Compass size={14} className="text-primary" />
+                                      <div>
+                                        <div className="font-bold text-text-main group-hover:text-primary transition-colors">{r.owner}/{r.name}</div>
+                                        <div className="text-[10px] text-text-muted line-clamp-1">{r.description}</div>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-1 text-[10px] text-text-muted">
+                                      <Star size={10} className="text-amber-400 fill-amber-400" />
+                                      <span>{r.stars}</span>
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Main Paste Git URL area */}
+                  <div className="space-y-1.5">
+                    <div className="relative">
+                      <input 
+                        type="text" 
+                        required
+                        placeholder="Paste Git SSH or HTTPS URL..."
+                        value={url}
+                        onChange={(e) => setUrl(e.target.value)}
+                        className="w-full bg-card text-xs font-semibold pl-4 pr-10 py-3.5 rounded-xl border border-border focus:outline-none focus:border-primary text-text-main transition-all"
+                      />
+                      <button
+                        onClick={handlePasteFromClipboard}
+                        className="absolute right-3 top-3.5 p-1 text-text-muted hover:text-primary hover:bg-hover rounded-lg transition-colors cursor-pointer"
+                        title="Paste from clipboard"
+                      >
+                        <Clipboard size={14} />
+                      </button>
                     </div>
                   </div>
+                </div>
 
-                  {step === 'success' && (
-                    <div className="flex gap-3 pt-2">
-                      <button 
-                        onClick={() => {
-                          const parts = url.split('/');
-                          let n = parts[parts.length - 1] || 'repository';
-                          if (n.endsWith('.git')) n = n.slice(0, -4);
-                          openRepo(n);
-                        }}
-                        className="flex-1 bg-primary hover:bg-primary-hover text-white py-3.5 px-4 rounded-xl text-xs font-bold transition-all shadow-sm shadow-primary/20 flex items-center justify-center gap-1.5 cursor-pointer"
-                      >
-                        <Folder size={14} /> Open Cloned Repository
-                      </button>
-                      <button 
-                        onClick={() => setStep('config')}
-                        className="flex-1 bg-card border border-border hover:bg-hover text-text-main py-3.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                      >
-                        <RefreshCw size={14} /> Start New Clone
-                      </button>
+                {/* SECTION 2: 📂 DESTINATION */}
+                <div className="pb-6 border-b border-border space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted flex items-center gap-2">
+                      <Folder size={14} className="text-text-muted" />
+                      📂 Destination Path
+                    </h3>
+                    <button
+                      onClick={() => setIsEditingDest(!isEditingDest)}
+                      className="text-xs font-bold text-primary hover:text-primary-hover transition-colors cursor-pointer"
+                    >
+                      {isEditingDest ? 'Lock Value' : 'Change →'}
+                    </button>
+                  </div>
+
+                  {isEditingDest ? (
+                    <div className="space-y-1.5">
+                      <input 
+                        type="text"
+                        value={destFolder}
+                        onChange={(e) => setDestFolder(e.target.value)}
+                        placeholder="/Storage/Projects/"
+                        className="w-full bg-card border border-border rounded-xl px-4 py-2.5 text-xs font-mono font-semibold focus:outline-none focus:border-primary text-text-main"
+                      />
+                      <p className="text-[10px] text-text-muted">Modify target directory mount point</p>
+                    </div>
+                  ) : (
+                    <div className="bg-card border border-border rounded-xl p-3.5 flex items-center gap-3">
+                      <HardDrive size={16} className="text-text-muted" />
+                      <div className="font-mono text-[11px] font-bold text-text-muted overflow-x-auto no-scrollbar whitespace-nowrap">
+                        {destFolder}
+                        <span className="text-primary font-extrabold">{repoName || 'my-repository'}</span>
+                      </div>
                     </div>
                   )}
                 </div>
-              )}
-            </div>
 
-            {/* Right Quick Guides and Stats - 5 Cols */}
-            <div className="lg:col-span-5 space-y-6">
-              {/* Recent Clone Targets card */}
-              <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-3.5">
-                <span className="block text-xs font-bold text-text-muted uppercase tracking-wider">Historical Clone cache</span>
-                
-                {recentClones && recentClones.length > 0 ? (
-                  <div className="space-y-2.5">
-                    {recentClones.slice(0, 4).map((clone, index) => (
-                      <div 
-                        key={index}
-                        onClick={() => {
-                          setUrl(clone.url);
-                          setDest(clone.dest);
-                        }}
-                        className="p-3 bg-main/35 border border-border/50 rounded-xl hover:bg-hover hover:border-primary/30 transition-all cursor-pointer group"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-xs text-text-main group-hover:text-primary transition-colors truncate max-w-[150px]">{clone.name}</span>
-                          <span className="text-[9.5px] text-text-muted font-semibold">{new Date(clone.timestamp).toLocaleDateString()}</span>
-                        </div>
-                        <p className="text-[10px] text-text-muted font-mono truncate mt-1">{clone.url}</p>
-                        <div className="flex items-center gap-1 text-[9.5px] text-text-muted font-medium mt-1.5">
-                          <Folder size={10} />
-                          <span className="truncate">{clone.dest}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 bg-main/20 border border-dashed border-border/80 rounded-xl">
-                    <Folder size={24} className="text-text-muted/60 mx-auto mb-2" />
-                    <p className="text-xs text-text-muted font-medium">No prior cloned history recorded</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Developer Command Line Cheat sheet card */}
-              <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-3">
-                <span className="block text-xs font-bold text-text-muted uppercase tracking-wider">Git Clone Command Presets</span>
-                
-                <div className="space-y-2">
-                  <div className="p-2.5 rounded-xl bg-main/50 border border-border/40 hover:bg-hover transition-colors">
-                    <div className="flex justify-between items-center text-[10.5px] font-bold text-text-main mb-1">
-                      <span>Standard HTTPS</span>
-                      <button 
-                        onClick={() => setUrl('https://github.com/facebook/react.git')}
-                        className="text-[9.5px] text-primary hover:underline font-bold"
-                      >
-                        Load URL
-                      </button>
-                    </div>
-                    <code className="font-mono text-[9px] text-text-muted break-all">git clone https://github.com/facebook/react.git</code>
-                  </div>
-
-                  <div className="p-2.5 rounded-xl bg-main/50 border border-border/40 hover:bg-hover transition-colors">
-                    <div className="flex justify-between items-center text-[10.5px] font-bold text-text-main mb-1">
-                      <span>Shallow Depth 1 (Fast)</span>
-                      <button 
-                        onClick={() => {
-                          setUrl('https://github.com/vuejs/core.git');
-                          setDepth('shallow');
-                        }}
-                        className="text-[9.5px] text-primary hover:underline font-bold"
-                      >
-                        Load URL
-                      </button>
-                    </div>
-                    <code className="font-mono text-[9px] text-text-muted break-all">git clone --depth 1 https://github.com/vuejs/core.git</code>
-                  </div>
-
-                  <div className="p-2.5 rounded-xl bg-main/50 border border-border/40 hover:bg-hover transition-colors">
-                    <div className="flex justify-between items-center text-[10.5px] font-bold text-text-main mb-1">
-                      <span>Submodules Recursive</span>
-                      <button 
-                        onClick={() => {
-                          setUrl('https://github.com/electron/electron.git');
-                          setSubmodules(true);
-                        }}
-                        className="text-[9.5px] text-primary hover:underline font-bold"
-                      >
-                        Load URL
-                      </button>
-                    </div>
-                    <code className="font-mono text-[9px] text-text-muted break-all">git clone --recursive https://github.com/electron/electron.git</code>
+                {/* SECTION 3: 🌿 BRANCH */}
+                <div className="pb-6 border-b border-border space-y-3">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted flex items-center gap-2">
+                    <GitBranch size={14} className="text-text-muted" />
+                    🌿 Checkout Branch
+                  </h3>
+                  
+                  <div className="relative">
+                    <select
+                      value={branch}
+                      onChange={(e) => setBranch(e.target.value)}
+                      className="w-full bg-card border border-border rounded-xl px-4 py-3 text-xs font-bold text-text-main focus:outline-none focus:ring-2 focus:ring-primary/10 appearance-none cursor-pointer"
+                    >
+                      <option value="main">Default (main)</option>
+                      <option value="master">Legacy (master)</option>
+                      <option value="develop">Development (develop)</option>
+                      <option value="staging">Staging (staging)</option>
+                    </select>
+                    <ChevronDown size={14} className="absolute right-4 top-3.5 text-text-muted pointer-events-none" />
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        )}
 
-        {activeTab === 'manager' && (
-          <div className="space-y-6">
-            {/* Intro Header banner */}
-            <div className="bg-card border border-border rounded-2xl p-6 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <div>
-                <h3 className="font-bold text-sm text-text-main">Local Checked-out repositories directory</h3>
-                <p className="text-[11px] text-text-muted mt-0.5">Control, analyze, and manage files cloned to the developer workspace.</p>
-              </div>
-              <button 
-                onClick={() => showToast('Reindexed workspace files.')}
-                className="bg-main border border-border hover:border-primary/40 text-text-main hover:text-primary text-xs font-bold py-2 px-4 rounded-xl flex items-center gap-1.5 cursor-pointer transition-colors"
-              >
-                <RefreshCw size={13} /> Re-scan directories
-              </button>
-            </div>
+                {/* SECTION 4: 📦 CLONE TYPE */}
+                <div className="pb-6 border-b border-border space-y-3.5">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted flex items-center gap-2">
+                    <Database size={14} className="text-text-muted" />
+                    📦 Clone History Type
+                  </h3>
 
-            {/* List of checked out repositories */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {recentClones && recentClones.length > 0 ? (
-                recentClones.map((repo, idx) => (
-                  <div key={idx} className="bg-card border border-border hover:border-primary/20 rounded-2xl p-5 shadow-sm space-y-4 transition-all">
-                    <div className="flex justify-between items-start">
-                      <div className="flex items-center gap-2.5 overflow-hidden">
-                        <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                          <HardDrive size={18} />
-                        </div>
-                        <div className="truncate">
-                          <h4 className="font-bold text-xs text-text-main truncate">{repo.name}</h4>
-                          <span className="text-[9.5px] font-mono text-text-muted truncate block">{repo.dest}</span>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setCloneType('full')}
+                      className={`flex flex-col text-left p-3.5 rounded-xl border transition-all cursor-pointer ${cloneType === 'full' ? 'bg-primary/5 border-primary ring-2 ring-primary/10' : 'bg-card border-border hover:border-text-muted'}`}
+                    >
+                      <span className="text-xs font-bold text-text-main">Full History</span>
+                      <span className="text-[10px] text-text-muted mt-1">Downloads complete commit logs, blobs, and history branch trees.</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setCloneType('shallow')}
+                      className={`flex flex-col text-left p-3.5 rounded-xl border transition-all cursor-pointer ${cloneType === 'shallow' ? 'bg-primary/5 border-primary ring-2 ring-primary/10' : 'bg-card border-border hover:border-text-muted'}`}
+                    >
+                      <span className="text-xs font-bold text-text-main">Latest Commit Only</span>
+                      <span className="text-[10px] text-text-muted mt-1">Shallow clone (depth=1). Faster, minimizes local storage size.</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* SECTION 5: ⚙ ADVANCED DRAWER */}
+                <div className="pb-6 border-b border-border space-y-3.5">
+                  <button
+                    type="button"
+                    onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
+                    className="w-full flex items-center justify-between text-left cursor-pointer"
+                  >
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted flex items-center gap-2">
+                      <Sliders size={14} className="text-text-muted" />
+                      ⚙ Advanced Configuration
+                    </h3>
+                    {isAdvancedOpen ? <ChevronUp size={14} className="text-text-muted" /> : <ChevronDown size={14} className="text-text-muted" />}
+                  </button>
+
+                  <AnimatePresence>
+                    {isAdvancedOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.18 }}
+                        className="overflow-hidden space-y-3 pt-2 border-t border-border"
+                      >
+                        <label className="flex items-center justify-between p-2.5 bg-card hover:bg-hover rounded-xl transition-colors cursor-pointer border border-border">
+                          <div className="flex flex-col">
+                            <span className="text-xs font-bold text-text-main">Clone Submodules</span>
+                            <span className="text-[9.5px] text-text-muted">Initialize nested third-party directories</span>
+                          </div>
+                          <div className="relative inline-flex items-center shrink-0">
+                            <input 
+                              type="checkbox" 
+                              checked={cloneSubmodules}
+                              onChange={(e) => setCloneSubmodules(e.target.checked)}
+                              className="sr-only"
+                            />
+                            <div className={`w-9 h-5 rounded-full transition-colors relative ${cloneSubmodules ? 'bg-primary' : 'bg-neutral-300 dark:bg-neutral-700'}`}>
+                              <div className={`w-3.5 h-3.5 bg-white rounded-full absolute top-[3px] transition-all ${cloneSubmodules ? 'left-[19px]' : 'left-[3px]'}`} />
+                            </div>
+                          </div>
+                        </label>
+
+                        <label className="flex items-center justify-between p-2.5 bg-card hover:bg-hover rounded-xl transition-colors cursor-pointer border border-border">
+                          <div className="flex flex-col">
+                            <span className="text-xs font-bold text-text-main">Clone Large File Storage (LFS)</span>
+                            <span className="text-[9.5px] text-text-muted">Fetch giant assets during checkout stage</span>
+                          </div>
+                          <div className="relative inline-flex items-center shrink-0">
+                            <input 
+                              type="checkbox" 
+                              checked={cloneLfs}
+                              onChange={(e) => setCloneLfs(e.target.checked)}
+                              className="sr-only"
+                            />
+                            <div className={`w-9 h-5 rounded-full transition-colors relative ${cloneLfs ? 'bg-primary' : 'bg-neutral-300 dark:bg-neutral-700'}`}>
+                              <div className={`w-3.5 h-3.5 bg-white rounded-full absolute top-[3px] transition-all ${cloneLfs ? 'left-[19px]' : 'left-[3px]'}`} />
+                            </div>
+                          </div>
+                        </label>
+
+                        <label className="flex items-center justify-between p-2.5 bg-card hover:bg-hover rounded-xl transition-colors cursor-pointer border border-border">
+                          <div className="flex flex-col">
+                            <span className="text-xs font-bold text-text-main">Open After Clone</span>
+                            <span className="text-[9.5px] text-text-muted">Auto-navigate to code inspector on success</span>
+                          </div>
+                          <div className="relative inline-flex items-center shrink-0">
+                            <input 
+                              type="checkbox" 
+                              checked={openAfterClone}
+                              onChange={(e) => setOpenAfterClone(e.target.checked)}
+                              className="sr-only"
+                            />
+                            <div className={`w-9 h-5 rounded-full transition-colors relative ${openAfterClone ? 'bg-primary' : 'bg-neutral-300 dark:bg-neutral-700'}`}>
+                              <div className={`w-3.5 h-3.5 bg-white rounded-full absolute top-[3px] transition-all ${openAfterClone ? 'left-[19px]' : 'left-[3px]'}`} />
+                            </div>
+                          </div>
+                        </label>
+
+                        <label className="flex items-center justify-between p-2.5 bg-card hover:bg-hover rounded-xl transition-colors cursor-pointer border border-border">
+                          <div className="flex flex-col">
+                            <span className="text-xs font-bold text-text-main">Add to Bookmarks / Favorites</span>
+                            <span className="text-[9.5px] text-text-muted">Pin to sidebar repository listings</span>
+                          </div>
+                          <div className="relative inline-flex items-center shrink-0">
+                            <input 
+                              type="checkbox" 
+                              checked={addToFavorites}
+                              onChange={(e) => setAddToFavorites(e.target.checked)}
+                              className="sr-only"
+                            />
+                            <div className={`w-9 h-5 rounded-full transition-colors relative ${addToFavorites ? 'bg-primary' : 'bg-neutral-300 dark:bg-neutral-700'}`}>
+                              <div className={`w-3.5 h-3.5 bg-white rounded-full absolute top-[3px] transition-all ${addToFavorites ? 'left-[19px]' : 'left-[3px]'}`} />
+                            </div>
+                          </div>
+                        </label>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* SECTION 6: ACTIVE REPOSITORY INSIGHTS */}
+                {activeRepoInfo && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-primary/5 text-text-main rounded-xl p-5 space-y-4 border border-border"
+                  >
+                    <div>
+                      <h4 className="text-[10px] font-bold tracking-widest text-primary uppercase">Matched Repository</h4>
+                      <h3 className="text-base font-extrabold text-text-main mt-0.5">{activeRepoInfo.owner}/{activeRepoInfo.name}</h3>
+                      <p className="text-xs text-text-muted mt-1 line-clamp-2">{activeRepoInfo.description}</p>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3 border-t border-border pt-3 text-center">
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] text-text-muted block">Stars</span>
+                        <div className="flex items-center justify-center gap-1 font-bold text-sm text-text-main">
+                          <Star size={12} className="text-amber-400 fill-amber-400" />
+                          <span>{activeRepoInfo.stars}</span>
                         </div>
                       </div>
-                      <span className="text-[9px] font-bold text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full uppercase">
-                        Indexed
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] text-text-muted block">Forks</span>
+                        <div className="flex items-center justify-center gap-1 font-bold text-sm text-text-main">
+                          <GitFork size={12} className="text-primary" />
+                          <span>{activeRepoInfo.forks}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] text-text-muted block">Approx. Size</span>
+                        <div className="font-bold text-sm text-text-main">{activeRepoInfo.size}</div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* SUBMIT BUTTON */}
+                <button
+                  type="button"
+                  onClick={handleCloneClick}
+                  disabled={!url}
+                  className="w-full bg-primary hover:bg-primary-hover text-white py-4 px-6 rounded-2xl text-sm font-bold tracking-tight shadow-md hover:shadow-lg disabled:opacity-50 disabled:pointer-events-none transition-all flex items-center justify-center gap-2 cursor-pointer mt-2"
+                >
+                  <Download size={16} />
+                  <span>Clone Repository</span>
+                </button>
+              </motion.div>
+            )}
+
+            {/* STEP 2: DURING CLONE (PROGRESS STATE) */}
+            {step === 'progress' && (
+              <motion.div
+                key="progress"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+                className="bg-card border border-border p-8 rounded-2xl text-center space-y-6"
+              >
+                <div className="space-y-2">
+                  <h2 className="text-base font-bold text-text-main">Cloning Repository</h2>
+                  <p className="text-xs text-text-muted font-mono tracking-tight">{url.replace(/.*github\.com\//, '')}</p>
+                </div>
+
+                {/* GORGEOUS RADIAL / CIRCULAR PROGRESS */}
+                <div className="relative w-36 h-36 mx-auto flex items-center justify-center">
+                  <svg className="w-full h-full transform -rotate-90">
+                    <circle 
+                      cx="72" 
+                      cy="72" 
+                      r="64" 
+                      className="text-border stroke-current" 
+                      strokeWidth="10" 
+                      fill="transparent" 
+                    />
+                    <circle 
+                      cx="72" 
+                      cy="72" 
+                      r="64" 
+                      className="text-primary stroke-current transition-all duration-300" 
+                      strokeWidth="10" 
+                      strokeDasharray={2 * Math.PI * 64}
+                      strokeDashoffset={2 * Math.PI * 64 * (1 - progress / 100)}
+                      strokeLinecap="round"
+                      fill="transparent" 
+                    />
+                  </svg>
+                  <div className="absolute flex flex-col items-center">
+                    <span className="text-3xl font-extrabold tracking-tighter text-text-main">{progress}%</span>
+                    <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider mt-0.5">Cloned</span>
+                  </div>
+                </div>
+
+                {/* DYNAMIC PROGRESS INSIGHTS */}
+                <div className="bg-main rounded-xl border border-border p-4 text-left space-y-3 font-medium text-text-muted text-xs">
+                  <div className="flex justify-between items-center pb-2 border-b border-border">
+                    <span className="text-text-muted">Receiving Objects</span>
+                    <span className="font-mono text-text-main font-bold">
+                      {receivedObjects.current.toLocaleString()} / {receivedObjects.total.toLocaleString()}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center pb-2 border-b border-border">
+                    <span className="text-text-muted">Resolving Deltas</span>
+                    <span className="font-mono text-text-main flex items-center gap-1.5 font-bold">
+                      {resolvingDeltas ? (
+                        <>
+                          <Check size={12} className="text-emerald-500" />
+                          <span>Complete</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-ping" />
+                          <span>Pending...</span>
+                        </>
+                      )}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 pt-1 text-[11px]">
+                    <div className="space-y-0.5">
+                      <span className="text-text-muted block text-[10px]">Download Speed</span>
+                      <span className="font-bold text-text-main font-mono flex items-center gap-1">
+                        <Activity size={10} className="text-primary" />
+                        {cloneSpeed}
                       </span>
                     </div>
-
-                    <div className="bg-main/40 border border-border/40 rounded-xl p-3 space-y-2">
-                      <div className="flex justify-between text-[10px] text-text-muted">
-                        <span>Directory size</span>
-                        <span className="font-bold text-text-main">{(142.5 + (idx * 23.4)).toFixed(1)} MB</span>
-                      </div>
-                      <div className="flex justify-between text-[10px] text-text-muted">
-                        <span>Branch HEAD</span>
-                        <span className="font-bold font-mono text-primary flex items-center gap-1">
-                          <GitBranch size={10} /> main
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-[10px] text-text-muted">
-                        <span>LFS Status</span>
-                        <span className="font-semibold text-text-main">Enabled</span>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => openRepo(repo.name)}
-                        className="flex-1 bg-primary/10 text-primary hover:bg-primary hover:text-white py-1.5 rounded-lg text-[10px] font-bold transition-all text-center cursor-pointer"
-                      >
-                        Open Station
-                      </button>
-                      <button
-                        onClick={() => handleManualAction('fsck', repo.name)}
-                        className="px-2.5 border border-border hover:border-text-main/30 text-text-muted hover:text-text-main rounded-lg text-[10px] font-bold transition-all cursor-pointer"
-                        title="Run integrity check"
-                      >
-                        fsck
-                      </button>
-                      <button
-                        onClick={() => handleManualAction('fetch', repo.name)}
-                        className="px-2.5 border border-border hover:border-text-main/30 text-text-muted hover:text-text-main rounded-lg text-[10px] font-bold transition-all cursor-pointer"
-                        title="Fetch latest refs"
-                      >
-                        fetch
-                      </button>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="col-span-full text-center py-12 bg-card border border-dashed border-border rounded-2xl">
-                  <Folder size={40} className="text-text-muted/50 mx-auto mb-2.5" />
-                  <p className="text-sm text-text-muted font-bold">No active local repositories checked-out</p>
-                  <p className="text-xs text-text-muted mt-1 max-w-sm mx-auto">Click the "Clone Sandbox" tab to spin up a new git download process.</p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'insights' && (
-          <div className="space-y-6">
-            {/* Cards for key stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-1.5">
-                <span className="block text-[10px] font-bold text-text-muted uppercase tracking-wider">Active clones</span>
-                <span className="block font-bold text-xl text-text-main">{stats.totalCloned}</span>
-                <span className="block text-[9.5px] text-emerald-500 font-semibold flex items-center gap-1 mt-1">
-                  <Wifi size={11} /> Ready in local workspace
-                </span>
-              </div>
-
-              <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-1.5">
-                <span className="block text-[10px] font-bold text-text-muted uppercase tracking-wider">Workspace Disk Allocation</span>
-                <span className="block font-bold text-xl text-text-main">{stats.diskSpaceUsed}</span>
-                <span className="block text-[9.5px] text-text-muted font-medium mt-1">
-                  Average 324.5 MB per checkout
-                </span>
-              </div>
-
-              <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-1.5">
-                <span className="block text-[10px] font-bold text-text-muted uppercase tracking-wider">Shallow clones saved</span>
-                <span className="block font-bold text-xl text-text-main">412.5 MB</span>
-                <span className="block text-[9.5px] text-primary font-semibold flex items-center gap-1 mt-1">
-                  <Cpu size={11} /> 32% storage compression
-                </span>
-              </div>
-
-              <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-1.5">
-                <span className="block text-[10px] font-bold text-text-muted uppercase tracking-wider">Average Bandwidth Speed</span>
-                <span className="block font-bold text-xl text-text-main">{stats.avgCloneSpeed}</span>
-                <span className="block text-[9.5px] text-emerald-500 font-semibold flex items-center gap-1 mt-1">
-                  <Wifi size={11} /> Stable 100 Mbps line rate
-                </span>
-              </div>
-            </div>
-
-            {/* Simulated Visual charts / progress reports */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              <div className="lg:col-span-7 bg-card border border-border rounded-2xl p-6 shadow-sm space-y-4">
-                <span className="block text-xs font-bold text-text-muted uppercase tracking-wider">Network Throughput Logs</span>
-                
-                <div className="h-48 flex items-end justify-between pt-4 border-b border-border/60">
-                  {[24, 45, 68, 12, 56, 89, 78, 64, 98, 110, 85, 95].map((val, idx) => (
-                    <div key={idx} className="flex-1 flex flex-col items-center gap-2 group cursor-pointer px-1">
-                      <div className="w-full relative bg-primary/10 rounded-t-md hover:bg-primary/25 transition-colors" style={{ height: `${val}px` }}>
-                        <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-[9px] font-mono font-bold px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                          {val}M
-                        </div>
-                      </div>
-                      <span className="text-[8.5px] font-bold text-text-muted font-mono">{idx + 1}h</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex justify-between text-[10px] text-text-muted font-medium">
-                  <span>Throughput sampling history (past 12h)</span>
-                  <span>Peak speed: 110 MB/s</span>
-                </div>
-              </div>
-
-              <div className="lg:col-span-5 bg-card border border-border rounded-2xl p-6 shadow-sm space-y-4">
-                <span className="block text-xs font-bold text-text-muted uppercase tracking-wider">Storage allocation metrics</span>
-                
-                <div className="space-y-3 pt-2">
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between text-[11px] font-semibold text-text-main">
-                      <span>Standard Checked out repos</span>
-                      <span>850 MB (68%)</span>
-                    </div>
-                    <div className="h-2 bg-main rounded-full overflow-hidden w-full">
-                      <div className="bg-primary h-full rounded-full" style={{ width: '68%' }} />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between text-[11px] font-semibold text-text-main">
-                      <span>Git Submodules directory</span>
-                      <span>280 MB (22%)</span>
-                    </div>
-                    <div className="h-2 bg-main rounded-full overflow-hidden w-full">
-                      <div className="bg-sky-500 h-full rounded-full" style={{ width: '22%' }} />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between text-[11px] font-semibold text-text-main">
-                      <span>Network Caches & Configs</span>
-                      <span>110 MB (10%)</span>
-                    </div>
-                    <div className="h-2 bg-main rounded-full overflow-hidden w-full">
-                      <div className="bg-indigo-500 h-full rounded-full" style={{ width: '10%' }} />
+                    <div className="space-y-0.5 text-right">
+                      <span className="text-text-muted block text-[10px]">Est. Remaining</span>
+                      <span className="font-bold text-text-main font-mono block">{timeRemaining}</span>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        )}
+
+                {/* REAL-TIME TERMINAL MESSAGE */}
+                <div className="font-mono text-[10.5px] text-left text-neutral-400 bg-neutral-900 border border-neutral-800 rounded-xl p-3.5 space-y-1 overflow-hidden shadow-inner leading-relaxed select-text">
+                  <div className="text-indigo-400 font-bold">$ git checkout-index -a -f</div>
+                  <div className="text-neutral-200 truncate">{currentProgressActivity}</div>
+                </div>
+
+                {/* CANCEL BUTTON */}
+                <button
+                  type="button"
+                  onClick={cancelClone}
+                  className="w-full bg-hover hover:bg-opacity-85 text-text-main py-3 px-4 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                >
+                  Cancel Operation
+                </button>
+              </motion.div>
+            )}
+
+            {/* STEP 3: SUCCESS SCREEN */}
+            {step === 'success' && (
+              <motion.div
+                key="success"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+                className="bg-card border border-border p-8 rounded-2xl text-center space-y-6"
+              >
+                {/* SUCCESS BADGE */}
+                <div className="mx-auto w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center shadow-inner animate-bounce">
+                  <Check size={32} strokeWidth={3} />
+                </div>
+
+                <div className="space-y-2">
+                  <h2 className="text-lg font-extrabold text-text-main tracking-tight">Repository Ready</h2>
+                  <p className="text-xs text-text-muted">The remote repository tree has been written successfully.</p>
+                </div>
+
+                {/* CLONE LOCATION DATA */}
+                <div className="bg-main border border-border rounded-xl p-4 text-left space-y-2">
+                  <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider block">Mount Location</span>
+                  <div className="font-mono text-[11px] text-text-muted font-semibold break-all leading-relaxed">
+                    {destFolder}<span className="text-text-main font-extrabold">{repoName}</span>
+                  </div>
+                </div>
+
+                {/* SUCCESS OPTIONS LIST */}
+                <div className="space-y-2.5 pt-2">
+                  <button
+                    onClick={() => {
+                      if (openAfterClone) {
+                        openRepo(repoName);
+                      } else {
+                        navigate('repos');
+                      }
+                    }}
+                    className="w-full bg-primary hover:bg-primary-hover text-white p-3.5 rounded-xl text-xs font-bold tracking-tight shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Folder size={14} />
+                    <span>Open Repository</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      showToast(`Opened location: ${destFolder}${repoName} inside file-manager`);
+                    }}
+                    className="w-full bg-hover hover:bg-opacity-80 text-text-main p-3.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <HardDrive size={14} />
+                    <span>Open Folder Directory</span>
+                  </button>
+
+                  <button
+                    onClick={() => setIsReadmeOpen(true)}
+                    className="w-full bg-hover hover:bg-opacity-80 text-text-main p-3.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <FileText size={14} />
+                    <span>View README.md</span>
+                  </button>
+
+                  <button
+                    onClick={() => setStep('config')}
+                    className="w-full bg-main hover:bg-hover text-text-muted p-3.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <span>Clone Another Repository</span>
+                    <ChevronRight size={12} />
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+        </div>
       </div>
+
+      {/* DETAILED README MODAL SLIDER */}
+      <AnimatePresence>
+        {isReadmeOpen && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm">
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+              className="bg-card w-full max-w-lg rounded-t-3xl border-t border-border shadow-2xl p-6 space-y-4 max-h-[85vh] flex flex-col"
+            >
+              <div className="flex items-center justify-between border-b border-border pb-3">
+                <div className="flex items-center gap-2">
+                  <FileText size={16} className="text-primary" />
+                  <h3 className="text-sm font-bold text-text-main">README.md</h3>
+                </div>
+                <button 
+                  onClick={() => setIsReadmeOpen(false)}
+                  className="p-1 hover:bg-hover rounded-full text-text-muted hover:text-text-main transition-colors cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto pr-1 select-text no-scrollbar space-y-4 text-xs text-text-muted leading-relaxed">
+                <h1 className="text-xl font-extrabold text-text-main border-b border-border pb-2">{repoName || 'my-repository'}</h1>
+                <p className="font-semibold text-text-muted italic">This README was compiled securely upon checkout verification.</p>
+                
+                <div className="space-y-2 bg-main border border-border rounded-xl p-3.5 font-mono text-[11px] text-text-muted">
+                  <div className="font-bold text-primary">Quick Start Guides</div>
+                  <div>$ npm install</div>
+                  <div>$ npm run build</div>
+                  <div>$ npm run start</div>
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="font-bold text-text-main text-sm">Key Features</h3>
+                  <ul className="list-disc pl-4 space-y-1 font-medium">
+                    <li>Dynamic CI/CD action triggers with webhooks.</li>
+                    <li>Comprehensive commit graphs, amend, and resets.</li>
+                    <li>Seamless multi-branch staging and PR manager.</li>
+                    <li>Highly optimized local and remote synchronizations.</li>
+                  </ul>
+                </div>
+
+                <p className="text-[11px] text-text-muted pt-3">Checked out at: {new Date().toLocaleString()}</p>
+              </div>
+
+              <button
+                onClick={() => setIsReadmeOpen(false)}
+                className="w-full bg-primary hover:bg-primary-hover text-white p-3 rounded-xl text-xs font-bold transition-all cursor-pointer"
+              >
+                Done Reading
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* LOCAL DEVICE DOWNLOAD PLACE PICKER MODAL */}
+      <AnimatePresence>
+        {isPlaceModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="bg-card w-full max-w-md rounded-2xl border border-border shadow-2xl p-6 flex flex-col gap-5 text-left"
+            >
+              <div className="flex items-center justify-between border-b border-border pb-3.5">
+                <div className="flex items-center gap-2.5">
+                  <Download size={18} className="text-primary" />
+                  <h3 className="text-sm font-bold text-text-main">Local Download Options</h3>
+                </div>
+                <button 
+                  onClick={() => setIsPlaceModalOpen(false)}
+                  className="p-1 hover:bg-hover rounded-full text-text-muted hover:text-text-main transition-colors cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="space-y-3.5">
+                <p className="text-xs text-text-muted leading-relaxed">
+                  Choose a download destination on your machine to extract and store the <span className="font-bold text-text-main">@{repoName || 'repository'}</span> checkout tree.
+                </p>
+
+                {/* OPTION 1: CHOOSE LOCAL FOLDER */}
+                <button
+                  type="button"
+                  onClick={handleSelectDeviceFolder}
+                  className={`w-full text-left p-3.5 rounded-xl border transition-all cursor-pointer flex items-start gap-3.5 group ${
+                    downloadMode === 'direct' 
+                      ? 'border-primary bg-primary/5' 
+                      : 'border-border bg-main hover:bg-hover'
+                  }`}
+                >
+                  <div className={`p-2 rounded-lg transition-colors shrink-0 ${
+                    downloadMode === 'direct' 
+                      ? 'bg-primary text-white' 
+                      : 'bg-card text-text-muted group-hover:text-text-main'
+                  }`}>
+                    <Folder size={18} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-text-main">Direct Device Sync</span>
+                      {downloadMode === 'direct' && (
+                        <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-md font-semibold">Active</span>
+                      )}
+                    </div>
+                    <p className="text-[10.5px] text-text-muted mt-1 leading-normal">
+                      Write the codebase files directly to a designated local directory on your device.
+                    </p>
+                  </div>
+                </button>
+
+                {/* OPTION 2: STANDARD ZIP ARCHIVE */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setChosenDirectoryHandle(null);
+                    setDownloadMode('zip');
+                    setSelectedDirectoryPath(`Downloads/${repoName || 'repository'}.zip`);
+                  }}
+                  className={`w-full text-left p-3.5 rounded-xl border transition-all cursor-pointer flex items-start gap-3.5 group ${
+                    downloadMode === 'zip' 
+                      ? 'border-primary bg-primary/5' 
+                      : 'border-border bg-main hover:bg-hover'
+                  }`}
+                >
+                  <div className={`p-2 rounded-lg transition-colors shrink-0 ${
+                    downloadMode === 'zip' 
+                      ? 'bg-primary text-white' 
+                      : 'bg-card text-text-muted group-hover:text-text-main'
+                  }`}>
+                    <HardDrive size={18} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-text-main">Packaged ZIP Archive</span>
+                      {downloadMode === 'zip' && (
+                        <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-md font-semibold">Active</span>
+                      )}
+                    </div>
+                    <p className="text-[10.5px] text-text-muted mt-1 leading-normal">
+                      Download a structured ZIP bundle safely to your browser's default downloads folder.
+                    </p>
+                  </div>
+                </button>
+
+                {/* DISPLAY CHOSEN DESTINATION */}
+                <div className="bg-main/50 border border-border rounded-xl p-3.5 flex flex-col gap-1.5">
+                  <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider block">Target Destination Path</span>
+                  <div className="flex items-center gap-2 text-xs font-semibold text-text-main font-mono truncate">
+                    <span className="text-primary shrink-0">➔</span>
+                    <span className="truncate">{selectedDirectoryPath || 'No destination chosen yet'}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsPlaceModalOpen(false)}
+                  className="flex-1 bg-main border border-border hover:bg-hover text-text-main py-3 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsPlaceModalOpen(false);
+                    triggerClone();
+                  }}
+                  className="flex-1 bg-primary hover:bg-primary-hover text-white py-3 rounded-xl text-xs font-bold transition-all shadow-md hover:shadow-lg cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <Download size={14} />
+                  <span>Start Download</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 };

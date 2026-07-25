@@ -11,6 +11,7 @@ import { DesktopLayout } from './components/DesktopLayout';
 import { Dashboard } from './screens/Dashboard';
 import { Repositories } from './screens/Repositories';
 import { RepoDetails } from './screens/RepoDetails';
+import { CloneScreen } from './screens/CloneScreen';
 import { Settings } from './screens/Settings';
 
 const queryClient = new QueryClient();
@@ -30,7 +31,8 @@ const MainApp = () => {
           <PullToRefresh>
             {currentScreen === 'dash' && <Dashboard />}
             {currentScreen === 'repos' && <Repositories />}
-            {['commits', 'prs', 'branches', 'files', 'insights', 'clone'].includes(currentScreen) && <RepoDetails />}
+            {['commits', 'prs', 'branches', 'files', 'insights'].includes(currentScreen) && <RepoDetails />}
+            {currentScreen === 'clone' && <CloneScreen />}
             {currentScreen === 'settings' && <Settings />}
           </PullToRefresh>
           <BottomNav />

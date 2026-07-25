@@ -122,21 +122,7 @@ export const Dashboard: React.FC = () => {
         )}
       </div>
 
-      {!githubToken && (
-        <div className="bg-card rounded-2xl p-5 mb-6 border border-border flex flex-col items-center justify-center text-center">
-          <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-3">
-            <Github size={24} />
-          </div>
-          <h3 className="font-semibold mb-1 text-text-main">Connect GitHub</h3>
-          <p className="text-sm text-text-muted mb-4">Connect your account to see your real repositories and activity.</p>
-          <button 
-            onClick={connectGitHub}
-            className="bg-primary text-white px-4 py-2 rounded-xl text-sm font-medium active:scale-95 transition-transform"
-          >
-            Connect Account
-          </button>
-        </div>
-      )}
+
 
       <div className="grid grid-cols-2 gap-3 mb-6">
         <div className="rounded-2xl p-4 flex flex-col gap-2 bg-purple-500/10 border border-purple-500/20">
