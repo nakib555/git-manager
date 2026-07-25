@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAppContext } from '../AppContext';
-import { X, Folder, GitBranch, GitPullRequest, GitCommit, Check, Key, ExternalLink, ShieldAlert } from 'lucide-react';
+import { X, Folder, GitBranch, GitPullRequest, GitCommit, Check, Key, ExternalLink, ShieldAlert, HardDrive } from 'lucide-react';
+import { CloneModal } from './CloneModal';
 
 export const CreateModals: React.FC = () => {
   const { activeModal, closeModal, createLocalRepo, createLocalBranch, createLocalPR, createLocalCommit } = useAppContext();
@@ -71,6 +72,14 @@ export const CreateModals: React.FC = () => {
                 <span>Connect GitHub</span>
               </>
             )}
+            {activeModal === 'clone' && (
+              <>
+                <div className="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-500 flex items-center justify-center">
+                  <HardDrive size={18} />
+                </div>
+                <span>Clone Repository</span>
+              </>
+            )}
           </div>
           <button 
             onClick={closeModal}
@@ -85,6 +94,7 @@ export const CreateModals: React.FC = () => {
         {activeModal === 'pr' && <PRForm onSubmit={(data) => { createLocalPR(data); closeModal(); }} />}
         {activeModal === 'commit' && <CommitForm onSubmit={(data) => { createLocalCommit(data); closeModal(); }} />}
         {activeModal === 'oauth_setup' && <OAuthSetupForm />}
+        {activeModal === 'clone' && <CloneModal />}
           </motion.div>
         </motion.div>
       )}

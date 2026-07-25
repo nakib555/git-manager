@@ -202,7 +202,14 @@ export const DesktopLayout: React.FC = () => {
           </div>
 
           {/* Right Action Widgets */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            {/* Quick Clone repo button */}
+            <button 
+              onClick={() => openModal('clone')}
+              className="bg-card border border-border hover:border-primary/50 text-text-main hover:text-primary text-xs font-bold py-2 px-4 rounded-xl active:scale-95 transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+            >
+              <span>Clone Repository</span>
+            </button>
             {/* Quick Create repo button */}
             <button 
               onClick={() => openModal('repo')}

@@ -19,6 +19,7 @@ export default defineConfig(() => {
         registerType: 'autoUpdate',
         includeAssets: ['git-manager-logo.png'],
         workbox: {
+          maximumFileSizeToCacheInBytes: 5000000,
           navigateFallbackDenylist: [/^\/auth\/callback/, /^\/api\//],
         },
         manifest: {

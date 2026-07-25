@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAppContext } from '../AppContext';
-import { Folder, GitBranch, GitPullRequest, X, XCircle, CheckCircle2, MessageSquare, Bell } from 'lucide-react';
+import { Folder, GitBranch, GitPullRequest, X, XCircle, CheckCircle2, MessageSquare, Bell, HardDrive } from 'lucide-react';
 
 export const ActionSheet: React.FC = () => {
   const { isActionSheetOpen, closeModals, showToast, openModal } = useAppContext();
@@ -25,6 +25,18 @@ export const ActionSheet: React.FC = () => {
           <div>
             <div className="text-[15px] mb-0.5 text-text-main">Repository</div>
             <div className="text-xs text-text-muted">Create a new Git repository</div>
+          </div>
+        </div>
+        <div 
+          className="flex items-center gap-4 py-4 border-b border-border cursor-pointer active:opacity-70"
+          onClick={() => { openModal('clone'); }}
+        >
+          <div className="w-10 h-10 rounded-xl bg-teal-500/10 text-teal-500 flex items-center justify-center">
+            <HardDrive size={20} />
+          </div>
+          <div>
+            <div className="text-[15px] mb-0.5 text-text-main">Clone Repository</div>
+            <div className="text-xs text-text-muted">Clone an existing repository</div>
           </div>
         </div>
 

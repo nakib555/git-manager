@@ -38,8 +38,9 @@ export interface AppState {
   activeFiles: any[];
   activeLanguages: Record<string, number>;
   isLoadingRepoDetails: boolean;
-  activeModal: 'repo' | 'branch' | 'pr' | 'commit' | 'oauth_setup' | null;
+  activeModal: 'repo' | 'branch' | 'pr' | 'commit' | 'clone' | 'oauth_setup' | null;
   sessionCommitsCount: number;
+  recentClones: { name: string; url: string; dest: string; timestamp: number }[];
 }
 
 export type AppContextType = AppState & {
@@ -59,8 +60,10 @@ export type AppContextType = AppState & {
   refreshData: () => Promise<void>;
   
   // Details and local creation actions
-  openModal: (modalType: 'repo' | 'branch' | 'pr' | 'commit' | 'oauth_setup') => void;
+  openModal: (modalType: 'repo' | 'branch' | 'pr' | 'commit' | 'clone' | 'oauth_setup') => void;
   closeModal: () => void;
+  addRecentClone: (clone: { name: string; url: string; dest: string; timestamp: number }) => void;
+  cloneRepository: (repo: { url: string; destFolder: string; branch: string; shallow: boolean; submodules: boolean }) => void;
   createLocalRepo: (repo: { name: string; desc: string; isPrivate: boolean; lang: string }) => void;
   createLocalBranch: (branch: { name: string; desc: string }) => void;
   createLocalPR: (pr: { title: string; desc: string; source: string; target: string; isDraft?: boolean }) => void;

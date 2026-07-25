@@ -85,6 +85,7 @@ const defaultState: AppState = {
     localStorage.getItem("sessionCommitsCount") || "0",
     10,
   ),
+  recentClones: JSON.parse(localStorage.getItem("recentClones") || "[]"),
 };
 const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: ReactNode }> = ({
@@ -534,6 +535,44 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
   const closeModal = () => {
     setState((prev) => ({ ...prev, activeModal: null }));
   };
+  const addRecentClone = (clone: { name: string; url: string; dest: string; timestamp: number }) => {
+    setState((prev) => {
+      const clones = [clone, ...prev.recentClones.filter(c => c.url !== clone.url)].slice(0, 5);
+      localStorage.setItem("recentClones", JSON.stringify(clones));
+      return { ...prev, recentClones: clones };
+    });
+  };
+
+  const cloneRepository = (repo: { url: string; destFolder: string; branch: string; shallow: boolean; submodules: boolean }) => {
+    const parts = repo.url.split('/');
+    let name = parts[parts.length - 1];
+    if (name.endsWith('.git')) name = name.slice(0, -4);
+    
+    addRecentClone({
+      name,
+      url: repo.url,
+      dest: repo.destFolder,
+      timestamp: Date.now()
+    });
+
+    const newRepo: GitHubRepo = {
+      id: Date.now(),
+      name,
+      private: false,
+      description: `Cloned from ${repo.url}`,
+      language: 'TypeScript',
+      pushed_at: new Date().toISOString(),
+    };
+
+    setState((prev) => {
+      const newRepos = [newRepo, ...prev.githubRepos];
+      localStorage.setItem("localRepos", JSON.stringify(newRepos));
+      return { ...prev, githubRepos: newRepos };
+    });
+    
+    showToast(`Repository ${name} cloned successfully`);
+  };
+
   const createLocalRepo = async (repo: {
     name: string;
     desc: string;
@@ -1207,6 +1246,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         refreshData,
         openModal,
         closeModal,
+        addRecentClone,
+        cloneRepository,
         createLocalRepo,
         createLocalBranch,
         createLocalPR,
