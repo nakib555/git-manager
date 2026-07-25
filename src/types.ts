@@ -64,6 +64,7 @@ export type AppContextType = AppState & {
   createLocalRepo: (repo: { name: string; desc: string; isPrivate: boolean; lang: string }) => void;
   createLocalBranch: (branch: { name: string; desc: string }) => void;
   createLocalPR: (pr: { title: string; desc: string; source: string; target: string }) => void;
+  updateLocalPRStatus: (prId: number, status: 'Open' | 'Merged' | 'Closed') => void;
   createLocalCommit: (commit: { msg: string; author: string; hash?: string; add?: string; del?: string }) => void;
   editCommitMessage: (hash: string, newMsg: string) => void;
   deleteCommit: (hash: string) => void;

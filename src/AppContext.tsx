@@ -328,6 +328,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
           title: p.title,
           desc: p.body || "No description provided",
           author: p.user?.login || "unknown",
+          avatar: p.user?.avatar_url || "",
           time: formatTime(p.created_at),
           status: p.draft
             ? "Draft"
@@ -338,6 +339,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
               : "Open",
           comments: p.comments || 0,
           hasConflicts: false,
+          source: p.head?.ref || "feature-branch",
+          target: p.base?.ref || "main",
         }));
       }
       // 4. Fetch Languages
@@ -759,6 +762,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         status: "Open",
         avatar: state.githubUser?.avatar_url || "",
         hasConflicts: false,
+        source: pr.source || "feature-branch",
+        target: pr.target || "main",
       };
       const updated = [newPR, ...current];
       localStorage.setItem(key, JSON.stringify(updated));
@@ -768,6 +773,23 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
       }));
       showToast(`Pull Request #${newPR.id} opened!`);
     }
+  };
+  const updateLocalPRStatus = (prId: number, status: 'Open' | 'Merged' | 'Closed') => {
+    if (!state.currentRepo) return;
+    const key = `local_details_${state.currentRepo}_prs`;
+    const current = getLocalRepoDetails(state.currentRepo, "prs");
+    const updated = current.map((item: any) => {
+      if (item.id === prId) {
+        return { ...item, status };
+      }
+      return item;
+    });
+    localStorage.setItem(key, JSON.stringify(updated));
+    setState((prev) => ({
+      ...prev,
+      activePRs: updated,
+    }));
+    showToast(`Pull Request #${prId} is now ${status}!`);
   };
   const createLocalCommit = async (commit: {
     msg: string;
@@ -1179,6 +1201,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         createLocalRepo,
         createLocalBranch,
         createLocalPR,
+        updateLocalPRStatus,
         createLocalCommit,
         editCommitMessage,
         deleteCommit,
