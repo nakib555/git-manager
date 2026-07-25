@@ -225,6 +225,7 @@ const PRForm: React.FC<{ onSubmit: (data: any) => void }> = ({ onSubmit }) => {
   const { activeBranches } = useAppContext();
   const [title, setTitle] = useState('');
   const [desc, setDesc] = useState('');
+  const [isDraft, setIsDraft] = useState(false);
   
   // Smart branch defaulting: use separate branches if at least 2 are available
   const defaultSource = activeBranches.length > 1 ? activeBranches[1].name : (activeBranches[0]?.name || 'develop');
@@ -236,7 +237,7 @@ const PRForm: React.FC<{ onSubmit: (data: any) => void }> = ({ onSubmit }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || source === target) return;
-    onSubmit({ title: title.trim(), desc, source, target });
+    onSubmit({ title: title.trim(), desc, source, target, isDraft });
   };
 
   const isIdentical = source === target;
@@ -297,6 +298,16 @@ const PRForm: React.FC<{ onSubmit: (data: any) => void }> = ({ onSubmit }) => {
         </div>
       </div>
 
+      <label className="flex items-center gap-2 cursor-pointer mt-2">
+        <input 
+          type="checkbox" 
+          checked={isDraft}
+          onChange={(e) => setIsDraft(e.target.checked)}
+          className="w-4 h-4 rounded border-border text-primary focus:ring-primary accent-primary"
+        />
+        <span className="text-xs font-semibold text-text-main">Create as Draft</span>
+      </label>
+
       {isIdentical && (
         <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-500 rounded-xl text-xs flex items-center gap-2">
           <ShieldAlert size={14} className="shrink-0" />
@@ -307,9 +318,9 @@ const PRForm: React.FC<{ onSubmit: (data: any) => void }> = ({ onSubmit }) => {
       <button 
         type="submit" 
         disabled={!title.trim() || isIdentical}
-        className="w-full bg-success text-white font-semibold text-sm py-3 rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-2 cursor-pointer"
+        className="w-full bg-success text-white font-semibold text-sm py-3 rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-4 cursor-pointer"
       >
-        <Check size={16} strokeWidth={3} /> Open Pull Request
+        <Check size={16} strokeWidth={3} /> {isDraft ? 'Open Draft PR' : 'Open Pull Request'}
       </button>
     </form>
   );

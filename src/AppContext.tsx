@@ -712,6 +712,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
     desc: string;
     source: string;
     target: string;
+    isDraft?: boolean;
   }) => {
     if (!state.currentRepo) return;
     if (
@@ -736,6 +737,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
               body: pr.desc || "No description provided.",
               head: pr.source,
               base: pr.target,
+              draft: pr.isDraft || false,
             }),
           },
         );
@@ -766,7 +768,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         desc: pr.desc || "No description provided.",
         author: state.githubUser?.login || "User",
         time: "Just now",
-        status: "Open",
+        status: pr.isDraft ? "Draft" : "Open",
         avatar: state.githubUser?.avatar_url || "",
         hasConflicts: false,
         source: pr.source || "feature-branch",
