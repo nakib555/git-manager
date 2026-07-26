@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useAppContext } from '../AppContext';
-import { Search, Lock, Globe, Square, FolderGit2, Star, GitFork, Eye } from 'lucide-react';
+import { Search, Lock, Globe, Square, FolderGit2, Star, GitFork, Eye, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { AnimatedSearchIcon, AnimatedGlobe, AnimatedLock } from '../components/Layout';
 import { GitHubRepo } from '../types';
 import { useVirtualizer } from '@tanstack/react-virtual';
@@ -22,18 +22,32 @@ const getLanguageColor = (lang: string | null) => {
 };
 
 const formatTime = (dateStr: string) => {
+  if (!dateStr) return 'recently';
   const date = new Date(dateStr);
   const now = new Date();
   const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+  if (diffInHours < 0) return 'just now';
   if (diffInHours < 24) return `${diffInHours}h ago`;
   const diffInDays = Math.floor(diffInHours / 24);
   return `${diffInDays}d ago`;
 };
 
 export const Repositories: React.FC = () => {
-  const { openRepo, showToast, isSearchFocused, githubRepos } = useAppContext();
+  const { 
+    openRepo, 
+    showToast, 
+    isSearchFocused, 
+    githubRepos,
+    repoPage,
+    repoTotalPages,
+    setRepoPage,
+    repoSearchQuery,
+    setRepoSearchQuery,
+    isFetchingRepos
+  } = useAppContext();
+  
   const [filter, setFilter] = useState('All');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(repoSearchQuery);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -44,6 +58,26 @@ export const Repositories: React.FC = () => {
       }, 100);
     }
   }, [isSearchFocused]);
+
+  // Sync searchQuery from parent context initially
+  useEffect(() => {
+    setSearchQuery(repoSearchQuery);
+  }, [repoSearchQuery]);
+
+  // Debounce search query changes to the global state
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setRepoSearchQuery(searchQuery);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  // Scroll list to top when page changes
+  useEffect(() => {
+    if (parentRef.current) {
+      parentRef.current.scrollTop = 0;
+    }
+  }, [repoPage]);
 
   const displayRepos = githubRepos.map((repo: GitHubRepo) => {
     const lang = repo.language || 'Unknown';
@@ -66,7 +100,6 @@ export const Repositories: React.FC = () => {
   });
 
   const filteredRepos = displayRepos.filter(repo => {
-    if (searchQuery && !repo.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     if (filter === 'Private' && !repo.isPrivate) return false;
     if (filter === 'Public' && repo.isPrivate) return false;
     return true;
@@ -80,122 +113,180 @@ export const Repositories: React.FC = () => {
   });
 
   return (
-    <div className="animate-fade-up">
-      <div className="bg-card rounded-xl p-3 flex items-center gap-3 mb-4 border border-border">
-        <AnimatedSearchIcon size={20} className="text-text-muted" />
-        <input 
-          ref={searchInputRef}
-          type="text" 
-          placeholder="Search repositories..." 
-          className="bg-transparent border-none text-text-main w-full outline-none text-sm placeholder:text-text-muted"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-      </div>
-
-      <div className="flex gap-2 overflow-x-auto pb-4 no-scrollbar">
-        {['All', 'Private', 'Public'].map(f => (
-          <div 
-            key={f}
-            onClick={() => { setFilter(f); showToast(`Filtered by: ${f}`); }}
-            className={`border px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap cursor-pointer transition-colors duration-200 ${filter === f ? 'bg-primary/15 text-primary border-primary/40' : 'border-border text-text-muted'} flex items-center gap-1.5`}
-          >
-            {f === 'Public' && <AnimatedGlobe size={13} className={filter === f ? 'text-primary' : 'text-text-muted'} />}
-            {f === 'Private' && <AnimatedLock size={13} className={filter === f ? 'text-primary' : 'text-text-muted'} />}
-            <span>{f}</span>
-          </div>
-        ))}
-      </div>
-
-      <div>
-        {filteredRepos.length === 0 ? (
-          <div className="bg-card rounded-2xl p-8 border border-border text-center flex flex-col items-center justify-center my-4">
-            <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-3">
-              <FolderGit2 size={24} />
+    <div className="animate-fade-up flex flex-col justify-between h-[calc(100vh-130px)] max-h-[1000px]">
+      <div className="flex-1 overflow-hidden flex flex-col">
+        <div className="bg-card rounded-xl p-3 flex items-center gap-3 mb-4 border border-border shrink-0 relative">
+          <AnimatedSearchIcon size={20} className="text-text-muted" />
+          <input 
+            ref={searchInputRef}
+            type="text" 
+            placeholder="Search repositories..." 
+            className="bg-transparent border-none text-text-main w-full outline-none text-sm placeholder:text-text-muted pr-8"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {isFetchingRepos && (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+              <Loader2 size={16} className="text-primary animate-spin" />
             </div>
-            <p className="font-semibold text-sm mb-1 text-text-main">No repositories found</p>
-            <p className="text-xs text-text-muted max-w-[260px] leading-relaxed">
-              Create a new repository using the <strong>+</strong> button or connect your GitHub account to load your repositories.
-            </p>
-          </div>
-        ) : (
-          <div 
-            ref={parentRef} 
-            className="overflow-y-auto no-scrollbar"
-            style={{ height: 'calc(100vh - 250px)', width: '100%' }}
-          >
-            <div
-              style={{
-                height: `${rowVirtualizer.getTotalSize()}px`,
-                width: '100%',
-                position: 'relative',
-              }}
-            >
-              {rowVirtualizer.getVirtualItems().map((virtualItem) => {
-                const repo = filteredRepos[virtualItem.index];
-                if (!repo) return null;
-                const Icon = repo.icon;
-                return (
-                  <div
-                    key={virtualItem.key}
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      width: '100%',
-                      height: `${virtualItem.size}px`,
-                      transform: `translateY(${virtualItem.start}px)`,
-                      paddingBottom: '12px',
-                    }}
-                  >
-                    <div 
-                      className="bg-card p-4 rounded-2xl cursor-pointer transition-all duration-200 hover:-translate-y-0.5 active:scale-95 border border-border h-full flex flex-col justify-between"
-                      onClick={() => openRepo(repo.id, repo.owner)}
-                    >
-                      <div className="flex justify-between mb-2">
-                        <div className="text-[15px] font-semibold flex items-center gap-2.5 truncate">
-                          <div className={`w-8 h-8 rounded-lg ${repo.bg} ${repo.iconColor} flex items-center justify-center shrink-0`}>
-                            <Icon size={18} />
-                          </div>
-                          <span className="truncate">{repo.name}</span>
-                        </div>
-                        <div className="text-[10px] px-2 py-0.5 rounded-full border border-border text-text-muted flex items-center gap-1 h-fit shrink-0">
-                          {repo.isPrivate ? <AnimatedLock size={11} className="text-text-muted" /> : <AnimatedGlobe size={11} className="text-text-muted" />}
-                          <span>{repo.isPrivate ? 'Private' : 'Public'}</span>
-                        </div>
-                      </div>
-                      <div className="text-[13px] text-text-muted mb-3 truncate">{repo.desc}</div>
-                      
-                      {/* Repo Stats */}
-                      <div className="flex items-center gap-3.5 text-xs text-text-muted mb-3 border-t border-border/10 pt-2.5">
-                        <span className="flex items-center gap-1" title="Stars">
-                          <Star size={13} className="text-amber-500 fill-amber-500/10" />
-                          <span className="font-semibold text-text-main">{(repo as any).stars.toLocaleString()}</span>
-                        </span>
-                        <span className="flex items-center gap-1" title="Forks">
-                          <GitFork size={13} className="text-blue-500" />
-                          <span className="font-semibold text-text-main">{(repo as any).forks.toLocaleString()}</span>
-                        </span>
-                        <span className="flex items-center gap-1" title="Watching">
-                          <Eye size={13} className="text-emerald-500" />
-                          <span className="font-semibold text-text-main">{(repo as any).watching.toLocaleString()}</span>
-                        </span>
-                      </div>
+          )}
+        </div>
 
-                      <div className="flex justify-between text-xs text-text-muted mt-auto">
-                        <span className="flex items-center gap-1.5">
-                          <Square size={12} fill={repo.langColor} color={repo.langColor} /> {repo.lang}
-                        </span>
-                        <span>Updated {repo.updated}</span>
+        <div className="flex gap-2 overflow-x-auto pb-4 no-scrollbar shrink-0">
+          {['All', 'Private', 'Public'].map(f => (
+            <div 
+              key={f}
+              onClick={() => { setFilter(f); showToast(`Filtered by: ${f}`); }}
+              className={`border px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap cursor-pointer transition-colors duration-200 ${filter === f ? 'bg-primary/15 text-primary border-primary/40' : 'border-border text-text-muted'} flex items-center gap-1.5`}
+            >
+              {f === 'Public' && <AnimatedGlobe size={13} className={filter === f ? 'text-primary' : 'text-text-muted'} />}
+              {f === 'Private' && <AnimatedLock size={13} className={filter === f ? 'text-primary' : 'text-text-muted'} />}
+              <span>{f}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex-1 overflow-hidden relative">
+          {filteredRepos.length === 0 ? (
+            <div className="bg-card rounded-2xl p-8 border border-border text-center flex flex-col items-center justify-center my-4">
+              <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-3">
+                <FolderGit2 size={24} />
+              </div>
+              <p className="font-semibold text-sm mb-1 text-text-main">No repositories found</p>
+              <p className="text-xs text-text-muted max-w-[260px] leading-relaxed">
+                Create a new repository using the <strong>+</strong> button or connect your GitHub account to load your repositories.
+              </p>
+            </div>
+          ) : (
+            <div 
+              ref={parentRef} 
+              className={`overflow-y-auto no-scrollbar h-full w-full transition-opacity duration-200 ${isFetchingRepos ? 'opacity-60 pointer-events-none' : ''}`}
+            >
+              <div
+                style={{
+                  height: `${rowVirtualizer.getTotalSize()}px`,
+                  width: '100%',
+                  position: 'relative',
+                }}
+              >
+                {rowVirtualizer.getVirtualItems().map((virtualItem) => {
+                  const repo = filteredRepos[virtualItem.index];
+                  if (!repo) return null;
+                  const Icon = repo.icon;
+                  return (
+                    <div
+                      key={virtualItem.key}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: `${virtualItem.size}px`,
+                        transform: `translateY(${virtualItem.start}px)`,
+                        paddingBottom: '12px',
+                      }}
+                    >
+                      <div 
+                        className="bg-card p-4 rounded-2xl cursor-pointer transition-all duration-200 hover:-translate-y-0.5 active:scale-95 border border-border h-full flex flex-col justify-between"
+                        onClick={() => openRepo(repo.id, repo.owner)}
+                      >
+                        <div className="flex justify-between mb-2">
+                          <div className="text-[15px] font-semibold flex items-center gap-2.5 truncate">
+                            <div className={`w-8 h-8 rounded-lg ${repo.bg} ${repo.iconColor} flex items-center justify-center shrink-0`}>
+                              <Icon size={18} />
+                            </div>
+                            <span className="truncate">{repo.name}</span>
+                          </div>
+                          <div className="text-[10px] px-2 py-0.5 rounded-full border border-border text-text-muted flex items-center gap-1 h-fit shrink-0">
+                            {repo.isPrivate ? <AnimatedLock size={11} className="text-text-muted" /> : <AnimatedGlobe size={11} className="text-text-muted" />}
+                            <span>{repo.isPrivate ? 'Private' : 'Public'}</span>
+                          </div>
+                        </div>
+                        <div className="text-[13px] text-text-muted mb-3 truncate">{repo.desc}</div>
+                        
+                        {/* Repo Stats */}
+                        <div className="flex items-center gap-3.5 text-xs text-text-muted mb-3 border-t border-border/10 pt-2.5">
+                          <span className="flex items-center gap-1" title="Stars">
+                            <Star size={13} className="text-amber-500 fill-amber-500/10" />
+                            <span className="font-semibold text-text-main">{(repo as any).stars.toLocaleString()}</span>
+                          </span>
+                          <span className="flex items-center gap-1" title="Forks">
+                            <GitFork size={13} className="text-blue-500" />
+                            <span className="font-semibold text-text-main">{(repo as any).forks.toLocaleString()}</span>
+                          </span>
+                          <span className="flex items-center gap-1" title="Watching">
+                            <Eye size={13} className="text-emerald-500" />
+                            <span className="font-semibold text-text-main">{(repo as any).watching.toLocaleString()}</span>
+                          </span>
+                        </div>
+
+                        <div className="flex justify-between text-xs text-text-muted mt-auto">
+                          <span className="flex items-center gap-1.5">
+                            <Square size={12} fill={repo.langColor} color={repo.langColor} /> {repo.lang}
+                          </span>
+                          <span>Updated {repo.updated}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
+
+      {/* Pagination Footer */}
+      {repoTotalPages > 1 && (
+        <div className="shrink-0 flex items-center justify-between py-3 mt-1 border-t border-border bg-background">
+          <div className="text-xs text-text-muted">
+             Page {repoPage} of {repoTotalPages}
+          </div>
+          <div className="flex items-center gap-1">
+            <button 
+              onClick={() => setRepoPage(repoPage - 1)}
+              disabled={repoPage === 1 || isFetchingRepos}
+              className="p-1.5 rounded-lg border border-border text-text-main disabled:opacity-30 disabled:cursor-not-allowed hover:bg-hover/10 transition-colors"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <div className="flex items-center gap-1 mx-1">
+               {[...Array(repoTotalPages)].map((_, i) => {
+                 const pageNum = i + 1;
+                 if (
+                   pageNum === 1 || 
+                   pageNum === repoTotalPages || 
+                   (pageNum >= repoPage - 1 && pageNum <= repoPage + 1)
+                 ) {
+                   return (
+                     <button
+                       key={pageNum}
+                       onClick={() => setRepoPage(pageNum)}
+                       disabled={isFetchingRepos}
+                       className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs transition-colors disabled:opacity-50 ${repoPage === pageNum ? 'bg-primary text-white font-bold' : 'text-text-main hover:bg-hover/10'}`}
+                     >
+                       {pageNum}
+                     </button>
+                   );
+                 } else if (
+                   pageNum === repoPage - 2 || 
+                   pageNum === repoPage + 2
+                 ) {
+                   return <span key={pageNum} className="text-text-muted text-xs">...</span>;
+                 }
+                 return null;
+               })}
+            </div>
+            <button 
+              onClick={() => setRepoPage(repoPage + 1)}
+              disabled={repoPage === repoTotalPages || isFetchingRepos}
+              className="p-1.5 rounded-lg border border-border text-text-main disabled:opacity-30 disabled:cursor-not-allowed hover:bg-hover/10 transition-colors"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

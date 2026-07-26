@@ -10,11 +10,11 @@ import { CloneScreen } from '../screens/CloneScreen';
 import { 
   Search, Lock, Globe, Square, FolderGit2, Folder, GitBranch, 
   GitPullRequest, GitCommit, Check, Key, ExternalLink, ShieldAlert, 
-  User, Moon, Sun, ChevronRight, Github, Cloud, KeySquare, Bell, 
+  User, Moon, Sun, ChevronRight, ChevronLeft, Github, Cloud, KeySquare, Bell, 
   Sliders, ArrowLeft, MoreVertical, Activity, Grid, Home, Eye, 
   EyeOff, RefreshCw, ChevronDown, BookOpen, Clock, FileText, 
   FileCode, Terminal, HelpCircle, Edit2, Trash2, Undo, Tag, RotateCcw,
-  AlertCircle, HardDrive, X, Star, GitFork, AlertTriangle
+  AlertCircle, HardDrive, X, Star, GitFork, AlertTriangle, Loader2
 } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 
@@ -40,11 +40,19 @@ export const DesktopLayout: React.FC = () => {
   const { 
     currentScreen, currentRepo, navigate, githubUser, githubRepos, 
     disconnectGitHub, theme, toggleTheme, connectGitHub, openModal,
-    toastMessage, githubToken
+    toastMessage, githubToken, setRepoSearchQuery, isFetchingRepos
   } = useAppContext();
 
   const [searchFocused, setSearchFocused] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
+
+  // Debounce globalSearch changes to global state if on repositories page
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setRepoSearchQuery(globalSearch);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [globalSearch]);
 
   // Handle active sub-tab for Repository details screen
   const isRepoScreen = ['files', 'commits', 'branches', 'insights', 'prs', 'clone'].includes(currentScreen);
@@ -191,17 +199,22 @@ export const DesktopLayout: React.FC = () => {
         {/* Header bar */}
         <header className="h-16 px-8 border-b border-border flex items-center justify-between shrink-0 bg-card/40 backdrop-blur-md">
           {/* Top Search bar */}
-          <div className={`w-80 bg-card border rounded-xl px-3 py-2 flex items-center gap-2.5 transition-all duration-200 ${searchFocused ? 'border-primary ring-4 ring-primary/10' : 'border-border'}`}>
+          <div className={`w-80 bg-card border rounded-xl px-3 py-2 flex items-center gap-2.5 transition-all duration-200 relative ${searchFocused ? 'border-primary ring-4 ring-primary/10' : 'border-border'}`}>
             <Search size={16} className="text-text-muted" />
             <input 
               type="text" 
               placeholder="Search workspaces, repos..." 
-              className="bg-transparent border-none text-xs text-text-main w-full outline-none placeholder:text-text-muted"
+              className="bg-transparent border-none text-xs text-text-main w-full outline-none placeholder:text-text-muted pr-6"
               value={globalSearch}
               onChange={(e) => setGlobalSearch(e.target.value)}
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setSearchFocused(false)}
             />
+            {isFetchingRepos && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <Loader2 size={13} className="text-primary animate-spin" />
+              </div>
+            )}
           </div>
 
           {/* Right Action Widgets */}
@@ -804,12 +817,36 @@ const DesktopDashboard: React.FC<{ globalSearch: string }> = ({ globalSearch }) 
  * 2. DESKTOP REPOSITORIES EXPLORER (THREE-PANE SPLIT WORKSPACE)
  */
 const DesktopRepositories: React.FC<{ globalSearch: string }> = ({ globalSearch }) => {
-  const { openRepo, githubRepos, openModal } = useAppContext();
+  const { 
+    openRepo, 
+    githubRepos, 
+    openModal,
+    repoPage,
+    repoTotalPages,
+    setRepoPage,
+    repoSearchQuery,
+    setRepoSearchQuery,
+    isFetchingRepos
+  } = useAppContext();
+  
   const [filter, setFilter] = useState<'All' | 'Private' | 'Public'>('All');
-  const [localSearch, setLocalSearch] = useState('');
+  const [localSearch, setLocalSearch] = useState(repoSearchQuery);
   const [selectedRepoId, setSelectedRepoId] = useState<string | null>(null);
 
   const searchVal = globalSearch || localSearch;
+
+  // Sync state initially
+  useEffect(() => {
+    setLocalSearch(repoSearchQuery);
+  }, [repoSearchQuery]);
+
+  // Debounce changes to global query
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setRepoSearchQuery(localSearch);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [localSearch]);
 
   const displayRepos = githubRepos.map(repo => {
     const lang = repo.language || 'Unknown';
@@ -821,7 +858,7 @@ const DesktopRepositories: React.FC<{ globalSearch: string }> = ({ globalSearch 
       desc: repo.description || 'No description provided.',
       lang,
       langColor: getLanguageColor(lang),
-      updated: new Date(repo.pushed_at).toLocaleDateString(),
+      updated: new Date(repo.pushed_at || Date.now()).toLocaleDateString(),
       stars: repo.stargazers_count || 0,
       forks: repo.forks_count || 0,
       watching: repo.watchers_count || 0,
@@ -829,7 +866,6 @@ const DesktopRepositories: React.FC<{ globalSearch: string }> = ({ globalSearch 
   });
 
   const filteredRepos = displayRepos.filter(repo => {
-    if (searchVal && !repo.name.toLowerCase().includes(searchVal.toLowerCase())) return false;
     if (filter === 'Private' && !repo.isPrivate) return false;
     if (filter === 'Public' && repo.isPrivate) return false;
     return true;
@@ -858,16 +894,21 @@ const DesktopRepositories: React.FC<{ globalSearch: string }> = ({ globalSearch 
         {/* Left column: Repository navigator list */}
         <div className="w-96 border-r border-border flex flex-col h-full bg-hover/5 shrink-0">
           <div className="p-4 border-b border-border space-y-3 shrink-0">
-            {/* Inline search box */}
-            <div className="bg-card border border-border rounded-xl px-3 py-2 flex items-center gap-2.5">
+            {/* Inline search box with loader */}
+            <div className="bg-card border border-border rounded-xl px-3 py-2 flex items-center gap-2.5 relative">
               <Search size={15} className="text-text-muted" />
               <input 
                 type="text" 
                 placeholder="Search database..." 
-                className="bg-transparent border-none text-xs text-text-main w-full outline-none placeholder:text-text-muted"
+                className="bg-transparent border-none text-xs text-text-main w-full outline-none placeholder:text-text-muted pr-6"
                 value={localSearch}
                 onChange={(e) => setLocalSearch(e.target.value)}
               />
+              {isFetchingRepos && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <Loader2 size={13} className="text-primary animate-spin" />
+                </div>
+              )}
             </div>
 
             {/* Filter buttons */}
@@ -885,7 +926,7 @@ const DesktopRepositories: React.FC<{ globalSearch: string }> = ({ globalSearch 
           </div>
 
           {/* Scrollable Repo List */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-2 no-scrollbar">
+          <div className={`flex-1 overflow-y-auto p-3 space-y-2 no-scrollbar transition-opacity duration-200 ${isFetchingRepos ? 'opacity-60 pointer-events-none' : ''}`}>
             {filteredRepos.length === 0 ? (
               <div className="py-12 flex flex-col items-center justify-center text-center">
                 <FolderGit2 size={24} className="text-text-muted mb-2" />
@@ -938,6 +979,58 @@ const DesktopRepositories: React.FC<{ globalSearch: string }> = ({ globalSearch 
               })
             )}
           </div>
+
+          {/* Desktop Pagination Footer */}
+          {repoTotalPages > 1 && (
+            <div className="shrink-0 flex items-center justify-between p-3 border-t border-border bg-card">
+              <div className="text-[10px] text-text-muted">
+                 Page {repoPage} of {repoTotalPages}
+              </div>
+              <div className="flex items-center gap-1">
+                <button 
+                  onClick={() => setRepoPage(repoPage - 1)}
+                  disabled={repoPage === 1 || isFetchingRepos}
+                  className="p-1 rounded-md border border-border text-text-main disabled:opacity-30 disabled:cursor-not-allowed hover:bg-hover/15 transition-colors"
+                >
+                  <ChevronLeft size={13} />
+                </button>
+                <div className="flex items-center gap-0.5">
+                   {[...Array(repoTotalPages)].map((_, i) => {
+                     const pageNum = i + 1;
+                     if (
+                       pageNum === 1 || 
+                       pageNum === repoTotalPages || 
+                       (pageNum >= repoPage - 1 && pageNum <= repoPage + 1)
+                     ) {
+                       return (
+                         <button
+                           key={pageNum}
+                           onClick={() => setRepoPage(pageNum)}
+                           disabled={isFetchingRepos}
+                           className={`w-5 h-5 flex items-center justify-center rounded text-[10px] transition-colors disabled:opacity-50 ${repoPage === pageNum ? 'bg-primary text-white font-bold' : 'text-text-main hover:bg-hover/15'}`}
+                         >
+                           {pageNum}
+                         </button>
+                       );
+                     } else if (
+                       pageNum === repoPage - 2 || 
+                       pageNum === repoPage + 2
+                     ) {
+                       return <span key={pageNum} className="text-text-muted text-[10px]">..</span>;
+                     }
+                     return null;
+                   })}
+                </div>
+                <button 
+                  onClick={() => setRepoPage(repoPage + 1)}
+                  disabled={repoPage === repoTotalPages || isFetchingRepos}
+                  className="p-1 rounded-md border border-border text-text-main disabled:opacity-30 disabled:cursor-not-allowed hover:bg-hover/15 transition-colors"
+                >
+                  <ChevronRight size={13} />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right column: Selected Repository Details Inspector */}

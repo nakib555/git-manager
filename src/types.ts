@@ -38,6 +38,11 @@ export interface AppState {
   githubToken: string | null;
   githubUser: GitHubUser | null;
   githubRepos: GitHubRepo[];
+  repoPage: number;
+  repoPerPage: number;
+  repoTotalPages: number;
+  repoSearchQuery: string;
+  isFetchingRepos: boolean;
   
   // Repo details state
   activeCommits: any[];
@@ -54,6 +59,8 @@ export interface AppState {
 export type AppContextType = AppState & {
   navigate: (screen: Screen) => void;
   openRepo: (repoName: string, owner?: string | null) => void;
+  setRepoPage: (page: number) => void;
+  setRepoSearchQuery: (query: string) => void;
   switchBranch: (branchName: string) => Promise<void>;
   openActionSheet: () => void;
   closeActionSheet: () => void;

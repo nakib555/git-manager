@@ -76,6 +76,11 @@ const defaultState: AppState = {
   githubToken: localStorage.getItem("githubToken") || null,
   githubUser: localStorage.getItem("githubUser") ? sanitizeGitHubUser(JSON.parse(localStorage.getItem("githubUser")!)) : null,
   githubRepos: getLocalRepos(),
+  repoPage: 1,
+  repoPerPage: 15,
+  repoTotalPages: 1,
+  repoSearchQuery: "",
+  isFetchingRepos: false,
   activeCommits: getLocalRepoDetails(localStorage.getItem("currentRepo") || "", "commits"),
   activePRs: getLocalRepoDetails(localStorage.getItem("currentRepo") || "", "prs"),
   activeBranches: getLocalRepoDetails(localStorage.getItem("currentRepo") || "", "branches"),
@@ -213,56 +218,128 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
       console.error("Error fetching public fallback repos:", error);
     }
   };
-  const fetchGitHubData = async (token: string, isBackground = false) => {
+  const fetchGitHubData = async (
+    token: string, 
+    isBackground = false, 
+    pageOverride?: number, 
+    searchOverride?: string
+  ) => {
+    const page = pageOverride !== undefined ? pageOverride : state.repoPage;
+    const perPage = state.repoPerPage;
+    const searchQuery = searchOverride !== undefined ? searchOverride : state.repoSearchQuery;
+
+    if (!isBackground) {
+      setState(prev => ({ ...prev, isFetchingRepos: true }));
+    }
     try {
-      console.log("Fetching GitHub user data with token:", token.substring(0, 4) + "...");
+      console.log("Fetching GitHub data with token:", token.substring(0, 4) + "...");
       const headers = {
         Authorization: `Bearer ${token}`,
         Accept: "application/vnd.github.v3+json",
       };
-      // Fetch user profile
-      const userRes = await fetch("https://api.github.com/user", { headers });
-      console.log("GitHub user profile response status:", userRes.status);
-      if (!userRes.ok) {
-        let errorMsg = `Status ${userRes.status}`;
-        try {
-          const errBody = await userRes.json();
-          console.error("GitHub user profile error response:", errBody);
-          if (errBody.message) {
-            errorMsg = errBody.message;
+
+      // 1. Fetch user profile (only if not already loaded)
+      let sanitizedUser = state.githubUser;
+      if (!sanitizedUser) {
+        const userRes = await fetch("https://api.github.com/user", { headers });
+        console.log("GitHub user profile response status:", userRes.status);
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          sanitizedUser = sanitizeGitHubUser(userData);
+          console.log("GitHub user data fetched successfully", sanitizedUser?.login);
+          if (sanitizedUser) {
+            localStorage.setItem("githubUser", JSON.stringify(sanitizedUser));
           }
-        } catch (_) {}
-        throw new Error(`Profile: ${errorMsg}`);
+        } else if (!isBackground) {
+          let errorMsg = `Status ${userRes.status}`;
+          try {
+            const errBody = await userRes.json();
+            if (errBody.message) errorMsg = errBody.message;
+          } catch (_) {}
+          throw new Error(`Profile: ${errorMsg}`);
+        }
       }
-      const userData = await userRes.json();
-      const sanitizedUser = sanitizeGitHubUser(userData);
-      console.log("GitHub user data fetched successfully", sanitizedUser?.login);
-      if (sanitizedUser) {
-        localStorage.setItem("githubUser", JSON.stringify(sanitizedUser));
-      }
-      // Fetch user repos
-      const reposRes = await fetch(
-        "https://api.github.com/user/repos?sort=updated&per_page=20",
-        { headers },
-      );
-      console.log("GitHub user repos response status:", reposRes.status);
-      if (!reposRes.ok) {
-        let errorMsg = `Status ${reposRes.status}`;
-        try {
-          const errBody = await reposRes.json();
-          console.error("GitHub user repos error response:", errBody);
-          if (errBody.message) {
-            errorMsg = errBody.message;
+
+      const username = sanitizedUser?.login;
+
+      // 2. Fetch user repos (either via search API or standard list repos API)
+      let reposData: GitHubRepo[] = [];
+      let totalPages = 1;
+
+      if (searchQuery && username) {
+        console.log(`Searching GitHub repos for user ${username} with query "${searchQuery}" on page ${page}...`);
+        const searchUrl = `https://api.github.com/search/repositories?q=user:${username}+${encodeURIComponent(searchQuery)}&sort=updated&per_page=${perPage}&page=${page}`;
+        const searchRes = await fetch(searchUrl, { headers });
+        console.log("GitHub repos search response status:", searchRes.status);
+        if (!searchRes.ok) {
+          let errorMsg = `Status ${searchRes.status}`;
+          try {
+            const errBody = await searchRes.json();
+            if (errBody.message) errorMsg = errBody.message;
+          } catch (_) {}
+          throw new Error(`Search Repositories: ${errorMsg}`);
+        }
+        const searchData = await searchRes.json();
+        reposData = searchData.items || [];
+        const totalCount = searchData.total_count || 0;
+        totalPages = Math.max(1, Math.ceil(totalCount / perPage));
+      } else {
+        console.log(`Fetching GitHub repos on page ${page}...`);
+        const reposUrl = `https://api.github.com/user/repos?sort=updated&per_page=${perPage}&page=${page}`;
+        const reposRes = await fetch(reposUrl, { headers });
+        console.log("GitHub user repos response status:", reposRes.status);
+        if (!reposRes.ok) {
+          let errorMsg = `Status ${reposRes.status}`;
+          try {
+            const errBody = await reposRes.json();
+            if (errBody.message) errorMsg = errBody.message;
+          } catch (_) {}
+          throw new Error(`Repositories: ${errorMsg}`);
+        }
+        reposData = await reposRes.json();
+
+        // Parse Link header for total pages
+        const linkHeader = reposRes.headers.get("link");
+        if (linkHeader) {
+          const match = linkHeader.match(/&page=(\d+)>; rel="last"/);
+          if (match) {
+            totalPages = parseInt(match[1], 10);
+          } else {
+            const nextMatch = linkHeader.match(/&page=(\d+)>; rel="next"/);
+            if (!nextMatch) {
+              totalPages = page;
+            } else {
+              totalPages = page + 1;
+            }
           }
-        } catch (_) {}
-        throw new Error(`Repositories: ${errorMsg}`);
+        } else {
+          totalPages = 1;
+        }
       }
-      const reposData = await reposRes.json();
-      console.log(`Fetched ${reposData.length} GitHub repositories`);
+
+      console.log(`Fetched ${reposData.length} GitHub repositories for page ${page}. Total pages calculated: ${totalPages}`);
+
+      // 3. Merge local repositories (created/cloned locally) on page 1
+      const localRepos = getLocalRepos();
+      const filteredLocal = searchQuery
+        ? localRepos.filter(r => r.name.toLowerCase().includes(searchQuery.toLowerCase()))
+        : localRepos;
+
+      const mergedRepos = [...reposData];
+      if (page === 1) {
+        for (const local of filteredLocal) {
+          if (!mergedRepos.some(r => r.name === local.name)) {
+            mergedRepos.unshift(local);
+          }
+        }
+      }
+
       setState((prev) => ({
         ...prev,
         githubUser: sanitizedUser,
-        githubRepos: reposData,
+        githubRepos: mergedRepos,
+        repoTotalPages: totalPages,
+        isFetchingRepos: false,
       }));
     } catch (error: any) {
       if (error instanceof TypeError && error.message === 'Failed to fetch') {
@@ -273,10 +350,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
           showToast(`Error loading GitHub data: ${error.message || error}`);
         }
       }
-      // If unauthorized, the token might be invalid or revoked
-      if (error.message?.includes("401") || error.message?.includes("Bad credentials")) {
-        console.warn("GitHub token seems invalid or expired. Consider clearing it.");
-      }
+      setState(prev => ({ ...prev, isFetchingRepos: false }));
     }
   };
   const fetchRepoDetails = async (repoName: string, owner: string, isBackground = false, branchOverride?: string) => {
@@ -549,11 +623,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
   }, []);
   useEffect(() => {
     if (state.githubToken) {
-      fetchGitHubData(state.githubToken);
+      fetchGitHubData(state.githubToken, false, state.repoPage, state.repoSearchQuery);
     } else {
       fetchPublicFallbackRepos();
     }
-  }, [state.githubToken, refreshTrigger]);
+  }, [state.githubToken, state.repoPage, state.repoSearchQuery, refreshTrigger]);
   useEffect(() => {
     if (state.currentRepo) {
       const owner = state.currentRepoOwner || (state.githubToken && state.githubUser?.login ? state.githubUser.login : null);
@@ -599,6 +673,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
   const navigate = (screen: Screen) => {
     localStorage.setItem("currentScreen", screen);
     setState((prev) => ({ ...prev, currentScreen: screen }));
+  };
+  const setRepoPage = (page: number) => {
+    setState((prev) => ({ ...prev, repoPage: page }));
+  };
+  const setRepoSearchQuery = (query: string) => {
+    setState((prev) => ({ ...prev, repoSearchQuery: query, repoPage: 1 }));
   };
   const openRepo = (repoName: string, owner: string | null = null) => {
     setState((prev) => {
@@ -1402,6 +1482,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         ...state,
         navigate,
         openRepo,
+        setRepoPage,
+        setRepoSearchQuery,
         switchBranch,
         openActionSheet,
         closeActionSheet,
