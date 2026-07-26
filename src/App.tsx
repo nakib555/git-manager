@@ -14,10 +14,12 @@ import { RepoDetails } from './screens/RepoDetails';
 import { CloneScreen } from './screens/CloneScreen';
 import { Settings } from './screens/Settings';
 
+import { UnauthenticatedState } from './components/UnauthenticatedState';
+
 const queryClient = new QueryClient();
 
 const MainApp = () => {
-  const { currentScreen } = useAppContext();
+  const { currentScreen, githubToken } = useAppContext();
   const isDesktop = useIsDesktop();
 
   return (
@@ -27,14 +29,22 @@ const MainApp = () => {
       ) : (
         <>
           <Header />
-          <RepoTabs />
-          <PullToRefresh>
-            {currentScreen === 'dash' && <Dashboard />}
-            {currentScreen === 'repos' && <Repositories />}
-            {['commits', 'prs', 'branches', 'files', 'insights'].includes(currentScreen) && <RepoDetails />}
-            {currentScreen === 'clone' && <CloneScreen />}
-            {currentScreen === 'settings' && <Settings />}
-          </PullToRefresh>
+          {!githubToken && currentScreen !== 'settings' ? (
+            <PullToRefresh>
+              <UnauthenticatedState />
+            </PullToRefresh>
+          ) : (
+            <>
+              <RepoTabs />
+              <PullToRefresh>
+                {currentScreen === 'dash' && <Dashboard />}
+                {currentScreen === 'repos' && <Repositories />}
+                {['commits', 'prs', 'branches', 'files', 'insights'].includes(currentScreen) && <RepoDetails />}
+                {currentScreen === 'clone' && <CloneScreen />}
+                {currentScreen === 'settings' && <Settings />}
+              </PullToRefresh>
+            </>
+          )}
           <BottomNav />
           <ActionSheet />
           <NotificationDrawer />

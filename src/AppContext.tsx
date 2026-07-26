@@ -322,16 +322,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
       }
       // 1. Fetch Commits
       let activeBranch = branchOverride;
-      if (!activeBranch) {
-        // Try to get default branch
-        try {
-          const repoRes = await fetch(`https://api.github.com/repos/${owner}/${repoName}`, { headers });
-          if (repoRes.ok) {
-            const repoData = await repoRes.json();
+      let actualDefaultBranch = "";
+      try {
+        const repoRes = await fetch(`https://api.github.com/repos/${owner}/${repoName}`, { headers });
+        if (repoRes.ok) {
+          const repoData = await repoRes.json();
+          actualDefaultBranch = repoData.default_branch;
+          if (!activeBranch) {
             activeBranch = repoData.default_branch;
           }
-        } catch (e) {}
-      }
+        }
+      } catch (e) {}
+      if (!actualDefaultBranch) actualDefaultBranch = "main";
       if (!activeBranch) activeBranch = "main";
       
       console.log(`Fetching commits for ${owner}/${repoName} on branch ${activeBranch}...`);
@@ -387,7 +389,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         branchesData = rawBranches.map((b: any) => ({
           name: b.name,
           desc: `Branch head: ${b.commit.sha.substring(0, 7)}`,
-          isDefault: b.name === activeBranch,
+          isDefault: b.name === actualDefaultBranch,
           borderColor:
             b.name === activeBranch
               ? "#38BDF8"
@@ -564,7 +566,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         fetchRepoDetails(state.currentRepo, resolvedOwner, false, targetBranch);
       }
     }
-  }, [state.currentRepo, state.githubToken, state.currentRepoOwner, refreshTrigger]);
+  }, [state.currentRepo, state.githubToken, state.currentRepoOwner, state.currentBranch, refreshTrigger]);
   useEffect(() => {
     let timer: any;
     if (state.githubToken) {
@@ -581,7 +583,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
             fetchRepoDetails(state.currentRepo, resolvedOwner, true, targetBranch);
           }
         }
-      }, 1000);
+      }, 15000);
     }
     return () => {
       if (timer) clearInterval(timer);
@@ -591,7 +593,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
     state.currentRepo,
     state.currentRepoOwner,
     state.githubUser?.login,
-    state.githubRepos
+    state.githubRepos,
+    state.currentBranch
   ]);
   const navigate = (screen: Screen) => {
     localStorage.setItem("currentScreen", screen);
@@ -615,10 +618,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
     });
   };
   const switchBranch = async (branchName: string) => {
-    if (!state.currentRepo || !state.currentRepoOwner) return;
+    if (!state.currentRepo) return;
+    
+    // Resolve owner
+    let owner = state.currentRepoOwner;
+    if (!owner) {
+      if (state.githubToken && state.githubUser?.login) {
+        owner = state.githubUser.login;
+      } else {
+        const matchedRepo = state.githubRepos.find(r => r.name === state.currentRepo);
+        owner = (matchedRepo as any)?.owner?.login || 'facebook';
+      }
+    }
+
     localStorage.setItem("currentBranch", branchName);
     setState((prev) => ({ ...prev, currentBranch: branchName }));
-    await fetchRepoDetails(state.currentRepo, state.currentRepoOwner, false, branchName);
+    await fetchRepoDetails(state.currentRepo, owner, false, branchName);
   };
   const openActionSheet = () =>
     setState((prev) => ({ ...prev, isActionSheetOpen: true }));
@@ -1054,22 +1069,62 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
       showToast(`Failed to open Pull Request: ${error.message || error}`);
     }
   };
-  const updateLocalPRStatus = (prId: number, status: 'Open' | 'Merged' | 'Closed') => {
-    if (!state.currentRepo) return;
-    const key = `local_details_${state.currentRepo}_prs`;
-    const current = getLocalRepoDetails(state.currentRepo, "prs");
-    const updated = current.map((item: any) => {
-      if (item.id === prId) {
-        return { ...item, status };
+  const updateLocalPRStatus = async (
+    prId: number,
+    status: 'Open' | 'Merged' | 'Closed',
+    strategy: 'merge' | 'squash' = 'merge'
+  ) => {
+    if (!state.currentRepo || !state.currentRepoOwner) {
+      showToast("Repository details are missing.");
+      return;
+    }
+    if (!state.githubToken) {
+      showToast("GitHub authentication is required.");
+      return;
+    }
+    const token = state.githubToken;
+    const owner = state.currentRepoOwner;
+    const repo = state.currentRepo;
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      Accept: "application/vnd.github.v3+json",
+    };
+
+    try {
+      if (status === 'Merged') {
+        const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/pulls/${prId}/merge`, {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify({
+            merge_method: strategy
+          })
+        });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.message || `Status ${res.status}`);
+        }
+        showToast(`Successfully merged Pull Request #${prId}!`);
+      } else {
+        const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/pulls/${prId}`, {
+          method: 'PATCH',
+          headers,
+          body: JSON.stringify({
+            state: status === 'Closed' ? 'closed' : 'open'
+          })
+        });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.message || `Status ${res.status}`);
+        }
+        showToast(`Pull Request #${prId} set to ${status}!`);
       }
-      return item;
-    });
-    localStorage.setItem(key, JSON.stringify(updated));
-    setState((prev) => ({
-      ...prev,
-      activePRs: updated,
-    }));
-    showToast(`Pull Request #${prId} is now ${status}!`);
+      await fetchRepoDetails(repo, owner);
+    } catch (error: any) {
+      console.error("Error updating pull request status on GitHub:", error);
+      showToast(`Failed to update Pull Request: ${error.message || error}`);
+      throw error;
+    }
   };
   const createLocalCommit = async (commit: {
     msg: string;

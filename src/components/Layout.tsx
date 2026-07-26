@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useAppContext } from '../AppContext';
 import { Menu, Bell, Plus, ArrowLeft, ChevronDown, MoreVertical, Folder, Activity, Search, Grid, Home, GitBranch, ChevronLeft, HardDrive } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -188,8 +188,28 @@ export const Header: React.FC = () => {
 };
 
 export const RepoTabs: React.FC = () => {
-  const { currentScreen, navigate, currentRepo, openModal } = useAppContext();
+  const { currentScreen, navigate, currentRepo } = useAppContext();
   const isRepoScreen = ['files', 'commits', 'branches', 'insights', 'prs'].includes(currentScreen);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const activeTabRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isRepoScreen && containerRef.current && activeTabRef.current) {
+      const container = containerRef.current;
+      const activeTab = activeTabRef.current;
+      
+      const containerWidth = container.offsetWidth;
+      const tabLeft = activeTab.offsetLeft;
+      const tabWidth = activeTab.offsetWidth;
+      
+      const targetScrollLeft = tabLeft - (containerWidth / 2) + (tabWidth / 2);
+      
+      container.scrollTo({
+        left: targetScrollLeft,
+        behavior: 'smooth'
+      });
+    }
+  }, [currentScreen, isRepoScreen]);
 
   if (!isRepoScreen || !currentRepo) return null;
 
@@ -202,19 +222,30 @@ export const RepoTabs: React.FC = () => {
   ] as const;
 
   return (
-    <div className="flex-shrink-0 flex gap-4 overflow-x-auto px-5 pb-3 border-b border-border mb-4 no-scrollbar">
-      {tabs.map(tab => (
-        <div 
-          key={tab.id}
-          className={`text-[13px] font-medium whitespace-nowrap pb-2 relative cursor-pointer transition-colors duration-200 ${currentScreen === tab.id ? 'text-primary' : 'text-text-muted'}`}
-          onClick={() => navigate(tab.id as any)}
-        >
-          {tab.label}
-          {currentScreen === tab.id && (
-            <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-sm"></div>
-          )}
-        </div>
-      ))}
+    <div 
+      ref={containerRef}
+      className="flex-shrink-0 flex gap-4 overflow-x-auto px-5 pb-3 border-b border-border mb-4 no-scrollbar scroll-smooth"
+    >
+      {tabs.map(tab => {
+        const isActive = currentScreen === tab.id;
+        return (
+          <div 
+            key={tab.id}
+            ref={isActive ? activeTabRef : null}
+            className={`text-[13px] font-bold whitespace-nowrap pb-2 relative cursor-pointer transition-colors duration-200 select-none ${isActive ? 'text-primary' : 'text-text-muted hover:text-text-main'}`}
+            onClick={() => navigate(tab.id as any)}
+          >
+            {tab.label}
+            {isActive && (
+              <motion.div 
+                layoutId="repoActiveTabUnderline" 
+                className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-sm"
+                transition={{ type: "spring", stiffness: 380, damping: 28 }}
+              />
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 };

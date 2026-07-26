@@ -515,24 +515,7 @@ export default function App() {
             if (errData.error) errMsg = errData.error;
           } catch (_) {}
           
-          console.warn('Live GitHub download failed, falling back to workspace package generator:', errMsg);
-          showToast('Notice: Generating workspace bundle as fallback for repository.');
-          await downloadRepoFiles(repo, checkoutBranch);
-          
-          cloneRepository({
-            url: url.trim(),
-            destFolder: `/Storage/Projects/GitManager/${repo}`,
-            branch: checkoutBranch,
-            shallow: cloneType === 'shallow',
-            submodules: cloneSubmodules
-          });
-
-          setProgress(100);
-          setTimeout(() => {
-            setStep('success');
-            showToast(`Cloned and generated workspace package for ${repo}!`);
-          }, 600);
-          return;
+          throw new Error(errMsg);
         }
       }
 

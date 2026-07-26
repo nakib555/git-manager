@@ -14,9 +14,11 @@ import {
   Sliders, ArrowLeft, MoreVertical, Activity, Grid, Home, Eye, 
   EyeOff, RefreshCw, ChevronDown, BookOpen, Clock, FileText, 
   FileCode, Terminal, HelpCircle, Edit2, Trash2, Undo, Tag, RotateCcw,
-  AlertCircle, HardDrive, X, Star, GitFork
+  AlertCircle, HardDrive, X, Star, GitFork, AlertTriangle
 } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
+
+import { UnauthenticatedState } from './UnauthenticatedState';
 
 const getLanguageColor = (lang: string | null) => {
   if (!lang) return '#8F8F9D';
@@ -243,17 +245,23 @@ export const DesktopLayout: React.FC = () => {
 
         {/* Content Viewport */}
         <div className="flex-1 overflow-hidden p-8 relative min-h-0 flex flex-col">
-          {currentScreen === 'dash' && (
-            <div className="flex-1 overflow-y-auto pr-1 no-scrollbar">
-              <DesktopDashboard globalSearch={globalSearch} />
-            </div>
-          )}
-          {currentScreen === 'repos' && <DesktopRepositories globalSearch={globalSearch} />}
-          {isRepoScreen && <DesktopRepoWorkspace />}
-          {currentScreen === 'settings' && (
-            <div className="flex-1 overflow-y-auto pr-1 no-scrollbar">
-              <DesktopSettings />
-            </div>
+          {!githubToken && currentScreen !== 'settings' ? (
+            <UnauthenticatedState />
+          ) : (
+            <>
+              {currentScreen === 'dash' && (
+                <div className="flex-1 overflow-y-auto pr-1 no-scrollbar">
+                  <DesktopDashboard globalSearch={globalSearch} />
+                </div>
+              )}
+              {currentScreen === 'repos' && <DesktopRepositories globalSearch={globalSearch} />}
+              {isRepoScreen && <DesktopRepoWorkspace />}
+              {currentScreen === 'settings' && (
+                <div className="flex-1 overflow-y-auto pr-1 no-scrollbar">
+                  <DesktopSettings />
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>
@@ -1571,7 +1579,7 @@ const DesktopCommitsView: React.FC = () => {
 const DesktopBranchesView: React.FC = () => {
   const { activeBranches, openModal, deleteBranch, switchBranch, currentBranch } = useAppContext();
   const [search, setSearch] = useState('');
-  const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
+  const [branchToDelete, setBranchToDelete] = useState<string | null>(null);
 
   const filtered = activeBranches.filter(b => b.name.toLowerCase().includes(search.toLowerCase()));
 
@@ -1607,13 +1615,11 @@ const DesktopBranchesView: React.FC = () => {
             <div 
               key={branch.name}
               onClick={() => {
-                if (confirmingDelete !== branch.name) {
-                  switchBranch(branch.name);
-                }
+                switchBranch(branch.name);
               }}
               className={`bg-card p-5 rounded-2xl border flex items-center justify-between gap-4 transition-all relative group cursor-pointer ${
                 isActive 
-                  ? 'border-primary ring-2 ring-primary/10 shadow-sm' 
+                  ? 'border-primary ring-2 ring-primary/10 shadow-sm bg-primary/5' 
                   : 'border-border hover:border-primary/40'
               }`}
             >
@@ -1640,45 +1646,16 @@ const DesktopBranchesView: React.FC = () => {
 
                 {/* Delete Button (only if not default and not active) */}
                 {!isDefault && !isActive && (
-                  <div className="relative shrink-0">
-                    {confirmingDelete === branch.name ? (
-                      <div className="flex items-center gap-1 bg-card border border-border rounded-xl p-1 z-10" onClick={(e) => e.stopPropagation()}>
-                        <span className="text-[10px] font-bold text-error px-1">Delete?</span>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setConfirmingDelete(null);
-                          }}
-                          className="p-1 text-text-muted hover:text-text-main hover:bg-hover rounded-lg transition-colors cursor-pointer"
-                          title="Cancel"
-                        >
-                          <X size={12} />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteBranch(branch.name);
-                            setConfirmingDelete(null);
-                          }}
-                          className="p-1 bg-error text-white hover:bg-error/90 rounded-lg transition-colors cursor-pointer shadow-sm"
-                          title="Confirm Delete"
-                        >
-                          <Check size={12} />
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setConfirmingDelete(branch.name);
-                        }}
-                        className="p-2 bg-error/10 text-error hover:bg-error/25 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                        title="Delete Branch"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    )}
-                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setBranchToDelete(branch.name);
+                    }}
+                    className="p-2 bg-error/10 text-error hover:bg-error/25 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shrink-0"
+                    title="Delete Branch"
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 )}
               </div>
             </div>
@@ -1690,6 +1667,64 @@ const DesktopBranchesView: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Redesigned Premium Warning Confirmation Dialog Box for Branch Deletion */}
+      <AnimatePresence>
+        {branchToDelete && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[250] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+              className="bg-card border border-border rounded-3xl w-full max-w-md overflow-hidden shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header/Warning Top Banner */}
+              <div className="p-6 pb-4 flex gap-4 items-start">
+                <div className="w-12 h-12 rounded-2xl bg-error/15 text-error flex items-center justify-center shrink-0">
+                  <AlertTriangle size={24} />
+                </div>
+                <div className="space-y-1.5 flex-1 min-w-0">
+                  <h3 className="text-lg font-bold text-text-main">Delete Branch</h3>
+                  <p className="text-xs text-text-muted font-medium break-all">
+                    Are you sure you want to delete branch <span className="font-mono font-bold text-text-main bg-hover px-1.5 py-0.5 rounded-lg border border-border/50">{branchToDelete}</span>?
+                  </p>
+                </div>
+              </div>
+
+              {/* Content Warning Box */}
+              <div className="px-6 py-4 bg-error/5 border-y border-error/10 mx-6 rounded-2xl">
+                <p className="text-[11px] font-semibold text-error leading-relaxed">
+                  Warning: This action is permanent and cannot be undone. All exclusive commits and branches metadata will be removed.
+                </p>
+              </div>
+
+              {/* Action Footer */}
+              <div className="p-6 flex items-center gap-3">
+                <button
+                  onClick={() => setBranchToDelete(null)}
+                  className="flex-1 py-3 text-xs font-bold text-text-muted bg-hover rounded-2xl hover:text-text-main hover:bg-hover/80 active:scale-95 transition-all cursor-pointer border border-border/40"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    if (branchToDelete) {
+                      deleteBranch(branchToDelete);
+                      setBranchToDelete(null);
+                    }
+                  }}
+                  className="flex-1 py-3 text-xs font-bold text-white bg-error rounded-2xl hover:bg-error/90 active:scale-95 transition-all shadow-md shadow-error/10 flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Trash2 size={14} />
+                  <span>Delete Branch</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
