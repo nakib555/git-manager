@@ -14,7 +14,7 @@ import {
   Sliders, ArrowLeft, MoreVertical, Activity, Grid, Home, Eye, 
   EyeOff, RefreshCw, ChevronDown, BookOpen, Clock, FileText, 
   FileCode, Terminal, HelpCircle, Edit2, Trash2, Undo, Tag, RotateCcw,
-  AlertCircle, HardDrive
+  AlertCircle, HardDrive, X
 } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 
@@ -1533,8 +1533,9 @@ const DesktopCommitsView: React.FC = () => {
  * 3.4 DESKTOP BRANCHES VIEW
  */
 const DesktopBranchesView: React.FC = () => {
-  const { activeBranches, openModal } = useAppContext();
+  const { activeBranches, openModal, deleteBranch, switchBranch, currentBranch } = useAppContext();
   const [search, setSearch] = useState('');
+  const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
 
   const filtered = activeBranches.filter(b => b.name.toLowerCase().includes(search.toLowerCase()));
 
@@ -1562,27 +1563,96 @@ const DesktopBranchesView: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 overflow-y-auto pr-1">
-        {filtered.map(branch => (
-          <div 
-            key={branch.name}
-            className="bg-card p-5 rounded-2xl border flex items-center justify-between gap-4 hover:border-primary/30 transition-colors"
-            style={{ borderColor: branch.borderColor !== 'transparent' ? branch.borderColor : 'var(--border)' }}
-          >
-            <div className="space-y-1.5 truncate">
-              <span className="text-sm font-bold text-text-main flex items-center gap-2 truncate">
-                <GitBranch size={14} className="text-primary shrink-0" />
-                <span className="truncate">{branch.name}</span>
-              </span>
-              <p className="text-xs text-text-muted truncate">{branch.desc || 'Active branch'}</p>
-            </div>
+        {filtered.map(branch => {
+          const isActive = branch.name === (currentBranch || 'main');
+          const isDefault = branch.isDefault;
 
-            {branch.isDefault && (
-              <span className="text-[9px] uppercase tracking-wider px-2.5 py-1 rounded-full bg-info/15 text-info border border-info/30 font-extrabold shrink-0">
-                Default
-              </span>
-            )}
+          return (
+            <div 
+              key={branch.name}
+              onClick={() => {
+                if (confirmingDelete !== branch.name) {
+                  switchBranch(branch.name);
+                }
+              }}
+              className={`bg-card p-5 rounded-2xl border flex items-center justify-between gap-4 transition-all relative group cursor-pointer ${
+                isActive 
+                  ? 'border-primary ring-2 ring-primary/10 shadow-sm' 
+                  : 'border-border hover:border-primary/40'
+              }`}
+            >
+              <div className="space-y-1.5 truncate flex-1">
+                <span className="text-sm font-bold text-text-main flex items-center gap-2 truncate">
+                  <GitBranch size={14} className={isActive ? "text-primary shrink-0 animate-pulse" : "text-text-muted shrink-0"} />
+                  <span className="truncate">{branch.name}</span>
+                </span>
+                <p className="text-xs text-text-muted truncate">{branch.desc || 'Active branch'}</p>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                {isDefault && (
+                  <span className="text-[9px] uppercase tracking-wider px-2.5 py-1 rounded-full bg-info/15 text-info border border-info/30 font-extrabold shrink-0">
+                    Default
+                  </span>
+                )}
+                
+                {isActive && !isDefault && (
+                  <span className="text-[9px] uppercase tracking-wider px-2.5 py-1 rounded-full bg-primary/15 text-primary border border-primary/30 font-extrabold shrink-0">
+                    Active
+                  </span>
+                )}
+
+                {/* Delete Button (only if not default and not active) */}
+                {!isDefault && !isActive && (
+                  <div className="relative shrink-0">
+                    {confirmingDelete === branch.name ? (
+                      <div className="flex items-center gap-1 bg-card border border-border rounded-xl p-1 z-10" onClick={(e) => e.stopPropagation()}>
+                        <span className="text-[10px] font-bold text-error px-1">Delete?</span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setConfirmingDelete(null);
+                          }}
+                          className="p-1 text-text-muted hover:text-text-main hover:bg-hover rounded-lg transition-colors cursor-pointer"
+                          title="Cancel"
+                        >
+                          <X size={12} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteBranch(branch.name);
+                            setConfirmingDelete(null);
+                          }}
+                          className="p-1 bg-error text-white hover:bg-error/90 rounded-lg transition-colors cursor-pointer shadow-sm"
+                          title="Confirm Delete"
+                        >
+                          <Check size={12} />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setConfirmingDelete(branch.name);
+                        }}
+                        className="p-2 bg-error/10 text-error hover:bg-error/25 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                        title="Delete Branch"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+        {filtered.length === 0 && (
+          <div className="col-span-full text-center py-12 text-text-muted text-xs font-semibold uppercase tracking-wider">
+            No branches found matching your search.
           </div>
-        ))}
+        )}
       </div>
     </div>
   );

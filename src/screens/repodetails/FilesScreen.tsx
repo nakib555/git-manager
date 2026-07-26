@@ -80,7 +80,7 @@ const FileTreeItem = ({ item, depth, activeFileName, onSelect }: any) => {
 };
 
 export const FilesScreen = () => {
-  const { activeFiles, currentRepo, githubToken, currentRepoOwner } = useAppContext();
+  const { activeFiles, currentRepo, githubToken, currentRepoOwner, currentBranch } = useAppContext();
   const [selectedFile, setSelectedFile] = useState<string>('');
   const [fileContent, setFileContent] = useState<string>('');
   const [isLoadingFile, setIsLoadingFile] = useState<boolean>(false);
@@ -102,7 +102,8 @@ export const FilesScreen = () => {
               ? `Bearer ${githubToken}`
               : `token ${githubToken}`
           };
-          const res = await fetch(`https://api.github.com/repos/${currentRepoOwner}/${currentRepo}/contents/${fileName}`, { headers });
+          const refParam = currentBranch ? `?ref=${currentBranch}` : '';
+          const res = await fetch(`https://api.github.com/repos/${currentRepoOwner}/${currentRepo}/contents/${fileName}${refParam}`, { headers });
           if (res.ok) {
             const data = await res.json();
             if (data.encoding === 'base64') {
@@ -127,7 +128,7 @@ export const FilesScreen = () => {
     } else {
       setFileContent('// Please connect your GitHub account to fetch file content.');
     }
-  }, [selectedFile, githubToken, currentRepo, currentRepoOwner]);
+  }, [selectedFile, githubToken, currentRepo, currentRepoOwner, currentBranch]);
 
   if (filesToDisplay.length === 0) {
     return (

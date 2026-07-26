@@ -5,11 +5,12 @@ import {
   ExternalLink, Github, Monitor, AlertCircle, Terminal, 
   Settings, Server, Cpu, Database, Trash2, RefreshCw, 
   FileText, ShieldAlert, Wifi, Download, ChevronRight, BarChart3,
-  Search, Clipboard, Sliders, Eye, X, ChevronDown, ChevronUp,
-  Star, GitFork, CornerDownRight, Compass, Info
+  Search, Clipboard, Copy, ClipboardPaste, Sliders, Eye, X, ChevronDown, ChevronUp,
+  Star, GitFork, CornerDownRight, Compass, Info, QrCode
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import JSZip from 'jszip';
+import { QRCodeSVG } from 'qrcode.react';
 
 export const CloneScreen = () => {
   const { 
@@ -39,9 +40,11 @@ export const CloneScreen = () => {
   
   // Core input states
   const [url, setUrl] = useState(getInitialRepoUrl());
-  const [destFolder, setDestFolder] = useState('/Storage/Projects/GitManager/');
+  const [urlMode, setUrlMode] = useState<'https' | 'cli' | 'ssh'>('https');
   const [branch, setBranch] = useState('main');
   const [cloneType, setCloneType] = useState<'full' | 'shallow'>('full');
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
   
   // Advanced options (bottom sheet toggles)
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
@@ -54,10 +57,6 @@ export const CloneScreen = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   
-  // Edit destination path inline
-  const [isEditingDest, setIsEditingDest] = useState(false);
-  const [customDestBase, setCustomDestBase] = useState('/Storage/Projects/GitManager/');
-
   // Flow State
   const [step, setStep] = useState<'config' | 'progress' | 'success'>('config');
   
@@ -98,7 +97,13 @@ export const CloneScreen = () => {
       let owner = '';
       let repo = '';
       
-      if (clean.startsWith('git@github.com:')) {
+      if (clean.startsWith('gh repo clone ')) {
+        const parts = clean.replace('gh repo clone ', '').trim().split('/');
+        if (parts.length >= 2) {
+          owner = parts[0];
+          repo = parts[1];
+        }
+      } else if (clean.startsWith('git@github.com:')) {
         const parts = clean.replace('git@github.com:', '').split('/');
         if (parts.length >= 2) {
           owner = parts[0];
@@ -142,19 +147,37 @@ export const CloneScreen = () => {
   const activeRepoInfo = getParsedRepoInfo();
 
   // Helper to prefill from search or popular list
-  const prefillRepo = (repoOwner: string, repoName: string) => {
-    const gitUrl = `https://github.com/${repoOwner}/${repoName}.git`;
+  const prefillRepo = (repoOwner: string, repoName: string, modeOverride?: 'https' | 'cli' | 'ssh') => {
+    const mode = modeOverride || urlMode;
+    let gitUrl = '';
+    if (mode === 'cli') {
+      gitUrl = `gh repo clone ${repoOwner}/${repoName}`;
+    } else if (mode === 'ssh') {
+      gitUrl = `git@github.com:${repoOwner}/${repoName}.git`;
+    } else {
+      gitUrl = `https://github.com/${repoOwner}/${repoName}.git`;
+    }
     setUrl(gitUrl);
-    setSearchQuery('');
-    setIsSearching(false);
-    showToast(`Prefilled ${repoOwner}/${repoName}`);
+    if (!modeOverride) {
+      setSearchQuery('');
+      setIsSearching(false);
+      showToast(`Prefilled ${repoOwner}/${repoName}`);
+    }
+  };
+
+  const toggleUrlMode = (mode: 'https' | 'cli' | 'ssh') => {
+    setUrlMode(mode);
+    const info = getParsedRepoInfo();
+    if (info) {
+      prefillRepo(info.owner, info.name, mode);
+    }
   };
 
   // Helper to read from clipboard
   const handlePasteFromClipboard = async () => {
     try {
       const text = await navigator.clipboard.readText();
-      if (text && (text.startsWith('http') || text.startsWith('git@') || text.includes('/'))) {
+      if (text && (text.startsWith('http') || text.startsWith('git@') || text.startsWith('gh repo clone ') || text.includes('/'))) {
         setUrl(text.trim());
         showToast('Pasted Git URL from clipboard');
       } else {
@@ -162,6 +185,18 @@ export const CloneScreen = () => {
       }
     } catch (err) {
       showToast('Click and paste into the text field directly');
+    }
+  };
+
+  const handleCopyToClipboard = async () => {
+    if (!url) return;
+    try {
+      await navigator.clipboard.writeText(url);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+      showToast('Copied to clipboard');
+    } catch (err) {
+      showToast('Failed to copy. Try selecting and copying manually.');
     }
   };
 
@@ -333,7 +368,8 @@ export default function App() {
       }
     } catch (err: any) {
       console.error('Error during packaging:', err);
-      showToast('Error during device download. Fallback simulation completed.');
+      showToast('Error during device download. Download failed.');
+      throw err;
     }
   };
 
@@ -344,30 +380,12 @@ export default function App() {
       return;
     }
 
-    const clean = url.trim().replace(/\.git$/, '');
-    let owner = '';
-    let repo = '';
+    const repoInfo = getParsedRepoInfo();
+    let owner = repoInfo?.owner || '';
+    let repo = repoInfo?.name || '';
     
-    if (clean.startsWith('git@github.com:')) {
-      const parts = clean.replace('git@github.com:', '').split('/');
-      if (parts.length >= 2) {
-        owner = parts[0];
-        repo = parts[1];
-      }
-    } else {
-      const urlStr = clean.startsWith('http') ? clean : `https://${clean}`;
-      try {
-        const urlObj = new URL(urlStr);
-        const pathParts = urlObj.pathname.split('/').filter(Boolean);
-        if (pathParts.length >= 2) {
-          owner = pathParts[pathParts.length - 2];
-          repo = pathParts[pathParts.length - 1];
-        }
-      } catch (_) {}
-    }
-
     if (!owner || !repo) {
-      showToast('Could not parse GitHub owner and repository from URL');
+      showToast('Could not parse GitHub owner and repository from input');
       return;
     }
 
@@ -415,7 +433,7 @@ export default function App() {
           
           cloneRepository({
             url: url.trim(),
-            destFolder: `${destFolder}${repo}`,
+            destFolder: `/Storage/Projects/GitManager/${repo}`,
             branch: checkoutBranch,
             shallow: cloneType === 'shallow',
             submodules: cloneSubmodules
@@ -538,7 +556,7 @@ export default function App() {
       
       cloneRepository({
         url: url.trim(),
-        destFolder: `${destFolder}${repo}`,
+        destFolder: `/Storage/Projects/GitManager/${repo}`,
         branch: checkoutBranch,
         shallow: cloneType === 'shallow',
         submodules: cloneSubmodules
@@ -772,60 +790,75 @@ export default function App() {
                       <input 
                         type="text" 
                         required
-                        placeholder="Paste Git SSH or HTTPS URL..."
+                        placeholder={urlMode === 'cli' ? 'e.g. gh repo clone owner/repo' : 'Paste Git SSH or HTTPS URL...'}
                         value={url}
                         onChange={(e) => setUrl(e.target.value)}
-                        className="w-full bg-card text-xs font-semibold pl-4 pr-10 py-3.5 rounded-xl border border-border focus:outline-none focus:border-primary text-text-main transition-all"
+                        className="w-full bg-card text-xs font-semibold pl-4 pr-24 py-3.5 rounded-xl border border-border focus:outline-none focus:border-primary text-text-main transition-all"
                       />
-                      <button
-                        onClick={handlePasteFromClipboard}
-                        className="absolute right-3 top-3.5 p-1 text-text-muted hover:text-primary hover:bg-hover rounded-lg transition-colors cursor-pointer"
-                        title="Paste from clipboard"
+                      <div className="absolute right-3 top-3.5 flex items-center gap-1">
+                        <button
+                          onClick={() => {
+                            if (!url) {
+                              showToast('Please enter a URL first');
+                            } else {
+                              setIsQrModalOpen(true);
+                            }
+                          }}
+                          className="p-1 text-text-muted hover:text-primary hover:bg-hover rounded-lg transition-colors cursor-pointer"
+                          title="Generate QR Code"
+                        >
+                          <QrCode size={14} />
+                        </button>
+                        <button
+                          onClick={handleCopyToClipboard}
+                          className={`p-1 hover:bg-hover rounded-lg transition-all duration-300 transform active:scale-90 cursor-pointer flex items-center justify-center ${isCopied ? 'bg-emerald-500/10 text-emerald-500' : 'text-text-muted hover:text-primary'}`}
+                          title="Copy to clipboard"
+                        >
+                          <AnimatePresence mode="wait">
+                            <motion.div
+                              key={isCopied ? 'checked' : 'copy'}
+                              initial={{ scale: 0.8, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              exit={{ scale: 0.8, opacity: 0 }}
+                              transition={{ duration: 0.15 }}
+                            >
+                              {isCopied ? <Check size={14} className="text-emerald-500 font-bold" /> : <Copy size={14} />}
+                            </motion.div>
+                          </AnimatePresence>
+                        </button>
+                        <button
+                          onClick={handlePasteFromClipboard}
+                          className="p-1 text-text-muted hover:text-primary hover:bg-hover rounded-lg transition-colors cursor-pointer"
+                          title="Paste from clipboard"
+                        >
+                          <ClipboardPaste size={14} />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2 pr-1">
+                      <button 
+                        onClick={() => toggleUrlMode('https')}
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded transition-colors cursor-pointer ${urlMode === 'https' ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text-main hover:bg-hover'}`}
                       >
-                        <Clipboard size={14} />
+                        HTTPS URL
+                      </button>
+                      <button 
+                        onClick={() => toggleUrlMode('ssh')}
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded transition-colors cursor-pointer ${urlMode === 'ssh' ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text-main hover:bg-hover'}`}
+                      >
+                        SSH
+                      </button>
+                      <button 
+                        onClick={() => toggleUrlMode('cli')}
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded transition-colors cursor-pointer ${urlMode === 'cli' ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text-main hover:bg-hover'}`}
+                      >
+                        GitHub CLI
                       </button>
                     </div>
                   </div>
                 </div>
 
-                {/* SECTION 2: 📂 DESTINATION */}
-                <div className="pb-6 border-b border-border space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted flex items-center gap-2">
-                      <Folder size={14} className="text-text-muted" />
-                      📂 Destination Path
-                    </h3>
-                    <button
-                      onClick={() => setIsEditingDest(!isEditingDest)}
-                      className="text-xs font-bold text-primary hover:text-primary-hover transition-colors cursor-pointer"
-                    >
-                      {isEditingDest ? 'Lock Value' : 'Change →'}
-                    </button>
-                  </div>
-
-                  {isEditingDest ? (
-                    <div className="space-y-1.5">
-                      <input 
-                        type="text"
-                        value={destFolder}
-                        onChange={(e) => setDestFolder(e.target.value)}
-                        placeholder="/Storage/Projects/"
-                        className="w-full bg-card border border-border rounded-xl px-4 py-2.5 text-xs font-mono font-semibold focus:outline-none focus:border-primary text-text-main"
-                      />
-                      <p className="text-[10px] text-text-muted">Modify target directory mount point</p>
-                    </div>
-                  ) : (
-                    <div className="bg-card border border-border rounded-xl p-3.5 flex items-center gap-3">
-                      <HardDrive size={16} className="text-text-muted" />
-                      <div className="font-mono text-[11px] font-bold text-text-muted overflow-x-auto no-scrollbar whitespace-nowrap">
-                        {destFolder}
-                        <span className="text-primary font-extrabold">{repoName || 'my-repository'}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* SECTION 3: 🌿 BRANCH */}
+                {/* SECTION 2: 🌿 BRANCH */}
                 <div className="pb-6 border-b border-border space-y-3">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted flex items-center gap-2">
                     <GitBranch size={14} className="text-text-muted" />
@@ -833,17 +866,13 @@ export default function App() {
                   </h3>
                   
                   <div className="relative">
-                    <select
+                    <input
+                      type="text"
                       value={branch}
                       onChange={(e) => setBranch(e.target.value)}
-                      className="w-full bg-card border border-border rounded-xl px-4 py-3 text-xs font-bold text-text-main focus:outline-none focus:ring-2 focus:ring-primary/10 appearance-none cursor-pointer"
-                    >
-                      <option value="main">Default (main)</option>
-                      <option value="master">Legacy (master)</option>
-                      <option value="develop">Development (develop)</option>
-                      <option value="staging">Staging (staging)</option>
-                    </select>
-                    <ChevronDown size={14} className="absolute right-4 top-3.5 text-text-muted pointer-events-none" />
+                      placeholder="e.g. main, master, feature/xyz"
+                      className="w-full bg-card border border-border rounded-xl px-4 py-3 text-xs font-bold text-text-main focus:outline-none focus:ring-2 focus:ring-primary/10 appearance-none"
+                    />
                   </div>
                 </div>
 
@@ -1145,14 +1174,6 @@ export default function App() {
                   <p className="text-xs text-text-muted">The remote repository tree has been written successfully.</p>
                 </div>
 
-                {/* CLONE LOCATION DATA */}
-                <div className="bg-main border border-border rounded-xl p-4 text-left space-y-2">
-                  <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider block">Mount Location</span>
-                  <div className="font-mono text-[11px] text-text-muted font-semibold break-all leading-relaxed">
-                    {destFolder}<span className="text-text-main font-extrabold">{repoName}</span>
-                  </div>
-                </div>
-
                 {/* SUCCESS OPTIONS LIST */}
                 <div className="space-y-2.5 pt-2">
                   <button
@@ -1171,7 +1192,7 @@ export default function App() {
 
                   <button
                     onClick={() => {
-                      showToast(`Opened location: ${destFolder}${repoName} inside file-manager`);
+                      showToast(`Opened location: /Storage/Projects/GitManager/${repoName} inside file-manager`);
                     }}
                     className="w-full bg-hover hover:bg-opacity-80 text-text-main p-3.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
@@ -1383,6 +1404,49 @@ export default function App() {
                   <Download size={14} />
                   <span>Start Download</span>
                 </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* QR CODE MODAL */}
+      <AnimatePresence>
+        {isQrModalOpen && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="bg-card w-full max-w-sm rounded-2xl border border-border shadow-2xl p-6 flex flex-col gap-6 text-center relative overflow-hidden"
+            >
+              <button 
+                onClick={() => setIsQrModalOpen(false)}
+                className="absolute right-4 top-4 p-1.5 hover:bg-hover rounded-full text-text-muted hover:text-text-main transition-colors cursor-pointer z-10"
+              >
+                <X size={16} />
+              </button>
+              
+              <div className="space-y-1">
+                <h3 className="text-lg font-bold text-text-main">Share Repository</h3>
+                <p className="text-xs text-text-muted">Scan QR code to clone on another device</p>
+              </div>
+
+              <div className="flex justify-center p-4 bg-white rounded-xl shadow-inner mx-auto">
+                <QRCodeSVG 
+                  value={url} 
+                  size={200}
+                  level="H"
+                  includeMargin={false}
+                  className="rounded-lg"
+                />
+              </div>
+
+              <div className="bg-main border border-border rounded-xl p-3 text-left">
+                <div className="font-mono text-[10px] text-text-muted break-all leading-relaxed line-clamp-2">
+                  {url}
+                </div>
               </div>
             </motion.div>
           </div>

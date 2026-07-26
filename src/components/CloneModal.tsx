@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../AppContext';
 import { 
   X, GitBranch, Folder, HardDrive, Check, Play, Activity, 
-  ExternalLink, Github, Monitor, AlertCircle
+  ExternalLink, Github, Monitor, AlertCircle, Copy
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -21,6 +21,26 @@ export const CloneModal = () => {
   };
   
   const [url, setUrl] = useState(getRepoUrl());
+  const [urlMode, setUrlMode] = useState<'https' | 'ssh' | 'cli'>('https');
+  const [isCopied, setIsCopied] = useState(false);
+
+  const getFormattedUrl = (repoOwner: string, repoName: string, mode: 'https' | 'ssh' | 'cli') => {
+    if (mode === 'cli') {
+      return `gh repo clone ${repoOwner}/${repoName}`;
+    } else if (mode === 'ssh') {
+      return `git@github.com:${repoOwner}/${repoName}.git`;
+    } else {
+      return `https://github.com/${repoOwner}/${repoName}.git`;
+    }
+  };
+
+  const handleModeChange = (mode: 'https' | 'ssh' | 'cli') => {
+    setUrlMode(mode);
+    const owner = currentRepoOwner || githubUser?.login || "user";
+    const repo = currentRepo || "project";
+    setUrl(getFormattedUrl(owner, repo, mode));
+  };
+
   const [dest, setDest] = useState(currentRepo ? `/Documents/Projects/${currentRepo}` : '/Documents/Projects/');
   const [branch, setBranch] = useState('');
   const [depth, setDepth] = useState<'full' | 'shallow'>('full');
@@ -93,14 +113,65 @@ export const CloneModal = () => {
           )}
 
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Repository URL</label>
-            <input 
-              type="text" 
-              placeholder="https://github.com/user/project.git"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              className="w-full bg-main/50 text-sm font-semibold px-4 py-3 rounded-xl border border-border/50 focus:outline-none focus:border-primary/50 text-text-main transition-colors"
-            />
+            <div className="flex justify-between items-center">
+              <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Repository URL</label>
+              <div className="flex gap-1.5">
+                {(['https', 'ssh', 'cli'] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => handleModeChange(mode)}
+                    className={`text-[9px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded transition-all cursor-pointer ${
+                      urlMode === mode 
+                        ? 'bg-primary/10 text-primary border border-primary/25' 
+                        : 'text-text-muted hover:text-text-main hover:bg-hover border border-transparent'
+                    }`}
+                  >
+                    {mode === 'https' ? 'HTTPS' : mode === 'ssh' ? 'SSH' : 'CLI'}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="relative">
+              <input 
+                type="text" 
+                placeholder={urlMode === 'cli' ? 'e.g. gh repo clone owner/repo' : urlMode === 'ssh' ? 'git@github.com:owner/repo.git' : 'https://github.com/owner/repo.git'}
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                className="w-full bg-main/50 text-sm font-semibold pl-4 pr-12 py-3 rounded-xl border border-border/50 focus:outline-none focus:border-primary/50 text-text-main transition-colors"
+              />
+              <div className="absolute right-2.5 top-[7px] flex items-center">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!url) return;
+                    try {
+                      await navigator.clipboard.writeText(url);
+                      setIsCopied(true);
+                      setTimeout(() => setIsCopied(false), 2000);
+                    } catch (err) {
+                      // fallback
+                    }
+                  }}
+                  className={`p-2 hover:bg-hover rounded-lg transition-all duration-300 transform active:scale-90 cursor-pointer flex items-center justify-center ${
+                    isCopied ? 'bg-emerald-500/10 text-emerald-500' : 'text-text-muted hover:text-primary'
+                  }`}
+                  title="Copy to clipboard"
+                >
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={isCopied ? 'checked' : 'copy'}
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.8, opacity: 0 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      {isCopied ? <Check size={14} className="text-emerald-500 font-bold" /> : <Copy size={14} />}
+                    </motion.div>
+                  </AnimatePresence>
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="space-y-1.5">

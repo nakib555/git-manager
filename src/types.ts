@@ -26,6 +26,7 @@ export interface AppState {
   currentScreen: Screen;
   currentRepo: string | null;
   currentRepoOwner: string | null;
+  currentBranch: string | null;
   isActionSheetOpen: boolean;
   isDrawerOpen: boolean;
   toastMessage: string | null;
@@ -50,6 +51,7 @@ export interface AppState {
 export type AppContextType = AppState & {
   navigate: (screen: Screen) => void;
   openRepo: (repoName: string, owner?: string | null) => void;
+  switchBranch: (branchName: string) => Promise<void>;
   openActionSheet: () => void;
   closeActionSheet: () => void;
   openDrawer: () => void;
@@ -70,6 +72,7 @@ export type AppContextType = AppState & {
   cloneRepository: (repo: { url: string; destFolder: string; branch: string; shallow: boolean; submodules: boolean }) => void;
   createLocalRepo: (repo: { name: string; desc: string; isPrivate: boolean; lang: string }) => void;
   createLocalBranch: (branch: { name: string; desc: string }) => void;
+  deleteBranch: (branchName: string) => Promise<void>;
   createLocalPR: (pr: { title: string; desc: string; source: string; target: string; isDraft?: boolean }) => void;
   updateLocalPRStatus: (prId: number, status: 'Open' | 'Merged' | 'Closed') => void;
   createLocalCommit: (commit: { msg: string; author: string; hash?: string; add?: string; del?: string }) => void;

@@ -67,6 +67,7 @@ const defaultState: AppState = {
   currentScreen: (localStorage.getItem("currentScreen") as Screen) || "dash",
   currentRepo: localStorage.getItem("currentRepo") || "",
   currentRepoOwner: localStorage.getItem("currentRepoOwner") || "",
+  currentBranch: localStorage.getItem("currentBranch") || "",
   isActionSheetOpen: false,
   isDrawerOpen: false,
   toastMessage: null,
@@ -209,7 +210,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
       console.error("Error fetching public fallback repos:", error);
     }
   };
-  const fetchGitHubData = async (token: string) => {
+  const fetchGitHubData = async (token: string, isBackground = false) => {
     try {
       console.log("Fetching GitHub user data with token:", token.substring(0, 4) + "...");
       const headers = {
@@ -261,15 +262,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         githubRepos: reposData,
       }));
     } catch (error: any) {
-      console.error("GitHub fetch error:", error);
-      showToast(`Error loading GitHub data: ${error.message || error}`);
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        console.warn("Network error or rate limit reached during background poll for user data.");
+      } else {
+        console.error("GitHub fetch error:", error);
+        if (!isBackground) {
+          showToast(`Error loading GitHub data: ${error.message || error}`);
+        }
+      }
       // If unauthorized, the token might be invalid or revoked
-      if (error.message.includes("401") || error.message.includes("Bad credentials")) {
+      if (error.message?.includes("401") || error.message?.includes("Bad credentials")) {
         console.warn("GitHub token seems invalid or expired. Consider clearing it.");
       }
     }
   };
-  const fetchRepoDetails = async (repoName: string, owner: string, isBackground = false) => {
+  const fetchRepoDetails = async (repoName: string, owner: string, isBackground = false, branchOverride?: string) => {
     console.log(`Fetching repo details for ${owner}/${repoName} (background: ${isBackground})`);
     if (!isBackground) {
       setState((prev) => ({ ...prev, isLoadingRepoDetails: true }));
@@ -311,9 +318,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         }
       }
       // 1. Fetch Commits
-      console.log(`Fetching commits for ${owner}/${repoName}...`);
+      let activeBranch = branchOverride;
+      if (!activeBranch) {
+        // Try to get default branch
+        try {
+          const repoRes = await fetch(`https://api.github.com/repos/${owner}/${repoName}`, { headers });
+          if (repoRes.ok) {
+            const repoData = await repoRes.json();
+            activeBranch = repoData.default_branch;
+          }
+        } catch (e) {}
+      }
+      if (!activeBranch) activeBranch = "main";
+      
+      console.log(`Fetching commits for ${owner}/${repoName} on branch ${activeBranch}...`);
       const commitsRes = await fetch(
-        `https://api.github.com/repos/${owner}/${repoName}/commits?per_page=15`,
+        `https://api.github.com/repos/${owner}/${repoName}/commits?sha=${activeBranch}&per_page=15`,
         { headers },
       );
       if (!commitsRes.ok) {
@@ -364,9 +384,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         branchesData = rawBranches.map((b: any) => ({
           name: b.name,
           desc: `Branch head: ${b.commit.sha.substring(0, 7)}`,
-          isDefault: b.name === "main" || b.name === "master",
+          isDefault: b.name === activeBranch,
           borderColor:
-            b.name === "main" || b.name === "master"
+            b.name === activeBranch
               ? "#38BDF8"
               : "transparent",
         }));
@@ -411,7 +431,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
       }
       // 5. Fetch Files
       const filesRes = await fetch(
-        `https://api.github.com/repos/${owner}/${repoName}/git/trees/HEAD?recursive=1`,
+        `https://api.github.com/repos/${owner}/${repoName}/git/trees/${activeBranch}?recursive=1`,
         { headers },
       );
       let filesData = [];
@@ -464,8 +484,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
           JSON.stringify(filesData),
         );
       }
+      localStorage.setItem("currentBranch", activeBranch);
       setState((prev) => ({
         ...prev,
+        currentBranch: activeBranch,
         activeCommits: mergedCommits,
         activeBranches: branchesData.length
           ? branchesData
@@ -479,8 +501,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         activeLanguages: langData,
         isLoadingRepoDetails: false,
       }));
-    } catch (error) {
-      console.error("Error fetching repo details:", error);
+    } catch (error: any) {
+      if (isBackground && error instanceof TypeError && error.message === 'Failed to fetch') {
+        // Silently ignore background network/CORS errors caused by rate limiting
+      } else {
+        console.error("Error fetching repo details:", error);
+      }
       setState((prev) => ({
         ...prev,
         activeCommits: getLocalRepoDetails(repoName, "commits"),
@@ -526,39 +552,37 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
   useEffect(() => {
     if (state.currentRepo) {
       const owner = state.currentRepoOwner || (state.githubToken && state.githubUser?.login ? state.githubUser.login : null);
+      const targetBranch = state.currentBranch || undefined;
       if (owner) {
-        fetchRepoDetails(state.currentRepo, owner);
+        fetchRepoDetails(state.currentRepo, owner, false, targetBranch);
       } else {
         const matchedRepo = state.githubRepos.find(r => r.name === state.currentRepo);
         const resolvedOwner = (matchedRepo as any)?.owner?.login || 'facebook';
-        fetchRepoDetails(state.currentRepo, resolvedOwner);
+        fetchRepoDetails(state.currentRepo, resolvedOwner, false, targetBranch);
       }
     }
   }, [state.currentRepo, state.githubToken, state.currentRepoOwner, refreshTrigger]);
   useEffect(() => {
-    const timer = setInterval(() => {
-      if (state.githubToken) {
-        fetchGitHubData(state.githubToken);
+    let timer: any;
+    if (state.githubToken) {
+      timer = setInterval(() => {
+        fetchGitHubData(state.githubToken!, true);
         if (state.currentRepo) {
           const owner = state.currentRepoOwner || (state.githubUser?.login ? state.githubUser.login : null);
+          const targetBranch = state.currentBranch || undefined;
           if (owner) {
-            fetchRepoDetails(state.currentRepo, owner, true);
+            fetchRepoDetails(state.currentRepo, owner, true, targetBranch);
           } else {
             const matchedRepo = state.githubRepos.find(r => r.name === state.currentRepo);
             const resolvedOwner = (matchedRepo as any)?.owner?.login || 'facebook';
-            fetchRepoDetails(state.currentRepo, resolvedOwner, true);
+            fetchRepoDetails(state.currentRepo, resolvedOwner, true, targetBranch);
           }
         }
-      } else {
-        fetchPublicFallbackRepos();
-        if (state.currentRepo) {
-          const matchedRepo = state.githubRepos.find(r => r.name === state.currentRepo);
-          const resolvedOwner = (matchedRepo as any)?.owner?.login || 'facebook';
-          fetchRepoDetails(state.currentRepo, resolvedOwner, true);
-        }
-      }
-    }, 1000);
-    return () => clearInterval(timer);
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
   }, [
     state.githubToken,
     state.currentRepo,
@@ -576,14 +600,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         owner || (prev.githubToken ? prev.githubUser?.login : null);
       localStorage.setItem("currentRepo", repoName);
       localStorage.setItem("currentRepoOwner", actualOwner);
+      localStorage.removeItem("currentBranch");
       localStorage.setItem("currentScreen", "files");
       return {
         ...prev,
         currentRepo: repoName,
         currentRepoOwner: actualOwner,
+        currentBranch: "",
         currentScreen: "files",
       };
     });
+  };
+  const switchBranch = async (branchName: string) => {
+    if (!state.currentRepo || !state.currentRepoOwner) return;
+    localStorage.setItem("currentBranch", branchName);
+    setState((prev) => ({ ...prev, currentBranch: branchName }));
+    await fetchRepoDetails(state.currentRepo, state.currentRepoOwner, false, branchName);
   };
   const openActionSheet = () =>
     setState((prev) => ({ ...prev, isActionSheetOpen: true }));
@@ -907,6 +939,64 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
       showToast(`Failed to create branch: ${error.message || error}`);
     }
   };
+  
+  const deleteBranch = async (branchName: string) => {
+    if (!state.currentRepo) return;
+    
+    const branchInfo = state.activeBranches.find((b) => b.name === branchName);
+    const isDefault = branchInfo?.isDefault || branchName === 'main' || branchName === 'master';
+    const isActive = branchName === (state.currentBranch || 'main');
+
+    if (isDefault) {
+      showToast(`Cannot delete protected branch '${branchName}': Default branch is protected.`);
+      return;
+    }
+    if (isActive) {
+      showToast(`Cannot delete active branch '${branchName}': Switch to another branch first.`);
+      return;
+    }
+
+    if (state.githubToken && state.currentRepoOwner) {
+      try {
+        const token = state.githubToken;
+        const headers = {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/vnd.github.v3+json",
+        };
+        const owner = state.currentRepoOwner;
+        const repo = state.currentRepo;
+        
+        const res = await fetch(
+          `https://api.github.com/repos/${owner}/${repo}/git/refs/heads/${branchName}`,
+          {
+            method: "DELETE",
+            headers,
+          }
+        );
+        
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.message || `Status ${res.status}`);
+        }
+        
+        showToast(`Branch '${branchName}' deleted from GitHub!`);
+        await fetchRepoDetails(repo, owner, false, state.currentBranch || undefined);
+      } catch (error: any) {
+        console.error("Error deleting GitHub branch:", error);
+        showToast(`Failed to delete branch: ${error.message || error}`);
+      }
+    } else {
+      const key = `local_details_${state.currentRepo}_branches`;
+      const current = getLocalRepoDetails(state.currentRepo, "branches");
+      const updated = current.filter((b: any) => b.name !== branchName);
+      localStorage.setItem(key, JSON.stringify(updated));
+      setState(prev => ({
+        ...prev,
+        activeBranches: updated
+      }));
+      showToast(`Local branch '${branchName}' deleted!`);
+    }
+  };
   const createLocalPR = async (pr: {
     title: string;
     desc: string;
@@ -1208,7 +1298,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         if (
           state.currentRepo && state.currentRepoOwner
         ) {
-          await fetchRepoDetails(state.currentRepo, state.currentRepoOwner);
+          await fetchRepoDetails(state.currentRepo, state.currentRepoOwner, false, state.currentBranch || undefined);
         }
       } catch (error) {
         console.error("Refresh error:", error);
@@ -1254,6 +1344,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         ...state,
         navigate,
         openRepo,
+        switchBranch,
         openActionSheet,
         closeActionSheet,
         openDrawer,
@@ -1272,6 +1363,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         cloneRepository,
         createLocalRepo,
         createLocalBranch,
+        deleteBranch,
         createLocalPR,
         updateLocalPRStatus,
         createLocalCommit,

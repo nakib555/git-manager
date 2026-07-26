@@ -4,7 +4,8 @@ import { Menu, Bell, Plus, ArrowLeft, ChevronDown, MoreVertical, Folder, Activit
 import { motion } from 'motion/react';
 
 export const Header: React.FC = () => {
-  const { currentScreen, currentRepo, currentRepoOwner, navigate, openDrawer, openActionSheet } = useAppContext();
+  const { currentScreen, currentRepo, currentRepoOwner, currentBranch, activeBranches, switchBranch, navigate, openDrawer, openActionSheet } = useAppContext();
+  const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
 
   const getHeaderContent = () => {
     switch (currentScreen) {
@@ -60,9 +61,42 @@ export const Header: React.FC = () => {
           sub: currentRepo,
           left: <AnimatedChevronLeft onClick={() => navigate('repos')} />,
           right: (
-            <button className="bg-card border border-border rounded-lg px-3 py-1.5 text-[13px] font-semibold flex items-center text-text-main">
-              <GitBranch size={14} className="mr-1" /> main {currentScreen === 'files' && <ChevronDown size={14} className="ml-1" />}
-            </button>
+            <div className="relative">
+              <button 
+                onClick={() => setIsBranchDropdownOpen(!isBranchDropdownOpen)}
+                className="bg-card border border-border rounded-lg px-3 py-1.5 text-[13px] font-semibold flex items-center text-text-main hover:bg-hover active:scale-95 transition-all cursor-pointer"
+              >
+                <GitBranch size={14} className="mr-1 text-primary animate-pulse" />
+                <span className="max-w-[80px] truncate">{currentBranch || 'main'}</span>
+                <ChevronDown size={14} className="ml-1" />
+              </button>
+              {isBranchDropdownOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setIsBranchDropdownOpen(false)}></div>
+                  <div className="absolute right-0 mt-1 w-48 bg-card border border-border rounded-xl shadow-lg py-1.5 z-50 max-h-64 overflow-y-auto">
+                    <div className="px-3 py-1 border-b border-border text-[9px] uppercase tracking-wider font-bold text-text-muted">Branches</div>
+                    {activeBranches.map((b) => (
+                      <button
+                        key={b.name}
+                        onClick={() => {
+                          switchBranch(b.name);
+                          setIsBranchDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-hover ${
+                          b.name === (currentBranch || 'main') ? 'text-primary font-bold bg-primary/5' : 'text-text-main font-medium'
+                        }`}
+                      >
+                        <span className="truncate">{b.name}</span>
+                        {b.name === (currentBranch || 'main') && <div className="w-1.5 h-1.5 bg-primary rounded-full" />}
+                      </button>
+                    ))}
+                    {activeBranches.length === 0 && (
+                      <div className="px-3 py-2 text-xs text-text-muted text-center">No branches found</div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
           )
         };
       case 'branches':
@@ -402,17 +436,6 @@ export const BottomNav: React.FC = () => {
           <Activity size={20} className={getIconClass(isActivity)} />
         </div>
         <span className="text-[10px]">Activity</span>
-      </div>
-
-      {/* Search tab */}
-      <div 
-        className="group flex flex-col items-center gap-1 text-[11px] font-semibold cursor-pointer transition-all duration-200 w-16 text-text-muted hover:text-text-main"
-        onClick={() => { navigate('repos'); setSearchFocus(true); }}
-      >
-        <div className="w-12 h-8 flex items-center justify-center rounded-2xl transition-all duration-300 hover:bg-hover">
-          <AnimatedSearchIcon className={getIconClass(false)} />
-        </div>
-        <span className="text-[10px]">Search</span>
       </div>
 
       {/* Settings / More tab */}
