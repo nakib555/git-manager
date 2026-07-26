@@ -900,7 +900,7 @@ const DesktopRepositories: React.FC<{ globalSearch: string }> = ({ globalSearch 
                       </span>
                     </div>
                     
-                    <p className="text-[11px] text-text-muted line-clamp-1 truncate">{repo.desc}</p>
+                    <p className="text-[11px] text-text-muted truncate">{repo.desc}</p>
                     
                     {/* Repo Stats Row */}
                     <div className="flex items-center gap-3 text-[10px] text-text-muted mt-2">

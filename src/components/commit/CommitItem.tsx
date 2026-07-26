@@ -41,7 +41,7 @@ export const CommitItem = memo(({ commit, isSelected, isLatest, onSelect, onActi
                 </span>
               )}
             </div>
-            <p className="text-[11px] font-bold text-text-main line-clamp-1 truncate">{commit.msg}</p>
+            <p className="text-[11px] font-bold text-text-main truncate">{commit.msg}</p>
             <div className="mt-1 flex">
               <CiCdBadge hash={commit.hash} isCompact={true} />
             </div>

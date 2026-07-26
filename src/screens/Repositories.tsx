@@ -75,7 +75,7 @@ export const Repositories: React.FC = () => {
   const rowVirtualizer = useVirtualizer({
     count: filteredRepos.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 162,
+    estimateSize: () => 180,
     overscan: 5,
   });
 
@@ -164,7 +164,7 @@ export const Repositories: React.FC = () => {
                           <span>{repo.isPrivate ? 'Private' : 'Public'}</span>
                         </div>
                       </div>
-                      <div className="text-[13px] text-text-muted mb-3 line-clamp-1 truncate">{repo.desc}</div>
+                      <div className="text-[13px] text-text-muted mb-3 truncate">{repo.desc}</div>
                       
                       {/* Repo Stats */}
                       <div className="flex items-center gap-3.5 text-xs text-text-muted mb-3 border-t border-border/10 pt-2.5">
