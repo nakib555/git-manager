@@ -189,7 +189,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
                 owner: {
                   login: data.owner?.login || owner,
                   avatar_url: data.owner?.avatar_url
-                }
+                },
+                stargazers_count: data.stargazers_count,
+                forks_count: data.forks_count,
+                watchers_count: data.watchers_count
               };
             }
           } catch (e) {

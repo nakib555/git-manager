@@ -14,7 +14,7 @@ import {
   Sliders, ArrowLeft, MoreVertical, Activity, Grid, Home, Eye, 
   EyeOff, RefreshCw, ChevronDown, BookOpen, Clock, FileText, 
   FileCode, Terminal, HelpCircle, Edit2, Trash2, Undo, Tag, RotateCcw,
-  AlertCircle, HardDrive, X
+  AlertCircle, HardDrive, X, Star, GitFork
 } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 
@@ -814,6 +814,9 @@ const DesktopRepositories: React.FC<{ globalSearch: string }> = ({ globalSearch 
       lang,
       langColor: getLanguageColor(lang),
       updated: new Date(repo.pushed_at).toLocaleDateString(),
+      stars: repo.stargazers_count || 0,
+      forks: repo.forks_count || 0,
+      watching: repo.watchers_count || 0,
     };
   });
 
@@ -899,6 +902,22 @@ const DesktopRepositories: React.FC<{ globalSearch: string }> = ({ globalSearch 
                     
                     <p className="text-[11px] text-text-muted line-clamp-1 truncate">{repo.desc}</p>
                     
+                    {/* Repo Stats Row */}
+                    <div className="flex items-center gap-3 text-[10px] text-text-muted mt-2">
+                      <span className="flex items-center gap-1" title="Stars">
+                        <Star size={11} className="text-amber-500 fill-amber-500/10" />
+                        <span className="font-semibold text-text-main">{repo.stars.toLocaleString()}</span>
+                      </span>
+                      <span className="flex items-center gap-1" title="Forks">
+                        <GitFork size={11} className="text-blue-500" />
+                        <span className="font-semibold text-text-main">{repo.forks.toLocaleString()}</span>
+                      </span>
+                      <span className="flex items-center gap-1" title="Watching">
+                        <Eye size={11} className="text-emerald-500" />
+                        <span className="font-semibold text-text-main">{repo.watching.toLocaleString()}</span>
+                      </span>
+                    </div>
+
                     <div className="flex justify-between items-center text-[10px] text-text-muted mt-3 pt-2.5 border-t border-border/30">
                       <span className="flex items-center gap-1">
                         <span className="w-2 h-2 rounded-full" style={{ backgroundColor: repo.langColor }} />
@@ -926,7 +945,24 @@ const DesktopRepositories: React.FC<{ globalSearch: string }> = ({ globalSearch 
                     </div>
                     <div>
                       <h2 className="text-lg font-bold text-text-main">{selectedRepo.name}</h2>
-                      <span className="text-[10px] text-text-muted font-bold tracking-wider uppercase block">Workspace Metadata</span>
+                      <div className="flex items-center flex-wrap gap-2.5 mt-0.5">
+                        <span className="text-[10px] text-text-muted font-bold tracking-wider uppercase block">Workspace Metadata</span>
+                        <span className="text-border text-[10px] hidden sm:inline">•</span>
+                        <div className="flex items-center gap-3 text-xs">
+                          <span className="flex items-center gap-1" title="Stars">
+                            <Star size={12} className="text-amber-500 fill-amber-500/10" />
+                            <span className="font-semibold text-text-main">{selectedRepo.stars.toLocaleString()}</span>
+                          </span>
+                          <span className="flex items-center gap-1" title="Forks">
+                            <GitFork size={12} className="text-blue-500" />
+                            <span className="font-semibold text-text-main">{selectedRepo.forks.toLocaleString()}</span>
+                          </span>
+                          <span className="flex items-center gap-1" title="Watching">
+                            <Eye size={12} className="text-emerald-500" />
+                            <span className="font-semibold text-text-main">{selectedRepo.watching.toLocaleString()}</span>
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -20,6 +20,9 @@ export interface GitHubRepo {
     login: string;
     avatar_url?: string;
   };
+  stargazers_count?: number;
+  forks_count?: number;
+  watchers_count?: number;
 }
 
 export interface AppState {

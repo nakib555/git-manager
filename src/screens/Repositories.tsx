@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useAppContext } from '../AppContext';
-import { Search, Lock, Globe, Square, FolderGit2 } from 'lucide-react';
+import { Search, Lock, Globe, Square, FolderGit2, Star, GitFork, Eye } from 'lucide-react';
 import { AnimatedSearchIcon, AnimatedGlobe, AnimatedLock } from '../components/Layout';
 import { GitHubRepo } from '../types';
 import { useVirtualizer } from '@tanstack/react-virtual';
@@ -58,7 +58,10 @@ export const Repositories: React.FC = () => {
       updated: formatTime(repo.pushed_at),
       icon: FolderGit2,
       iconColor: 'text-[#38BDF8]',
-      bg: 'bg-[#38BDF8]/10'
+      bg: 'bg-[#38BDF8]/10',
+      stars: repo.stargazers_count || 0,
+      forks: repo.forks_count || 0,
+      watching: repo.watchers_count || 0,
     };
   });
 
@@ -72,7 +75,7 @@ export const Repositories: React.FC = () => {
   const rowVirtualizer = useVirtualizer({
     count: filteredRepos.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 142,
+    estimateSize: () => 162,
     overscan: 5,
   });
 
@@ -162,6 +165,23 @@ export const Repositories: React.FC = () => {
                         </div>
                       </div>
                       <div className="text-[13px] text-text-muted mb-3 line-clamp-1 truncate">{repo.desc}</div>
+                      
+                      {/* Repo Stats */}
+                      <div className="flex items-center gap-3.5 text-xs text-text-muted mb-3 border-t border-border/10 pt-2.5">
+                        <span className="flex items-center gap-1" title="Stars">
+                          <Star size={13} className="text-amber-500 fill-amber-500/10" />
+                          <span className="font-semibold text-text-main">{(repo as any).stars.toLocaleString()}</span>
+                        </span>
+                        <span className="flex items-center gap-1" title="Forks">
+                          <GitFork size={13} className="text-blue-500" />
+                          <span className="font-semibold text-text-main">{(repo as any).forks.toLocaleString()}</span>
+                        </span>
+                        <span className="flex items-center gap-1" title="Watching">
+                          <Eye size={13} className="text-emerald-500" />
+                          <span className="font-semibold text-text-main">{(repo as any).watching.toLocaleString()}</span>
+                        </span>
+                      </div>
+
                       <div className="flex justify-between text-xs text-text-muted mt-auto">
                         <span className="flex items-center gap-1.5">
                           <Square size={12} fill={repo.langColor} color={repo.langColor} /> {repo.lang}
