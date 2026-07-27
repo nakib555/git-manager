@@ -3,6 +3,7 @@ import { useCommits, CommitFilter } from '../../hooks/useCommits';
 import { CommitItem } from './CommitItem';
 import { Search, Loader2, RefreshCw, X, Filter, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import emptyStateImage from '../../assets/images/empty_commits_state_1784913881320.jpg';
 
 export const CommitList = ({ 
@@ -39,6 +40,13 @@ export const CommitList = ({
   const currentPage = filters.page;
   
   const scrollElementRef = useRef<HTMLDivElement>(null);
+
+  const rowVirtualizer = useVirtualizer({
+    count: commits.length,
+    getScrollElement: () => scrollElementRef.current,
+    estimateSize: () => 130, // Estimate height of CommitItem + gap
+    overscan: 5,
+  });
 
   // Preserve scroll position by scrolling to top of the list when page changes, 
   // or keeping it in view. Since we replace the list, we can just scroll top.
@@ -204,32 +212,46 @@ export const CommitList = ({
             </div>
           </div>
         ) : (
-          <div className="flex flex-col gap-6 relative pb-6 pt-2 pl-8">
+          <div 
+            className="relative pb-6 pt-2"
+            style={{
+              height: `${rowVirtualizer.getTotalSize()}px`,
+              width: '100%',
+            }}
+          >
             {/* The continuous timeline line */}
             <div className="absolute top-4 bottom-6 left-[15px] w-[2px] bg-border/60 z-0"></div>
-            <AnimatePresence>
-              {commits.map((commit: any, index: number) => {
-                const isLatest = index === 0 && !filters.query && filters.page === 1;
+            
+            {rowVirtualizer.getVirtualItems().map((virtualItem) => {
+              const commit = commits[virtualItem.index];
+              if (!commit) return null;
+              const isLatest = virtualItem.index === 0 && !filters.query && filters.page === 1;
 
-                return (
-                  <motion.div
-                    key={commit.hash}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.03 }}
-                  >
-                    <CommitItem
-                      commit={commit}
-                      isLatest={isLatest}
-                      isSelected={selectedCommitId === commit.hash}
-                      onSelect={onSelectCommit}
-                      onActionClick={onActionClick}
-                      isDesktop={isDesktop}
-                    />
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
+              return (
+                <div
+                  key={virtualItem.key}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: `${virtualItem.size}px`,
+                    transform: `translateY(${virtualItem.start}px)`,
+                    paddingBottom: '24px', // Equivalent to gap-6
+                    paddingLeft: '32px' // Equivalent to pl-8
+                  }}
+                >
+                  <CommitItem
+                    commit={commit}
+                    isLatest={isLatest}
+                    isSelected={selectedCommitId === commit.hash}
+                    onSelect={onSelectCommit}
+                    onActionClick={onActionClick}
+                    isDesktop={isDesktop}
+                  />
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

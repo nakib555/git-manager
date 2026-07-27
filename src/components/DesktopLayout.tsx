@@ -832,6 +832,7 @@ const DesktopRepositories: React.FC<{ globalSearch: string }> = ({ globalSearch 
   const [filter, setFilter] = useState<'All' | 'Private' | 'Public'>('All');
   const [localSearch, setLocalSearch] = useState(repoSearchQuery);
   const [selectedRepoId, setSelectedRepoId] = useState<string | null>(null);
+  const parentRef = useRef<HTMLDivElement>(null);
 
   const searchVal = globalSearch || localSearch;
 
@@ -869,6 +870,13 @@ const DesktopRepositories: React.FC<{ globalSearch: string }> = ({ globalSearch 
     if (filter === 'Private' && !repo.isPrivate) return false;
     if (filter === 'Public' && repo.isPrivate) return false;
     return true;
+  });
+
+  const rowVirtualizer = useVirtualizer({
+    count: filteredRepos.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 140, // Height of the card + spacing
+    overscan: 5,
   });
 
   // Automatically select first repo if none selected
@@ -926,57 +934,85 @@ const DesktopRepositories: React.FC<{ globalSearch: string }> = ({ globalSearch 
           </div>
 
           {/* Scrollable Repo List */}
-          <div className={`flex-1 overflow-y-auto p-3 space-y-2 no-scrollbar transition-opacity duration-200 ${isFetchingRepos ? 'opacity-60 pointer-events-none' : ''}`}>
+          <div 
+            ref={parentRef}
+            className={`flex-1 overflow-y-auto p-3 no-scrollbar transition-opacity duration-200 ${isFetchingRepos ? 'opacity-60 pointer-events-none' : ''}`}
+          >
             {filteredRepos.length === 0 ? (
-              <div className="py-12 flex flex-col items-center justify-center text-center">
+              <div className="py-12 flex flex-col items-center justify-center text-center h-full">
                 <FolderGit2 size={24} className="text-text-muted mb-2" />
                 <span className="font-semibold text-xs text-text-main">No repos found</span>
                 <span className="text-[10px] text-text-muted mt-1">Try resetting filter categories.</span>
               </div>
             ) : (
-              filteredRepos.map(repo => {
-                const isSelected = selectedRepoId === repo.id;
-                return (
-                  <div 
-                    key={repo.id}
-                    onClick={() => setSelectedRepoId(repo.id)}
-                    className={`p-3.5 border rounded-xl cursor-pointer transition-all ${isSelected ? 'bg-primary/5 border-primary/45 text-primary' : 'border-border bg-card/65 hover:border-border/80 hover:-translate-y-0.5'}`}
-                  >
-                    <div className="flex justify-between items-start gap-2 mb-1.5">
-                      <span className={`font-bold text-xs truncate ${isSelected ? 'text-primary' : 'text-text-main'}`}>{repo.name}</span>
-                      <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full border uppercase tracking-wider shrink-0 ${repo.isPrivate ? 'bg-danger/10 border-danger/20 text-danger' : 'bg-success/10 border-success/20 text-success'}`}>
-                        {repo.isPrivate ? 'Private' : 'Public'}
-                      </span>
-                    </div>
-                    
-                    <p className="text-[11px] text-text-muted truncate">{repo.desc}</p>
-                    
-                    {/* Repo Stats Row */}
-                    <div className="flex items-center gap-3 text-[10px] text-text-muted mt-2">
-                      <span className="flex items-center gap-1" title="Stars">
-                        <Star size={11} className="text-amber-500 fill-amber-500/10" />
-                        <span className="font-semibold text-text-main">{repo.stars.toLocaleString()}</span>
-                      </span>
-                      <span className="flex items-center gap-1" title="Forks">
-                        <GitFork size={11} className="text-blue-500" />
-                        <span className="font-semibold text-text-main">{repo.forks.toLocaleString()}</span>
-                      </span>
-                      <span className="flex items-center gap-1" title="Watching">
-                        <Eye size={11} className="text-emerald-500" />
-                        <span className="font-semibold text-text-main">{repo.watching.toLocaleString()}</span>
-                      </span>
-                    </div>
+              <div
+                style={{
+                  height: `${rowVirtualizer.getTotalSize()}px`,
+                  width: '100%',
+                  position: 'relative',
+                }}
+              >
+                {rowVirtualizer.getVirtualItems().map((virtualItem) => {
+                  const repo = filteredRepos[virtualItem.index];
+                  if (!repo) return null;
+                  const isSelected = selectedRepoId === repo.id;
+                  
+                  return (
+                    <div
+                      key={virtualItem.key}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: `${virtualItem.size}px`,
+                        transform: `translateY(${virtualItem.start}px)`,
+                        paddingBottom: '8px',
+                      }}
+                    >
+                      <div 
+                        onClick={() => setSelectedRepoId(repo.id)}
+                        className={`h-full p-3.5 border rounded-xl cursor-pointer transition-all flex flex-col justify-between ${isSelected ? 'bg-primary/5 border-primary/45 text-primary' : 'border-border bg-card/65 hover:border-border/80 hover:-translate-y-0.5'}`}
+                      >
+                        <div>
+                          <div className="flex justify-between items-start gap-2 mb-1.5">
+                            <span className={`font-bold text-xs truncate ${isSelected ? 'text-primary' : 'text-text-main'}`}>{repo.name}</span>
+                            <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full border uppercase tracking-wider shrink-0 ${repo.isPrivate ? 'bg-danger/10 border-danger/20 text-danger' : 'bg-success/10 border-success/20 text-success'}`}>
+                              {repo.isPrivate ? 'Private' : 'Public'}
+                            </span>
+                          </div>
+                          
+                          <p className="text-[11px] text-text-muted truncate">{repo.desc}</p>
+                          
+                          {/* Repo Stats Row */}
+                          <div className="flex items-center gap-3 text-[10px] text-text-muted mt-2">
+                            <span className="flex items-center gap-1" title="Stars">
+                              <Star size={11} className="text-amber-500 fill-amber-500/10" />
+                              <span className="font-semibold text-text-main">{repo.stars.toLocaleString()}</span>
+                            </span>
+                            <span className="flex items-center gap-1" title="Forks">
+                              <GitFork size={11} className="text-blue-500" />
+                              <span className="font-semibold text-text-main">{repo.forks.toLocaleString()}</span>
+                            </span>
+                            <span className="flex items-center gap-1" title="Watching">
+                              <Eye size={11} className="text-emerald-500" />
+                              <span className="font-semibold text-text-main">{repo.watching.toLocaleString()}</span>
+                            </span>
+                          </div>
+                        </div>
 
-                    <div className="flex justify-between items-center text-[10px] text-text-muted mt-3 pt-2.5 border-t border-border/30">
-                      <span className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: repo.langColor }} />
-                        {repo.lang}
-                      </span>
-                      <span>{repo.updated}</span>
+                        <div className="flex justify-between items-center text-[10px] text-text-muted mt-3 pt-2.5 border-t border-border/30 shrink-0">
+                          <span className="flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: repo.langColor }} />
+                            {repo.lang}
+                          </span>
+                          <span>{repo.updated}</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                );
-              })
+                  );
+                })}
+              </div>
             )}
           </div>
 
