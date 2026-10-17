@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '../../AppContext';
-import { Home, Folder, FileText, FileCode, ChevronRight, ChevronDown, Copy, Check } from 'lucide-react';
+import { Home, Folder, FileText, FileCode, ChevronRight, ChevronDown, Copy, Check, Search, X } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus, vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
@@ -40,54 +40,108 @@ const getCodeLanguage = (filename: string): string => {
   }
 };
 
-const buildTree = (files: any[]) => {
-  const root: any[] = [];
-  
-  files.forEach(file => {
+const safeDecodeBase64 = (base64Str: string): string => {
+  try {
+    const cleanStr = base64Str.replace(/\s/g, '');
+    const binary = atob(cleanStr);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+  } catch (_) {
+    try {
+      return atob(base64Str.replace(/\s/g, ''));
+    } catch {
+      return '// Unable to decode file preview';
+    }
+  }
+};
+
+interface TreeNode {
+  name: string;
+  path: string;
+  type: 'dir' | 'file';
+  children?: TreeNode[];
+}
+
+const buildFastTree = (files: any[]): TreeNode[] => {
+  if (!files || files.length === 0) return [];
+  const root: TreeNode[] = [];
+  const dirMap = new Map<string, TreeNode>();
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    if (!file || !file.name) continue;
     const parts = file.name.split('/');
-    let currentLevel = root;
-    
-    parts.forEach((part: string, index: number) => {
-      const isLast = index === parts.length - 1;
-      const path = parts.slice(0, index + 1).join('/');
-      
-      let existing = currentLevel.find(item => item.name === part);
-      if (!existing) {
-        existing = {
+    let currentPath = '';
+
+    for (let depth = 0; depth < parts.length; depth++) {
+      const part = parts[depth];
+      const isFile = depth === parts.length - 1 && file.type === 'file';
+      const prevPath = currentPath;
+      currentPath = currentPath ? `${currentPath}/${part}` : part;
+
+      if (isFile) {
+        const fileNode: TreeNode = {
           name: part,
-          path: path,
-          type: isLast ? file.type : 'dir',
-          children: isLast && file.type === 'file' ? undefined : []
+          path: currentPath,
+          type: 'file',
         };
-        currentLevel.push(existing);
+        if (depth === 0) {
+          root.push(fileNode);
+        } else {
+          const parent = dirMap.get(prevPath);
+          if (parent && parent.children) {
+            parent.children.push(fileNode);
+          }
+        }
+      } else {
+        if (!dirMap.has(currentPath)) {
+          const dirNode: TreeNode = {
+            name: part,
+            path: currentPath,
+            type: 'dir',
+            children: [],
+          };
+          dirMap.set(currentPath, dirNode);
+          if (depth === 0) {
+            root.push(dirNode);
+          } else {
+            const parent = dirMap.get(prevPath);
+            if (parent && parent.children) {
+              parent.children.push(dirNode);
+            }
+          }
+        }
       }
-      if (existing.children) {
-        currentLevel = existing.children;
-      }
-    });
-  });
-  
-  const sortTree = (nodes: any[]) => {
+    }
+  }
+
+  const sortNodes = (nodes: TreeNode[]) => {
     nodes.sort((a, b) => {
       if (a.type === 'dir' && b.type !== 'dir') return -1;
       if (a.type !== 'dir' && b.type === 'dir') return 1;
       return a.name.localeCompare(b.name);
     });
-    nodes.forEach(node => {
-      if (node.children) sortTree(node.children);
-    });
+    for (let i = 0; i < nodes.length; i++) {
+      if (nodes[i].children && nodes[i].children!.length > 0) {
+        sortNodes(nodes[i].children!);
+      }
+    }
   };
-  
-  sortTree(root);
+
+  sortNodes(root);
   return root;
 };
 
-const FileTreeItem = ({ item, depth, activeFileName, onSelect }: any) => {
-  const [isOpen, setIsOpen] = useState(depth === 0);
+const FileTreeItem = React.memo(({ item, depth, activeFileName, onSelect }: any) => {
+  // Keep subfolders collapsed by default to prevent rendering thousands of DOM elements
+  const [isOpen, setIsOpen] = useState(depth === 0 && !item.path.includes('/'));
   const isSelected = activeFileName === item.path;
   const isDir = item.type === 'dir';
   const Icon = isDir ? Folder : (item.name.endsWith('.md') ? FileText : FileCode);
-  
+
   return (
     <div className="select-none">
       <div 
@@ -95,27 +149,37 @@ const FileTreeItem = ({ item, depth, activeFileName, onSelect }: any) => {
           if (isDir) setIsOpen(!isOpen);
           else onSelect(item.path);
         }}
-        className={`flex items-center gap-1.5 py-2 px-2 rounded-lg cursor-pointer transition-all text-xs font-semibold ${isSelected ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text-main hover:bg-hover/20'}`}
-        style={{ paddingLeft: `${depth * 12 + 8}px` }}
+        className={`flex items-center gap-1.5 py-1.5 px-2 rounded-lg cursor-pointer transition-all text-xs font-semibold ${
+          isSelected ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text-main hover:bg-hover/20'
+        }`}
+        style={{ paddingLeft: `${Math.min(depth * 14 + 8, 80)}px` }}
       >
         <div className="flex items-center justify-center w-4 h-4 shrink-0 text-text-muted/70">
           {isDir && (
             isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />
           )}
         </div>
-        <Icon size={14} className={isDir ? 'text-info' : 'text-primary'} />
+        <Icon size={14} className={isDir ? 'text-primary' : 'text-text-muted'} />
         <span className="truncate">{item.name}</span>
       </div>
-      {isDir && isOpen && item.children && (
+      {isDir && isOpen && item.children && item.children.length > 0 && (
         <div>
           {item.children.map((child: any) => (
-            <FileTreeItem key={child.path} item={child} depth={depth + 1} activeFileName={activeFileName} onSelect={onSelect} />
+            <FileTreeItem 
+              key={child.path} 
+              item={child} 
+              depth={depth + 1} 
+              activeFileName={activeFileName} 
+              onSelect={onSelect} 
+            />
           ))}
         </div>
       )}
     </div>
   );
-};
+});
+
+FileTreeItem.displayName = 'FileTreeItem';
 
 export const FilesScreen = () => {
   const { activeFiles, currentRepo, githubToken, currentRepoOwner, currentBranch, theme, showToast } = useAppContext();
@@ -123,9 +187,21 @@ export const FilesScreen = () => {
   const [fileContent, setFileContent] = useState<string>('');
   const [isLoadingFile, setIsLoadingFile] = useState<boolean>(false);
   const [isCopied, setIsCopied] = useState<boolean>(false);
-
-  const filesToDisplay = activeFiles;
+  const [searchFilter, setSearchFilter] = useState<string>('');
   const [view, setView] = useState<'tree' | 'file'>('tree');
+
+  // Filter files by search query if user types
+  const filteredFiles = useMemo(() => {
+    if (!searchFilter.trim()) return activeFiles;
+    const query = searchFilter.toLowerCase();
+    return activeFiles.filter((f: any) => f.name.toLowerCase().includes(query));
+  }, [activeFiles, searchFilter]);
+
+  // Memoize tree structure to prevent re-building on re-renders
+  const treeData = useMemo(() => {
+    return buildFastTree(filteredFiles);
+  }, [filteredFiles]);
+
   const activeFileName = selectedFile || '';
 
   useEffect(() => {
@@ -146,10 +222,7 @@ export const FilesScreen = () => {
           if (res.ok) {
             const data = await res.json();
             if (data.encoding === 'base64') {
-              const decoded = decodeURIComponent(atob(data.content.replace(/\s/g, '')).split('').map(function(c) {
-                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-              }).join(''));
-              setFileContent(decoded);
+              setFileContent(safeDecodeBase64(data.content));
             } else {
               setFileContent(data.content || '');
             }
@@ -165,11 +238,11 @@ export const FilesScreen = () => {
       };
       fetchFileContent();
     } else {
-      setFileContent('// Please connect your GitHub account to fetch file content.');
+      setFileContent('// Connect your GitHub account to view remote file contents.');
     }
   }, [selectedFile, githubToken, currentRepo, currentRepoOwner, currentBranch]);
 
-  if (filesToDisplay.length === 0) {
+  if (activeFiles.length === 0) {
     return (
       <div className="bg-card rounded-2xl border border-border p-8 text-center flex flex-col items-center justify-center my-4">
         <Folder size={32} className="text-text-muted mb-2" />
@@ -178,6 +251,8 @@ export const FilesScreen = () => {
       </div>
     );
   }
+
+  const isHugeFile = fileContent.length > 150_000 || fileContent.split('\n').length > 1500;
 
   return (
     <div className="bg-card rounded-2xl border border-border overflow-hidden flex flex-col h-[70vh]">
@@ -220,12 +295,39 @@ export const FilesScreen = () => {
           </button>
         )}
       </div>
+
+      {/* Filter search bar in tree view */}
+      {view === 'tree' && (
+        <div className="px-3 pt-3 pb-2 border-b border-border/60">
+          <div className="relative flex items-center">
+            <Search size={13} className="absolute left-2.5 text-text-muted" />
+            <input
+              type="text"
+              placeholder="Search files in workspace..."
+              value={searchFilter}
+              onChange={(e) => setSearchFilter(e.target.value)}
+              className="w-full bg-main border border-border rounded-lg pl-8 pr-7 py-1.5 text-xs text-text-main placeholder:text-text-muted focus:outline-none focus:border-primary font-medium"
+            />
+            {searchFilter && (
+              <button
+                onClick={() => setSearchFilter('')}
+                className="absolute right-2 text-text-muted hover:text-text-main cursor-pointer"
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
       
       {view === 'tree' ? (
         <div className="flex-1 overflow-y-auto bg-card p-3">
-          <div className="text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2 px-2">Workspace Directory</div>
+          <div className="flex items-center justify-between text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2 px-2">
+            <span>Workspace Files</span>
+            <span className="font-mono">{filteredFiles.length} items</span>
+          </div>
           <div className="space-y-0.5">
-            {buildTree(filesToDisplay).map(item => (
+            {treeData.map(item => (
               <FileTreeItem 
                 key={item.path} 
                 item={item} 
@@ -237,6 +339,11 @@ export const FilesScreen = () => {
                 }} 
               />
             ))}
+            {treeData.length === 0 && (
+              <div className="text-center py-6 text-xs text-text-muted font-medium">
+                No matching files found.
+              </div>
+            )}
           </div>
         </div>
       ) : (
@@ -244,7 +351,14 @@ export const FilesScreen = () => {
           {isLoadingFile ? (
             <div className="flex items-center justify-center h-full gap-2 text-text-muted text-xs">
               <span className="w-5 h-5 rounded-full border-2 border-primary border-t-transparent animate-spin"></span>
-              <span>Fetching file...</span>
+              <span>Fetching file content...</span>
+            </div>
+          ) : isHugeFile ? (
+            <div className="p-4 font-mono text-xs leading-relaxed text-text-main whitespace-pre overflow-x-auto">
+              <div className="mb-3 text-[11px] text-warning bg-warning/10 border border-warning/20 p-2 rounded-lg font-sans">
+                Large file preview rendered in fast-mode to optimize performance.
+              </div>
+              {fileContent}
             </div>
           ) : (
             <SyntaxHighlighter

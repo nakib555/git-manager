@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useAppContext } from '../AppContext';
 import { motion, AnimatePresence } from 'motion/react';
@@ -1293,50 +1293,103 @@ const DesktopRepoWorkspace: React.FC = () => {
  * 3.1 DESKTOP CODE FILES EXPLORER VIEW (IDE SIDEBAR + CODE PREVIEW PANEL)
  */
 
-const buildTree = (files: any[]) => {
-  const root: any[] = [];
-  
-  files.forEach(file => {
+interface DesktopTreeNode {
+  name: string;
+  path: string;
+  type: 'dir' | 'file';
+  children?: DesktopTreeNode[];
+}
+
+const buildFastDesktopTree = (files: any[]): DesktopTreeNode[] => {
+  if (!files || files.length === 0) return [];
+  const root: DesktopTreeNode[] = [];
+  const dirMap = new Map<string, DesktopTreeNode>();
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    if (!file || !file.name) continue;
     const parts = file.name.split('/');
-    let currentLevel = root;
-    
-    parts.forEach((part: string, index: number) => {
-      const isLast = index === parts.length - 1;
-      const path = parts.slice(0, index + 1).join('/');
-      
-      let existing = currentLevel.find(item => item.name === part);
-      if (!existing) {
-        existing = {
+    let currentPath = '';
+
+    for (let depth = 0; depth < parts.length; depth++) {
+      const part = parts[depth];
+      const isFile = depth === parts.length - 1 && file.type === 'file';
+      const prevPath = currentPath;
+      currentPath = currentPath ? `${currentPath}/${part}` : part;
+
+      if (isFile) {
+        const fileNode: DesktopTreeNode = {
           name: part,
-          path: path,
-          type: isLast ? file.type : 'dir',
-          children: isLast && file.type === 'file' ? undefined : []
+          path: currentPath,
+          type: 'file',
         };
-        currentLevel.push(existing);
+        if (depth === 0) {
+          root.push(fileNode);
+        } else {
+          const parent = dirMap.get(prevPath);
+          if (parent && parent.children) {
+            parent.children.push(fileNode);
+          }
+        }
+      } else {
+        if (!dirMap.has(currentPath)) {
+          const dirNode: DesktopTreeNode = {
+            name: part,
+            path: currentPath,
+            type: 'dir',
+            children: [],
+          };
+          dirMap.set(currentPath, dirNode);
+          if (depth === 0) {
+            root.push(dirNode);
+          } else {
+            const parent = dirMap.get(prevPath);
+            if (parent && parent.children) {
+              parent.children.push(dirNode);
+            }
+          }
+        }
       }
-      if (existing.children) {
-        currentLevel = existing.children;
-      }
-    });
-  });
-  
-  const sortTree = (nodes: any[]) => {
+    }
+  }
+
+  const sortNodes = (nodes: DesktopTreeNode[]) => {
     nodes.sort((a, b) => {
       if (a.type === 'dir' && b.type !== 'dir') return -1;
       if (a.type !== 'dir' && b.type === 'dir') return 1;
       return a.name.localeCompare(b.name);
     });
-    nodes.forEach(node => {
-      if (node.children) sortTree(node.children);
-    });
+    for (let i = 0; i < nodes.length; i++) {
+      if (nodes[i].children && nodes[i].children!.length > 0) {
+        sortNodes(nodes[i].children!);
+      }
+    }
   };
-  
-  sortTree(root);
+
+  sortNodes(root);
   return root;
 };
 
-const FileTreeItem = ({ item, depth, activeFileName, onSelect }: any) => {
-  const [isOpen, setIsOpen] = useState(depth === 0);
+const safeDecodeDesktopBase64 = (base64Str: string): string => {
+  try {
+    const cleanStr = base64Str.replace(/\s/g, '');
+    const binary = atob(cleanStr);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+  } catch (_) {
+    try {
+      return atob(base64Str.replace(/\s/g, ''));
+    } catch {
+      return '// Unable to decode file preview';
+    }
+  }
+};
+
+const FileTreeItem = React.memo(({ item, depth, activeFileName, onSelect }: any) => {
+  const [isOpen, setIsOpen] = useState(depth === 0 && !item.path.includes('/'));
   const isSelected = activeFileName === item.path;
   const isDir = item.type === 'dir';
   const Icon = isDir ? Folder : (item.name.endsWith('.md') ? FileText : FileCode);
@@ -1348,27 +1401,37 @@ const FileTreeItem = ({ item, depth, activeFileName, onSelect }: any) => {
           if (isDir) setIsOpen(!isOpen);
           else onSelect(item.path);
         }}
-        className={`flex items-center gap-1.5 py-1.5 pr-2 rounded-lg cursor-pointer transition-all text-xs font-semibold ${isSelected ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text-main hover:bg-hover/20'}`}
-        style={{ paddingLeft: `${depth * 12 + 8}px` }}
+        className={`flex items-center gap-1.5 py-1.5 pr-2 rounded-lg cursor-pointer transition-all text-xs font-semibold ${
+          isSelected ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text-main hover:bg-hover/20'
+        }`}
+        style={{ paddingLeft: `${Math.min(depth * 14 + 8, 80)}px` }}
       >
         <div className="flex items-center justify-center w-4 h-4 shrink-0 text-text-muted/70">
           {isDir && (
             isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />
           )}
         </div>
-        <Icon size={14} className={isDir ? 'text-info' : 'text-primary'} />
+        <Icon size={14} className={isDir ? 'text-primary' : 'text-text-muted'} />
         <span className="truncate">{item.name}</span>
       </div>
-      {isDir && isOpen && item.children && (
+      {isDir && isOpen && item.children && item.children.length > 0 && (
         <div>
           {item.children.map((child: any) => (
-            <FileTreeItem key={child.path} item={child} depth={depth + 1} activeFileName={activeFileName} onSelect={onSelect} />
+            <FileTreeItem 
+              key={child.path} 
+              item={child} 
+              depth={depth + 1} 
+              activeFileName={activeFileName} 
+              onSelect={onSelect} 
+            />
           ))}
         </div>
       )}
     </div>
   );
-};
+});
+
+FileTreeItem.displayName = 'FileTreeItem';
 
 const DesktopFilesView: React.FC = () => {
   const { activeFiles, currentRepo, githubToken, currentRepoOwner, showToast, theme } = useAppContext();
@@ -1376,12 +1439,22 @@ const DesktopFilesView: React.FC = () => {
   const [fileContent, setFileContent] = useState<string>('');
   const [isLoadingFile, setIsLoadingFile] = useState<boolean>(false);
   const [isCopied, setIsCopied] = useState<boolean>(false);
+  const [searchFilter, setSearchFilter] = useState<string>('');
 
-  const filesToDisplay = activeFiles;
-  const activeFileName = selectedFile || filesToDisplay[0]?.name || '';
+  const filteredFiles = useMemo(() => {
+    if (!searchFilter.trim()) return activeFiles;
+    const query = searchFilter.toLowerCase();
+    return activeFiles.filter((f: any) => f.name.toLowerCase().includes(query));
+  }, [activeFiles, searchFilter]);
+
+  const treeData = useMemo(() => {
+    return buildFastDesktopTree(filteredFiles);
+  }, [filteredFiles]);
+
+  const activeFileName = selectedFile || filteredFiles[0]?.name || '';
 
   useEffect(() => {
-    const fileName = selectedFile || filesToDisplay[0]?.name;
+    const fileName = selectedFile || activeFiles[0]?.name;
     if (!fileName) return;
 
     if (githubToken && typeof githubToken === 'string' && currentRepoOwner) {
@@ -1397,10 +1470,7 @@ const DesktopFilesView: React.FC = () => {
           if (res.ok) {
             const data = await res.json();
             if (data.encoding === 'base64') {
-              const decoded = decodeURIComponent(atob(data.content.replace(/\s/g, '')).split('').map(function(c) {
-                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-              }).join(''));
-              setFileContent(decoded);
+              setFileContent(safeDecodeDesktopBase64(data.content));
             } else {
               setFileContent(data.content || '');
             }
@@ -1416,11 +1486,11 @@ const DesktopFilesView: React.FC = () => {
       };
       fetchFileContent();
     } else {
-      setFileContent('// Please connect your GitHub account to fetch file content.');
+      setFileContent('// Connect your GitHub account to inspect live file content.');
     }
-  }, [selectedFile, filesToDisplay, githubToken, currentRepo, currentRepoOwner]);
+  }, [selectedFile, activeFiles, githubToken, currentRepo, currentRepoOwner]);
 
-  if (filesToDisplay.length === 0) {
+  if (activeFiles.length === 0) {
     return (
       <div className="bg-card rounded-2xl border border-border p-12 text-center flex-1 flex flex-col items-center justify-center">
         <Folder size={40} className="text-text-muted mb-3" />
@@ -1432,34 +1502,66 @@ const DesktopFilesView: React.FC = () => {
 
   const lineCount = fileContent ? fileContent.split('\n').length : 0;
   const language = getCodeLanguage(activeFileName);
+  const isHugeFile = fileContent.length > 150_000 || lineCount > 1500;
 
   return (
     <div className="flex-1 min-h-0 flex gap-5">
       {/* File sidebar explorer */}
       <div className="w-80 bg-card border border-border rounded-2xl p-4 flex flex-col h-full shrink-0 min-h-0">
-        <div className="flex items-center justify-between mb-3 px-1">
-          <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">WORKSPACE DIRECTORY</span>
-          <span className="text-[10px] text-text-muted font-mono">{filesToDisplay.length} files</span>
+        <div className="flex items-center justify-between mb-2.5 px-1">
+          <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">WORKSPACE FILES</span>
+          <span className="text-[10px] text-text-muted font-mono">{filteredFiles.length} files</span>
+        </div>
+
+        {/* Filter input */}
+        <div className="relative flex items-center mb-3">
+          <Search size={13} className="absolute left-2.5 text-text-muted" />
+          <input
+            type="text"
+            placeholder="Filter files..."
+            value={searchFilter}
+            onChange={(e) => setSearchFilter(e.target.value)}
+            className="w-full bg-main border border-border rounded-lg pl-8 pr-7 py-1.5 text-xs text-text-main placeholder:text-text-muted focus:outline-none focus:border-primary font-medium"
+          />
+          {searchFilter && (
+            <button
+              onClick={() => setSearchFilter('')}
+              className="absolute right-2 text-text-muted hover:text-text-main cursor-pointer"
+            >
+              <X size={12} />
+            </button>
+          )}
         </div>
         
         <div className="flex-1 overflow-y-auto pr-1 no-scrollbar space-y-0.5">
-          {buildTree(filesToDisplay).map(item => (
-            <FileTreeItem key={item.path} item={item} depth={0} activeFileName={activeFileName} onSelect={setSelectedFile} />
+          {treeData.map(item => (
+            <FileTreeItem 
+              key={item.path} 
+              item={item} 
+              depth={0} 
+              activeFileName={activeFileName} 
+              onSelect={setSelectedFile} 
+            />
           ))}
+          {treeData.length === 0 && (
+            <div className="text-center py-6 text-xs text-text-muted font-medium">
+              No matching files found.
+            </div>
+          )}
         </div>
       </div>
 
       {/* Code Editor Preview Screen */}
       <div className="flex-1 bg-card border border-border rounded-2xl overflow-hidden flex flex-col h-full shadow-sm min-h-0">
         <div className="px-5 py-3 border-b border-border bg-hover/10 flex justify-between items-center shrink-0">
-          <div className="flex items-center gap-2 text-xs text-text-muted font-medium">
-            <Home size={13} className="text-primary" />
-            <span className="text-border">/</span>
-            <span className="font-semibold text-text-main">{currentRepo}</span>
-            <span className="text-border">/</span>
-            <span className="font-mono font-medium text-primary">{activeFileName}</span>
+          <div className="flex items-center gap-2 text-xs text-text-muted font-medium truncate pr-4">
+            <Home size={13} className="text-primary shrink-0" />
+            <span className="text-border shrink-0">/</span>
+            <span className="font-semibold text-text-main shrink-0">{currentRepo}</span>
+            <span className="text-border shrink-0">/</span>
+            <span className="font-mono font-medium text-primary truncate">{activeFileName}</span>
             {lineCount > 0 && (
-              <span className="ml-2 px-2 py-0.5 rounded text-[10px] font-mono bg-hover text-text-muted border border-border/50">
+              <span className="ml-2 px-2 py-0.5 rounded text-[10px] font-mono bg-hover text-text-muted border border-border/50 shrink-0">
                 {lineCount} lines • {language}
               </span>
             )}
@@ -1474,7 +1576,7 @@ const DesktopFilesView: React.FC = () => {
                 setTimeout(() => setIsCopied(false), 2000);
               }
             }}
-            className="flex items-center gap-1.5 text-[11px] bg-card hover:bg-hover border border-border px-3 py-1.5 rounded-lg font-semibold text-text-main transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 text-[11px] bg-card hover:bg-hover border border-border px-3 py-1.5 rounded-lg font-semibold text-text-main transition-colors cursor-pointer shrink-0"
           >
             {isCopied ? <Check size={12} className="text-success" /> : <Copy size={12} className="text-text-muted" />}
             <span>{isCopied ? 'Copied' : 'Copy Code'}</span>
@@ -1486,6 +1588,13 @@ const DesktopFilesView: React.FC = () => {
             <div className="h-full flex items-center justify-center text-text-muted gap-2.5 text-xs">
               <span className="w-5 h-5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
               <span>Fetching file content stream...</span>
+            </div>
+          ) : isHugeFile ? (
+            <div className="p-4 font-mono text-xs leading-relaxed text-text-main whitespace-pre overflow-x-auto">
+              <div className="mb-3 text-[11px] text-warning bg-warning/10 border border-warning/20 p-2 rounded-lg font-sans">
+                Large file preview rendered in fast-mode to optimize performance.
+              </div>
+              {fileContent}
             </div>
           ) : (
             <SyntaxHighlighter

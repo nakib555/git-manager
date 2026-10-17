@@ -535,21 +535,36 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
       let filesData = [];
       if (filesRes.ok) {
         const rawFiles = await filesRes.json();
-        if (rawFiles.tree) {
-          filesData = rawFiles.tree.map((f: any) => ({
+        if (rawFiles.tree && Array.isArray(rawFiles.tree)) {
+          // Filter out giant noise directories (node_modules, .git, vendor, dist)
+          const filteredTree = rawFiles.tree.filter((f: any) => {
+            const p = f.path || '';
+            return !p.startsWith('.git/') && 
+                   !p.includes('/.git/') && 
+                   !p.startsWith('node_modules/') && 
+                   !p.includes('/node_modules/') &&
+                   !p.startsWith('dist/') &&
+                   !p.startsWith('build/') &&
+                   !p.startsWith('vendor/');
+          });
+
+          // Cap at 1,500 files to prevent freezing the browser
+          const cappedTree = filteredTree.slice(0, 1500);
+
+          filesData = cappedTree.map((f: any) => ({
             name: f.path,
             type: f.type === "tree" ? "dir" : "file",
             isCurrent:
               f.path.toLowerCase().endsWith(".tsx") ||
               f.path.toLowerCase().endsWith(".md"),
           }));
-        } else {
-          filesData = rawFiles.map((f: any) => ({
-            name: f.name,
+        } else if (Array.isArray(rawFiles)) {
+          filesData = rawFiles.slice(0, 1500).map((f: any) => ({
+            name: f.name || f.path,
             type: f.type === "dir" ? "dir" : "file",
             isCurrent:
-              f.name.toLowerCase().endsWith(".tsx") ||
-              f.name.toLowerCase().endsWith(".md"),
+              (f.name || f.path).toLowerCase().endsWith(".tsx") ||
+              (f.name || f.path).toLowerCase().endsWith(".md"),
           }));
         }
       }
@@ -559,30 +574,42 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         (lc: any) => !commitsData.some((gc: any) => gc.hash === lc.hash),
       );
       const mergedCommits = [...uniqueLocal, ...commitsData];
-      // Cache all fetched/merged details in localStorage for persistence and offline display
-      localStorage.setItem(
-        `local_details_${repoName}_commits`,
-        JSON.stringify(mergedCommits),
-      );
-      if (branchesData.length) {
+      
+      // Safely cache in localStorage without crashing if storage quota is exceeded
+      try {
         localStorage.setItem(
-          `local_details_${repoName}_branches`,
-          JSON.stringify(branchesData),
+          `local_details_${repoName}_commits`,
+          JSON.stringify(mergedCommits.slice(0, 500)),
         );
+      } catch (_) {}
+
+      if (branchesData.length) {
+        try {
+          localStorage.setItem(
+            `local_details_${repoName}_branches`,
+            JSON.stringify(branchesData.slice(0, 100)),
+          );
+        } catch (_) {}
       }
       if (prsData.length) {
-        localStorage.setItem(
-          `local_details_${repoName}_prs`,
-          JSON.stringify(prsData),
-        );
+        try {
+          localStorage.setItem(
+            `local_details_${repoName}_prs`,
+            JSON.stringify(prsData.slice(0, 100)),
+          );
+        } catch (_) {}
       }
       if (filesData.length) {
-        localStorage.setItem(
-          `local_details_${repoName}_files`,
-          JSON.stringify(filesData),
-        );
+        try {
+          localStorage.setItem(
+            `local_details_${repoName}_files`,
+            JSON.stringify(filesData),
+          );
+        } catch (_) {}
       }
-      localStorage.setItem("currentBranch", activeBranch);
+      try {
+        localStorage.setItem("currentBranch", activeBranch);
+      } catch (_) {}
       setState((prev) => ({
         ...prev,
         currentBranch: activeBranch,

@@ -17,29 +17,47 @@ export default defineConfig(() => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['git-manager-logo.png'],
+        includeAssets: ['git-manager-logo.png', 'icon.svg'],
         workbox: {
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
           maximumFileSizeToCacheInBytes: 5000000,
           navigateFallbackDenylist: [/^\/auth\/callback/, /^\/api\//],
+          cleanupOutdatedCaches: true,
+          clientsClaim: true,
+          skipWaiting: true,
+        },
+        devOptions: {
+          enabled: true,
+          type: 'module',
         },
         manifest: {
-          name: 'Git Manager Desktop System',
+          id: '/',
+          name: 'Git Manager',
           short_name: 'GitManager',
-          description: 'Git Manager Desktop System Workstation',
-          theme_color: '#1a1a2e',
-          background_color: '#1a1a2e',
+          description: 'Developer Studio Git manager and repository activity workbench.',
+          theme_color: '#09090b',
+          background_color: '#09090b',
+          display: 'standalone',
+          start_url: '/',
+          scope: '/',
           icons: [
             {
-              src: 'git-manager-logo.png',
+              src: '/git-manager-logo.png',
               sizes: '192x192',
               type: 'image/png',
               purpose: 'any'
             },
             {
-              src: 'git-manager-logo.png',
+              src: '/git-manager-logo.png',
               sizes: '512x512',
               type: 'image/png',
               purpose: 'any'
+            },
+            {
+              src: '/git-manager-logo.png',
+              sizes: '512x512',
+              type: 'image/png',
+              purpose: 'maskable'
             }
           ]
         }
