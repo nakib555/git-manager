@@ -62,7 +62,7 @@ export const Settings: React.FC = () => {
           <div className="flex flex-col py-4 border-b border-border">
             <div className="flex justify-between items-center cursor-pointer active:opacity-70" onClick={() => setShowTokenInput(!showTokenInput)}>
               <div className="flex gap-4 items-center">
-                <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
                   <KeySquare size={20} />
                 </div>
                 <div>

@@ -4,7 +4,7 @@ import { Menu, Bell, Plus, ArrowLeft, ChevronDown, MoreVertical, Folder, Activit
 import { motion } from 'motion/react';
 
 export const Header: React.FC = () => {
-  const { currentScreen, currentRepo, currentRepoOwner, currentBranch, activeBranches, switchBranch, navigate, openDrawer, openActionSheet } = useAppContext();
+  const { currentScreen, currentRepo, currentRepoOwner, currentBranch, activeBranches, switchBranch, navigate, openDrawer, openActionSheet, openCommandPalette } = useAppContext();
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
 
   const getHeaderContent = () => {
@@ -13,14 +13,21 @@ export const Header: React.FC = () => {
         return {
           title: 'Dashboard',
           sub: '',
-          left: <Menu size={24} />,
+          left: <Menu size={22} onClick={openDrawer} className="cursor-pointer" />,
           right: (
-            <div className="flex gap-3">
-              <button className="relative text-text-main" onClick={openDrawer}>
-                <Bell size={24} />
-                <div className="absolute top-0 right-0.5 w-2 h-2 bg-danger rounded-full border-2 border-main"></div>
+            <div className="flex gap-2 items-center">
+              <button 
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-main hover:bg-hover active:scale-95 transition-all cursor-pointer" 
+                onClick={openCommandPalette}
+                title="Quick Search & Actions"
+              >
+                <Search size={18} />
               </button>
-              <button className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-text-main header-action-btn" onClick={openActionSheet}>
+              <button className="relative text-text-main p-1 cursor-pointer" onClick={openDrawer}>
+                <Bell size={20} />
+                <div className="absolute top-1 right-1 w-2 h-2 bg-danger rounded-full border-2 border-main"></div>
+              </button>
+              <button className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white header-action-btn active:scale-95 transition-all shadow-sm shadow-primary/20 cursor-pointer" onClick={openActionSheet}>
                 <Plus size={18} />
               </button>
             </div>
@@ -30,11 +37,18 @@ export const Header: React.FC = () => {
         return {
           title: 'Repositories',
           sub: '',
-          left: <Menu size={24} />,
+          left: <Menu size={22} onClick={openDrawer} className="cursor-pointer" />,
           right: (
-            <div className="flex gap-3">
-              <button className="text-text-main" onClick={openDrawer}><Bell size={24} /></button>
-              <button className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-text-main header-action-btn" onClick={openActionSheet}>
+            <div className="flex gap-2 items-center">
+              <button 
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-main hover:bg-hover active:scale-95 transition-all cursor-pointer" 
+                onClick={openCommandPalette}
+                title="Quick Search & Actions"
+              >
+                <Search size={18} />
+              </button>
+              <button className="text-text-main p-1 cursor-pointer" onClick={openDrawer}><Bell size={20} /></button>
+              <button className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white header-action-btn active:scale-95 transition-all shadow-sm shadow-primary/20 cursor-pointer" onClick={openActionSheet}>
                 <Plus size={18} />
               </button>
             </div>
@@ -400,20 +414,20 @@ export const BottomNav: React.FC = () => {
     `transition-transform duration-300 ${isActive ? 'scale-105' : 'group-hover:scale-105'}`;
 
   return (
-    <nav className="flex-shrink-0 bg-main/95 backdrop-blur-md border-t border-border flex justify-around px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2.5 z-50">
+    <nav className="flex-shrink-0 bg-main/95 backdrop-blur-md border-t border-border flex justify-around px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 z-50">
       {/* Home tab */}
       <div 
         className={`group flex flex-col items-center gap-1 text-[11px] font-semibold cursor-pointer transition-all duration-200 w-16 ${
-          currentScreen === 'dash' ? 'text-blue-500' : 'text-text-muted hover:text-text-main'
+          currentScreen === 'dash' ? 'text-primary' : 'text-text-muted hover:text-text-main'
         }`}
         onClick={() => navigate('dash')}
       >
-        <div className={`w-12 h-8 flex items-center justify-center rounded-2xl transition-all duration-300 ${
+        <div className={`w-12 h-8 flex items-center justify-center rounded-xl transition-all duration-200 ${
           currentScreen === 'dash' 
-            ? 'bg-blue-500/10 text-blue-500' 
+            ? 'bg-primary/10 text-primary' 
             : 'hover:bg-hover'
         }`}>
-          <Home size={20} className={getIconClass(currentScreen === 'dash')} />
+          <Home size={18} className={getIconClass(currentScreen === 'dash')} />
         </div>
         <span className="text-[10px]">Home</span>
       </div>
@@ -421,16 +435,16 @@ export const BottomNav: React.FC = () => {
       {/* Repos tab */}
       <div 
         className={`group flex flex-col items-center gap-1 text-[11px] font-semibold cursor-pointer transition-all duration-200 w-16 ${
-          currentScreen === 'repos' && !isActivity ? 'text-purple-500' : 'text-text-muted hover:text-text-main'
+          currentScreen === 'repos' && !isActivity ? 'text-primary' : 'text-text-muted hover:text-text-main'
         }`}
         onClick={() => navigate('repos')}
       >
-        <div className={`w-12 h-8 flex items-center justify-center rounded-2xl transition-all duration-300 ${
+        <div className={`w-12 h-8 flex items-center justify-center rounded-xl transition-all duration-200 ${
           currentScreen === 'repos' && !isActivity 
-            ? 'bg-purple-500/10 text-purple-500' 
+            ? 'bg-primary/10 text-primary' 
             : 'hover:bg-hover'
         }`}>
-          <Folder size={20} className={getIconClass(currentScreen === 'repos' && !isActivity)} />
+          <Folder size={18} className={getIconClass(currentScreen === 'repos' && !isActivity)} />
         </div>
         <span className="text-[10px]">Repos</span>
       </div>
@@ -438,16 +452,16 @@ export const BottomNav: React.FC = () => {
       {/* Clone tab */}
       <div 
         className={`group flex flex-col items-center gap-1 text-[11px] font-semibold cursor-pointer transition-all duration-200 w-16 ${
-          currentScreen === 'clone' ? 'text-teal-500' : 'text-text-muted hover:text-text-main'
+          currentScreen === 'clone' ? 'text-primary' : 'text-text-muted hover:text-text-main'
         }`}
         onClick={() => navigate('clone')}
       >
-        <div className={`w-12 h-8 flex items-center justify-center rounded-2xl transition-all duration-300 ${
+        <div className={`w-12 h-8 flex items-center justify-center rounded-xl transition-all duration-200 ${
           currentScreen === 'clone' 
-            ? 'bg-teal-500/10 text-teal-500' 
+            ? 'bg-primary/10 text-primary' 
             : 'hover:bg-hover'
         }`}>
-          <HardDrive size={20} className={getIconClass(currentScreen === 'clone')} />
+          <HardDrive size={18} className={getIconClass(currentScreen === 'clone')} />
         </div>
         <span className="text-[10px]">Clone</span>
       </div>
@@ -455,16 +469,16 @@ export const BottomNav: React.FC = () => {
       {/* Activity tab */}
       <div 
         className={`group flex flex-col items-center gap-1 text-[11px] font-semibold cursor-pointer transition-all duration-200 w-16 ${
-          isActivity ? 'text-pink-500' : 'text-text-muted hover:text-text-main'
+          isActivity ? 'text-primary' : 'text-text-muted hover:text-text-main'
         }`}
         onClick={() => navigate('commits')}
       >
-        <div className={`w-12 h-8 flex items-center justify-center rounded-2xl transition-all duration-300 ${
+        <div className={`w-12 h-8 flex items-center justify-center rounded-xl transition-all duration-200 ${
           isActivity 
-            ? 'bg-pink-500/10 text-pink-500' 
+            ? 'bg-primary/10 text-primary' 
             : 'hover:bg-hover'
         }`}>
-          <Activity size={20} className={getIconClass(isActivity)} />
+          <Activity size={18} className={getIconClass(isActivity)} />
         </div>
         <span className="text-[10px]">Activity</span>
       </div>
@@ -472,19 +486,19 @@ export const BottomNav: React.FC = () => {
       {/* Settings / More tab */}
       <div 
         className={`group flex flex-col items-center gap-1 text-[11px] font-semibold cursor-pointer transition-all duration-200 w-16 ${
-          currentScreen === 'settings' ? 'text-green-500' : 'text-text-muted hover:text-text-main'
+          currentScreen === 'settings' ? 'text-primary' : 'text-text-muted hover:text-text-main'
         }`}
         onClick={() => navigate('settings')}
       >
-        <div className={`w-12 h-8 flex items-center justify-center rounded-2xl transition-all duration-300 ${
+        <div className={`w-12 h-8 flex items-center justify-center rounded-xl transition-all duration-200 ${
           currentScreen === 'settings' 
-            ? 'bg-green-500/10 text-green-500' 
+            ? 'bg-primary/10 text-primary' 
             : 'hover:bg-hover'
         }`}>
           <motion.svg
             xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
+            width="18"
+            height="18"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -518,7 +532,7 @@ export const BottomNav: React.FC = () => {
             </motion.g>
           </motion.svg>
         </div>
-        <span className="text-[10px]">More</span>
+        <span className="text-[10px]">Settings</span>
       </div>
     </nav>
   );

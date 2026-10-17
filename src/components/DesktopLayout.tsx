@@ -14,11 +14,52 @@ import {
   Sliders, ArrowLeft, MoreVertical, Activity, Grid, Home, Eye, 
   EyeOff, RefreshCw, ChevronDown, BookOpen, Clock, FileText, 
   FileCode, Terminal, HelpCircle, Edit2, Trash2, Undo, Tag, RotateCcw,
-  AlertCircle, HardDrive, X, Star, GitFork, AlertTriangle, Loader2
+  AlertCircle, HardDrive, X, Star, GitFork, AlertTriangle, Loader2,
+  PanelLeftClose, PanelLeft, Sparkles, Command, Copy
 } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus, vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 import { UnauthenticatedState } from './UnauthenticatedState';
+import { AnimatedNumber } from './UI';
+import { useStaggerList } from '../hooks/useAnime';
+
+const getCodeLanguage = (filename: string): string => {
+  const ext = filename.split('.').pop()?.toLowerCase();
+  switch (ext) {
+    case 'ts':
+    case 'tsx':
+      return 'typescript';
+    case 'js':
+    case 'jsx':
+      return 'javascript';
+    case 'json':
+      return 'json';
+    case 'css':
+      return 'css';
+    case 'html':
+      return 'markup';
+    case 'md':
+      return 'markdown';
+    case 'py':
+      return 'python';
+    case 'rs':
+      return 'rust';
+    case 'go':
+      return 'go';
+    case 'sh':
+    case 'bash':
+      return 'bash';
+    case 'yml':
+    case 'yaml':
+      return 'yaml';
+    case 'sql':
+      return 'sql';
+    default:
+      return 'typescript';
+  }
+};
 
 const getLanguageColor = (lang: string | null) => {
   if (!lang) return '#8F8F9D';
@@ -40,10 +81,11 @@ export const DesktopLayout: React.FC = () => {
   const { 
     currentScreen, currentRepo, navigate, githubUser, githubRepos, 
     disconnectGitHub, theme, toggleTheme, connectGitHub, openModal,
-    toastMessage, githubToken, setRepoSearchQuery, isFetchingRepos
+    toastMessage, githubToken, setRepoSearchQuery, isFetchingRepos,
+    openCommandPalette
   } = useAppContext();
 
-  const [searchFocused, setSearchFocused] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
 
   // Debounce globalSearch changes to global state if on repositories page
@@ -60,112 +102,150 @@ export const DesktopLayout: React.FC = () => {
   return (
     <div className="flex w-full h-full bg-main overflow-hidden text-text-main animate-fade-up">
       {/* 1. LEFT SIDEBAR */}
-      <aside className="w-72 bg-card border-r border-border flex flex-col justify-between shrink-0 h-full">
-        <div className="flex flex-col overflow-y-auto no-scrollbar flex-1 p-5">
-          {/* Logo Brand Header */}
-          <div className="flex items-center gap-3 mb-8 px-1">
-            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-white shadow-md shadow-primary/20">
-              <svg className="w-5 h-5" viewBox="0 0 100 100" fill="none">
-                <path d="M50 15L85 35V65L50 85L15 65V35L50 15Z" fill="rgba(255,255,255,0.2)" stroke="#FFF" strokeWidth="6"/>
-                <path d="M50 15L85 35L50 55L15 35L50 15Z" fill="#FFF"/>
-              </svg>
+      <aside className={`${isSidebarCollapsed ? 'w-20' : 'w-72'} bg-card border-r border-border flex flex-col justify-between shrink-0 h-full transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] relative z-20`}>
+        <div className={`flex flex-col overflow-y-auto no-scrollbar flex-1 ${isSidebarCollapsed ? 'p-3 items-center' : 'p-5'}`}>
+          {/* Logo Brand Header & Collapse Toggle */}
+          <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center flex-col gap-2' : 'justify-between'} mb-6 px-1`}>
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-white shadow-md shadow-primary/20 shrink-0">
+                <svg className="w-5 h-5" viewBox="0 0 100 100" fill="none">
+                  <path d="M50 15L85 35V65L50 85L15 65V35L50 15Z" fill="rgba(255,255,255,0.2)" stroke="#FFF" strokeWidth="6"/>
+                  <path d="M50 15L85 35L50 55L15 35L50 15Z" fill="#FFF"/>
+                </svg>
+              </div>
+              {!isSidebarCollapsed && (
+                <div>
+                  <span className="font-bold text-lg tracking-tight">Git <span className="text-primary">Manager</span></span>
+                  <span className="block text-[9px] text-text-muted font-bold tracking-widest uppercase">Studio Workbench</span>
+                </div>
+              )}
             </div>
-            <div>
-              <span className="font-bold text-lg tracking-tight">Git <span className="text-primary">Manager</span></span>
-              <span className="block text-[10px] text-text-muted font-bold tracking-widest uppercase">Desktop Workstation</span>
-            </div>
+
+            <button
+              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              className="p-1.5 rounded-lg text-text-muted hover:text-text-main hover:bg-hover/60 transition-colors cursor-pointer"
+              title={isSidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+            >
+              {isSidebarCollapsed ? <PanelLeft size={16} /> : <PanelLeftClose size={16} />}
+            </button>
           </div>
 
           {/* User Profile Card */}
-          <div className="bg-hover/20 border border-border/60 rounded-2xl p-4 mb-6">
-            <div className="flex items-center gap-3">
-              {githubUser ? (
-                <img src={githubUser.avatar_url} alt="Avatar" className="w-10 h-10 rounded-full border border-border" />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-hover border border-border flex items-center justify-center text-text-muted">
-                  <User size={18} />
+          {!isSidebarCollapsed ? (
+            <div className="bg-hover/20 border border-border/60 rounded-2xl p-4 mb-6">
+              <div className="flex items-center gap-3">
+                {githubUser ? (
+                  <img src={githubUser.avatar_url} alt="Avatar" className="w-10 h-10 rounded-full border border-border" />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-hover border border-border flex items-center justify-center text-text-muted">
+                    <User size={18} />
+                  </div>
+                )}
+                <div className="overflow-hidden">
+                  <span className="block font-semibold text-xs text-text-main truncate">
+                    {githubUser ? (githubUser.name || githubUser.login) : 'Guest Developer'}
+                  </span>
+                  <span className="block text-[10px] text-text-muted truncate mt-0.5">
+                    {githubUser ? `@${githubUser.login}` : 'Offline Mode'}
+                  </span>
                 </div>
+              </div>
+              
+              {githubUser && githubUser.bio && (
+                <p className="text-[10px] text-text-muted mt-2.5 line-clamp-2 leading-relaxed italic border-t border-border/40 pt-2">
+                  "{githubUser.bio}"
+                </p>
               )}
-              <div className="overflow-hidden">
-                <span className="block font-semibold text-xs text-text-main truncate">
-                  {githubUser ? (githubUser.name || githubUser.login) : 'Guest Developer'}
-                </span>
-                <span className="block text-[10px] text-text-muted truncate mt-0.5">
-                  {githubUser ? `@${githubUser.login}` : 'Offline Mode'}
-                </span>
+
+              <div className="mt-3.5 flex gap-2">
+                {githubToken ? (
+                  <button 
+                    onClick={disconnectGitHub}
+                    className="flex-1 bg-danger/10 hover:bg-danger/20 border border-danger/25 text-danger py-1.5 px-2.5 rounded-xl text-[10px] font-bold transition-all cursor-pointer text-center"
+                  >
+                    Disconnect
+                  </button>
+                ) : (
+                  <button 
+                    onClick={connectGitHub}
+                    className="flex-1 bg-primary hover:bg-primary-hover text-white py-1.5 px-2.5 rounded-xl text-[10px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm shadow-primary/15"
+                  >
+                    <Github size={11} /> Connect GitHub
+                  </button>
+                )}
               </div>
             </div>
-            
-            {githubUser && githubUser.bio && (
-              <p className="text-[10px] text-text-muted mt-2.5 line-clamp-2 leading-relaxed italic border-t border-border/40 pt-2">
-                "{githubUser.bio}"
-              </p>
-            )}
-
-            <div className="mt-3.5 flex gap-2">
-              {githubToken ? (
-                <button 
-                  onClick={disconnectGitHub}
-                  className="flex-1 bg-danger/10 hover:bg-danger/20 border border-danger/25 text-danger py-1.5 px-2.5 rounded-xl text-[10px] font-bold transition-all cursor-pointer text-center"
-                >
-                  Disconnect
-                </button>
+          ) : (
+            <div className="mb-5">
+              {githubUser ? (
+                <img src={githubUser.avatar_url} alt="Avatar" className="w-9 h-9 rounded-full border border-border" title={githubUser.login} />
               ) : (
-                <button 
-                  onClick={connectGitHub}
-                  className="flex-1 bg-primary hover:bg-primary-hover text-white py-1.5 px-2.5 rounded-xl text-[10px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm shadow-primary/15"
-                >
-                  <Github size={11} /> Connect GitHub
+                <button onClick={connectGitHub} className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center" title="Connect GitHub">
+                  <Github size={16} />
                 </button>
               )}
             </div>
-          </div>
+          )}
 
           {/* Global Navigation links */}
-          <div className="space-y-1">
-            <span className="block text-[9px] font-bold text-text-muted uppercase tracking-widest mb-2 px-1">Main Workspace</span>
+          <div className={`space-y-1 w-full ${isSidebarCollapsed ? 'flex flex-col items-center' : ''}`}>
+            {!isSidebarCollapsed && (
+              <span className="block text-[9px] font-bold text-text-muted uppercase tracking-widest mb-2 px-1">Workspace</span>
+            )}
             
             <button 
               onClick={() => navigate('dash')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${currentScreen === 'dash' ? 'bg-primary/10 text-primary border border-primary/25' : 'text-text-muted hover:text-text-main hover:bg-hover/30 border border-transparent'}`}
+              title="Dashboard Overview"
+              className={`flex items-center gap-3 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                isSidebarCollapsed ? 'w-10 h-10 justify-center p-0' : 'w-full px-3 py-2.5'
+              } ${currentScreen === 'dash' ? 'bg-primary/10 text-primary border border-primary/25' : 'text-text-muted hover:text-text-main hover:bg-hover/30 border border-transparent'}`}
             >
-              <Home size={15} />
-              <span>Dashboard Overview</span>
+              <Home size={16} />
+              {!isSidebarCollapsed && <span>Dashboard Overview</span>}
             </button>
 
             <button 
               onClick={() => navigate('repos')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${currentScreen === 'repos' ? 'bg-primary/10 text-primary border border-primary/25' : 'text-text-muted hover:text-text-main hover:bg-hover/30 border border-transparent'}`}
+              title="Repositories Explorer"
+              className={`flex items-center gap-3 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                isSidebarCollapsed ? 'w-10 h-10 justify-center p-0' : 'w-full px-3 py-2.5'
+              } ${currentScreen === 'repos' ? 'bg-primary/10 text-primary border border-primary/25' : 'text-text-muted hover:text-text-main hover:bg-hover/30 border border-transparent'}`}
             >
-              <FolderGit2 size={15} />
-              <span>Repositories Explorer</span>
+              <FolderGit2 size={16} />
+              {!isSidebarCollapsed && <span>Repositories Explorer</span>}
             </button>
 
             <button 
               onClick={() => navigate('settings')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${currentScreen === 'settings' ? 'bg-primary/10 text-primary border border-primary/25' : 'text-text-muted hover:text-text-main hover:bg-hover/30 border border-transparent'}`}
+              title="Settings Panel"
+              className={`flex items-center gap-3 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                isSidebarCollapsed ? 'w-10 h-10 justify-center p-0' : 'w-full px-3 py-2.5'
+              } ${currentScreen === 'settings' ? 'bg-primary/10 text-primary border border-primary/25' : 'text-text-muted hover:text-text-main hover:bg-hover/30 border border-transparent'}`}
             >
-              <Sliders size={15} />
-              <span>Settings Panel</span>
+              <Sliders size={16} />
+              {!isSidebarCollapsed && <span>Settings Panel</span>}
             </button>
           </div>
 
           {/* Repository Sub-navigation */}
           {currentRepo && (
-            <div className="mt-8 space-y-1">
-              <div className="flex items-center justify-between px-1 mb-2">
-                <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest">Active Repository</span>
-                <span className="text-[10px] font-semibold text-primary px-2 py-0.5 rounded-full bg-primary/10 border border-primary/15 truncate max-w-[120px]" title={currentRepo}>
-                  {currentRepo}
-                </span>
-              </div>
+            <div className={`mt-8 space-y-1 w-full ${isSidebarCollapsed ? 'flex flex-col items-center border-t border-border pt-4' : ''}`}>
+              {!isSidebarCollapsed && (
+                <div className="flex items-center justify-between px-1 mb-2">
+                  <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest">Active Repository</span>
+                  <span className="text-[10px] font-semibold text-primary px-2 py-0.5 rounded-full bg-primary/10 border border-primary/15 truncate max-w-[120px]" title={currentRepo}>
+                    {currentRepo}
+                  </span>
+                </div>
+              )}
 
               {[
                 { id: 'commits', label: 'Commits History', icon: GitCommit },
                 { id: 'prs', label: 'Pull Requests', icon: GitPullRequest },
                 { id: 'branches', label: 'Branch Manager', icon: GitBranch },
                 { id: 'files', label: 'Code Explorer', icon: FileCode },
-                { id: 'insights', label: 'Repository Insights', icon: Activity }, { id: 'clone', label: 'Clone Repository', icon: HardDrive },
+                { id: 'insights', label: 'Repository Insights', icon: Activity },
+                { id: 'clone', label: 'Clone Repository', icon: HardDrive },
               ].map(item => {
                 const isActive = currentScreen === item.id;
                 const Icon = item.icon;
@@ -173,10 +253,13 @@ export const DesktopLayout: React.FC = () => {
                   <button 
                     key={item.id}
                     onClick={() => navigate(item.id as any)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${isActive ? 'bg-primary/10 text-primary border border-primary/25 font-bold' : 'text-text-muted hover:text-text-main hover:bg-hover/30 border border-transparent'}`}
+                    title={item.label}
+                    className={`flex items-center gap-3 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                      isSidebarCollapsed ? 'w-10 h-10 justify-center p-0' : 'w-full px-3 py-2.5'
+                    } ${isActive ? 'bg-primary/10 text-primary border border-primary/25 font-bold' : 'text-text-muted hover:text-text-main hover:bg-hover/30 border border-transparent'}`}
                   >
-                    <Icon size={15} />
-                    <span>{item.label}</span>
+                    <Icon size={16} />
+                    {!isSidebarCollapsed && <span>{item.label}</span>}
                   </button>
                 );
               })}
@@ -185,36 +268,33 @@ export const DesktopLayout: React.FC = () => {
         </div>
 
         {/* Desktop Footer Status Bar */}
-        <div className="p-4 border-t border-border bg-hover/10 flex items-center justify-between text-[10px] text-text-muted font-medium">
-          <span className="flex items-center gap-1.5">
+        <div className={`p-4 border-t border-border bg-hover/10 flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} text-[10px] text-text-muted font-medium`}>
+          <span className="flex items-center gap-1.5" title="Developer Station OK">
             <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-            <span>Developer Station OK</span>
+            {!isSidebarCollapsed && <span>Station OK</span>}
           </span>
-          <span>v2.4.1</span>
+          {!isSidebarCollapsed && <span className="font-mono text-[9px] opacity-75">v2.4.1</span>}
         </div>
       </aside>
 
       {/* 2. WORKSPACE CONTAINER */}
-      <main className="flex-1 flex flex-col h-full overflow-hidden bg-main">
+      <main className="flex-1 flex flex-col h-full overflow-hidden bg-main min-w-0">
         {/* Header bar */}
-        <header className="h-16 px-8 border-b border-border flex items-center justify-between shrink-0 bg-card/40 backdrop-blur-md">
-          {/* Top Search bar */}
-          <div className={`w-80 bg-card border rounded-xl px-3 py-2 flex items-center gap-2.5 transition-all duration-200 relative ${searchFocused ? 'border-primary ring-4 ring-primary/10' : 'border-border'}`}>
-            <Search size={16} className="text-text-muted" />
-            <input 
-              type="text" 
-              placeholder="Search workspaces, repos..." 
-              className="bg-transparent border-none text-xs text-text-main w-full outline-none placeholder:text-text-muted pr-6"
-              value={globalSearch}
-              onChange={(e) => setGlobalSearch(e.target.value)}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
-            />
-            {isFetchingRepos && (
-              <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                <Loader2 size={13} className="text-primary animate-spin" />
-              </div>
-            )}
+        <header className="h-16 px-6 lg:px-8 border-b border-border flex items-center justify-between shrink-0 bg-card/60 backdrop-blur-md z-10">
+          {/* Quick Command Launcher / Search */}
+          <div 
+            onClick={openCommandPalette}
+            className="w-72 lg:w-96 bg-card hover:bg-hover/30 border border-border hover:border-primary/40 rounded-xl px-3.5 py-2 flex items-center justify-between transition-all duration-200 cursor-pointer shadow-sm group select-none"
+            title="Press Cmd+K or Ctrl+K to open palette"
+          >
+            <div className="flex items-center gap-2.5 text-xs text-text-muted truncate">
+              <Search size={15} className="group-hover:text-primary transition-colors shrink-0" />
+              <span className="truncate">Search repositories, branches, actions...</span>
+            </div>
+            <div className="flex items-center gap-1 font-mono text-[10px] text-text-muted bg-hover/80 px-2 py-0.5 rounded border border-border/70 font-semibold shrink-0">
+              <Command size={10} />
+              <span>K</span>
+            </div>
           </div>
 
           {/* Right Action Widgets */}
@@ -222,16 +302,17 @@ export const DesktopLayout: React.FC = () => {
             {/* Quick Clone repo button */}
             <button 
               onClick={() => navigate('clone')}
-              className="bg-card border border-border hover:border-primary/50 text-text-main hover:text-primary text-xs font-bold py-2 px-4 rounded-xl active:scale-95 transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+              className="bg-card border border-border hover:border-primary/50 text-text-main hover:text-primary text-xs font-bold py-2 px-3.5 rounded-xl active:scale-95 transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
             >
-              <span>Clone Repository</span>
+              <HardDrive size={13} className="text-primary" />
+              <span className="hidden sm:inline">Clone Repo</span>
             </button>
             {/* Quick Create repo button */}
             <button 
               onClick={() => openModal('repo')}
-              className="bg-primary hover:bg-primary-hover text-white text-xs font-bold py-2 px-4 rounded-xl active:scale-95 transition-all shadow-sm shadow-primary/15 flex items-center gap-1.5 cursor-pointer"
+              className="bg-primary hover:bg-primary-hover text-white text-xs font-bold py-2 px-3.5 rounded-xl active:scale-95 transition-all shadow-sm shadow-primary/15 flex items-center gap-1.5 cursor-pointer"
             >
-              <span>Create Repository</span>
+              <span>+ New Repo</span>
             </button>
 
             {/* Theme selector */}
@@ -240,24 +321,13 @@ export const DesktopLayout: React.FC = () => {
               className="w-9 h-9 border border-border bg-card rounded-xl flex items-center justify-center text-text-muted hover:text-text-main hover:border-primary/30 transition-all cursor-pointer"
               title="Toggle theme"
             >
-              {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+              {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
             </button>
-
-            {/* Notification triggers */}
-            <div className="relative">
-              <button 
-                className="w-9 h-9 border border-border bg-card rounded-xl flex items-center justify-center text-text-muted hover:text-text-main hover:border-primary/30 transition-all cursor-pointer"
-                title="Notifications"
-              >
-                <Bell size={16} />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-danger rounded-full border-2 border-card" />
-              </button>
-            </div>
           </div>
         </header>
 
         {/* Content Viewport */}
-        <div className="flex-1 overflow-hidden p-8 relative min-h-0 flex flex-col">
+        <div className="flex-1 overflow-hidden p-6 lg:p-8 relative min-h-0 flex flex-col">
           {!githubToken && currentScreen !== 'settings' ? (
             <UnauthenticatedState />
           ) : (
@@ -581,20 +651,24 @@ const DesktopDashboard: React.FC<{ globalSearch: string }> = ({ globalSearch }) 
 
       {/* Bento Metric Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <div className="bg-card p-5 rounded-2xl border border-border flex flex-col justify-between">
+        <div className="bg-card p-5 rounded-2xl border border-border flex flex-col justify-between shadow-sm hover:border-primary/30 transition-all">
           <div>
             <span className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2">Total Repositories</span>
-            <span className="text-3xl font-extrabold text-text-main">{githubRepos.length}</span>
+            <span className="text-3xl font-extrabold text-text-main">
+              <AnimatedNumber value={githubRepos.length} />
+            </span>
           </div>
           <span className="block text-[10px] text-primary font-semibold mt-4">
             {githubToken ? '✓ Active Cloud Sync' : '✓ Offline State Store'}
           </span>
         </div>
 
-        <div className="bg-card p-5 rounded-2xl border border-border flex flex-col justify-between">
+        <div className="bg-card p-5 rounded-2xl border border-border flex flex-col justify-between shadow-sm hover:border-primary/30 transition-all">
           <div>
             <span className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2">Workspace Commits</span>
-            <span className="text-3xl font-extrabold text-text-main">{displayCommits}</span>
+            <span className="text-3xl font-extrabold text-text-main">
+              <AnimatedNumber value={displayCommits} />
+            </span>
           </div>
           <span className="block text-[10px] text-info font-semibold mt-4">
             {allCommits.length > sessionCommitsCount ? '✓ All Sync Records Found' : '✓ Active Session Commits'}
@@ -627,8 +701,8 @@ const DesktopDashboard: React.FC<{ globalSearch: string }> = ({ globalSearch }) 
         <div className="lg:col-span-2 bg-card p-6 rounded-2xl border border-border flex flex-col h-[400px]">
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h2 className="text-sm font-bold">Activity Telemetry Overview</h2>
-              <span className="text-[11px] text-text-muted">Interactive telemetry curves of code integrations</span>
+              <h2 className="text-sm font-bold">Activity Overview</h2>
+              <span className="text-[11px] text-text-muted">Commit and pull request activity over time</span>
             </div>
 
             <div className="relative" ref={dropdownRef}>
@@ -1297,10 +1371,11 @@ const FileTreeItem = ({ item, depth, activeFileName, onSelect }: any) => {
 };
 
 const DesktopFilesView: React.FC = () => {
-  const { activeFiles, currentRepo, githubToken, currentRepoOwner, showToast } = useAppContext();
+  const { activeFiles, currentRepo, githubToken, currentRepoOwner, showToast, theme } = useAppContext();
   const [selectedFile, setSelectedFile] = useState<string>('');
   const [fileContent, setFileContent] = useState<string>('');
   const [isLoadingFile, setIsLoadingFile] = useState<boolean>(false);
+  const [isCopied, setIsCopied] = useState<boolean>(false);
 
   const filesToDisplay = activeFiles;
   const activeFileName = selectedFile || filesToDisplay[0]?.name || '';
@@ -1355,11 +1430,17 @@ const DesktopFilesView: React.FC = () => {
     );
   }
 
+  const lineCount = fileContent ? fileContent.split('\n').length : 0;
+  const language = getCodeLanguage(activeFileName);
+
   return (
     <div className="flex-1 min-h-0 flex gap-5">
       {/* File sidebar explorer */}
       <div className="w-80 bg-card border border-border rounded-2xl p-4 flex flex-col h-full shrink-0 min-h-0">
-        <span className="block text-[10px] font-bold text-text-muted uppercase tracking-widest mb-4 px-1">WORKSPACE DIRECTORY</span>
+        <div className="flex items-center justify-between mb-3 px-1">
+          <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">WORKSPACE DIRECTORY</span>
+          <span className="text-[10px] text-text-muted font-mono">{filesToDisplay.length} files</span>
+        </div>
         
         <div className="flex-1 overflow-y-auto pr-1 no-scrollbar space-y-0.5">
           {buildTree(filesToDisplay).map(item => (
@@ -1371,38 +1452,65 @@ const DesktopFilesView: React.FC = () => {
       {/* Code Editor Preview Screen */}
       <div className="flex-1 bg-card border border-border rounded-2xl overflow-hidden flex flex-col h-full shadow-sm min-h-0">
         <div className="px-5 py-3 border-b border-border bg-hover/10 flex justify-between items-center shrink-0">
-          <div className="flex items-center gap-1.5 text-xs text-text-muted font-medium">
+          <div className="flex items-center gap-2 text-xs text-text-muted font-medium">
             <Home size={13} className="text-primary" />
-            <span>/</span>
-            <span className="font-bold text-text-main">{currentRepo}</span>
-            <span>/</span>
-            <span className="font-bold text-primary">{activeFileName}</span>
+            <span className="text-border">/</span>
+            <span className="font-semibold text-text-main">{currentRepo}</span>
+            <span className="text-border">/</span>
+            <span className="font-mono font-medium text-primary">{activeFileName}</span>
+            {lineCount > 0 && (
+              <span className="ml-2 px-2 py-0.5 rounded text-[10px] font-mono bg-hover text-text-muted border border-border/50">
+                {lineCount} lines • {language}
+              </span>
+            )}
           </div>
 
           <button 
             onClick={() => {
-              navigator.clipboard.writeText(fileContent);
-              showToast('Code copied to clipboard!');
+              if (fileContent) {
+                navigator.clipboard.writeText(fileContent);
+                setIsCopied(true);
+                showToast('Code copied to clipboard!');
+                setTimeout(() => setIsCopied(false), 2000);
+              }
             }}
-            className="text-[10px] bg-card hover:bg-hover/60 border border-border px-3 py-1.5 rounded-lg font-bold text-text-main transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 text-[11px] bg-card hover:bg-hover border border-border px-3 py-1.5 rounded-lg font-semibold text-text-main transition-colors cursor-pointer"
           >
-            Copy Code
+            {isCopied ? <Check size={12} className="text-success" /> : <Copy size={12} className="text-text-muted" />}
+            <span>{isCopied ? 'Copied' : 'Copy Code'}</span>
           </button>
         </div>
 
-        <div className="flex-1 overflow-auto bg-main p-6 font-mono text-xs select-text">
+        <div className="flex-1 overflow-auto bg-main select-text relative">
           {isLoadingFile ? (
-            <div className="h-full flex items-center justify-center text-text-muted gap-2.5">
+            <div className="h-full flex items-center justify-center text-text-muted gap-2.5 text-xs">
               <span className="w-5 h-5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
               <span>Fetching file content stream...</span>
             </div>
           ) : (
-            fileContent.trim().split('\n').map((line, idx) => (
-              <div key={idx} className="flex leading-6 group hover:bg-hover/5">
-                <span className="text-[#4B4B5E] w-8 select-none shrink-0 font-bold text-right pr-3.5 border-r border-border/40 mr-4">{idx + 1}</span>
-                <span className="text-text-main/90 whitespace-pre">{line}</span>
-              </div>
-            ))
+            <SyntaxHighlighter
+              language={language}
+              style={theme === 'dark' ? vscDarkPlus : vs}
+              showLineNumbers={true}
+              wrapLines={false}
+              customStyle={{
+                margin: 0,
+                padding: '1.25rem',
+                background: 'transparent',
+                fontSize: '12px',
+                fontFamily: 'var(--font-mono, monospace)',
+                lineHeight: '1.65',
+              }}
+              lineNumberStyle={{
+                minWidth: '2.75rem',
+                paddingRight: '1.25rem',
+                color: 'var(--text-muted)',
+                opacity: 0.45,
+                userSelect: 'none',
+              }}
+            >
+              {fileContent || '// Empty file'}
+            </SyntaxHighlighter>
           )}
         </div>
       </div>
@@ -1490,13 +1598,14 @@ const DesktopCommitsView: React.FC = () => {
     <div className="flex-1 min-h-0 flex gap-5">
       {/* Timeline panel */}
       <div className="w-96 bg-card border border-border rounded-2xl p-5 flex flex-col h-full shrink-0 min-h-0">
-        <div className="flex justify-between items-center mb-5 shrink-0">
-          <span className="block text-[10px] font-bold text-text-muted uppercase tracking-widest">VERSION TIMELINE</span>
+        <div className="flex justify-between items-center mb-4 shrink-0">
+          <span className="block text-[11px] font-bold text-text-muted uppercase tracking-wider">Commit History</span>
           <button 
             onClick={() => openModal('commit')}
-            className="bg-purple-500 hover:bg-purple-600 text-white text-[10px] font-bold py-1.5 px-3 rounded-lg active:scale-95 transition-all shadow-sm shadow-purple-500/15 cursor-pointer"
+            className="bg-primary hover:bg-primary-hover text-white text-[11px] font-semibold py-1.5 px-3 rounded-lg active:scale-95 transition-all shadow-sm shadow-primary/20 cursor-pointer flex items-center gap-1.5"
           >
-            + Commit Changes
+            <GitCommit size={13} />
+            <span>New Commit</span>
           </button>
         </div>
 
@@ -2043,8 +2152,8 @@ const DesktopSettings: React.FC = () => {
                 <Github size={20} />
               </div>
               <div>
-                <span className="block text-xs font-bold text-text-main">{githubToken ? 'Disconnect GitHub Session' : 'Connect Cloud Account'}</span>
-                <span className="block text-[10px] text-text-muted mt-0.5">Toggle remote GitHub API sync pipelines</span>
+                <span className="block text-xs font-bold text-text-main">{githubToken ? 'Disconnect GitHub Account' : 'Connect GitHub Account'}</span>
+                <span className="block text-[10px] text-text-muted mt-0.5">Sync repositories, branches, and pull requests with GitHub</span>
               </div>
             </div>
 
@@ -2061,12 +2170,12 @@ const DesktopSettings: React.FC = () => {
             <div className="p-5 space-y-4">
               <div className="flex items-center justify-between cursor-pointer" onClick={() => setShowTokenForm(!showTokenForm)}>
                 <div className="flex gap-4 items-center">
-                  <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
                     <KeySquare size={20} />
                   </div>
                   <div>
                     <span className="block text-xs font-bold text-text-main">Developer Personal Access Token</span>
-                    <span className="block text-[10px] text-text-muted mt-0.5">Enter direct GitHub token (PAT) for custom access</span>
+                    <span className="block text-[10px] text-text-muted mt-0.5">Enter a GitHub token (PAT) for authenticated access</span>
                   </div>
                 </div>
                 <ChevronRight size={16} className={`text-text-muted transition-transform ${showTokenForm ? 'rotate-90' : ''}`} />

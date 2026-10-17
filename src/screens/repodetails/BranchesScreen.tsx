@@ -106,12 +106,15 @@ const BranchLabel = ({ title, desc, isDefault = false, isActive = false, onDelet
   );
 };
 
+import { useStaggerList } from '../../hooks/useAnime';
+
 export const BranchesScreen = () => {
   const { activeBranches, openModal, deleteBranch, switchBranch, currentBranch } = useAppContext();
   const [search, setSearch] = useState('');
   const [branchToDelete, setBranchToDelete] = useState<string | null>(null);
 
   const filteredBranches = activeBranches.filter(b => b.name.toLowerCase().includes(search.toLowerCase()));
+  const branchListRef = useStaggerList<HTMLDivElement>(':scope > div', [filteredBranches.length]);
 
   return (
     <>
@@ -130,13 +133,13 @@ export const BranchesScreen = () => {
         <span className="text-xs text-text-muted font-semibold uppercase tracking-wider">Branch from main</span>
         <button 
           onClick={() => openModal('branch')}
-          className="bg-info text-white text-xs font-bold px-3 py-2 rounded-xl active:scale-95 transition-all flex items-center gap-1.5 shadow-sm"
+          className="bg-info text-white text-xs font-bold px-3 py-2 rounded-xl active:scale-95 transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
         >
           <GitBranch size={14} strokeWidth={2.5} /> New Branch
         </button>
       </div>
 
-      <div className="flex flex-col gap-3">
+      <div ref={branchListRef} className="flex flex-col gap-3">
         {filteredBranches.map(branch => (
           <BranchLabel 
             key={branch.name} 

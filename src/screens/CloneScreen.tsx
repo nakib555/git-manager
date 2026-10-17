@@ -699,7 +699,7 @@ export default function App() {
   );
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-main text-text-main select-none">
+    <div className="flex-1 flex flex-col min-h-0 bg-main text-text-main">
       
       {/* Redesigned Premium Header */}
       <div className="md:flex hidden items-center justify-between px-6 py-4 border-b border-border bg-card shrink-0">

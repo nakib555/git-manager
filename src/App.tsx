@@ -14,12 +14,13 @@ import { RepoDetails } from './screens/RepoDetails';
 import { CloneScreen } from './screens/CloneScreen';
 import { Settings } from './screens/Settings';
 
+import { CommandPalette } from './components/CommandPalette';
 import { UnauthenticatedState } from './components/UnauthenticatedState';
 
 const queryClient = new QueryClient();
 
 const MainApp = () => {
-  const { currentScreen, githubToken } = useAppContext();
+  const { currentScreen, githubToken, isCommandPaletteOpen, closeCommandPalette } = useAppContext();
   const isDesktop = useIsDesktop();
 
   return (
@@ -50,6 +51,7 @@ const MainApp = () => {
           <NotificationDrawer />
         </>
       )}
+      <CommandPalette isOpen={isCommandPaletteOpen} onClose={closeCommandPalette} />
       <CreateModals />
       <Toast />
     </div>

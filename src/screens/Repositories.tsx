@@ -187,44 +187,45 @@ export const Repositories: React.FC = () => {
                       }}
                     >
                       <div 
-                        className="bg-card p-4 rounded-2xl cursor-pointer transition-all duration-200 hover:-translate-y-0.5 active:scale-95 border border-border h-full flex flex-col justify-between"
+                        className="bg-card p-4 rounded-xl cursor-pointer transition-all duration-200 hover:border-primary/40 border border-border h-full flex flex-col justify-between shadow-xs"
                         onClick={() => openRepo(repo.id, repo.owner)}
                       >
-                        <div className="flex justify-between mb-2">
-                          <div className="text-[15px] font-semibold flex items-center gap-2.5 truncate">
-                            <div className={`w-8 h-8 rounded-lg ${repo.bg} ${repo.iconColor} flex items-center justify-center shrink-0`}>
-                              <Icon size={18} />
+                        <div className="flex justify-between items-start gap-2 mb-2">
+                          <div className="flex items-center gap-2.5 truncate min-w-0">
+                            <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                              <Icon size={16} />
                             </div>
-                            <span className="truncate">{repo.name}</span>
+                            <span className="font-mono text-sm font-semibold text-text-main truncate">{repo.name}</span>
                           </div>
-                          <div className="text-[10px] px-2 py-0.5 rounded-full border border-border text-text-muted flex items-center gap-1 h-fit shrink-0">
-                            {repo.isPrivate ? <AnimatedLock size={11} className="text-text-muted" /> : <AnimatedGlobe size={11} className="text-text-muted" />}
+                          <div className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-md border border-border text-text-muted flex items-center gap-1 shrink-0 bg-hover/20">
+                            {repo.isPrivate ? <AnimatedLock size={10} className="text-text-muted" /> : <AnimatedGlobe size={10} className="text-text-muted" />}
                             <span>{repo.isPrivate ? 'Private' : 'Public'}</span>
                           </div>
                         </div>
-                        <div className="text-[13px] text-text-muted mb-3 truncate">{repo.desc}</div>
+                        <div className="text-xs text-text-muted mb-3 line-clamp-2 leading-relaxed">{repo.desc}</div>
                         
                         {/* Repo Stats */}
-                        <div className="flex items-center gap-3.5 text-xs text-text-muted mb-3 border-t border-border/10 pt-2.5">
-                          <span className="flex items-center gap-1" title="Stars">
-                            <Star size={13} className="text-amber-500 fill-amber-500/10" />
-                            <span className="font-semibold text-text-main">{(repo as any).stars.toLocaleString()}</span>
+                        <div className="flex items-center gap-4 text-xs text-text-muted mb-2.5 border-t border-border pt-2.5">
+                          <span className="flex items-center gap-1.5" title="Stars">
+                            <Star size={12} className="text-amber-500 fill-amber-500/10" />
+                            <span className="font-medium text-text-main">{(repo as any).stars.toLocaleString()}</span>
                           </span>
-                          <span className="flex items-center gap-1" title="Forks">
-                            <GitFork size={13} className="text-blue-500" />
-                            <span className="font-semibold text-text-main">{(repo as any).forks.toLocaleString()}</span>
+                          <span className="flex items-center gap-1.5" title="Forks">
+                            <GitFork size={12} className="text-blue-500" />
+                            <span className="font-medium text-text-main">{(repo as any).forks.toLocaleString()}</span>
                           </span>
-                          <span className="flex items-center gap-1" title="Watching">
-                            <Eye size={13} className="text-emerald-500" />
-                            <span className="font-semibold text-text-main">{(repo as any).watching.toLocaleString()}</span>
+                          <span className="flex items-center gap-1.5" title="Watching">
+                            <Eye size={12} className="text-emerald-500" />
+                            <span className="font-medium text-text-main">{(repo as any).watching.toLocaleString()}</span>
                           </span>
                         </div>
 
-                        <div className="flex justify-between text-xs text-text-muted mt-auto">
-                          <span className="flex items-center gap-1.5">
-                            <Square size={12} fill={repo.langColor} color={repo.langColor} /> {repo.lang}
+                        <div className="flex justify-between items-center text-xs text-text-muted mt-auto pt-1">
+                          <span className="flex items-center gap-1.5 font-medium">
+                            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: repo.langColor }} />
+                            <span>{repo.lang}</span>
                           </span>
-                          <span>Updated {repo.updated}</span>
+                          <span className="text-[11px] text-text-muted/80">Updated {repo.updated}</span>
                         </div>
                       </div>
                     </div>

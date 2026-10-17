@@ -4,6 +4,8 @@ import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianG
 import { ArrowUpRight, GitMerge, GitCommit, AlertCircle, ChevronDown, Github, FolderGit2, Settings, Sliders, RefreshCw, Eye, EyeOff } from 'lucide-react';
 import { useAppContext } from '../AppContext';
 import { AnimatedGlobe, AnimatedLock } from '../components/Layout';
+import { AnimatedNumber } from '../components/UI';
+import { useStaggerList } from '../hooks/useAnime';
 
 interface AnimateIconProps {
   children: React.ReactNode;
@@ -33,6 +35,7 @@ export const Dashboard: React.FC = () => {
   const [showPRsLine, setShowPRsLine] = useState(true);
   const [showGrid, setShowGrid] = useState(false);
   const [isAdjustmentPanelOpen, setIsAdjustmentPanelOpen] = useState(false);
+  const activityListRef = useStaggerList<HTMLDivElement>(':scope > div', [githubRepos.length]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -214,16 +217,20 @@ export const Dashboard: React.FC = () => {
 
 
       <div className="grid grid-cols-2 gap-3 mb-6">
-        <div className="rounded-2xl p-4 flex flex-col gap-2 bg-purple-500/10 border border-purple-500/20">
-          <span className="text-xs text-text-muted">Repositories</span>
-          <span className="text-[28px] font-bold text-text-main">{githubRepos.length}</span>
-          <span className="text-[11px] text-purple-500 flex items-center font-medium">
+        <div className="rounded-2xl p-4 flex flex-col gap-2 bg-card border border-border hover:border-primary/30 transition-all shadow-sm">
+          <span className="text-xs text-text-muted font-medium">Repositories</span>
+          <span className="text-[28px] font-bold text-text-main">
+            <AnimatedNumber value={githubRepos.length} />
+          </span>
+          <span className="text-[11px] text-primary flex items-center font-medium">
             <ArrowUpRight size={14} className="mr-1" strokeWidth={3} /> {githubUser ? 'GitHub Connected' : 'Local Repositories'}
           </span>
         </div>
-        <div className="rounded-2xl p-4 flex flex-col gap-2 bg-blue-500/10 border border-blue-500/20">
-          <span className="text-xs text-text-muted">Commits</span>
-          <span className="text-[28px] font-bold text-text-main">{displayCommitsCount}</span>
+        <div className="rounded-2xl p-4 flex flex-col gap-2 bg-card border border-border hover:border-info/30 transition-all shadow-sm">
+          <span className="text-xs text-text-muted font-medium">Commits</span>
+          <span className="text-[28px] font-bold text-text-main">
+            <AnimatedNumber value={displayCommitsCount} />
+          </span>
           <span className="text-[11px] text-info flex items-center font-medium">
             <ArrowUpRight size={14} className="mr-1" strokeWidth={3} /> {allCommits.length > sessionCommitsCount ? 'Total Synced Commits' : 'Current Session'}
           </span>
@@ -394,8 +401,8 @@ export const Dashboard: React.FC = () => {
           <div className="text-xs text-text-muted">Create a repository or connect GitHub to get started.</div>
         </div>
       ) : (
-        <div className="space-y-3">
-          {githubRepos.slice(0, 3).map(repo => (
+        <div ref={activityListRef} className="space-y-3">
+          {githubRepos.slice(0, 4).map(repo => (
             <div 
               key={repo.id} 
               onClick={() => openRepo(repo.name, (repo as any).owner?.login || null)}

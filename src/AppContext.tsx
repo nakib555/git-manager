@@ -93,6 +93,7 @@ const defaultState: AppState = {
     10,
   ),
   recentClones: JSON.parse(localStorage.getItem("recentClones") || "[]"),
+  isCommandPaletteOpen: false,
 };
 const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: ReactNode }> = ({
@@ -126,16 +127,34 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
       return { ...prev, theme: newTheme };
     });
   };
+
+  const openCommandPalette = () => setState(prev => ({ ...prev, isCommandPaletteOpen: true }));
+  const closeCommandPalette = () => setState(prev => ({ ...prev, isCommandPaletteOpen: false }));
+  const toggleCommandPalette = () => setState(prev => ({ ...prev, isCommandPaletteOpen: !prev.isCommandPaletteOpen }));
+
+  // Global shortcut listener for Cmd+K and Ctrl+K
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        toggleCommandPalette();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const connectGitHub = async () => {
     try {
       console.log("Initiating GitHub OAuth flow...");
       const response = await fetch("/api/auth/url");
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error("Failed to get auth URL:", errorData);
         openModal("oauth_setup");
         if (errorData.error && errorData.error.includes("GITHUB_CLIENT_ID")) {
-          throw new Error("GitHub OAuth is not configured yet. Opening fallback Personal Access Token (PAT) login...");
+          console.log("GitHub OAuth client credentials are not configured in environment. Opening token setup dialog.");
+          showToast("Please enter a Personal Access Token to connect GitHub.");
+          return;
         }
         throw new Error(errorData.error || "Failed to get auth URL");
       }
@@ -143,7 +162,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
       console.log("Redirecting to OAuth URL:", url);
       window.location.href = url;
     } catch (error: any) {
-      console.error("OAuth error:", error);
+      console.warn("GitHub connection notice:", error.message || error);
       showToast(error.message || "Error connecting to GitHub");
     }
   };
@@ -1515,6 +1534,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         resetBranchToCommit,
         createBranchAtCommit,
         createTagAtCommit,
+        openCommandPalette,
+        closeCommandPalette,
+        toggleCommandPalette,
       }}
     >
       {children}

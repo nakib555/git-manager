@@ -9,8 +9,10 @@
         "@tailwindcss/vite": "^4.1.14",
         "@tanstack/react-query": "^5.101.4",
         "@tanstack/react-virtual": "^3.14.8",
+        "@types/animejs": "^4.0.0",
         "@types/react-syntax-highlighter": "^15.5.13",
         "@vitejs/plugin-react": "^5.0.4",
+        "animejs": "^4.5.0",
         "cors": "^2.8.6",
         "date-fns": "^4.4.0",
         "dotenv": "^17.2.3",
@@ -306,6 +308,8 @@
 
     "@trickfilm400/rollup-plugin-off-main-thread": ["@trickfilm400/rollup-plugin-off-main-thread@3.0.0-pre1", "", { "dependencies": { "ejs": "^3.1.10", "json5": "^2.2.3", "magic-string": "^0.30.21", "string.prototype.matchall": "^4.0.12" } }, ""],
 
+    "@types/animejs": ["@types/animejs@4.0.0", "", { "dependencies": { "animejs": "*" } }, "sha512-DAjSUvkZpOZ7J7I/F6mtcOhSdrBCLZvOTod43rlWSwpNWV2kIHTr3tVaXas6rZrhy9b27Mbm54CZnKVOG0ep9A=="],
+
     "@types/babel__core": ["@types/babel__core@7.20.5", "", { "dependencies": { "@babel/parser": "^7.20.7", "@babel/types": "^7.20.7", "@types/babel__generator": "*", "@types/babel__template": "*", "@types/babel__traverse": "*" } }, ""],
 
     "@types/babel__generator": ["@types/babel__generator@7.27.0", "", { "dependencies": { "@babel/types": "^7.0.0" } }, ""],
@@ -385,6 +389,8 @@
     "agent-base": ["agent-base@7.1.4", "", {}, ""],
 
     "ajv": ["ajv@8.20.0", "", { "dependencies": { "fast-deep-equal": "^3.1.3", "fast-uri": "^3.0.1", "json-schema-traverse": "^1.0.0", "require-from-string": "^2.0.2" } }, ""],
+
+    "animejs": ["animejs@4.5.0", "", { "peerDependencies": { "@types/three": ">=0.150.0", "three": ">=0.150.0" }, "optionalPeers": ["@types/three", "three"] }, "sha512-NQimYX+lz8WaXonGS9zVVoviCIAjONeJayxacUditaivYLqyXgGjFKjuyl0aUUhFKm5MriX9ty1TGovNzoJQWA=="],
 
     "array-buffer-byte-length": ["array-buffer-byte-length@1.0.2", "", { "dependencies": { "call-bound": "^1.0.3", "is-array-buffer": "^3.0.5" } }, ""],
 

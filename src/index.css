@@ -19,14 +19,14 @@
 }
 
 :root {
-  --main: #F4F4F5;
+  --main: #F8FAFC;
   --card: #FFFFFF;
-  --hover: #E4E4E7;
-  --primary: #7C3AED;
-  --primary-hover: #6D28D9;
-  --text-main: #18181B;
-  --text-muted: #71717A;
-  --border: #D4D4D8;
+  --hover: #F1F5F9;
+  --primary: #4F46E5;
+  --primary-hover: #4338CA;
+  --text-main: #0F172A;
+  --text-muted: #64748B;
+  --border: #E2E8F0;
   --success: #10B981;
   --danger: #EF4444;
   --warning: #F59E0B;
@@ -38,14 +38,14 @@
 }
 
 .dark-theme {
-  --main: #0B0B14;
-  --card: #151522;
-  --hover: #1E1E2F;
-  --primary: #7C3AED;
-  --primary-hover: #6D28D9;
-  --text-main: #FFFFFF;
-  --text-muted: #8F8F9D;
-  --border: #262636;
+  --main: #09090B;
+  --card: #121215;
+  --hover: #1E1E24;
+  --primary: #6366F1;
+  --primary-hover: #4F46E5;
+  --text-main: #F4F4F5;
+  --text-muted: #A1A1AA;
+  --border: #27272A;
   --success: #10B981;
   --danger: #EF4444;
   --warning: #F59E0B;
@@ -96,13 +96,18 @@ body {
 }
 
 .dark-theme .header-action-btn {
-  background-color: #332c3e !important;
-  border: 1px solid #414152 !important;
+  background-color: #18181b !important;
+  border: 1px solid #27272a !important;
 }
 
 :root:not(.dark-theme) .header-action-btn {
   background-color: #ffffff !important;
-  border: 1px solid #d4d4d8 !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .recharts-wrapper, .recharts-surface {

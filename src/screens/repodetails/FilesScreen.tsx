@@ -1,6 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../AppContext';
-import { Home, Folder, FileText, FileCode, ChevronRight, ChevronDown } from 'lucide-react';
+import { Home, Folder, FileText, FileCode, ChevronRight, ChevronDown, Copy, Check } from 'lucide-react';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus, vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
+
+const getCodeLanguage = (filename: string): string => {
+  const ext = filename.split('.').pop()?.toLowerCase();
+  switch (ext) {
+    case 'ts':
+    case 'tsx':
+      return 'typescript';
+    case 'js':
+    case 'jsx':
+      return 'javascript';
+    case 'json':
+      return 'json';
+    case 'css':
+      return 'css';
+    case 'html':
+      return 'markup';
+    case 'md':
+      return 'markdown';
+    case 'py':
+      return 'python';
+    case 'rs':
+      return 'rust';
+    case 'go':
+      return 'go';
+    case 'sh':
+    case 'bash':
+      return 'bash';
+    case 'yml':
+    case 'yaml':
+      return 'yaml';
+    case 'sql':
+      return 'sql';
+    default:
+      return 'typescript';
+  }
+};
 
 const buildTree = (files: any[]) => {
   const root: any[] = [];
@@ -80,10 +118,11 @@ const FileTreeItem = ({ item, depth, activeFileName, onSelect }: any) => {
 };
 
 export const FilesScreen = () => {
-  const { activeFiles, currentRepo, githubToken, currentRepoOwner, currentBranch } = useAppContext();
+  const { activeFiles, currentRepo, githubToken, currentRepoOwner, currentBranch, theme, showToast } = useAppContext();
   const [selectedFile, setSelectedFile] = useState<string>('');
   const [fileContent, setFileContent] = useState<string>('');
   const [isLoadingFile, setIsLoadingFile] = useState<boolean>(false);
+  const [isCopied, setIsCopied] = useState<boolean>(false);
 
   const filesToDisplay = activeFiles;
   const [view, setView] = useState<'tree' | 'file'>('tree');
@@ -147,26 +186,44 @@ export const FilesScreen = () => {
           {view === 'file' && (
             <button 
               onClick={() => setView('tree')}
-              className="mr-1 p-1 bg-card hover:bg-hover border border-border rounded flex items-center justify-center transition-colors"
+              className="mr-1 p-1 bg-card hover:bg-hover border border-border rounded-lg flex items-center justify-center transition-colors cursor-pointer"
+              title="Back to file tree"
             >
               <ChevronRight size={14} className="rotate-180" />
             </button>
           )}
-          <Home size={14} className="text-primary shrink-0" /> 
-          <span className="shrink-0">/</span> 
-          <span className="text-text-main font-bold truncate">{currentRepo || 'repo'}</span> 
+          <Home size={13} className="text-primary shrink-0" /> 
+          <span className="shrink-0 text-text-muted">/</span> 
+          <span className="text-text-main font-semibold truncate">{currentRepo || 'repo'}</span> 
           {view === 'file' && activeFileName && (
             <>
-              <span className="shrink-0">/</span> 
-              <span className="text-primary font-bold truncate">{activeFileName.split('/').pop()}</span>
+              <span className="shrink-0 text-text-muted">/</span> 
+              <span className="text-primary font-mono font-medium truncate">{activeFileName.split('/').pop()}</span>
             </>
           )}
         </div>
+
+        {view === 'file' && (
+          <button
+            onClick={() => {
+              if (fileContent) {
+                navigator.clipboard.writeText(fileContent);
+                setIsCopied(true);
+                showToast('Code copied to clipboard!');
+                setTimeout(() => setIsCopied(false), 2000);
+              }
+            }}
+            className="flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-card border border-border hover:bg-hover text-text-main transition-colors shrink-0 cursor-pointer"
+          >
+            {isCopied ? <Check size={12} className="text-success" /> : <Copy size={12} />}
+            <span>{isCopied ? 'Copied' : 'Copy'}</span>
+          </button>
+        )}
       </div>
       
       {view === 'tree' ? (
         <div className="flex-1 overflow-y-auto bg-card p-3">
-          <div className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-3 px-2">Workspace Directory</div>
+          <div className="text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2 px-2">Workspace Directory</div>
           <div className="space-y-0.5">
             {buildTree(filesToDisplay).map(item => (
               <FileTreeItem 
@@ -183,19 +240,36 @@ export const FilesScreen = () => {
           </div>
         </div>
       ) : (
-        <div className="flex-1 font-mono text-[11px] leading-relaxed p-4 overflow-auto bg-main select-text">
+        <div className="flex-1 overflow-auto bg-main select-text relative">
           {isLoadingFile ? (
-            <div className="flex items-center justify-center h-full gap-2 text-text-muted">
+            <div className="flex items-center justify-center h-full gap-2 text-text-muted text-xs">
               <span className="w-5 h-5 rounded-full border-2 border-primary border-t-transparent animate-spin"></span>
               <span>Fetching file...</span>
             </div>
           ) : (
-            fileContent.trim().split('\n').map((line, idx) => (
-              <div key={idx} className="flex group hover:bg-hover/10">
-                <span className="text-[#4B4B5E] w-8 select-none shrink-0 font-bold text-right pr-3 mr-3 border-r border-border/40">{idx + 1}</span>
-                <span className="text-text-main/90 whitespace-pre break-all">{line}</span>
-              </div>
-            ))
+            <SyntaxHighlighter
+              language={getCodeLanguage(activeFileName)}
+              style={theme === 'dark' ? vscDarkPlus : vs}
+              showLineNumbers={true}
+              wrapLines={false}
+              customStyle={{
+                margin: 0,
+                padding: '1rem',
+                background: 'transparent',
+                fontSize: '12px',
+                fontFamily: 'var(--font-mono, monospace)',
+                lineHeight: '1.6',
+              }}
+              lineNumberStyle={{
+                minWidth: '2.5rem',
+                paddingRight: '1rem',
+                color: 'var(--text-muted)',
+                opacity: 0.5,
+                userSelect: 'none',
+              }}
+            >
+              {fileContent || '// Empty file'}
+            </SyntaxHighlighter>
           )}
         </div>
       )}

@@ -1,6 +1,6 @@
 {
   "name": "Git Manager",
-  "description": "A mobile-first GitHub repository manager and activity tracker with OAuth integration and theme switching.",
+  "description": "Clean Developer Studio Git manager and repository activity workbench with desktop split-view, smooth anime.js micro-interactions, and command palette.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

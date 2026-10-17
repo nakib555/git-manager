@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAppContext } from '../AppContext';
 import { Folder, GitBranch, GitPullRequest, X, XCircle, CheckCircle2, MessageSquare, Bell, HardDrive } from 'lucide-react';
+import { useCountUp } from '../hooks/useAnime';
 
 export const ActionSheet: React.FC = () => {
   const { isActionSheetOpen, closeModals, showToast, openModal, navigate, closeActionSheet } = useAppContext();
@@ -101,9 +102,14 @@ export const Toast: React.FC = () => {
   const { toastMessage } = useAppContext();
 
   return (
-    <div className={`absolute bottom-[90px] left-1/2 -translate-x-1/2 bg-white text-black px-6 py-3 rounded-full text-[13px] font-semibold transition-all duration-300 z-[200] shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex items-center gap-2 pointer-events-none ${toastMessage ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-      <CheckCircle2 size={18} className="text-success" />
+    <div className={`absolute bottom-[90px] left-1/2 -translate-x-1/2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border border-zinc-700/50 px-5 py-2.5 rounded-full text-xs font-semibold transition-all duration-300 z-[200] shadow-xl flex items-center gap-2 pointer-events-none backdrop-blur-md ${toastMessage ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'}`}>
+      <CheckCircle2 size={16} className="text-emerald-500" />
       <span>{toastMessage}</span>
     </div>
   );
+};
+
+export const AnimatedNumber: React.FC<{ value: number; className?: string; formatter?: (v: number) => string }> = ({ value, className, formatter }) => {
+  const ref = useCountUp(value, 750, formatter);
+  return <span ref={ref as any} className={className}>{formatter ? formatter(value) : value}</span>;
 };

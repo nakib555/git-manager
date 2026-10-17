@@ -54,6 +54,7 @@ export interface AppState {
   activeModal: 'repo' | 'branch' | 'pr' | 'commit' | 'clone' | 'oauth_setup' | null;
   sessionCommitsCount: number;
   recentClones: { name: string; url: string; dest: string; timestamp: number }[];
+  isCommandPaletteOpen: boolean;
 }
 
 export type AppContextType = AppState & {
@@ -94,5 +95,8 @@ export type AppContextType = AppState & {
   resetBranchToCommit: (hash: string) => void;
   createBranchAtCommit: (hash: string, branchName: string) => void;
   createTagAtCommit: (hash: string, tagName: string) => void;
+  openCommandPalette: () => void;
+  closeCommandPalette: () => void;
+  toggleCommandPalette: () => void;
 };
 
