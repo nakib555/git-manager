@@ -24,6 +24,7 @@ import { vscDarkPlus, vs } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { UnauthenticatedState } from './UnauthenticatedState';
 import { AnimatedNumber } from './UI';
 import { useStaggerList } from '../hooks/useAnime';
+import { RepoTypeFilter, RepoSortBy } from '../types';
 
 const getCodeLanguage = (filename: string): string => {
   const ext = filename.split('.').pop()?.toLowerCase();
@@ -896,17 +897,30 @@ const DesktopRepositories: React.FC<{ globalSearch: string }> = ({ globalSearch 
     githubRepos, 
     openModal,
     repoPage,
+    repoPerPage,
     repoTotalPages,
     setRepoPage,
     repoSearchQuery,
     setRepoSearchQuery,
-    isFetchingRepos
+    repoSearchScope,
+    setRepoSearchScope,
+    repoSortBy,
+    setRepoSortBy,
+    repoSortDirection,
+    setRepoSortDirection,
+    repoTypeFilter,
+    setRepoTypeFilter,
+    repoLanguageFilter,
+    setRepoLanguageFilter,
+    isFetchingRepos,
+    showToast
   } = useAppContext();
   
-  const [filter, setFilter] = useState<'All' | 'Private' | 'Public'>('All');
   const [localSearch, setLocalSearch] = useState(repoSearchQuery);
   const [selectedRepoId, setSelectedRepoId] = useState<string | null>(null);
+  const [showSortDropdown, setShowSortDropdown] = useState(false);
   const parentRef = useRef<HTMLDivElement>(null);
+  const sortRef = useRef<HTMLDivElement>(null);
 
   const searchVal = globalSearch || localSearch;
 
@@ -919,69 +933,184 @@ const DesktopRepositories: React.FC<{ globalSearch: string }> = ({ globalSearch 
   useEffect(() => {
     const handler = setTimeout(() => {
       setRepoSearchQuery(localSearch);
-    }, 400);
+    }, 350);
     return () => clearTimeout(handler);
-  }, [localSearch]);
+  }, [localSearch, setRepoSearchQuery]);
 
-  const displayRepos = githubRepos.map(repo => {
-    const lang = repo.language || 'Unknown';
-    return {
-      id: repo.name,
-      name: repo.name,
-      owner: (repo as any).owner?.login || null,
-      isPrivate: repo.private,
-      desc: repo.description || 'No description provided.',
-      lang,
-      langColor: getLanguageColor(lang),
-      updated: new Date(repo.pushed_at || Date.now()).toLocaleDateString(),
-      stars: repo.stargazers_count || 0,
-      forks: repo.forks_count || 0,
-      watching: repo.watchers_count || 0,
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (sortRef.current && !sortRef.current.contains(e.target as Node)) {
+        setShowSortDropdown(false);
+      }
     };
-  });
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-  const filteredRepos = displayRepos.filter(repo => {
-    if (filter === 'Private' && !repo.isPrivate) return false;
-    if (filter === 'Public' && repo.isPrivate) return false;
-    return true;
-  });
+  const displayRepos = useMemo(() => {
+    return (githubRepos || []).map(repo => {
+      const lang = repo.language || 'Unknown';
+      return {
+        id: repo.name,
+        name: repo.name,
+        owner: (repo as any).owner?.login || null,
+        isPrivate: !!repo.private,
+        isFork: !!(repo as any).fork,
+        desc: repo.description || 'No description provided.',
+        lang,
+        langColor: getLanguageColor(lang),
+        rawPushedAt: repo.pushed_at || new Date().toISOString(),
+        updated: new Date(repo.pushed_at || Date.now()).toLocaleDateString(),
+        stars: repo.stargazers_count || 0,
+        forks: repo.forks_count || 0,
+        watching: repo.watchers_count || 0,
+      };
+    });
+  }, [githubRepos]);
+
+  // Filtering & Sorting Pipeline
+  const filteredRepos = useMemo(() => {
+    let result = [...displayRepos];
+
+    // Personal search query filtering
+    if (repoSearchScope === 'personal' && searchVal && searchVal.trim().length > 0) {
+      const q = searchVal.toLowerCase().trim();
+      result = result.filter(repo =>
+        repo.name.toLowerCase().includes(q) ||
+        repo.desc.toLowerCase().includes(q) ||
+        repo.lang.toLowerCase().includes(q) ||
+        (repo.owner && repo.owner.toLowerCase().includes(q))
+      );
+    }
+
+    // Type filter
+    if (repoTypeFilter === 'private') {
+      result = result.filter(r => r.isPrivate);
+    } else if (repoTypeFilter === 'public') {
+      result = result.filter(r => !r.isPrivate);
+    } else if (repoTypeFilter === 'forks') {
+      result = result.filter(r => r.isFork);
+    } else if (repoTypeFilter === 'sources') {
+      result = result.filter(r => !r.isFork);
+    }
+
+    // Language filter
+    if (repoLanguageFilter !== 'all') {
+      result = result.filter(r => r.lang.toLowerCase() === repoLanguageFilter.toLowerCase());
+    }
+
+    // Multi-dimension Sorting
+    result.sort((a, b) => {
+      let comparison = 0;
+      switch (repoSortBy) {
+        case 'stars':
+          comparison = a.stars - b.stars;
+          break;
+        case 'forks':
+          comparison = a.forks - b.forks;
+          break;
+        case 'name':
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case 'language':
+          comparison = a.lang.localeCompare(b.lang);
+          break;
+        case 'updated':
+        default:
+          comparison = new Date(a.rawPushedAt).getTime() - new Date(b.rawPushedAt).getTime();
+          break;
+      }
+      return repoSortDirection === 'desc' ? -comparison : comparison;
+    });
+
+    return result;
+  }, [displayRepos, repoSearchScope, searchVal, repoTypeFilter, repoLanguageFilter, repoSortBy, repoSortDirection]);
+
+  // Total pages
+  const totalPages = useMemo(() => {
+    if (repoSearchScope === 'personal') {
+      return Math.max(1, Math.ceil(filteredRepos.length / repoPerPage));
+    }
+    return repoTotalPages;
+  }, [repoSearchScope, filteredRepos.length, repoPerPage, repoTotalPages]);
+
+  // Paginated items
+  const paginatedRepos = useMemo(() => {
+    if (repoSearchScope === 'personal') {
+      const start = (repoPage - 1) * repoPerPage;
+      return filteredRepos.slice(start, start + repoPerPage);
+    }
+    return filteredRepos;
+  }, [repoSearchScope, filteredRepos, repoPage, repoPerPage]);
 
   const rowVirtualizer = useVirtualizer({
-    count: filteredRepos.length,
+    count: paginatedRepos.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 140, // Height of the card + spacing
+    estimateSize: () => 140,
     overscan: 5,
   });
 
   // Automatically select first repo if none selected
   useEffect(() => {
-    if (filteredRepos.length > 0 && !selectedRepoId) {
-      setSelectedRepoId(filteredRepos[0].id);
+    if (paginatedRepos.length > 0 && (!selectedRepoId || !paginatedRepos.some(r => r.id === selectedRepoId))) {
+      setSelectedRepoId(paginatedRepos[0].id);
     }
-  }, [filteredRepos, selectedRepoId]);
+  }, [paginatedRepos, selectedRepoId]);
 
-  const selectedRepo = filteredRepos.find(r => r.id === selectedRepoId);
+  const selectedRepo = filteredRepos.find(r => r.id === selectedRepoId) || paginatedRepos[0];
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6 flex-1 flex flex-col min-h-0">
       <div className="flex justify-between items-center shrink-0">
         <div>
           <h1 className="text-xl font-bold tracking-tight">Repositories Explorer</h1>
-          <p className="text-xs text-text-muted mt-0.5 font-medium">Browse, filter, and inspect detailed metadata of version workspaces.</p>
+          <p className="text-xs text-text-muted mt-0.5 font-medium">Browse, sort, filter, and inspect detailed metadata across your workspaces.</p>
+        </div>
+
+        {/* Global vs Personal Scope Switcher */}
+        <div className="flex bg-card p-1 rounded-xl border border-border text-xs font-medium shrink-0">
+          <button
+            onClick={() => {
+              setRepoSearchScope('personal');
+              setRepoPage(1);
+            }}
+            className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+              repoSearchScope === 'personal'
+                ? 'bg-primary text-white font-bold shadow-xs'
+                : 'text-text-muted hover:text-text-main'
+            }`}
+          >
+            <FolderGit2 size={13} />
+            <span>Personal Repos</span>
+          </button>
+          <button
+            onClick={() => {
+              setRepoSearchScope('global');
+              setRepoPage(1);
+            }}
+            className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+              repoSearchScope === 'global'
+                ? 'bg-primary text-white font-bold shadow-xs'
+                : 'text-text-muted hover:text-text-main'
+            }`}
+          >
+            <Globe size={13} />
+            <span>Global GitHub</span>
+          </button>
         </div>
       </div>
 
       {/* Main split viewport layout */}
       <div className="flex-1 min-h-0 flex gap-6 bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
         {/* Left column: Repository navigator list */}
-        <div className="w-96 border-r border-border flex flex-col h-full bg-hover/5 shrink-0">
+        <div className="w-[380px] border-r border-border flex flex-col h-full bg-hover/5 shrink-0">
           <div className="p-4 border-b border-border space-y-3 shrink-0">
             {/* Inline search box with loader */}
             <div className="bg-card border border-border rounded-xl px-3 py-2 flex items-center gap-2.5 relative">
-              <Search size={15} className="text-text-muted" />
+              <Search size={15} className="text-text-muted shrink-0" />
               <input 
                 type="text" 
-                placeholder="Search database..." 
+                placeholder={repoSearchScope === 'personal' ? "Filter personal repos..." : "Search all GitHub..."} 
                 className="bg-transparent border-none text-xs text-text-main w-full outline-none placeholder:text-text-muted pr-6"
                 value={localSearch}
                 onChange={(e) => setLocalSearch(e.target.value)}
@@ -993,17 +1122,79 @@ const DesktopRepositories: React.FC<{ globalSearch: string }> = ({ globalSearch 
               )}
             </div>
 
-            {/* Filter buttons */}
-            <div className="flex gap-2">
-              {(['All', 'Private', 'Public'] as const).map(f => (
-                <button 
-                  key={f}
-                  onClick={() => setFilter(f)}
-                  className={`flex-1 py-1.5 border rounded-xl text-[11px] font-bold transition-all cursor-pointer ${filter === f ? 'bg-primary/10 border-primary/45 text-primary' : 'border-border text-text-muted hover:border-border/85 hover:text-text-main bg-card'}`}
+            {/* Filter pills & Sort Trigger */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex gap-1.5 overflow-x-auto no-scrollbar flex-1">
+                {(['all', 'public', 'private', 'forks'] as RepoTypeFilter[]).map(f => (
+                  <button 
+                    key={f}
+                    onClick={() => {
+                      setRepoTypeFilter(f);
+                      setRepoPage(1);
+                    }}
+                    className={`py-1 px-2.5 border rounded-lg text-[10px] font-bold transition-all cursor-pointer uppercase ${
+                      repoTypeFilter === f 
+                        ? 'bg-primary/10 border-primary/45 text-primary' 
+                        : 'border-border text-text-muted hover:border-border/85 hover:text-text-main bg-card'
+                    }`}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+
+              {/* Sort Dropdown */}
+              <div className="relative shrink-0" ref={sortRef}>
+                <button
+                  onClick={() => setShowSortDropdown(!showSortDropdown)}
+                  className="p-1.5 bg-card border border-border rounded-lg text-text-muted hover:text-text-main hover:border-primary/30 transition-colors flex items-center gap-1 text-[11px] font-semibold cursor-pointer"
+                  title="Sort options"
                 >
-                  {f}
+                  <Sliders size={13} />
+                  <span className="capitalize">{repoSortBy}</span>
                 </button>
-              ))}
+
+                {showSortDropdown && (
+                  <div className="absolute right-0 top-8 bg-card border border-border rounded-xl shadow-xl py-1.5 z-30 w-44 space-y-0.5">
+                    <div className="px-3 py-1 text-[9px] uppercase tracking-wider font-bold text-text-muted border-b border-border">Sort By</div>
+                    {[
+                      { key: 'updated', label: 'Last Updated' },
+                      { key: 'stars', label: 'Star Count' },
+                      { key: 'forks', label: 'Fork Count' },
+                      { key: 'name', label: 'Name (A-Z)' },
+                      { key: 'language', label: 'Language' },
+                    ].map(item => (
+                      <button
+                        key={item.key}
+                        onClick={() => {
+                          setRepoSortBy(item.key as any);
+                          setShowSortDropdown(false);
+                        }}
+                        className={`w-full text-left px-3 py-1.5 text-xs flex items-center justify-between hover:bg-hover ${
+                          repoSortBy === item.key ? 'text-primary font-bold bg-primary/5' : 'text-text-main'
+                        }`}
+                      >
+                        <span>{item.label}</span>
+                        {repoSortBy === item.key && <Check size={12} className="text-primary" />}
+                      </button>
+                    ))}
+                    <div className="border-t border-border pt-1 mt-1 px-2 flex gap-1">
+                      <button
+                        onClick={() => setRepoSortDirection('desc')}
+                        className={`flex-1 py-1 text-[10px] rounded font-bold ${repoSortDirection === 'desc' ? 'bg-primary text-white' : 'text-text-muted hover:bg-hover'}`}
+                      >
+                        Desc ↓
+                      </button>
+                      <button
+                        onClick={() => setRepoSortDirection('asc')}
+                        className={`flex-1 py-1 text-[10px] rounded font-bold ${repoSortDirection === 'asc' ? 'bg-primary text-white' : 'text-text-muted hover:bg-hover'}`}
+                      >
+                        Asc ↑
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -1012,7 +1203,7 @@ const DesktopRepositories: React.FC<{ globalSearch: string }> = ({ globalSearch 
             ref={parentRef}
             className={`flex-1 overflow-y-auto p-3 no-scrollbar transition-opacity duration-200 ${isFetchingRepos ? 'opacity-60 pointer-events-none' : ''}`}
           >
-            {filteredRepos.length === 0 ? (
+            {paginatedRepos.length === 0 ? (
               <div className="py-12 flex flex-col items-center justify-center text-center h-full">
                 <FolderGit2 size={24} className="text-text-muted mb-2" />
                 <span className="font-semibold text-xs text-text-main">No repos found</span>
@@ -1027,7 +1218,7 @@ const DesktopRepositories: React.FC<{ globalSearch: string }> = ({ globalSearch 
                 }}
               >
                 {rowVirtualizer.getVirtualItems().map((virtualItem) => {
-                  const repo = filteredRepos[virtualItem.index];
+                  const repo = paginatedRepos[virtualItem.index];
                   if (!repo) return null;
                   const isSelected = selectedRepoId === repo.id;
                   
@@ -1091,50 +1282,46 @@ const DesktopRepositories: React.FC<{ globalSearch: string }> = ({ globalSearch 
           </div>
 
           {/* Desktop Pagination Footer */}
-          {repoTotalPages > 1 && (
+          {totalPages > 1 && (
             <div className="shrink-0 flex items-center justify-between p-3 border-t border-border bg-card">
               <div className="text-[10px] text-text-muted">
-                 Page {repoPage} of {repoTotalPages}
+                 Page <span className="font-bold text-text-main">{repoPage}</span> of {totalPages}
               </div>
               <div className="flex items-center gap-1">
                 <button 
-                  onClick={() => setRepoPage(repoPage - 1)}
+                  onClick={() => setRepoPage(Math.max(1, repoPage - 1))}
                   disabled={repoPage === 1 || isFetchingRepos}
-                  className="p-1 rounded-md border border-border text-text-main disabled:opacity-30 disabled:cursor-not-allowed hover:bg-hover/15 transition-colors"
+                  className="p-1 rounded-md border border-border text-text-main disabled:opacity-30 disabled:cursor-not-allowed hover:bg-hover/15 transition-colors cursor-pointer"
                 >
                   <ChevronLeft size={13} />
                 </button>
-                <div className="flex items-center gap-0.5">
-                   {[...Array(repoTotalPages)].map((_, i) => {
-                     const pageNum = i + 1;
-                     if (
-                       pageNum === 1 || 
-                       pageNum === repoTotalPages || 
-                       (pageNum >= repoPage - 1 && pageNum <= repoPage + 1)
-                     ) {
-                       return (
-                         <button
-                           key={pageNum}
-                           onClick={() => setRepoPage(pageNum)}
-                           disabled={isFetchingRepos}
-                           className={`w-5 h-5 flex items-center justify-center rounded text-[10px] transition-colors disabled:opacity-50 ${repoPage === pageNum ? 'bg-primary text-white font-bold' : 'text-text-main hover:bg-hover/15'}`}
-                         >
-                           {pageNum}
-                         </button>
-                       );
-                     } else if (
-                       pageNum === repoPage - 2 || 
-                       pageNum === repoPage + 2
-                     ) {
-                       return <span key={pageNum} className="text-text-muted text-[10px]">..</span>;
-                     }
-                     return null;
-                   })}
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(p => p === 1 || p === totalPages || Math.abs(p - repoPage) <= 1)
+                    .map((pageNum, idx, arr) => {
+                      const prev = arr[idx - 1];
+                      const showEllipsis = prev && pageNum - prev > 1;
+                      return (
+                        <React.Fragment key={pageNum}>
+                          {showEllipsis && <span className="text-text-muted text-[10px]">..</span>}
+                          <button
+                            key={pageNum}
+                            onClick={() => setRepoPage(pageNum)}
+                            disabled={isFetchingRepos}
+                            className={`w-5 h-5 flex items-center justify-center rounded text-[10px] transition-colors disabled:opacity-50 cursor-pointer ${
+                              repoPage === pageNum ? 'bg-primary text-white font-bold' : 'text-text-main hover:bg-hover/15'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        </React.Fragment>
+                      );
+                    })}
                 </div>
                 <button 
-                  onClick={() => setRepoPage(repoPage + 1)}
-                  disabled={repoPage === repoTotalPages || isFetchingRepos}
-                  className="p-1 rounded-md border border-border text-text-main disabled:opacity-30 disabled:cursor-not-allowed hover:bg-hover/15 transition-colors"
+                  onClick={() => setRepoPage(Math.min(totalPages, repoPage + 1))}
+                  disabled={repoPage === totalPages || isFetchingRepos}
+                  className="p-1 rounded-md border border-border text-text-main disabled:opacity-30 disabled:cursor-not-allowed hover:bg-hover/15 transition-colors cursor-pointer"
                 >
                   <ChevronRight size={13} />
                 </button>

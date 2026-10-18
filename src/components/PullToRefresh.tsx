@@ -162,7 +162,7 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({ children }) => {
       <motion.div
         animate={{ y: pullDistance }}
         transition={{ type: "spring", stiffness: 350, damping: 25 }}
-        className="h-full"
+        className="h-full flex flex-col min-h-0"
       >
         {children}
       </motion.div>

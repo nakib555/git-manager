@@ -71,6 +71,7 @@ const defaultState: AppState = {
   isActionSheetOpen: false,
   isDrawerOpen: false,
   toastMessage: null,
+  toastType: 'info',
   isSearchFocused: false,
   theme: (localStorage.getItem("theme") as "dark" | "light") || "light",
   githubToken: localStorage.getItem("githubToken") || null,
@@ -80,6 +81,11 @@ const defaultState: AppState = {
   repoPerPage: 15,
   repoTotalPages: 1,
   repoSearchQuery: "",
+  repoSearchScope: 'personal',
+  repoSortBy: 'updated',
+  repoSortDirection: 'desc',
+  repoTypeFilter: 'all',
+  repoLanguageFilter: 'all',
   isFetchingRepos: false,
   activeCommits: getLocalRepoDetails(localStorage.getItem("currentRepo") || "", "commits"),
   activePRs: getLocalRepoDetails(localStorage.getItem("currentRepo") || "", "prs"),
@@ -280,31 +286,53 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
       }
 
       const username = sanitizedUser?.login;
+      const scope = state.repoSearchScope;
 
-      // 2. Fetch user repos (either via search API or standard list repos API)
+      // 2. Fetch user repos (either via global search API or standard list repos API)
       let reposData: GitHubRepo[] = [];
       let totalPages = 1;
 
-      if (searchQuery && username) {
-        console.log(`Searching GitHub repos for user ${username} with query "${searchQuery}" on page ${page}...`);
-        const searchUrl = `https://api.github.com/search/repositories?q=user:${username}+${encodeURIComponent(searchQuery)}&sort=updated&per_page=${perPage}&page=${page}`;
-        const searchRes = await fetch(searchUrl, { headers });
-        console.log("GitHub repos search response status:", searchRes.status);
-        if (!searchRes.ok) {
-          let errorMsg = `Status ${searchRes.status}`;
-          try {
-            const errBody = await searchRes.json();
-            if (errBody.message) errorMsg = errBody.message;
-          } catch (_) {}
-          throw new Error(`Search Repositories: ${errorMsg}`);
+      if (scope === 'global' && searchQuery && searchQuery.trim().length > 0) {
+        const cleanQuery = searchQuery.trim();
+        console.log(`Global GitHub repos search for query "${cleanQuery}" on page ${page}...`);
+        
+        // Build sanitized search parameters
+        let apiSort = 'updated';
+        if (state.repoSortBy === 'stars') apiSort = 'stars';
+        if (state.repoSortBy === 'forks') apiSort = 'forks';
+        if (state.repoSortBy === 'updated') apiSort = 'updated';
+
+        const searchUrl = `https://api.github.com/search/repositories?q=${encodeURIComponent(cleanQuery)}&sort=${apiSort}&order=${state.repoSortDirection}&per_page=${perPage}&page=${page}`;
+        
+        try {
+          const searchRes = await fetch(searchUrl, { headers });
+          console.log("GitHub global search response status:", searchRes.status);
+          if (searchRes.ok) {
+            const searchData = await searchRes.json();
+            reposData = searchData.items || [];
+            const totalCount = searchData.total_count || 0;
+            totalPages = Math.max(1, Math.min(Math.ceil(totalCount / perPage), 67)); // GitHub search max 1000 results
+          } else {
+            let errorMsg = `HTTP ${searchRes.status}`;
+            try {
+              const errBody = await searchRes.json();
+              if (errBody.message) errorMsg = errBody.message;
+            } catch (_) {}
+            console.warn(`Global search warning: ${errorMsg}`);
+            showToast(`Global search: ${errorMsg}`, 'error');
+            reposData = [];
+            totalPages = 1;
+          }
+        } catch (searchErr: any) {
+          console.error("Global search error:", searchErr);
+          showToast("Global search failed. Please verify connection.", 'error');
+          reposData = [];
+          totalPages = 1;
         }
-        const searchData = await searchRes.json();
-        reposData = searchData.items || [];
-        const totalCount = searchData.total_count || 0;
-        totalPages = Math.max(1, Math.ceil(totalCount / perPage));
       } else {
-        console.log(`Fetching GitHub repos on page ${page}...`);
-        const reposUrl = `https://api.github.com/user/repos?sort=updated&per_page=${perPage}&page=${page}`;
+        // Personal Repositories: Fetch standard list of user's own repos (clean, rate-limit safe, supports private repos)
+        console.log(`Fetching user repos on page ${page}...`);
+        const reposUrl = `https://api.github.com/user/repos?sort=updated&per_page=100&affiliation=owner,collaborator,organization_member`;
         const reposRes = await fetch(reposUrl, { headers });
         console.log("GitHub user repos response status:", reposRes.status);
         if (!reposRes.ok) {
@@ -315,41 +343,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
           } catch (_) {}
           throw new Error(`Repositories: ${errorMsg}`);
         }
-        reposData = await reposRes.json();
-
-        // Parse Link header for total pages
-        const linkHeader = reposRes.headers.get("link");
-        if (linkHeader) {
-          const match = linkHeader.match(/&page=(\d+)>; rel="last"/);
-          if (match) {
-            totalPages = parseInt(match[1], 10);
-          } else {
-            const nextMatch = linkHeader.match(/&page=(\d+)>; rel="next"/);
-            if (!nextMatch) {
-              totalPages = page;
-            } else {
-              totalPages = page + 1;
-            }
-          }
-        } else {
-          totalPages = 1;
-        }
+        const allUserRepos: GitHubRepo[] = await reposRes.json();
+        reposData = Array.isArray(allUserRepos) ? allUserRepos : [];
+        totalPages = 1; // Filter and pagination handled client-side for personal repos
       }
 
-      console.log(`Fetched ${reposData.length} GitHub repositories for page ${page}. Total pages calculated: ${totalPages}`);
+      console.log(`Fetched ${reposData.length} GitHub repositories for scope "${scope}".`);
 
-      // 3. Merge local repositories (created/cloned locally) on page 1
+      // 3. Merge local repositories (created/cloned locally)
       const localRepos = getLocalRepos();
-      const filteredLocal = searchQuery
-        ? localRepos.filter(r => r.name.toLowerCase().includes(searchQuery.toLowerCase()))
-        : localRepos;
-
       const mergedRepos = [...reposData];
-      if (page === 1) {
-        for (const local of filteredLocal) {
-          if (!mergedRepos.some(r => r.name === local.name)) {
-            mergedRepos.unshift(local);
-          }
+      for (const local of localRepos) {
+        if (!mergedRepos.some(r => r.name === local.name)) {
+          mergedRepos.unshift(local);
         }
       }
 
@@ -366,7 +372,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
       } else {
         console.error("GitHub fetch error:", error);
         if (!isBackground) {
-          showToast(`Error loading GitHub data: ${error.message || error}`);
+          showToast(`Error loading GitHub data: ${error.message || error}`, 'error');
         }
       }
       setState(prev => ({ ...prev, isFetchingRepos: false }));
@@ -673,7 +679,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
     } else {
       fetchPublicFallbackRepos();
     }
-  }, [state.githubToken, state.repoPage, state.repoSearchQuery, refreshTrigger]);
+  }, [state.githubToken, state.repoPage, state.repoSearchQuery, state.repoSearchScope, state.repoSortBy, state.repoSortDirection, refreshTrigger]);
   useEffect(() => {
     if (state.currentRepo) {
       const owner = state.currentRepoOwner || (state.githubToken && state.githubUser?.login ? state.githubUser.login : null);
@@ -778,11 +784,26 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
     }));
   const setSearchFocus = (focus: boolean) =>
     setState((prev) => ({ ...prev, isSearchFocused: focus }));
-  const showToast = (msg: string) => {
-    setState((prev) => ({ ...prev, toastMessage: msg }));
+  const showToast = (msg: string, type: 'info' | 'success' | 'error' = 'info') => {
+    setState((prev) => ({ ...prev, toastMessage: msg, toastType: type }));
+  };
+  const setRepoSearchScope = (scope: any) => {
+    setState((prev) => ({ ...prev, repoSearchScope: scope, repoPage: 1 }));
+  };
+  const setRepoSortBy = (sortBy: any) => {
+    setState((prev) => ({ ...prev, repoSortBy: sortBy, repoPage: 1 }));
+  };
+  const setRepoSortDirection = (dir: any) => {
+    setState((prev) => ({ ...prev, repoSortDirection: dir, repoPage: 1 }));
+  };
+  const setRepoTypeFilter = (filter: any) => {
+    setState((prev) => ({ ...prev, repoTypeFilter: filter, repoPage: 1 }));
+  };
+  const setRepoLanguageFilter = (lang: string) => {
+    setState((prev) => ({ ...prev, repoLanguageFilter: lang, repoPage: 1 }));
   };
   const openModal = (
-    modalType: "repo" | "branch" | "pr" | "commit" | "oauth_setup",
+    modalType: "repo" | "branch" | "pr" | "commit" | "clone" | "oauth_setup",
   ) => {
     setState((prev) => ({
       ...prev,
@@ -1530,6 +1551,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         openRepo,
         setRepoPage,
         setRepoSearchQuery,
+        setRepoSearchScope,
+        setRepoSortBy,
+        setRepoSortDirection,
+        setRepoTypeFilter,
+        setRepoLanguageFilter,
         switchBranch,
         openActionSheet,
         closeActionSheet,

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAppContext } from '../AppContext';
-import { Folder, GitBranch, GitPullRequest, X, XCircle, CheckCircle2, MessageSquare, Bell, HardDrive } from 'lucide-react';
+import { Folder, GitBranch, GitPullRequest, X, XCircle, CheckCircle2, AlertCircle, Info, MessageSquare, Bell, HardDrive } from 'lucide-react';
 import { useCountUp } from '../hooks/useAnime';
 
 export const ActionSheet: React.FC = () => {
@@ -99,12 +99,40 @@ export const NotificationDrawer: React.FC = () => {
 };
 
 export const Toast: React.FC = () => {
-  const { toastMessage } = useAppContext();
+  const { toastMessage, toastType } = useAppContext();
+
+  const getVariantStyles = () => {
+    switch (toastType) {
+      case 'error':
+        return 'bg-red-50 dark:bg-red-950/90 text-red-900 dark:text-red-200 border-red-300 dark:border-red-800/80 shadow-red-500/10';
+      case 'success':
+        return 'bg-emerald-50 dark:bg-emerald-950/90 text-emerald-900 dark:text-emerald-200 border-emerald-300 dark:border-emerald-800/80 shadow-emerald-500/10';
+      case 'info':
+      default:
+        return 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-zinc-700/60 dark:border-zinc-300 shadow-zinc-900/10';
+    }
+  };
+
+  const getIcon = () => {
+    switch (toastType) {
+      case 'error':
+        return <AlertCircle size={16} className="text-red-500 shrink-0" />;
+      case 'success':
+        return <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />;
+      case 'info':
+      default:
+        return <Info size={16} className="text-primary shrink-0" />;
+    }
+  };
 
   return (
-    <div className={`absolute bottom-[90px] left-1/2 -translate-x-1/2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border border-zinc-700/50 px-5 py-2.5 rounded-full text-xs font-semibold transition-all duration-300 z-[200] shadow-xl flex items-center gap-2 pointer-events-none backdrop-blur-md ${toastMessage ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'}`}>
-      <CheckCircle2 size={16} className="text-emerald-500" />
-      <span>{toastMessage}</span>
+    <div 
+      className={`fixed top-4 left-1/2 -translate-x-1/2 max-w-[92vw] sm:max-w-md border px-4 py-2.5 rounded-full text-xs font-semibold transition-all duration-300 z-[300] shadow-xl flex items-center gap-2.5 pointer-events-none backdrop-blur-md ${getVariantStyles()} ${
+        toastMessage ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-4 scale-95'
+      }`}
+    >
+      {getIcon()}
+      <span className="truncate">{toastMessage}</span>
     </div>
   );
 };

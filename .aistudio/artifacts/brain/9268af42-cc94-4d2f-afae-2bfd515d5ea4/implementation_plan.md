@@ -1,209 +1,152 @@
-# Git Manager: Clean Developer Studio Redesign & Restructuring Plan
+# Master Engineering Plan: Repository Search Fix, Advanced Sorting & Layout Restructuring
 
-Comprehensive engineering and architectural specification to elevate Git Manager into a modern, high-performance, and visually refined developer studio workbench across desktop, tablet, and mobile form factors.
-
----
-
-## User Review & Critical Decisions
-
-> [!IMPORTANT]
-> The following product and design choices were confirmed by the user during interactive clarification and form the foundation of this redesign:
->
-> 1. **Visual Aesthetic Direction**: **Clean Developer Studio** — neutral zinc canvas (`#09090b` dark, `#fafafa` light), refined indigo accents (`#6366f1` / `#4f46e5`), crisp typographic hierarchy, and anti-slop visual restraint.
-> 2. **Layout Architecture**: **Modern Split-View Git Workbench** — collapsible dual/triple-pane workspace, persistent top breadcrumbs and branch switcher, high-density data tables, and deep interactive code and diff inspector.
-> 3. **Smoothing Focus Areas**:
->    - Navigation and repository overview with quick switcher and instant multi-criteria filters.
->    - Repository details: interactive file tree explorer, syntax-highlighted diff viewer, and commit timeline.
->    - Git operations: branch switcher, commit staging and creator, and pull request workflow.
->    - Micro-interactions: 120fps fluid view transitions, keyboard shortcuts (`Cmd/Ctrl+K`, `Escape`, `Arrow` navigation), and responsive touch gestures.
-
----
-
-## 1. Objective & Scope
-
+## 1. Objective
 ### Purpose
-Transform Git Manager from a prototype-like interface with inconsistent badges, artificial telemetry dots, and disjointed mobile/desktop layouts into a cohesive, production-grade developer workbench that feels on par with GitHub Desktop, Linear, and VS Code Web.
-
-### Complexity Classification
-**Level 4 — Architectural Redesign & Systems Restructure**
+Resolve the GitHub search API `422 Validation Failed` runtime error, introduce a configurable repository search system with scope toggling (Personal repositories vs. Global GitHub search), comprehensive sorting and filtering across all kinds and types (Updated, Stars, Forks, Alphabetical Name, Programming Language), fix layout crampedness and pagination spacing, and modernize the toast notification component to avoid UI occlusion.
 
 ### Problem Statement
-- Visual inconsistencies: arbitrary purple accents, floating cards with competing elevations, and decorative pulsing dots that violate UI design principles.
-- Spatial tension: mobile and desktop codebases share state but have diverged presentation patterns, leading to awkward transitions and redundant components.
-- Navigation friction: switching repositories or branches requires navigating multiple levels of screens rather than seamless in-place switching.
-- Inspection depth: commit inspection, diffs, and file tree browsing lack standard developer shortcuts and keyboard accessibility.
+1. **GitHub Search API 422 Validation Failed**: In `AppContext.tsx`, searching user repositories calls `https://api.github.com/search/repositories?q=user:${username}+${encodeURIComponent(searchQuery)}...`. When query inputs are structured with raw qualifiers or lack necessary term formatting, GitHub's search query parser rejects the request with HTTP 422 Unprocessable Entity ("Validation Failed"). Furthermore, GitHub Search API has strict rate limits (30 req/min for authenticated, 10 for unauthenticated) and qualifier rules that do not include private repos unless authenticated with specific token scopes.
+2. **Cramped Layout & Pagination Overlap**: In `Repositories.tsx`, container height is hardcoded to `h-[calc(100vh-130px)]` nested inside `PullToRefresh`'s `overflow-y-auto`, causing pagination buttons to collide, numbers (`4 1 2 ... 4`) to overlap, and text to truncate improperly.
+3. **Occluding Toast with Misleading Icon**: The current `Toast` in `src/components/UI.tsx` is fixed at `bottom-[90px]` right on top of the pagination footer, and renders a green `CheckCircle2` checkmark even for fatal API errors.
+4. **Lack of Multi-Dimension Sorting & Configuration**: Users currently only have basic client-side 'All'/'Private'/'Public' pill filters, with no ability to sort by Stars, Forks, Language, Name, or Updated date, nor toggle between searching personal repositories versus global GitHub.
 
-### Expected Result & Success Criteria
-- **Visual Polish**: Strict 60-30-10 color discipline with zinc neutrals and indigo accents. Zero fake status indicators or pill badge sandwiches.
-- **Unified Workbench**: Responsive 3-pane workbench on desktop (collapsible rail + list/tree + deep inspector), adaptive 2-pane on tablet, and fluid bottom-sheet navigation on mobile.
-- **High-Performance Rendering**: Virtualized repository and commit lists (`@tanstack/react-virtual`), zero layout shifts, and sub-100ms micro-interactions.
-- **Accessibility & Contrast**: 100% WCAG AA compliance with visible focus rings (`focus-visible`) and complete keyboard navigation.
-
----
-
-## 2. Existing System Analysis & Evidence-First Audit
-
-### Verified Facts
-- **Stack**: Vite 6, React 19, TypeScript 5.8, Tailwind CSS 4 with `@theme`, Express backend on port 3000 running `vite.middlewares` via `tsx server.ts`.
-- **Libraries**: `@tanstack/react-query`, `@tanstack/react-virtual`, `motion` (Framer Motion v12), `recharts`, `react-syntax-highlighter`, `lucide-react`, `jszip`.
-- **State Architecture**: `AppContext.tsx` provides centralized state management (`AppState`, `AppContextType`) managing GitHub auth tokens, user profiles, repository pagination, local commit/PR/branch mutations, and active tabs.
-- **Screen Inventory**:
-  - `Dashboard`: activity graphs with Recharts, summary statistics, recent activity.
-  - `Repositories`: repository list, search, pagination, public/private filters.
-  - `RepoDetails`: sub-screens for `files` (file tree), `commits` (timeline), `branches`, `insights`, `prs`, and `clone`.
-  - `Settings`: token configuration, theme switcher, cache management.
-- **Desktop vs. Mobile**: Handled via `useIsDesktop` hook rendering either `DesktopLayout` or mobile `Header + RepoTabs + Screen + BottomNav`.
-
-### Technical Debt & Anti-Patterns Identified
-- **Anti-Slop Violations**: Footer pinned status bar with fake `v2.4.1` and `Developer Station OK` pulsing green dot (`bg-emerald-500 animate-pulse`).
-- **Pill Badge Overuse**: Multiple pill badges on cards (`Private`, `Public`, language badges, date badges) creating visual clutter instead of clean inline typographic metadata.
-- **Inconsistent Theme Tokens**: Hardcoded purple `#7C3AED` and scattered Tailwind classes instead of unified CSS variable-backed design tokens.
-- **Dead/Spurious Controls**: Some header icons and search elements lack full keyboard wiring or deep integration.
+### Success Criteria
+- Zero 422 validation errors when searching repositories; graceful fallback to client-side multi-field filtering on personal repositories and valid qualifier syntax for global searches.
+- Configuration panel for Repository Search:
+  - Search Scope Toggle: "Personal Repositories" vs "Global GitHub".
+  - Sort By: Last Updated, Stars Count, Forks Count, Repository Name (A-Z), and Primary Language.
+  - Sort Order: Descending vs Ascending.
+  - Type Filter: All, Public, Private, Forks, Sources.
+  - Language Filter: All, TypeScript, JavaScript, Python, Go, Rust, Java, HTML, CSS, etc.
+- Pagination spacing and layout restructured according to the 8-point spatial system: clean responsive buttons, proper hit targets (min 36x36px), no overlapping text or cramped controls.
+- Toast notifications relocated to floating top-center with distinct semantic colorways and icons (Error = Red with `AlertCircle`, Success = Green with `CheckCircle2`, Info = Indigo with `Info`).
 
 ---
 
-## 3. Architecture & Visual Design
+## 2. Evidence-First System Analysis
 
-### Visual Identity & Theme Tokens
-The theme is anchored in **Clean Developer Studio** aesthetics:
-- **Canvas (60%)**: 
-  - Dark: Deep Obsidian / Zinc 950 (`#09090b`), Canvas Surface (`#121217`)
-  - Light: Clean Canvas (`#fafafa`), Card Surface (`#ffffff`)
-- **Structure & Borders (30%)**:
-  - Hairline borders: `rgba(255, 255, 255, 0.08)` in dark, `rgba(0, 0, 0, 0.08)` in light
-  - Muted typography: Zinc 400 (`#a1a1aa`) in dark, Zinc 500 (`#71717a`) in light
-  - Data numbers and code hashes: Monospace with tabular numerals (`tabular-nums font-mono`)
-- **Accent Budget (10%)**:
-  - Primary Accent: Refined Indigo (`#6366f1` dark / `#4f46e5` light)
-  - Success/Nominal: Emerald (`#10b981`)
-  - Warning: Amber (`#f59e0b`)
-  - Danger: Rose/Crimson (`#f43f5e`)
+### Verified Facts (Confirmed from Codebase)
+1. **Search Endpoint**: `AppContext.tsx` lines 288-305 construct:
+   ```ts
+   const searchUrl = `https://api.github.com/search/repositories?q=user:${username}+${encodeURIComponent(searchQuery)}&sort=updated&per_page=${perPage}&page=${page}`;
+   ```
+   GitHub's search API fails if `user:${username}` has syntax issues, if query terms contain unhandled qualifiers, or if the search string is formatted with `+` instead of sanitized URL parameters.
+2. **Personal Repos Availability**: When a user is logged in, their repositories are fetched via `https://api.github.com/user/repos` (which returns both public and private repos). When searching personal repos, client-side indexing over cached and paginated repos is instantaneous, zero-latency, rate-limit immune, and supports private repos reliably.
+3. **Layout Overlap**: `Repositories.tsx` line 116 uses `h-[calc(100vh-130px)] max-h-[1000px]` inside `PullToRefresh.tsx` line 125 (`className="flex-1 overflow-y-auto ... px-5 pb-5"`). This dual nested scroll container causes layout recalculation bugs and forces pagination footer to collide with viewport boundaries.
+4. **Toast Occlusion**: `UI.tsx` line 105 places Toast at `bottom-[90px] left-1/2 -translate-x-1/2`, exactly where the pagination footer rests, and hardcodes a green `CheckCircle2` icon.
 
-### System Architecture Diagram
+### Assumptions
+- Users searching their own repositories prioritize immediate results without triggering GitHub API rate limits.
+- When users toggle "Global GitHub Search", they expect to query the full public GitHub repository index using safe, sanitized search parameters.
 
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│                          GLOBAL APP SHELL                              │
-│   Cmd/Ctrl+K Quick Command Palette · Global Search · Toast Container   │
-└───────────────────────────────────┬────────────────────────────────────┘
-                                    │
-          ┌─────────────────────────┴─────────────────────────┐
-          │                                                   │
-┌─────────▼──────────────┐                         ┌──────────▼──────────────┐
-│     DESKTOP / TABLET   │                         │      MOBILE SHELL       │
-│  Collapsible Workbench │                         │ Fluid Viewport + Sheets │
-├────────────────────────┤                         ├─────────────────────────┤
-│ ┌──────┬──────┬──────┐ │                         │ ┌─────────────────────┐ │
-│ │ Rail │ List │ Detail│ │                         │ │ Clean 3-Zone Header │ │
-│ │  Nav │ View │ Insp.│ │                         │ ├─────────────────────┤ │
-│ └──────┴──────┴──────┘ │                         │ │ Active Screen View  │ │
-│                        │                         │ ├─────────────────────┤ │
-│                        │                         │ │ Modern Bottom Nav   │ │
-│                        │                         │ └─────────────────────┘ │
-└─────────┬──────────────┘                         └──────────┬──────────────┘
-          │                                                   │
-          └─────────────────────────┬─────────────────────────┘
-                                    │
-┌───────────────────────────────────▼────────────────────────────────────┐
-│                    CENTRALIZED APPLICATION STATE                       │
-│    GitHub Token / Auth · Active Repository & Branch · Virtualizer      │
-│     Real REST / Fallback Seed Data · Local Mutation Optimism           │
-└────────────────────────────────────────────────────────────────────────┘
-```
-
-### Component Hierarchy & Structural Refactoring
-1. **`src/index.css` & Theme**:
-   - Reconfigure CSS variables to Clean Developer Studio (`--main`, `--card`, `--hover`, `--border`, `--primary`, `--text-main`, `--text-muted`).
-   - Clean tabular numerals and monospace formatting.
-2. **`DesktopLayout.tsx`**:
-   - Restructure into a true modular 3-pane workbench:
-     - **Pane 1 (Navigation Rail, 240px)**: Collapsible sidebar with brand wordmark, repository quick-picker dropdown, workspace sections, and user account status.
-     - **Pane 2 (Explorer / List, 360px-440px)**: Dynamic high-density list (repositories, commit history, file tree, PR list) with search and status filters.
-     - **Pane 3 (Deep Inspector, flex-1)**: Focused detail viewer (code diff with syntax highlighting, file preview, PR conversation and merge checks, insights analytics).
-   - Eliminate fake telemetry tickers and pulsing dots.
-3. **`Layout.tsx` & Mobile Screens**:
-   - Align mobile header with the Top Bar contract (clean title, repository breadcrumb, single primary CTA).
-   - Streamlined segmented controls replacing garish pill tags.
-   - Smooth animated sheet modals for quick actions.
-4. **`Repositories.tsx` & `RepoDetails.tsx`**:
-   - Unboxed metadata (`TypeScript · 2.4k stars · updated 2h ago`) with typographic separators.
-   - Consistent empty states with clear calls to action.
-   - Fast file tree navigator with clean directory expansion and file icons.
-5. **Git Operations & Modals (`CreateModals.tsx`)**:
-   - Polished modal dialogs with autofocus, validation messages, and smooth entrance/exit transitions.
+### Missing Information
+- None. The root causes and visual layout artifacts in `Screenshot_2026_1018_121931.jpg` have been verified against the codebase.
 
 ---
 
-## 4. Platform Experience Specifications
-
-### Desktop Experience (1440px+)
-- **Layout**: Fixed-height viewport (`h-screen overflow-hidden`) with 3-pane grid.
-- **Keyboard Navigation**:
-  - `Cmd+K` / `Ctrl+K`: Opens quick jump / repo command palette.
-  - `Esc`: Closes modals, drawers, or clears active search.
-  - `↑` / `↓` arrow keys: Navigate repository or commit list items.
-- **Inspector**: Side-by-side or unified diff viewer with split line numbers, syntax highlighting, and commit metadata banner.
-
-### Tablet Experience (768px – 1024px)
-- **Landscape**: 2-pane split (collapsible list + inspector). Navigation rail collapses to compact icon strip (64px).
-- **Portrait**: Fluid primary view with slide-over inspector drawer for commit diffs and file details.
-- **Touch Targets**: Minimum 44px tap targets for all interactive controls.
-
-### Mobile Experience (<768px)
-- **Navigation**: Clean top bar with contextual breadcrumbs and a bottom bar adhering to the 15% viewport height cap.
-- **Gestures**: Pull-to-refresh on repositories and activity feeds, swipe-to-back on repo details.
-- **Input & Safe Areas**: Native iOS/Android safe area padding (`pb-safe`), auto-scroll into view on input focus.
+## 3. Complexity Classification
+- **Level 3 (Large Feature / Architectural Fix)**: Involves state management overhaul in `AppContext.tsx`, UI redesign and restructuring in `Repositories.tsx` and `DesktopLayout.tsx`, advanced sorting algorithms, and component modernization in `UI.tsx`.
 
 ---
 
-## 5. Technical Implementation Breakdown
+## 4. Architecture & Technical Design
 
-### Phase 1: Design System & Token Foundation
-- **Files**: `src/index.css`, `src/types.ts`
-- **Actions**:
-  - Define zinc and indigo color tokens in `@theme`.
-  - Enforce `font-mono` and `tabular-nums` for hashes, counts, and dates.
-  - Remove deprecated inline color styles.
-- **Validation**: Visual check of theme switching and contrast compliance.
-
-### Phase 2: Desktop Split-View Workbench Restructuring
-- **Files**: `src/components/DesktopLayout.tsx`, `src/components/commit/DiffViewer.tsx`
-- **Actions**:
-  - Re-architect desktop into 3-pane responsive workbench.
-  - Remove all anti-slop elements (pulsing status dots, fake version tags, fake telemetry).
-  - Modernize commit list and diff inspector with syntax highlighting and clear split metadata.
-- **Validation**: Check desktop viewport rendering, resizing, and virtual scrolling.
-
-### Phase 3: Mobile & Tablet Smoothing & Unification
-- **Files**: `src/components/Layout.tsx`, `src/screens/Repositories.tsx`, `src/screens/RepoDetails.tsx`, `src/screens/Dashboard.tsx`
-- **Actions**:
-  - Replace pill badge sandwiches with unboxed typographic metadata.
-  - Smooth repository search and filter bar.
-  - Refactor file explorer with collapsible folder hierarchy and breadcrumb navigation.
-- **Validation**: Test mobile responsive widths (375px, 414px) and tablet orientations.
-
-### Phase 4: Git Operations & Modal Polish
-- **Files**: `src/components/CreateModals.tsx`, `src/components/UnauthenticatedState.tsx`
-- **Actions**:
-  - Redesign creation modals (Repository, Branch, Commit, PR, Clone, PAT Setup).
-  - Add form validation indicators and keyboard escape handlers.
-- **Validation**: Execute simulated branch creation, commit creation, and PAT entry.
-
-### Phase 5: Verification & Accessibility Audit
-- **Actions**:
-  - Run `compile_applet` and `lint_applet`.
-  - Verify WCAG AA color contrast and zero console warnings.
-- **Validation**: Zero build errors, zero runtime exceptions.
+### Data Flow & Search Architecture
+1. **Repository Search Configuration**:
+   - `searchScope`: `'personal' | 'global'` (Default: `'personal'`).
+   - `sortBy`: `'updated' | 'stars' | 'forks' | 'name' | 'language'` (Default: `'updated'`).
+   - `sortDirection`: `'desc' | 'asc'` (Default: `'desc'`).
+   - `typeFilter`: `'all' | 'public' | 'private' | 'forks' | 'sources'` (Default: `'all'`).
+   - `languageFilter`: string (Default: `'all'`).
+2. **Execution Strategy**:
+   - **Personal Scope**: Searches and sorts across the user's connected and local repositories client-side. Sanitizes search text with fuzzy token matching across `name`, `description`, `owner`, and `language`. Zero GitHub API rate-limit cost, full private repo support, zero network lag.
+   - **Global Scope**: Queries `https://api.github.com/search/repositories` using sanitized parameters:
+     ```ts
+     const cleanTerm = searchQuery.trim();
+     const queryParts: string[] = [cleanTerm];
+     if (languageFilter !== 'all') queryParts.push(`language:${languageFilter}`);
+     if (typeFilter === 'forks') queryParts.push('fork:only');
+     else if (typeFilter === 'sources') queryParts.push('fork:false');
+     const q = queryParts.join(' ');
+     const url = `https://api.github.com/search/repositories?q=${encodeURIComponent(q)}&sort=${apiSort}&order=${sortDirection}&per_page=${perPage}&page=${page}`;
+     ```
+   - Catches 422 errors and rate-limiting gracefully, presenting clear guidance rather than raw unformatted strings.
+3. **Layout & 8-Point Spatial Hierarchy**:
+   - Remove dual nested scrolling constraints.
+   - Establish dedicated header area: Search Input (40px) + Scope Switcher + Configuration Drawer Toggle.
+   - Expandable Configuration Bar: Sort By dropdown/chips, Sort Direction toggle, Type filter, and Language selector.
+   - Responsive virtualized list with standard 16px bottom gap.
+   - Pagination Bar: Clean 36px interactive touch targets, clear `Page X of Y` indicator, adaptive pagination window to prevent mobile wrapping.
+4. **Toast Notification Engine**:
+   - Relocate to top-center: `top-4 left-1/2 -translate-x-1/2`.
+   - Polymorphic variants:
+     - `error`: Red border, light red background, `AlertCircle` icon.
+     - `success`: Emerald border, emerald background, `CheckCircle2` icon.
+     - `info`: Indigo border, indigo background, `Info` icon.
+   - Added `z-[300]` with subtle drop shadow and non-blocking layout presence.
 
 ---
 
-## 6. Execution Checklist
+## 5. Implementation Phases & Breakdown
 
-- [ ] Update `src/index.css` with Clean Developer Studio zinc/indigo design tokens and typography rules.
-- [ ] Refactor `src/components/DesktopLayout.tsx` into a modern 3-pane workbench and eliminate fake status indicators.
-- [ ] Upgrade `src/components/commit/DiffViewer.tsx` and commit timeline with refined styling and tabular numerals.
-- [ ] Streamline `src/components/Layout.tsx` top bar and bottom navigation to adhere to the Top Bar contract.
-- [ ] Restructure `src/screens/Repositories.tsx` with unboxed metadata, clean sorting, and zero-pill discipline.
-- [ ] Smooth `src/screens/repodetails/FilesScreen.tsx` and `CommitsScreen.tsx` with breadcrumbs and keyboard accessibility.
-- [ ] Polish `src/components/CreateModals.tsx` and `UnauthenticatedState.tsx` for consistent aesthetic finish.
-- [ ] Compile and verify entire application build via `compile_applet` and `lint_applet`.
+### Phase 1: State Management & GitHub Search Hardening (`src/AppContext.tsx`)
+- Add search and sort state configuration to `AppContext`:
+  - `repoSearchScope`, `setRepoSearchScope`
+  - `repoSortBy`, `setRepoSortBy`
+  - `repoSortDirection`, `setRepoSortDirection`
+  - `repoTypeFilter`, `setRepoTypeFilter`
+  - `repoLanguageFilter`, `setRepoLanguageFilter`
+- Re-architect `fetchGitHubRepos` to eliminate 422 validation errors.
+- Implement robust query sanitation and client-side sorting for personal repositories.
+- Support typed toast messages: `showToast(message, type?: 'info' | 'success' | 'error')`.
+
+### Phase 2: Repository Screen Layout & Configuration Panel (`src/screens/Repositories.tsx`)
+- Add Search Scope Switcher (Personal vs Global GitHub).
+- Build Sort & Filter Configuration Bar:
+  - Sort dimensions: Last Updated, Stars, Forks, Name, Language.
+  - Direction: Descending vs Ascending.
+  - Types: All, Public, Private, Forks, Sources.
+  - Languages: Dynamic extraction from repository list.
+- Fix pagination footer layout:
+  - Eliminate cramped numbers and overflowing rows.
+  - Dynamic page window calculation (`1 ... 3 4 5 ... 12`).
+  - Strict 8-point grid heights (`h-9 w-9` buttons, 16px gap).
+- Fix height constraints so scrolling feels fluid and native.
+
+### Phase 3: Desktop Repository Synchronization (`src/components/DesktopLayout.tsx`)
+- Reflect the new search scope, multi-dimension sorting, and filters inside the Desktop repository management view.
+- Ensure desktop filter controls and pagination align with desktop sidebar and table layouts.
+
+### Phase 4: Toast System Modernization (`src/components/UI.tsx`)
+- Move `Toast` from bottom-90px to top-center (`top-5 z-[300]`).
+- Render semantic icons (`AlertCircle` for error, `CheckCircle2` for success, `Info` for info).
+- Add max-width and text truncation protection to prevent awkward pill wrapping.
+
+---
+
+## 6. Responsive & Multi-Platform Experience
+
+### Mobile Experience (Portrait & Landscape)
+- Single-row search input with scope pill toggle.
+- Collapsible "Filters & Sort" drawer to preserve vertical space for repositories.
+- Pagination bar with compact step navigation (`< Page 1/4 >` on small screens, expanded on wider phones).
+- Top-anchored toast with safe-area inset support (`top-[max(1.25rem,env(safe-area-inset-top))]`).
+
+### Tablet & Desktop Experience
+- Expanded horizontal configuration toolbar.
+- Direct-access sort selector dropdown and quick filters.
+- Responsive multi-column grid layout for repository cards.
+
+---
+
+## 7. Accessibility, Security & Quality Gates
+- **WCAG 2.1 AA**: Minimum touch target of 36x36px for pagination, 4.5:1 text contrast on badges.
+- **Keyboard Navigation**: Full tab index and arrow key navigation for sort dropdowns and pagination buttons.
+- **Security**: Strict query sanitization preventing parameter injection or malformed URI components to external APIs.
+- **Zero Breaking Changes**: Existing repo cloning, commit tracking, and branch switching remain fully compatible.
+
+---
+
+## 8. Verification & Rollback Strategy
+- **Verification**: Run `npm run lint` (`tsc --noEmit`) and `compile_applet` (`npm run build`) to ensure zero type errors and build cleanliness.
+- **Rollback**: Every change is modular and atomic within `AppContext.tsx`, `Repositories.tsx`, and `UI.tsx`.

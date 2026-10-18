@@ -25,6 +25,11 @@ export interface GitHubRepo {
   watchers_count?: number;
 }
 
+export type RepoSearchScope = 'personal' | 'global';
+export type RepoSortBy = 'updated' | 'stars' | 'forks' | 'name' | 'language';
+export type RepoSortDirection = 'desc' | 'asc';
+export type RepoTypeFilter = 'all' | 'public' | 'private' | 'forks' | 'sources';
+
 export interface AppState {
   currentScreen: Screen;
   currentRepo: string | null;
@@ -33,6 +38,7 @@ export interface AppState {
   isActionSheetOpen: boolean;
   isDrawerOpen: boolean;
   toastMessage: string | null;
+  toastType: 'info' | 'success' | 'error';
   isSearchFocused: boolean;
   theme: 'dark' | 'light';
   githubToken: string | null;
@@ -42,6 +48,11 @@ export interface AppState {
   repoPerPage: number;
   repoTotalPages: number;
   repoSearchQuery: string;
+  repoSearchScope: RepoSearchScope;
+  repoSortBy: RepoSortBy;
+  repoSortDirection: RepoSortDirection;
+  repoTypeFilter: RepoTypeFilter;
+  repoLanguageFilter: string;
   isFetchingRepos: boolean;
   
   // Repo details state
@@ -67,7 +78,12 @@ export type AppContextType = AppState & {
   closeActionSheet: () => void;
   openDrawer: () => void;
   closeDrawer: () => void;
-  showToast: (msg: string) => void;
+  showToast: (msg: string, type?: 'info' | 'success' | 'error') => void;
+  setRepoSearchScope: (scope: RepoSearchScope) => void;
+  setRepoSortBy: (sortBy: RepoSortBy) => void;
+  setRepoSortDirection: (dir: RepoSortDirection) => void;
+  setRepoTypeFilter: (filter: RepoTypeFilter) => void;
+  setRepoLanguageFilter: (lang: string) => void;
   closeModals: () => void;
   setSearchFocus: (focus: boolean) => void;
   toggleTheme: () => void;
