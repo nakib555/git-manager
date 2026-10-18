@@ -110,6 +110,31 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* 8-Point Spatial Grid Architecture System */
+:root {
+  --grid-base: 8px;
+  --grid-half: 4px;
+}
+
+/* Standardized 8-point component heights */
+.h-8-compact { height: 32px; min-height: 32px; }
+.h-8-control { height: 40px; min-height: 40px; }
+.h-8-action  { height: 48px; min-height: 48px; }
+.h-8-bar     { height: 56px; min-height: 56px; }
+
+/* Responsive 8-grid container layouts */
+.container-8-mobile {
+  padding-left: 16px;
+  padding-right: 16px;
+  gap: 16px;
+}
+
+.container-8-desktop {
+  padding-left: 32px;
+  padding-right: 32px;
+  gap: 24px;
+}
+
 .recharts-wrapper, .recharts-surface {
   outline: none !important;
 }
