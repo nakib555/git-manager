@@ -276,10 +276,10 @@ export const CommitsScreen = () => {
   return (
     <div className="flex flex-col gap-4 relative">
       <div className="flex justify-between items-center bg-card border border-border rounded-xl p-3 mb-1 shrink-0">
-        <span className="text-xs text-text-muted font-semibold uppercase tracking-wider">Ready to record state?</span>
+        <span className="text-xs text-text-muted font-medium">Working Tree Changes</span>
         <button 
           onClick={() => openModal('commit')}
-          className="bg-primary hover:bg-primary-hover text-white text-xs font-bold px-3 py-2 rounded-xl active:scale-95 transition-all flex items-center gap-1.5 shadow-sm"
+          className="bg-primary hover:bg-primary-hover text-white text-xs font-semibold px-3.5 py-2 rounded-lg active:scale-95 transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
         >
           <GitCommit size={14} strokeWidth={2.5} /> Commit Changes
         </button>

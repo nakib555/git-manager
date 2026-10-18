@@ -204,13 +204,13 @@ export const Dashboard: React.FC = () => {
     <div className="animate-fade-up">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h2 className="text-[22px] font-semibold mb-1">
-            {githubUser ? `👋 Hi, ${githubUser.name || githubUser.login}` : '👋 Welcome'}
+          <h2 className="text-xl font-bold tracking-tight text-text-main mb-1">
+            {githubUser ? `Welcome, ${githubUser.name || githubUser.login}` : 'Overview'}
           </h2>
-          <p className="text-[13px] text-text-muted">Here's what's happening with your repositories.</p>
+          <p className="text-xs text-text-muted font-medium">Activity and status summary for your repositories.</p>
         </div>
         {githubUser && (
-          <img src={githubUser.avatar_url} alt="Profile" className="w-12 h-12 rounded-full border border-border" />
+          <img src={githubUser.avatar_url} alt="Profile" className="w-12 h-12 rounded-full border border-border shadow-sm" />
         )}
       </div>
 

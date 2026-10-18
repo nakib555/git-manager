@@ -2324,14 +2324,14 @@ const DesktopSettings: React.FC = () => {
           )}
 
           {/* Appearance theme selector */}
-          <div className="p-5 flex items-center justify-between hover:bg-hover/10 transition-colors cursor-pointer" onClick={toggleTheme}>
+          <div className="p-5 flex items-center justify-between hover:bg-hover/10 transition-colors cursor-pointer group" onClick={toggleTheme}>
             <div className="flex gap-4 items-center">
-              <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center">
-                {theme === 'dark' ? <Moon size={20} /> : <Sun size={20} />}
+              <div className="w-10 h-10 rounded-xl bg-hover text-text-muted group-hover:text-primary transition-colors flex items-center justify-center">
+                {theme === 'dark' ? <Moon size={18} /> : <Sun size={18} />}
               </div>
               <div>
-                <span className="block text-xs font-bold text-text-main">Interface Appearance Mode</span>
-                <span className="block text-[10px] text-text-muted mt-0.5">{theme === 'dark' ? 'Modern Dark Slate' : 'Clean Whisper White'}</span>
+                <span className="block text-xs font-bold text-text-main">Appearance Mode</span>
+                <span className="block text-[10px] text-text-muted mt-0.5">{theme === 'dark' ? 'Dark Theme' : 'Light Theme'}</span>
               </div>
             </div>
             
@@ -2341,17 +2341,17 @@ const DesktopSettings: React.FC = () => {
           </div>
 
           {/* Version details info */}
-          <div className="p-5 flex items-center justify-between hover:bg-hover/10 transition-colors">
+          <div className="p-5 flex items-center justify-between hover:bg-hover/10 transition-colors group">
             <div className="flex gap-4 items-center">
-              <div className="w-10 h-10 rounded-xl bg-gray-400/10 text-gray-400 flex items-center justify-center">
-                <Sliders size={20} />
+              <div className="w-10 h-10 rounded-xl bg-hover text-text-muted flex items-center justify-center">
+                <Sliders size={18} />
               </div>
               <div>
-                <span className="block text-xs font-bold text-text-main">Workspace Core Engine</span>
-                <span className="block text-[10px] text-text-muted mt-0.5">Application version status telemetry</span>
+                <span className="block text-xs font-bold text-text-main">Git Manager Desktop</span>
+                <span className="block text-[10px] text-text-muted mt-0.5">Desktop Workstation Client</span>
               </div>
             </div>
-            <span className="text-xs font-bold text-text-muted">v2.4.1 (Stable)</span>
+            <span className="text-xs font-medium text-text-muted">v2.4.1</span>
           </div>
         </div>
       </div>

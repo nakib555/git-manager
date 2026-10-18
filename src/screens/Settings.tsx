@@ -116,22 +116,22 @@ export const Settings: React.FC = () => {
           </div>
         )}
 
-        <div className="flex justify-between items-center py-4 border-b border-border cursor-pointer active:opacity-70" onClick={() => showToast('Account Settings opened')}>
+        <div className="flex justify-between items-center py-4 border-b border-border cursor-pointer active:opacity-70 group" onClick={() => showToast('Account Settings opened')}>
           <div className="flex gap-4 items-center">
-            <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center">
-              <User size={20} />
+            <div className="w-10 h-10 rounded-xl bg-hover text-text-muted group-hover:text-primary transition-colors flex items-center justify-center">
+              <User size={18} />
             </div>
             <div>
               <div className="text-sm font-medium">Account</div>
-              <div className="text-[11px] text-text-muted">Manage your account settings</div>
+              <div className="text-[11px] text-text-muted">Manage your profile and preferences</div>
             </div>
           </div>
           <ChevronRight size={16} className="text-text-muted" />
         </div>
-        <div className="flex justify-between items-center py-4 border-b border-border cursor-pointer active:opacity-70" onClick={() => showToast('SSH & GPG Keys')}>
+        <div className="flex justify-between items-center py-4 border-b border-border cursor-pointer active:opacity-70 group" onClick={() => showToast('SSH & GPG Keys')}>
           <div className="flex gap-4 items-center">
-            <div className="w-10 h-10 rounded-xl bg-orange-500/10 text-orange-500 flex items-center justify-center">
-              <Key size={20} />
+            <div className="w-10 h-10 rounded-xl bg-hover text-text-muted group-hover:text-primary transition-colors flex items-center justify-center">
+              <Key size={18} />
             </div>
             <div>
               <div className="text-sm font-medium">SSH & GPG Keys</div>
@@ -140,10 +140,10 @@ export const Settings: React.FC = () => {
           </div>
           <ChevronRight size={16} className="text-text-muted" />
         </div>
-        <div className="flex justify-between items-center py-4 border-b border-border cursor-pointer active:opacity-70" onClick={() => showToast('Billing')}>
+        <div className="flex justify-between items-center py-4 border-b border-border cursor-pointer active:opacity-70 group" onClick={() => showToast('Billing')}>
           <div className="flex gap-4 items-center">
-            <div className="w-10 h-10 rounded-xl bg-green-500/10 text-green-500 flex items-center justify-center">
-              <CreditCard size={20} />
+            <div className="w-10 h-10 rounded-xl bg-hover text-text-muted group-hover:text-primary transition-colors flex items-center justify-center">
+              <CreditCard size={18} />
             </div>
             <div>
               <div className="text-sm font-medium">Billing & Plans</div>
@@ -152,14 +152,14 @@ export const Settings: React.FC = () => {
           </div>
           <ChevronRight size={16} className="text-text-muted" />
         </div>
-        <div className="flex justify-between items-center py-4 cursor-pointer active:opacity-70" onClick={toggleTheme}>
+        <div className="flex justify-between items-center py-4 cursor-pointer active:opacity-70 group" onClick={toggleTheme}>
           <div className="flex gap-4 items-center">
-            <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center">
-              {theme === 'dark' ? <Moon size={20} /> : <Sun size={20} />}
+            <div className="w-10 h-10 rounded-xl bg-hover text-text-muted group-hover:text-primary transition-colors flex items-center justify-center">
+              {theme === 'dark' ? <Moon size={18} /> : <Sun size={18} />}
             </div>
             <div>
               <div className="text-sm font-medium">Appearance</div>
-              <div className="text-[11px] text-text-muted">{theme === 'dark' ? 'Dark theme' : 'Whisper White theme'}</div>
+              <div className="text-[11px] text-text-muted">{theme === 'dark' ? 'Dark theme' : 'Light theme'}</div>
             </div>
           </div>
           <ChevronRight size={16} className="text-text-muted" />
@@ -167,10 +167,10 @@ export const Settings: React.FC = () => {
       </div>
 
       <div className="bg-card rounded-2xl px-4 border border-border">
-        <div className="flex justify-between items-center py-4 border-b border-border cursor-pointer active:opacity-70" onClick={() => showToast('Cloudflare Publish settings')}>
+        <div className="flex justify-between items-center py-4 border-b border-border cursor-pointer active:opacity-70 group" onClick={() => showToast('Cloudflare Publish settings')}>
           <div className="flex gap-4 items-center">
-            <div className="w-10 h-10 rounded-xl bg-[#F6821F]/10 text-[#F6821F] flex items-center justify-center">
-              <Cloud size={20} />
+            <div className="w-10 h-10 rounded-xl bg-hover text-text-muted group-hover:text-primary transition-colors flex items-center justify-center">
+              <Cloud size={18} />
             </div>
             <div>
               <div className="text-sm font-medium">Cloudflare Publish</div>
@@ -179,10 +179,10 @@ export const Settings: React.FC = () => {
           </div>
           <ChevronRight size={16} className="text-text-muted" />
         </div>
-        <div className="flex justify-between items-center py-4 border-b border-border cursor-pointer active:opacity-70" onClick={() => showToast('Git Integrations')}>
+        <div className="flex justify-between items-center py-4 border-b border-border cursor-pointer active:opacity-70 group" onClick={() => showToast('Git Integrations')}>
           <div className="flex gap-4 items-center">
-            <div className="w-10 h-10 rounded-xl bg-pink-500/10 text-pink-500 flex items-center justify-center">
-              <Plug size={20} />
+            <div className="w-10 h-10 rounded-xl bg-hover text-text-muted group-hover:text-primary transition-colors flex items-center justify-center">
+              <Plug size={18} />
             </div>
             <div>
               <div className="text-sm font-medium">Git Integrations</div>
@@ -191,10 +191,10 @@ export const Settings: React.FC = () => {
           </div>
           <ChevronRight size={16} className="text-text-muted" />
         </div>
-        <div className="flex justify-between items-center py-4 cursor-pointer active:opacity-70" onClick={() => showToast('Git Manager v2.4.1 is up to date')}>
+        <div className="flex justify-between items-center py-4 cursor-pointer active:opacity-70 group" onClick={() => showToast('Git Manager v2.4.1 is up to date')}>
           <div className="flex gap-4 items-center">
-            <div className="w-10 h-10 rounded-xl bg-gray-400/10 text-gray-400 flex items-center justify-center">
-              <Info size={20} />
+            <div className="w-10 h-10 rounded-xl bg-hover text-text-muted group-hover:text-primary transition-colors flex items-center justify-center">
+              <Info size={18} />
             </div>
             <div>
               <div className="text-sm font-medium">About</div>

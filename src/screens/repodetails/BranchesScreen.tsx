@@ -130,10 +130,10 @@ export const BranchesScreen = () => {
       </div>
 
       <div className="flex justify-between items-center bg-card border border-border rounded-xl p-3 mb-4">
-        <span className="text-xs text-text-muted font-semibold uppercase tracking-wider">Branch from main</span>
+        <span className="text-xs text-text-muted font-medium">Create New Branch</span>
         <button 
           onClick={() => openModal('branch')}
-          className="bg-info text-white text-xs font-bold px-3 py-2 rounded-xl active:scale-95 transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+          className="bg-primary hover:bg-primary-hover text-white text-xs font-semibold px-3.5 py-2 rounded-lg active:scale-95 transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
         >
           <GitBranch size={14} strokeWidth={2.5} /> New Branch
         </button>

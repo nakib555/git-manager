@@ -768,12 +768,12 @@ export default function App() {
                 transition={{ duration: 0.2 }}
                 className="flex flex-col gap-6"
               >
-                {/* SECTION 1: 🌐 REPOSITORY */}
+                {/* SECTION 1: REPOSITORY */}
                 <div className="pb-6 border-b border-border space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted flex items-center gap-2">
                       <Github size={14} className="text-text-muted" />
-                      🌐 Repository Source
+                      Repository Source
                     </h3>
                     <button 
                       onClick={() => setIsSearching(!isSearching)}
@@ -929,11 +929,11 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* SECTION 2: 🌿 BRANCH */}
+                {/* SECTION 2: BRANCH */}
                 <div className="pb-6 border-b border-border space-y-3">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted flex items-center gap-2">
                     <GitBranch size={14} className="text-text-muted" />
-                    🌿 Checkout Branch
+                    Checkout Branch
                   </h3>
                   
                   <div className="relative">
@@ -947,11 +947,11 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* SECTION 4: 📦 CLONE TYPE */}
+                {/* SECTION 4: CLONE TYPE */}
                 <div className="pb-6 border-b border-border space-y-3.5">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted flex items-center gap-2">
                     <Database size={14} className="text-text-muted" />
-                    📦 Clone History Type
+                    Clone History Type
                   </h3>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -975,7 +975,7 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* SECTION 5: ⚙ ADVANCED DRAWER */}
+                {/* SECTION 5: ADVANCED DRAWER */}
                 <div className="pb-6 border-b border-border space-y-3.5">
                   <button
                     type="button"
@@ -984,7 +984,7 @@ export default function App() {
                   >
                     <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted flex items-center gap-2">
                       <Sliders size={14} className="text-text-muted" />
-                      ⚙ Advanced Configuration
+                      Advanced Configuration
                     </h3>
                     {isAdvancedOpen ? <ChevronUp size={14} className="text-text-muted" /> : <ChevronDown size={14} className="text-text-muted" />}
                   </button>
