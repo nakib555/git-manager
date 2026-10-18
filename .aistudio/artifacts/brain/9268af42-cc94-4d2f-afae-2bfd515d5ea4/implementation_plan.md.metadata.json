@@ -1,6 +1,6 @@
 {
-  "summary": "Master Engineering Plan for fixing the GitHub search 422 Validation Failed error, adding configurable multi-dimension sorting (Updated, Stars, Forks, Name, Language) and search scope (Personal vs Global GitHub), fixing the pagination overlap and spacing layout issues, and upgrading the toast notification system to a floating top-center notification with distinct error/success/warning styling.",
-  "updatedAt": "2026-10-18T10:03:54.166289520Z",
+  "summary": "Master Engineering Specification for premium, native-feeling mobile interface redesign for Git Manager. Covers charcoal color system (#0A0A0B to #242428), Geist/Geist Mono typography, 56px sticky header, horizontal repo pill tabs, 5-tab safe-area bottom navigation, Repositories screen with sliding sort sheet, Files tab with bottom code sheet, Commits timeline with unified diffs, and ActionSheet.",
+  "updatedAt": "2026-10-18T15:44:23.091425800Z",
   "requestFeedback": true,
   "userFacing": true
 }

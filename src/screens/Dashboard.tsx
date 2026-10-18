@@ -216,7 +216,7 @@ export const Dashboard: React.FC = () => {
 
 
 
-      <div className="grid grid-cols-2 gap-3 mb-6">
+      <div className="grid grid-cols-2 gap-4 mb-6">
         <div className="rounded-2xl p-4 flex flex-col gap-2 bg-card border border-border hover:border-primary/30 transition-all shadow-sm">
           <span className="text-xs text-text-muted font-medium">Repositories</span>
           <span className="text-[28px] font-bold text-text-main">
@@ -237,7 +237,7 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-card rounded-3xl p-5 pb-4 mb-5 border border-border">
+      <div className="bg-card rounded-3xl p-6 pb-4 mb-6 border border-border">
         <div className="flex justify-between mb-4 relative" ref={dropdownRef}>
           <span className="text-[15px] font-semibold text-text-main">Activity Overview</span>
           <button 
@@ -270,7 +270,7 @@ export const Dashboard: React.FC = () => {
           )}
           </AnimatePresence>
         </div>
-        <div className="h-[150px] w-full">
+        <div className="h-40 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }}>
               <defs>

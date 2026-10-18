@@ -235,23 +235,23 @@ export const Repositories: React.FC = () => {
   return (
     <div className="animate-fade-up flex flex-col flex-1 min-h-0 w-full">
       {/* 1. Header Toolbar with Scope Switcher */}
-      <div className="space-y-3 mb-3 shrink-0">
+      <div className="space-y-4 mb-4 shrink-0">
         <div className="flex items-center gap-2">
           {/* Search Input Container */}
-          <div className="bg-card rounded-xl px-3.5 h-11 flex items-center gap-2.5 border border-border flex-1 relative shadow-xs">
+          <div className="bg-card rounded-xl px-4 h-10 flex items-center gap-2 border border-border flex-1 relative shadow-xs">
             <AnimatedSearchIcon size={18} className="text-text-muted shrink-0" />
             <input 
               ref={searchInputRef}
               type="text" 
               placeholder={repoSearchScope === 'personal' ? "Filter personal repositories..." : "Search all GitHub repositories..."} 
-              className="bg-transparent border-none text-text-main w-full outline-none text-xs placeholder:text-text-muted pr-7"
+              className="bg-transparent border-none text-text-main w-full outline-none text-xs placeholder:text-text-muted pr-8"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
             {searchQuery && (
               <button 
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 text-text-muted hover:text-text-main p-0.5 cursor-pointer"
+                className="absolute right-3 text-text-muted hover:text-text-main p-1 cursor-pointer"
                 title="Clear search query"
               >
                 <X size={14} />
@@ -259,7 +259,7 @@ export const Repositories: React.FC = () => {
             )}
             {isFetchingRepos && (
               <div className="absolute right-8 top-1/2 -translate-y-1/2">
-                <Loader2 size={15} className="text-primary animate-spin" />
+                <Loader2 size={16} className="text-primary animate-spin" />
               </div>
             )}
           </div>
@@ -267,7 +267,7 @@ export const Repositories: React.FC = () => {
           {/* Config & Sort Drawer Button */}
           <button
             onClick={() => setIsConfigDrawerOpen(!isConfigDrawerOpen)}
-            className={`h-11 px-3 rounded-xl border flex items-center gap-1.5 text-xs font-semibold transition-all cursor-pointer relative shrink-0 ${
+            className={`h-10 px-4 rounded-xl border flex items-center gap-2 text-xs font-semibold transition-all cursor-pointer relative shrink-0 ${
               isConfigDrawerOpen || hasActiveCustomFilters 
                 ? 'bg-primary/10 border-primary/30 text-primary' 
                 : 'bg-card border-border text-text-muted hover:text-text-main'
@@ -293,13 +293,13 @@ export const Repositories: React.FC = () => {
                   showToast('Searching personal & local repositories', 'info');
                 }
               }}
-              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`h-8 px-3 rounded-lg transition-all cursor-pointer flex items-center gap-2 ${
                 repoSearchScope === 'personal'
                   ? 'bg-primary text-white font-bold shadow-xs'
                   : 'text-text-muted hover:text-text-main'
               }`}
             >
-              <FolderGit2 size={13} />
+              <FolderGit2 size={14} />
               <span>Personal Repos</span>
             </button>
             <button
@@ -310,13 +310,13 @@ export const Repositories: React.FC = () => {
                   showToast('Searching entire GitHub directory', 'info');
                 }
               }}
-              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`h-8 px-3 rounded-lg transition-all cursor-pointer flex items-center gap-2 ${
                 repoSearchScope === 'global'
                   ? 'bg-primary text-white font-bold shadow-xs'
                   : 'text-text-muted hover:text-text-main'
               }`}
             >
-              <Globe size={13} />
+              <Globe size={14} />
               <span>Global GitHub</span>
             </button>
           </div>
@@ -345,7 +345,7 @@ export const Repositories: React.FC = () => {
                   setRepoTypeFilter(type);
                   setRepoPage(1);
                 }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap border transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`h-8 px-3 rounded-lg text-xs font-medium whitespace-nowrap border transition-all cursor-pointer flex items-center gap-2 ${
                   isActive
                     ? 'bg-primary/10 border-primary/30 text-primary font-bold'
                     : 'bg-card border-border text-text-muted hover:text-text-main'
@@ -420,14 +420,14 @@ export const Repositories: React.FC = () => {
                 </div>
 
                 {/* Sort Direction & Language Filter */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-border/60">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-border/60">
                   {/* Direction */}
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     <span className="text-[11px] font-bold text-text-muted uppercase tracking-wider block">Sort Order</span>
                     <div className="flex gap-2">
                       <button
                         onClick={() => setRepoSortDirection('desc')}
-                        className={`flex-1 py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        className={`h-10 flex-1 px-4 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
                           repoSortDirection === 'desc'
                             ? 'bg-primary text-white border-primary font-bold'
                             : 'bg-main/50 border-border text-text-muted hover:text-text-main'
@@ -438,7 +438,7 @@ export const Repositories: React.FC = () => {
                       </button>
                       <button
                         onClick={() => setRepoSortDirection('asc')}
-                        className={`flex-1 py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        className={`h-10 flex-1 px-4 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
                           repoSortDirection === 'asc'
                             ? 'bg-primary text-white border-primary font-bold'
                             : 'bg-main/50 border-border text-text-muted hover:text-text-main'
@@ -451,7 +451,7 @@ export const Repositories: React.FC = () => {
                   </div>
 
                   {/* Language Filter Dropdown */}
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     <span className="text-[11px] font-bold text-text-muted uppercase tracking-wider block">Programming Language</span>
                     <select
                       value={repoLanguageFilter}
@@ -459,7 +459,7 @@ export const Repositories: React.FC = () => {
                         setRepoLanguageFilter(e.target.value);
                         setRepoPage(1);
                       }}
-                      className="w-full bg-main/50 border border-border text-text-main rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-primary transition-colors cursor-pointer"
+                      className="h-10 w-full bg-main/50 border border-border text-text-main rounded-xl px-4 text-xs font-semibold outline-none focus:border-primary transition-colors cursor-pointer"
                     >
                       <option value="all">All Languages</option>
                       {availableLanguages.map((lang) => (
@@ -524,7 +524,7 @@ export const Repositories: React.FC = () => {
                       width: '100%',
                       height: `${virtualItem.size}px`,
                       transform: `translateY(${virtualItem.start}px)`,
-                      paddingBottom: '12px',
+                      paddingBottom: '16px',
                     }}
                   >
                     <div 
@@ -532,7 +532,7 @@ export const Repositories: React.FC = () => {
                       onClick={() => openRepo(repo.id, repo.owner)}
                     >
                       <div className="flex justify-between items-start gap-2 mb-2">
-                        <div className="flex items-center gap-2.5 truncate min-w-0">
+                        <div className="flex items-center gap-2 truncate min-w-0">
                           <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
                             <Icon size={16} />
                           </div>
@@ -549,7 +549,7 @@ export const Repositories: React.FC = () => {
                       <div className="text-xs text-text-muted mb-3 line-clamp-2 leading-relaxed">{repo.desc}</div>
                       
                       {/* Repo Stats */}
-                      <div className="flex items-center gap-4 text-xs text-text-muted mb-2.5 border-t border-border/80 pt-2.5">
+                      <div className="flex items-center gap-4 text-xs text-text-muted mb-2 border-t border-border/80 pt-2">
                         <span className="flex items-center gap-1.5" title="Stars">
                           <Star size={12} className="text-amber-500 fill-amber-500/10" />
                           <span className="font-medium text-text-main">{repo.stars.toLocaleString()}</span>
@@ -582,7 +582,7 @@ export const Repositories: React.FC = () => {
 
       {/* 3. Pagination Footer with Non-Overlapping Spacing */}
       {totalPages > 1 && (
-        <div className="shrink-0 flex items-center justify-between gap-2 py-3 mt-2 border-t border-border bg-card/60 rounded-xl px-3 shadow-xs">
+        <div className="shrink-0 flex items-center justify-between gap-2 h-12 py-2 mt-2 border-t border-border bg-card/60 rounded-xl px-4 shadow-xs">
           <div className="text-xs text-text-muted font-medium whitespace-nowrap">
             Page <span className="font-bold text-text-main">{repoPage}</span> of {totalPages}
           </div>

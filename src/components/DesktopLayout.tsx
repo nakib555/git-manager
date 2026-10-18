@@ -104,11 +104,11 @@ export const DesktopLayout: React.FC = () => {
     <div className="flex w-full h-full bg-main overflow-hidden text-text-main animate-fade-up">
       {/* 1. LEFT SIDEBAR */}
       <aside className={`${isSidebarCollapsed ? 'w-20' : 'w-72'} bg-card border-r border-border flex flex-col justify-between shrink-0 h-full transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] relative z-20`}>
-        <div className={`flex flex-col overflow-y-auto no-scrollbar flex-1 ${isSidebarCollapsed ? 'p-3 items-center' : 'p-5'}`}>
+        <div className={`flex flex-col overflow-y-auto no-scrollbar flex-1 ${isSidebarCollapsed ? 'p-2 items-center' : 'p-6'}`}>
           {/* Logo Brand Header & Collapse Toggle */}
           <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center flex-col gap-2' : 'justify-between'} mb-6 px-1`}>
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-white shadow-md shadow-primary/20 shrink-0">
+              <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center text-white shadow-md shadow-primary/20 shrink-0">
                 <svg className="w-5 h-5" viewBox="0 0 100 100" fill="none">
                   <path d="M50 15L85 35V65L50 85L15 65V35L50 15Z" fill="rgba(255,255,255,0.2)" stroke="#FFF" strokeWidth="6"/>
                   <path d="M50 15L85 35L50 55L15 35L50 15Z" fill="#FFF"/>
@@ -124,7 +124,7 @@ export const DesktopLayout: React.FC = () => {
 
             <button
               onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-              className="p-1.5 rounded-lg text-text-muted hover:text-text-main hover:bg-hover/60 transition-colors cursor-pointer"
+              className="p-2 rounded-lg text-text-muted hover:text-text-main hover:bg-hover/60 transition-colors cursor-pointer"
               title={isSidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
             >
               {isSidebarCollapsed ? <PanelLeft size={16} /> : <PanelLeftClose size={16} />}
@@ -158,18 +158,18 @@ export const DesktopLayout: React.FC = () => {
                 </p>
               )}
 
-              <div className="mt-3.5 flex gap-2">
+              <div className="mt-4 flex gap-2">
                 {githubToken ? (
                   <button 
                     onClick={disconnectGitHub}
-                    className="flex-1 bg-danger/10 hover:bg-danger/20 border border-danger/25 text-danger py-1.5 px-2.5 rounded-xl text-[10px] font-bold transition-all cursor-pointer text-center"
+                    className="flex-1 bg-danger/10 hover:bg-danger/20 border border-danger/25 text-danger h-8 px-3 rounded-xl text-[10px] font-bold transition-all cursor-pointer text-center flex items-center justify-center"
                   >
                     Disconnect
                   </button>
                 ) : (
                   <button 
                     onClick={connectGitHub}
-                    className="flex-1 bg-primary hover:bg-primary-hover text-white py-1.5 px-2.5 rounded-xl text-[10px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm shadow-primary/15"
+                    className="flex-1 bg-primary hover:bg-primary-hover text-white h-8 px-3 rounded-xl text-[10px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm shadow-primary/15"
                   >
                     <Github size={11} /> Connect GitHub
                   </button>
@@ -177,11 +177,11 @@ export const DesktopLayout: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="mb-5">
+            <div className="mb-6">
               {githubUser ? (
-                <img src={githubUser.avatar_url} alt="Avatar" className="w-9 h-9 rounded-full border border-border" title={githubUser.login} />
+                <img src={githubUser.avatar_url} alt="Avatar" className="w-8 h-8 rounded-full border border-border" title={githubUser.login} />
               ) : (
-                <button onClick={connectGitHub} className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center" title="Connect GitHub">
+                <button onClick={connectGitHub} className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center" title="Connect GitHub">
                   <Github size={16} />
                 </button>
               )}
@@ -285,10 +285,10 @@ export const DesktopLayout: React.FC = () => {
           {/* Quick Command Launcher / Search */}
           <div 
             onClick={openCommandPalette}
-            className="w-72 lg:w-96 bg-card hover:bg-hover/30 border border-border hover:border-primary/40 rounded-xl px-3.5 py-2 flex items-center justify-between transition-all duration-200 cursor-pointer shadow-sm group select-none"
+            className="w-72 lg:w-96 bg-card hover:bg-hover/30 border border-border hover:border-primary/40 rounded-xl px-4 h-10 flex items-center justify-between transition-all duration-200 cursor-pointer shadow-sm group select-none"
             title="Press Cmd+K or Ctrl+K to open palette"
           >
-            <div className="flex items-center gap-2.5 text-xs text-text-muted truncate">
+            <div className="flex items-center gap-2 text-xs text-text-muted truncate">
               <Search size={15} className="group-hover:text-primary transition-colors shrink-0" />
               <span className="truncate">Search repositories, branches, actions...</span>
             </div>
@@ -299,19 +299,19 @@ export const DesktopLayout: React.FC = () => {
           </div>
 
           {/* Right Action Widgets */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {/* Quick Clone repo button */}
             <button 
               onClick={() => navigate('clone')}
-              className="bg-card border border-border hover:border-primary/50 text-text-main hover:text-primary text-xs font-bold py-2 px-3.5 rounded-xl active:scale-95 transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+              className="bg-card border border-border hover:border-primary/50 text-text-main hover:text-primary text-xs font-bold h-10 px-4 rounded-xl active:scale-95 transition-all shadow-sm flex items-center gap-2 cursor-pointer"
             >
-              <HardDrive size={13} className="text-primary" />
+              <HardDrive size={14} className="text-primary" />
               <span className="hidden sm:inline">Clone Repo</span>
             </button>
             {/* Quick Create repo button */}
             <button 
               onClick={() => openModal('repo')}
-              className="bg-primary hover:bg-primary-hover text-white text-xs font-bold py-2 px-3.5 rounded-xl active:scale-95 transition-all shadow-sm shadow-primary/15 flex items-center gap-1.5 cursor-pointer"
+              className="bg-primary hover:bg-primary-hover text-white text-xs font-bold h-10 px-4 rounded-xl active:scale-95 transition-all shadow-sm shadow-primary/15 flex items-center gap-2 cursor-pointer"
             >
               <span>+ New Repo</span>
             </button>
@@ -319,10 +319,10 @@ export const DesktopLayout: React.FC = () => {
             {/* Theme selector */}
             <button 
               onClick={toggleTheme}
-              className="w-9 h-9 border border-border bg-card rounded-xl flex items-center justify-center text-text-muted hover:text-text-main hover:border-primary/30 transition-all cursor-pointer"
+              className="w-10 h-10 border border-border bg-card rounded-xl flex items-center justify-center text-text-muted hover:text-text-main hover:border-primary/30 transition-all cursor-pointer shrink-0"
               title="Toggle theme"
             >
-              {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+              {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
             </button>
           </div>
         </header>

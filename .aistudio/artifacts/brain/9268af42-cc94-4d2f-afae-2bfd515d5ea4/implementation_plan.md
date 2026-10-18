@@ -1,152 +1,175 @@
-# Master Engineering Plan: Repository Search Fix, Advanced Sorting & Layout Restructuring
+# Master Engineering Specification: Premium Mobile Interface Redesign for Git Manager
 
 ## 1. Objective
 ### Purpose
-Resolve the GitHub search API `422 Validation Failed` runtime error, introduce a configurable repository search system with scope toggling (Personal repositories vs. Global GitHub search), comprehensive sorting and filtering across all kinds and types (Updated, Stars, Forks, Alphabetical Name, Programming Language), fix layout crampedness and pagination spacing, and modernize the toast notification component to avoid UI occlusion.
+Deliver a native-grade mobile experience for **Git Manager** on screens $< 1024\text{px}$. Redesign the mobile interface from the ground up to feel like a modern, focused iOS/Android developer tool (similar to Linear Mobile, Raycast, and GitHub Mobile) rather than a desktop viewport scaled down.
 
-### Problem Statement
-1. **GitHub Search API 422 Validation Failed**: In `AppContext.tsx`, searching user repositories calls `https://api.github.com/search/repositories?q=user:${username}+${encodeURIComponent(searchQuery)}...`. When query inputs are structured with raw qualifiers or lack necessary term formatting, GitHub's search query parser rejects the request with HTTP 422 Unprocessable Entity ("Validation Failed"). Furthermore, GitHub Search API has strict rate limits (30 req/min for authenticated, 10 for unauthenticated) and qualifier rules that do not include private repos unless authenticated with specific token scopes.
-2. **Cramped Layout & Pagination Overlap**: In `Repositories.tsx`, container height is hardcoded to `h-[calc(100vh-130px)]` nested inside `PullToRefresh`'s `overflow-y-auto`, causing pagination buttons to collide, numbers (`4 1 2 ... 4`) to overlap, and text to truncate improperly.
-3. **Occluding Toast with Misleading Icon**: The current `Toast` in `src/components/UI.tsx` is fixed at `bottom-[90px]` right on top of the pagination footer, and renders a green `CheckCircle2` checkmark even for fatal API errors.
-4. **Lack of Multi-Dimension Sorting & Configuration**: Users currently only have basic client-side 'All'/'Private'/'Public' pill filters, with no ability to sort by Stars, Forks, Language, Name, or Updated date, nor toggle between searching personal repositories versus global GitHub.
+### Problem
+While desktop functionality is robust, the mobile interface needs a dedicated design system that guarantees thumb-first ergonomics, dense yet readable information architecture, near-black charcoal surfaces with subtle depth, strict touch target compliance ($\ge 44\times 44\text{px}$), and native sliding bottom sheets for sorting, filtering, and code inspection.
 
-### Success Criteria
-- Zero 422 validation errors when searching repositories; graceful fallback to client-side multi-field filtering on personal repositories and valid qualifier syntax for global searches.
-- Configuration panel for Repository Search:
-  - Search Scope Toggle: "Personal Repositories" vs "Global GitHub".
-  - Sort By: Last Updated, Stars Count, Forks Count, Repository Name (A-Z), and Primary Language.
-  - Sort Order: Descending vs Ascending.
-  - Type Filter: All, Public, Private, Forks, Sources.
-  - Language Filter: All, TypeScript, JavaScript, Python, Go, Rust, Java, HTML, CSS, etc.
-- Pagination spacing and layout restructured according to the 8-point spatial system: clean responsive buttons, proper hit targets (min 36x36px), no overlapping text or cramped controls.
-- Toast notifications relocated to floating top-center with distinct semantic colorways and icons (Error = Red with `AlertCircle`, Success = Green with `CheckCircle2`, Info = Indigo with `Info`).
+### Business & Technical Value
+- **Developer Workflow on the Go**: Rapid triage of repositories, browsing recent commits, reviewing PR status, inspecting file changes, and switching branches from a smartphone with one-handed thumb interaction.
+- **Visual Polish**: Replaces generic aesthetics with the specified charcoal color system (`#0A0A0B`, `#121214`, `#1A1A1D`, `#242428`, `#2A2A2E`, `#3B82F6`), high-contrast typographic hierarchy (Geist & Geist Mono), and soft, consistent lighting.
+- **Safe-Area Ergonomics**: Guarantees zero clipping or obscured elements across iPhone Dynamic Island, home indicators (`env(safe-area-inset-bottom)`), and Android navigation bars.
 
----
-
-## 2. Evidence-First System Analysis
-
-### Verified Facts (Confirmed from Codebase)
-1. **Search Endpoint**: `AppContext.tsx` lines 288-305 construct:
-   ```ts
-   const searchUrl = `https://api.github.com/search/repositories?q=user:${username}+${encodeURIComponent(searchQuery)}&sort=updated&per_page=${perPage}&page=${page}`;
-   ```
-   GitHub's search API fails if `user:${username}` has syntax issues, if query terms contain unhandled qualifiers, or if the search string is formatted with `+` instead of sanitized URL parameters.
-2. **Personal Repos Availability**: When a user is logged in, their repositories are fetched via `https://api.github.com/user/repos` (which returns both public and private repos). When searching personal repos, client-side indexing over cached and paginated repos is instantaneous, zero-latency, rate-limit immune, and supports private repos reliably.
-3. **Layout Overlap**: `Repositories.tsx` line 116 uses `h-[calc(100vh-130px)] max-h-[1000px]` inside `PullToRefresh.tsx` line 125 (`className="flex-1 overflow-y-auto ... px-5 pb-5"`). This dual nested scroll container causes layout recalculation bugs and forces pagination footer to collide with viewport boundaries.
-4. **Toast Occlusion**: `UI.tsx` line 105 places Toast at `bottom-[90px] left-1/2 -translate-x-1/2`, exactly where the pagination footer rests, and hardcodes a green `CheckCircle2` icon.
-
-### Assumptions
-- Users searching their own repositories prioritize immediate results without triggering GitHub API rate limits.
-- When users toggle "Global GitHub Search", they expect to query the full public GitHub repository index using safe, sanitized search parameters.
-
-### Missing Information
-- None. The root causes and visual layout artifacts in `Screenshot_2026_1018_121931.jpg` have been verified against the codebase.
+### Success & Acceptance Criteria
+1. **Strict Color Implementation**:
+   - Background: `#0A0A0B`
+   - Surface Level 1: `#121214`
+   - Surface Level 2: `#1A1A1D`
+   - Surface Level 3: `#242428`
+   - Border: `#2A2A2E`
+   - Text hierarchy: `#F4F4F5` (Primary), `#A1A1AA` (Secondary), `#71717A` (Tertiary)
+   - Accent: `#3B82F6` (Desaturated professional blue)
+   - Semantic alerts: `#22C55E` (Success), `#EF4444` (Danger), `#F59E0B` (Warning)
+2. **Typography & Numbers**:
+   - Inter / Geist as primary UI font; JetBrains Mono / Geist Mono for hashes, numbers, code, and paths.
+   - Screen titles at 20px / 600 weight; section headers at 16px / 600 weight; body at 15px / 400 weight; captions at 12–13px / 500 weight with tabular figures for numbers.
+3. **Spatial Scale & Touch Targets**:
+   - Standard 20px horizontal screen margins (`px-5`).
+   - Cards have 16px internal padding (`p-4`) with 12px radius (`rounded-xl`).
+   - All interactive controls (buttons, inputs, tabs, chips) meet or exceed $44\times 44\text{px}$ touch targets.
+   - Native bottom sheets have 20px top radius (`rounded-t-[20px]`) and tactile drag handles.
+4. **Layout Structure (Every Screen)**:
+   - Sticky Header: 56px height + `safe-area-top` (Menu left, contextual title center with branch selector, Search & Plus right).
+   - Repo Sub-Tabs (inside repo): Horizontal scrollable pills with solid `#3B82F6` accent active state.
+   - Main Scrollport: Pull-to-refresh with generous bottom padding (`pb-[calc(56px+env(safe-area-inset-bottom)+16px)]`).
+   - Fixed BottomNav: 56px height + `safe-area-inset-bottom` featuring 5 tabs (Home, Repos, Clone, Activity, Settings) with soft accent pill background (`bg-[#3B82F6]/10`).
+   - Floating Toast: Positioned at `top-16 left-1/2 -translate-x-1/2 z-[300]` (below header, never colliding with bottom navigation).
 
 ---
 
-## 3. Complexity Classification
-- **Level 3 (Large Feature / Architectural Fix)**: Involves state management overhaul in `AppContext.tsx`, UI redesign and restructuring in `Repositories.tsx` and `DesktopLayout.tsx`, advanced sorting algorithms, and component modernization in `UI.tsx`.
+## 2. Existing System Analysis & Verification
+
+### Verified Facts
+- `src/App.tsx` routes between `DesktopLayout` and mobile screens based on `useIsDesktop()` (`window.innerWidth >= 1024`).
+- Mobile layout currently mounts `<Header />`, `<RepoTabs />`, `<PullToRefresh>`, active screen component, `<BottomNav />`, `<ActionSheet />`, `<NotificationDrawer />`, and `<Toast />`.
+- `src/index.css` defines CSS variables for `--main`, `--card`, `--hover`, `--border`, etc. Updating these variables establishes the exact charcoal palette system-wide.
+- `src/screens/Repositories.tsx` handles personal and global search, multi-dimension sorting, type filters, and virtualized pagination.
+- `src/screens/repodetails/FilesScreen.tsx` uses Git tree recursion to show repo files.
+- `src/screens/repodetails/CommitsScreen.tsx` renders commit history and diffs.
 
 ---
 
-## 4. Architecture & Technical Design
+## 3. Architecture & UI/UX Design
 
-### Data Flow & Search Architecture
-1. **Repository Search Configuration**:
-   - `searchScope`: `'personal' | 'global'` (Default: `'personal'`).
-   - `sortBy`: `'updated' | 'stars' | 'forks' | 'name' | 'language'` (Default: `'updated'`).
-   - `sortDirection`: `'desc' | 'asc'` (Default: `'desc'`).
-   - `typeFilter`: `'all' | 'public' | 'private' | 'forks' | 'sources'` (Default: `'all'`).
-   - `languageFilter`: string (Default: `'all'`).
-2. **Execution Strategy**:
-   - **Personal Scope**: Searches and sorts across the user's connected and local repositories client-side. Sanitizes search text with fuzzy token matching across `name`, `description`, `owner`, and `language`. Zero GitHub API rate-limit cost, full private repo support, zero network lag.
-   - **Global Scope**: Queries `https://api.github.com/search/repositories` using sanitized parameters:
-     ```ts
-     const cleanTerm = searchQuery.trim();
-     const queryParts: string[] = [cleanTerm];
-     if (languageFilter !== 'all') queryParts.push(`language:${languageFilter}`);
-     if (typeFilter === 'forks') queryParts.push('fork:only');
-     else if (typeFilter === 'sources') queryParts.push('fork:false');
-     const q = queryParts.join(' ');
-     const url = `https://api.github.com/search/repositories?q=${encodeURIComponent(q)}&sort=${apiSort}&order=${sortDirection}&per_page=${perPage}&page=${page}`;
-     ```
-   - Catches 422 errors and rate-limiting gracefully, presenting clear guidance rather than raw unformatted strings.
-3. **Layout & 8-Point Spatial Hierarchy**:
-   - Remove dual nested scrolling constraints.
-   - Establish dedicated header area: Search Input (40px) + Scope Switcher + Configuration Drawer Toggle.
-   - Expandable Configuration Bar: Sort By dropdown/chips, Sort Direction toggle, Type filter, and Language selector.
-   - Responsive virtualized list with standard 16px bottom gap.
-   - Pagination Bar: Clean 36px interactive touch targets, clear `Page X of Y` indicator, adaptive pagination window to prevent mobile wrapping.
-4. **Toast Notification Engine**:
-   - Relocate to top-center: `top-4 left-1/2 -translate-x-1/2`.
-   - Polymorphic variants:
-     - `error`: Red border, light red background, `AlertCircle` icon.
-     - `success`: Emerald border, emerald background, `CheckCircle2` icon.
-     - `info`: Indigo border, indigo background, `Info` icon.
-   - Added `z-[300]` with subtle drop shadow and non-blocking layout presence.
+### 3.1 Color & Surface Hierarchy
 
----
+```
++-------------------------------------------------------------------------+
+| Level 0: App Canvas Background (#0A0A0B)                                |
+|                                                                         |
+|  +-------------------------------------------------------------------+  |
+|  | Level 1: Cards, Sticky Header, BottomNav (#121214, Border: #2A2A2E)|  |
+|  |                                                                   |  |
+|  |  +-------------------------------------------------------------+  |  |
+|  |  | Level 2: Inputs, Segmented Controls, Inactive Chips (#1A1A1D)|  |  |
+|  |  |                                                             |  |  |
+|  |  |  +-------------------------------------------------------+  |  |  |
+|  |  |  | Level 3: Nested Hover, Badges, Drag Handles (#242428)  |  |  |  |
+|  |  |  +-------------------------------------------------------+  |  |  |
+|  |  +-------------------------------------------------------------+  |  |
+|  +-------------------------------------------------------------------+  |
++-------------------------------------------------------------------------+
+```
 
-## 5. Implementation Phases & Breakdown
-
-### Phase 1: State Management & GitHub Search Hardening (`src/AppContext.tsx`)
-- Add search and sort state configuration to `AppContext`:
-  - `repoSearchScope`, `setRepoSearchScope`
-  - `repoSortBy`, `setRepoSortBy`
-  - `repoSortDirection`, `setRepoSortDirection`
-  - `repoTypeFilter`, `setRepoTypeFilter`
-  - `repoLanguageFilter`, `setRepoLanguageFilter`
-- Re-architect `fetchGitHubRepos` to eliminate 422 validation errors.
-- Implement robust query sanitation and client-side sorting for personal repositories.
-- Support typed toast messages: `showToast(message, type?: 'info' | 'success' | 'error')`.
-
-### Phase 2: Repository Screen Layout & Configuration Panel (`src/screens/Repositories.tsx`)
-- Add Search Scope Switcher (Personal vs Global GitHub).
-- Build Sort & Filter Configuration Bar:
-  - Sort dimensions: Last Updated, Stars, Forks, Name, Language.
-  - Direction: Descending vs Ascending.
-  - Types: All, Public, Private, Forks, Sources.
-  - Languages: Dynamic extraction from repository list.
-- Fix pagination footer layout:
-  - Eliminate cramped numbers and overflowing rows.
-  - Dynamic page window calculation (`1 ... 3 4 5 ... 12`).
-  - Strict 8-point grid heights (`h-9 w-9` buttons, 16px gap).
-- Fix height constraints so scrolling feels fluid and native.
-
-### Phase 3: Desktop Repository Synchronization (`src/components/DesktopLayout.tsx`)
-- Reflect the new search scope, multi-dimension sorting, and filters inside the Desktop repository management view.
-- Ensure desktop filter controls and pagination align with desktop sidebar and table layouts.
-
-### Phase 4: Toast System Modernization (`src/components/UI.tsx`)
-- Move `Toast` from bottom-90px to top-center (`top-5 z-[300]`).
-- Render semantic icons (`AlertCircle` for error, `CheckCircle2` for success, `Info` for info).
-- Add max-width and text truncation protection to prevent awkward pill wrapping.
+### 3.2 Mobile Header & Navigation Architecture
+- **Header**: Height $56\text{px} + \text{safe-area-top}$.
+  - Left: Hamburger menu ($44\times 44\text{px}$ touch target) triggering account & notification drawer.
+  - Center: Contextual Title (e.g. `Repositories`, `facebook/react`, or branch dropdown with chevrons).
+  - Right: Search button ($44\times 44\text{px}$) + Quick Action Plus (+) button ($44\times 44\text{px}$).
+- **Repo Sub-Tabs**:
+  - Horizontal scrolling container (`no-scrollbar`) containing `Files`, `Commits`, `Branches`, `PRs`, and `Insights`.
+  - Inactive pill: `#1A1A1D` surface with `#A1A1AA` text.
+  - Active pill: Solid `#3B82F6` accent background with pure `#FFFFFF` bold text.
+- **Bottom Navigation**:
+  - Height $56\text{px} + \text{safe-area-inset-bottom}$.
+  - 5 Destinations: `Home` (`dash`), `Repos` (`repos`), `Clone` (`clone`), `Activity` (`commits`), `Settings` (`settings`).
+  - Active indicator: Soft rounded pill (`bg-[#3B82F6]/10 text-[#3B82F6]`) with filled icon variant.
 
 ---
 
-## 6. Responsive & Multi-Platform Experience
+## 4. Key Screens Mobile Specification
 
-### Mobile Experience (Portrait & Landscape)
-- Single-row search input with scope pill toggle.
-- Collapsible "Filters & Sort" drawer to preserve vertical space for repositories.
-- Pagination bar with compact step navigation (`< Page 1/4 >` on small screens, expanded on wider phones).
-- Top-anchored toast with safe-area inset support (`top-[max(1.25rem,env(safe-area-inset-top))]`).
+### 4.1 Repositories Screen
+- **Sticky Controls Strip**:
+  - Segmented control: `Personal` | `Global` (Height 40px, `#1A1A1D` background, `#242428` active slider).
+  - Search input: 44px height, `#1A1A1D` surface, 10px radius, left search icon, right clear (X) button, and debounce indicator.
+  - Quick filter chips: Horizontal scrolling pills (`All`, `Public`, `Private`, `Forks`, `Sources`).
+  - Sort button: 44px square / compact button with badge opening the **Sort & Filter Bottom Sheet**.
+- **Repository Card**:
+  - Surface: `#121214` with `#2A2A2E` border, 12px radius, 16px internal padding.
+  - Row 1: `owner/repo-name` in 16px semibold `#F4F4F5` + Visibility badge (`Public` in `#22C55E/10`, `Private` in `#EF4444/10`).
+  - Row 2: Description in 14px `#A1A1AA` (max 2 lines, line-clamp-2).
+  - Row 3: Meta items: Star count with amber icon, Fork count with blue icon, Language badge with colored dot, relative push time (`2h ago`) in tabular figures.
+- **Bottom List Pagination**:
+  - Fixed inside list flow below repository cards (not floating).
+  - Previous / Next buttons ($44\times 44\text{px}$) with windowed page numbers (`1 .. 4 5 6 .. 12`).
 
-### Tablet & Desktop Experience
-- Expanded horizontal configuration toolbar.
-- Direct-access sort selector dropdown and quick filters.
-- Responsive multi-column grid layout for repository cards.
+### 4.2 Repository Detail — Files Tab & Code Bottom Sheet
+- Breadcrumb bar at top with tap-to-navigate ancestor folders.
+- Hierarchical tree: Folders first, files second, alphabetical order.
+- Folder rows: Tap toggles folder open/close with rotating chevron.
+- File rows: Icon by file extension (TS, JS, CSS, JSON, MD, etc.) + filename + humanized file size.
+- **Code Bottom Sheet**:
+  - Triggered by tapping any file.
+  - Header: Filename, language tag, Copy Code button ($44\text{px}$ target with copy feedback), Close (X) button.
+  - Body: Prism syntax-highlighted code with monospace font and line numbers, smooth momentum scrolling.
+
+### 4.3 Commits Tab & Diff Inspector
+- Vertical timeline with subtle `#2A2A2E` connector line.
+- Commit Card: Author avatar ($32\times 32\text{px}$), commit message in 14px `#F4F4F5`, relative timestamp in 12px `#71717A`, and short SHA in Geist Mono (`font-mono text-xs`).
+- Tap action: Opens full commit details modal / bottom sheet showing commit metadata, files changed count, additions (+ green) / deletions (- red), and unified diff viewer.
+
+### 4.4 Action Sheet (Native Bottom Sheet)
+- Drag handle: 36px wide, 4px high, `#2A2A2E` surface, centered.
+- 20px top border radius (`rounded-t-[20px]`).
+- Clean list of items: New Repository, Clone Repository, Create Branch, Create Pull Request.
+- Destructive action: Red icon and text at bottom.
+- 48px height per action row with active opacity feedback.
+
+### 4.5 Dashboard / Home Screen
+- Header greeting: "Welcome back, {User}" with user avatar badge.
+- Compact stats grid: 3-column / 2-column layout displaying Repositories, Synced Commits, and Pull Requests with tabular numbers.
+- Recent Activity Feed: List of recent git events and pushes.
+- Quick Actions: Shortcuts to Clone, New Repo, and Explore.
 
 ---
 
-## 7. Accessibility, Security & Quality Gates
-- **WCAG 2.1 AA**: Minimum touch target of 36x36px for pagination, 4.5:1 text contrast on badges.
-- **Keyboard Navigation**: Full tab index and arrow key navigation for sort dropdowns and pagination buttons.
-- **Security**: Strict query sanitization preventing parameter injection or malformed URI components to external APIs.
-- **Zero Breaking Changes**: Existing repo cloning, commit tracking, and branch switching remain fully compatible.
+## 5. Implementation Phases
+
+### Phase 1: CSS Theme Tokens & Foundations (`src/index.css`)
+- Inject exact charcoal color variables into `:root` and `.dark-theme`.
+- Define surface levels: `--surface-1: #121214`, `--surface-2: #1A1A1D`, `--surface-3: #242428`, `--border-subtle: #2A2A2E`.
+- Define text colors: `--text-primary: #F4F4F5`, `--text-secondary: #A1A1AA`, `--text-tertiary: #71717A`.
+- Define accent and semantic tokens: `--accent: #3B82F6`, `--success: #22C55E`, `--danger: #EF4444`, `--warning: #F59E0B`.
+
+### Phase 2: Global Mobile Navigation & Overlays (`Layout.tsx`, `UI.tsx`)
+- Redesign `<Header />`: 56px sticky bar with safe-area padding, 44px buttons, branch dropdown chevron.
+- Redesign `<RepoTabs />`: Horizontal scrolling pill strip with solid `#3B82F6` active pill and auto-scroll center.
+- Redesign `<BottomNav />`: 56px bar with safe-area padding, 5 tabs with soft `#3B82F6/10` active pill and filled icons.
+- Redesign `<ActionSheet />`: Sliding bottom sheet with drag handle, 20px top radius, 48px touch rows.
+- Redesign `<Toast />`: Floating top-center pill at `top-16`, semantic color schemes.
+
+### Phase 3: Screen Redesigns
+- Redesign `src/screens/Repositories.tsx`: 44px search input, segmented control, filter chips, repo cards, sliding sort bottom sheet, non-floating pagination.
+- Redesign `src/screens/Dashboard.tsx`: Greeting, stats row, activity feed, quick action buttons.
+- Redesign `src/screens/repodetails/FilesScreen.tsx`: Breadcrumb, folders-first tree, sliding bottom sheet for file code preview with syntax highlighting and copy button.
+- Redesign `src/screens/repodetails/CommitsScreen.tsx`: Vertical timeline, connector lines, commit cards, diff viewer sheet.
+- Redesign `src/screens/repodetails/BranchesScreen.tsx` & `PRsScreen.tsx`: Charcoal cards and 44px touch targets.
+
+### Phase 4: Build Verification & Quality Review
+- Run `npm run lint` (`tsc --noEmit`).
+- Run `npm run build` (`vite build`).
 
 ---
 
-## 8. Verification & Rollback Strategy
-- **Verification**: Run `npm run lint` (`tsc --noEmit`) and `compile_applet` (`npm run build`) to ensure zero type errors and build cleanliness.
-- **Rollback**: Every change is modular and atomic within `AppContext.tsx`, `Repositories.tsx`, and `UI.tsx`.
+## 6. Execution Checklist
+- [ ] 1. Update `src/index.css` with exact charcoal color variables and typography.
+- [ ] 2. Update `src/components/Layout.tsx` for 56px Header, RepoTabs, and BottomNav.
+- [ ] 3. Update `src/components/UI.tsx` for ActionSheet, SortBottomSheet, and floating Toast.
+- [ ] 4. Update `src/screens/Repositories.tsx` with sticky controls, cards, and sort sheet.
+- [ ] 5. Update `src/screens/Dashboard.tsx` with stats, greeting, and activity feed.
+- [ ] 6. Update `src/screens/repodetails/FilesScreen.tsx` with breadcrumbs, tree, and code preview bottom sheet.
+- [ ] 7. Update `src/screens/repodetails/CommitsScreen.tsx` with timeline and diff sheet.
+- [ ] 8. Verify build compilation and absence of lint errors.

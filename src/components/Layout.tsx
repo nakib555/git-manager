@@ -78,16 +78,16 @@ export const Header: React.FC = () => {
             <div className="relative">
               <button 
                 onClick={() => setIsBranchDropdownOpen(!isBranchDropdownOpen)}
-                className="bg-card border border-border rounded-lg px-3 py-1.5 text-[13px] font-semibold flex items-center text-text-main hover:bg-hover active:scale-95 transition-all cursor-pointer"
+                className="bg-card border border-border rounded-lg h-8 px-3 text-xs font-semibold flex items-center text-text-main hover:bg-hover active:scale-95 transition-all cursor-pointer"
               >
-                <GitBranch size={14} className="mr-1 text-primary animate-pulse" />
+                <GitBranch size={14} className="mr-1.5 text-primary animate-pulse shrink-0" />
                 <span className="max-w-[80px] truncate">{currentBranch || 'main'}</span>
-                <ChevronDown size={14} className="ml-1" />
+                <ChevronDown size={14} className="ml-1 shrink-0" />
               </button>
               {isBranchDropdownOpen && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setIsBranchDropdownOpen(false)}></div>
-                  <div className="absolute right-0 mt-1 w-48 bg-card border border-border rounded-xl shadow-lg py-1.5 z-50 max-h-64 overflow-y-auto">
+                  <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-xl shadow-lg py-2 z-50 max-h-64 overflow-y-auto">
                     <div className="px-3 py-1 border-b border-border text-[9px] uppercase tracking-wider font-bold text-text-muted">Branches</div>
                     {activeBranches.map((b) => (
                       <button
@@ -120,7 +120,7 @@ export const Header: React.FC = () => {
           sub: currentRepo,
           left: <AnimatedChevronLeft onClick={() => navigate('repos')} />,
           right: (
-            <button className="bg-primary rounded-lg px-3 py-1.5 text-[13px] font-semibold text-white" onClick={openActionSheet}>
+            <button className="bg-primary rounded-lg h-8 px-3 text-xs font-semibold text-white cursor-pointer active:scale-95 transition-all shadow-xs" onClick={openActionSheet}>
               + New {currentScreen === 'branches' ? 'Branch' : 'PR'}
             </button>
           )
@@ -131,9 +131,9 @@ export const Header: React.FC = () => {
           sub: '',
           left: <Menu size={24} onClick={openDrawer} className="cursor-pointer" />,
           right: (
-            <div className="flex gap-3">
-              <button className="text-text-main" onClick={openDrawer}><Bell size={24}/></button>
-              <button className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-text-main header-action-btn" onClick={openActionSheet}>
+            <div className="flex gap-2 items-center">
+              <button className="text-text-main p-1 cursor-pointer" onClick={openDrawer}><Bell size={20}/></button>
+              <button className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-text-main header-action-btn cursor-pointer" onClick={openActionSheet}>
                 <Plus size={18} />
               </button>
             </div>
@@ -149,7 +149,7 @@ export const Header: React.FC = () => {
   const isRepoScreen = ['files', 'commits', 'branches', 'insights', 'prs'].includes(currentScreen);
 
   return (
-    <header className="flex-shrink-0 flex items-center px-5 pb-4 pt-[max(1rem,env(safe-area-inset-top))] bg-main z-10 gap-3">
+    <header className="flex-shrink-0 flex items-center px-4 pb-4 pt-[max(1rem,env(safe-area-inset-top))] bg-main z-10 gap-2">
       <div className="text-text-main flex items-center justify-center shrink-0">
         {content.left}
       </div>

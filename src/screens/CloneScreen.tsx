@@ -795,20 +795,20 @@ export default function App() {
                         transition={{ type: 'spring', stiffness: 280, damping: 26 }}
                         className="overflow-hidden"
                       >
-                        <div className="space-y-3 p-3 bg-card rounded-xl border border-border my-2">
+                        <div className="space-y-4 p-4 bg-card rounded-xl border border-border my-2">
                           <div className="relative">
-                            <Search className="absolute left-3 top-2.5 text-text-muted" size={14} />
+                            <Search className="absolute left-3 top-3 text-text-muted" size={14} />
                             <input 
                               type="text"
                               autoFocus
                               placeholder="Search your repos or type..."
                               value={searchQuery}
                               onChange={(e) => setSearchQuery(e.target.value)}
-                              className="w-full bg-main border border-border rounded-lg pl-9 pr-4 py-2 text-xs font-medium focus:outline-none focus:border-primary text-text-main"
+                              className="w-full h-10 bg-main border border-border rounded-lg pl-8 pr-4 text-xs font-medium focus:outline-none focus:border-primary text-text-main"
                             />
                           </div>
 
-                          <div className="space-y-1 max-h-48 overflow-y-auto pr-1 no-scrollbar">
+                          <div className="space-y-2 max-h-48 overflow-y-auto pr-1 no-scrollbar">
                             {filteredGitHubRepos.length > 0 ? (
                               filteredGitHubRepos.map((r, idx) => (
                                 <button
@@ -825,7 +825,7 @@ export default function App() {
                               ))
                             ) : (
                               // Curated list fallback if no user repos found/connected
-                              <div className="space-y-1.5">
+                              <div className="space-y-2">
                                 <div className="text-[10px] font-bold text-text-muted uppercase tracking-wider px-2 pt-1">Popular Suggestions</div>
                                 {popularRepos.filter(p => p.name.includes(searchQuery.toLowerCase())).map((r, idx) => (
                                   <button
