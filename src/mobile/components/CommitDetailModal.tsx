@@ -3,7 +3,7 @@ import { useAppContext } from '../../AppContext';
 import { 
   GitCommit, Copy, Check, X, FileDiff, 
   GitBranch, Tag, ShieldCheck, Clock, User, CheckCircle2, 
-  RefreshCw, FileText, Layers, ExternalLink, Activity, AlertCircle, XCircle
+  RefreshCw, ExternalLink, Activity, AlertCircle, XCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -21,7 +21,6 @@ export const CommitDetailModal: React.FC<CommitDetailModalProps> = ({
   onClose,
 }) => {
   const { 
-    activeFiles, 
     showToast, 
     currentRepo, 
     currentRepoOwner, 
@@ -33,7 +32,7 @@ export const CommitDetailModal: React.FC<CommitDetailModalProps> = ({
 
   const [commitDetail, setCommitDetail] = useState<DetailedCommitInfo | null>(null);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
-  const [activeTab, setActiveTab] = useState<'diff' | 'details' | 'files' | 'cicd'>('diff');
+  const [activeTab, setActiveTab] = useState<'diff' | 'details' | 'cicd'>('diff');
   const [isCopiedSha, setIsCopiedSha] = useState(false);
   const [isCopiedMsg, setIsCopiedMsg] = useState(false);
   const [selectedDiffFile, setSelectedDiffFile] = useState<string | null>(null);
@@ -209,18 +208,6 @@ export const CommitDetailModal: React.FC<CommitDetailModalProps> = ({
               </button>
 
               <button
-                onClick={() => setActiveTab('files')}
-                className={`h-9 px-3 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 ${
-                  activeTab === 'files'
-                    ? 'bg-accent text-white font-bold shadow-xs'
-                    : 'bg-surface-2 text-text-secondary hover:text-text-primary'
-                }`}
-              >
-                <Layers size={14} />
-                <span>Files Snapshot</span>
-              </button>
-
-              <button
                 onClick={() => setActiveTab('cicd')}
                 className={`h-9 px-3 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 ${
                   activeTab === 'cicd'
@@ -379,33 +366,6 @@ export const CommitDetailModal: React.FC<CommitDetailModalProps> = ({
                         {commitDetail.parentSha.substring(0, 7)}
                       </span>
                     </div>
-                  )}
-                </div>
-              </div>
-            ) : activeTab === 'files' ? (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between text-xs text-text-tertiary font-mono px-1">
-                  <span>FILES IN CURRENT REPOSITORY</span>
-                  <span className="tabular-nums">{activeFiles.length} files</span>
-                </div>
-
-                <div className="divide-y divide-border border border-border rounded-xl bg-background max-h-[45vh] overflow-y-auto">
-                  {activeFiles.length === 0 ? (
-                    <div className="p-6 text-center text-xs text-text-tertiary">
-                      No files cataloged on active branch.
-                    </div>
-                  ) : (
-                    activeFiles.slice(0, 50).map((f) => (
-                      <div key={f.name} className="p-2.5 flex items-center justify-between text-xs hover:bg-surface-2 transition-colors">
-                        <div className="flex items-center gap-2 min-w-0 pr-2">
-                          <FileText size={14} className="text-accent shrink-0" />
-                          <span className="font-mono text-[11px] text-text-primary truncate">{f.name}</span>
-                        </div>
-                        <span className="text-[10px] text-text-tertiary font-mono shrink-0">
-                          {f.name.endsWith('.tsx') || f.name.endsWith('.ts') ? 'TypeScript' : 'Source'}
-                        </span>
-                      </div>
-                    ))
                   )}
                 </div>
               </div>

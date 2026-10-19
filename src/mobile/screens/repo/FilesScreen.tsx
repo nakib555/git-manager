@@ -3,7 +3,7 @@ import { useAppContext } from '../../../AppContext';
 import { 
   Folder, FileText, ChevronRight, ChevronDown, Copy, 
   Check, Search, X, Home, Maximize2, Minimize2, 
-  Download, FileCode, Clock, Info, AlignLeft, ArrowUpRight
+  Download, FileCode, Clock, Info, ArrowUpRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -66,7 +66,7 @@ export const FilesScreen: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFileForModal, setSelectedFileForModal] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState(false);
-  const [contentTab, setContentTab] = useState<'code' | 'raw' | 'history' | 'info'>('code');
+  const [contentTab, setContentTab] = useState<'code' | 'history' | 'info'>('code');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [wrapLines, setWrapLines] = useState(false);
   const [inCodeSearch, setInCodeSearch] = useState('');
@@ -332,18 +332,6 @@ export const FilesScreen: React.FC = () => {
                   </button>
 
                   <button
-                    onClick={() => setContentTab('raw')}
-                    className={`h-7 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
-                      contentTab === 'raw'
-                        ? 'bg-accent text-white font-bold shadow-xs'
-                        : 'text-text-tertiary hover:text-text-primary hover:bg-surface-2'
-                    }`}
-                  >
-                    <AlignLeft size={13} />
-                    <span>Raw</span>
-                  </button>
-
-                  <button
                     onClick={() => setContentTab('history')}
                     className={`h-7 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
                       contentTab === 'history'
@@ -428,10 +416,6 @@ export const FilesScreen: React.FC = () => {
                       Empty file or binary content.
                     </div>
                   )
-                ) : contentTab === 'raw' ? (
-                  <pre className={`p-4 text-[11px] font-mono text-text-primary ${wrapLines ? 'whitespace-pre-wrap' : 'whitespace-pre'}`}>
-                    {activeFileContent}
-                  </pre>
                 ) : contentTab === 'history' ? (
                   <div className="p-4 space-y-3 font-sans">
                     <span className="text-xs font-semibold text-text-tertiary uppercase tracking-wider block">
