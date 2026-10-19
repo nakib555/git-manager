@@ -152,8 +152,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
         onKeyDown={handleKeyDown}
       >
         {/* Search Input Bar */}
-        <div className="flex items-center px-4 py-3.5 border-b border-border bg-card">
-          <Search size={18} className="text-primary shrink-0 mr-3" />
+        <div className="flex items-center px-4 h-14 border-b border-border bg-card">
+          <Search size={18} className="text-primary shrink-0 mr-4" />
           <input 
             ref={inputRef}
             type="text"
@@ -167,14 +167,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
           />
           <button 
             onClick={onClose}
-            className="p-1 text-text-muted hover:text-text-main hover:bg-hover rounded-md transition-colors"
+            className="w-8 h-8 flex items-center justify-center text-text-muted hover:text-text-main hover:bg-hover rounded-lg transition-colors cursor-pointer"
           >
             <X size={16} />
           </button>
         </div>
 
         {/* Results List */}
-        <div className="max-h-[380px] overflow-y-auto p-2 no-scrollbar">
+        <div className="max-h-[384px] overflow-y-auto p-2 no-scrollbar">
           {items.length === 0 ? (
             <div className="py-12 text-center text-text-muted text-xs">
               <FolderGit2 size={24} className="mx-auto mb-2 opacity-50" />
@@ -184,7 +184,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
             <div className="space-y-1">
               {/* Repositories Section */}
               {matchedRepos.length > 0 && (
-                <div className="px-2 pt-2 pb-1 text-[10px] font-bold text-text-muted uppercase tracking-wider">
+                <div className="px-3 pt-2 pb-1 text-[10px] font-bold text-text-muted uppercase tracking-wider">
                   Repositories
                 </div>
               )}
@@ -196,7 +196,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
                     key={repo.name}
                     onClick={() => { openRepo(repo.name); onClose(); }}
                     onMouseEnter={() => setSelectedIndex(itemIndex)}
-                    className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer text-xs transition-colors ${
+                    className={`flex items-center justify-between px-3 h-10 rounded-lg cursor-pointer text-xs transition-colors ${
                       isSelected ? 'bg-primary/10 text-primary border border-primary/20' : 'text-text-main hover:bg-hover'
                     }`}
                   >

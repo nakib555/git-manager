@@ -28,10 +28,10 @@ export const CreateModals: React.FC = () => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className="relative w-full max-w-[420px] max-h-[90vh] overflow-y-auto bg-card rounded-2xl border border-border p-6 shadow-2xl"
+            className="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-card rounded-2xl border border-border p-6 shadow-2xl"
           >
-        <div className="flex justify-between items-center mb-5">
-          <div className="flex items-center gap-2.5 font-semibold text-text-main text-base">
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center gap-2 font-semibold text-text-main text-base">
             {activeModal === 'repo' && (
               <>
                 <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
@@ -83,9 +83,9 @@ export const CreateModals: React.FC = () => {
           </div>
           <button 
             onClick={closeModal}
-            className="text-text-muted hover:text-text-main p-1 rounded-full bg-hover transition-colors"
+            className="text-text-muted hover:text-text-main w-8 h-8 rounded-lg flex items-center justify-center bg-hover transition-colors cursor-pointer"
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
 
@@ -117,33 +117,33 @@ const RepoForm: React.FC<{ onSubmit: (data: any) => void }> = ({ onSubmit }) => 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-xs font-semibold text-text-muted mb-1.5 uppercase tracking-wider">Repository Name</label>
+        <label className="block text-xs font-semibold text-text-muted mb-2 uppercase tracking-wider">Repository Name</label>
         <input 
           type="text" 
           placeholder="e.g. awesome-react-app" 
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
-          className="w-full bg-main border border-border rounded-xl px-3.5 py-2.5 text-sm text-text-main outline-none focus:border-primary transition-colors placeholder:text-text-muted/60"
+          className="w-full h-10 bg-main border border-border rounded-xl px-4 text-sm text-text-main outline-none focus:border-primary transition-colors placeholder:text-text-muted/60"
         />
       </div>
       <div>
-        <label className="block text-xs font-semibold text-text-muted mb-1.5 uppercase tracking-wider">Description</label>
+        <label className="block text-xs font-semibold text-text-muted mb-2 uppercase tracking-wider">Description</label>
         <textarea 
           placeholder="A brief description about your project..." 
           value={desc}
           onChange={(e) => setDesc(e.target.value)}
           rows={2}
-          className="w-full bg-main border border-border rounded-xl px-3.5 py-2.5 text-sm text-text-main outline-none focus:border-primary transition-colors placeholder:text-text-muted/60 resize-none"
+          className="w-full bg-main border border-border rounded-xl p-3 text-sm text-text-main outline-none focus:border-primary transition-colors placeholder:text-text-muted/60 resize-none"
         />
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-semibold text-text-muted mb-1.5 uppercase tracking-wider">Primary Language</label>
+          <label className="block text-xs font-semibold text-text-muted mb-2 uppercase tracking-wider">Primary Language</label>
           <select 
             value={lang} 
             onChange={(e) => setLang(e.target.value)}
-            className="w-full bg-main border border-border rounded-xl px-3.5 py-2.5 text-sm text-text-main outline-none focus:border-primary transition-colors"
+            className="w-full h-10 bg-main border border-border rounded-xl px-3 text-sm text-text-main outline-none focus:border-primary transition-colors"
           >
             <option value="TypeScript">TypeScript</option>
             <option value="JavaScript">JavaScript</option>
@@ -155,19 +155,19 @@ const RepoForm: React.FC<{ onSubmit: (data: any) => void }> = ({ onSubmit }) => 
           </select>
         </div>
         <div>
-          <label className="block text-xs font-semibold text-text-muted mb-1.5 uppercase tracking-wider">Visibility</label>
+          <label className="block text-xs font-semibold text-text-muted mb-2 uppercase tracking-wider">Visibility</label>
           <div className="flex gap-2">
             <button 
               type="button" 
               onClick={() => setIsPrivate(false)} 
-              className={`flex-1 py-2.5 text-xs font-semibold rounded-xl border transition-all ${!isPrivate ? 'bg-primary/10 text-primary border-primary/40' : 'bg-main border-border text-text-muted'}`}
+              className={`flex-1 h-10 text-xs font-semibold rounded-xl border transition-all ${!isPrivate ? 'bg-primary/10 text-primary border-primary/40' : 'bg-main border-border text-text-muted'}`}
             >
               Public
             </button>
             <button 
               type="button" 
               onClick={() => setIsPrivate(true)} 
-              className={`flex-1 py-2.5 text-xs font-semibold rounded-xl border transition-all ${isPrivate ? 'bg-primary/10 text-primary border-primary/40' : 'bg-main border-border text-text-muted'}`}
+              className={`flex-1 h-10 text-xs font-semibold rounded-xl border transition-all ${isPrivate ? 'bg-primary/10 text-primary border-primary/40' : 'bg-main border-border text-text-muted'}`}
             >
               Private
             </button>
@@ -177,7 +177,7 @@ const RepoForm: React.FC<{ onSubmit: (data: any) => void }> = ({ onSubmit }) => 
       <button 
         type="submit" 
         disabled={!name.trim()}
-        className="w-full bg-primary hover:bg-primary-hover text-white font-semibold text-sm py-3 rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
+        className="w-full h-12 bg-primary hover:bg-primary-hover text-white font-semibold text-sm rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-4 cursor-pointer"
       >
         <Check size={16} strokeWidth={3} /> Create Repository
       </button>

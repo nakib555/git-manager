@@ -349,12 +349,12 @@ export const Dashboard: React.FC = () => {
               transition={{ duration: 0.2 }}
               className="overflow-hidden"
             >
-            <div className="bg-hover/10 p-4 rounded-2xl border border-border text-xs mt-3 flex flex-col gap-2">
+            <div className="bg-hover/10 p-4 rounded-2xl border border-border text-xs mt-4 flex flex-col gap-2">
               <span className="font-semibold text-text-main mb-1">Series Visibility & Layout</span>
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => setShowCommitsLine(!showCommitsLine)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-medium transition-colors cursor-pointer ${
+                  className={`flex items-center gap-2 h-8 px-3 rounded-full border text-xs font-medium transition-colors cursor-pointer ${
                     showCommitsLine 
                       ? 'bg-[#7C3AED]/10 text-[#7C3AED] border-[#7C3AED]/30' 
                       : 'border-border text-text-muted bg-card'
@@ -365,7 +365,7 @@ export const Dashboard: React.FC = () => {
                 </button>
                 <button
                   onClick={() => setShowPRsLine(!showPRsLine)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-medium transition-colors cursor-pointer ${
+                  className={`flex items-center gap-2 h-8 px-3 rounded-full border text-xs font-medium transition-colors cursor-pointer ${
                     showPRsLine 
                       ? 'bg-[#38BDF8]/10 text-[#38BDF8] border-[#38BDF8]/30' 
                       : 'border-border text-text-muted bg-card'
@@ -376,7 +376,7 @@ export const Dashboard: React.FC = () => {
                 </button>
                 <button
                   onClick={() => setShowGrid(!showGrid)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-medium transition-colors cursor-pointer ${
+                  className={`flex items-center gap-2 h-8 px-3 rounded-full border text-xs font-medium transition-colors cursor-pointer ${
                     showGrid 
                       ? 'bg-primary/10 text-primary border-primary/30' 
                       : 'border-border text-text-muted bg-card'
@@ -401,14 +401,14 @@ export const Dashboard: React.FC = () => {
           <div className="text-xs text-text-muted">Create a repository or connect GitHub to get started.</div>
         </div>
       ) : (
-        <div ref={activityListRef} className="space-y-3">
+        <div ref={activityListRef} className="space-y-4">
           {githubRepos.slice(0, 4).map(repo => (
             <div 
               key={repo.id} 
               onClick={() => openRepo(repo.name, (repo as any).owner?.login || null)}
-              className="flex gap-3 p-3 bg-card rounded-2xl border border-border cursor-pointer hover:border-primary/40 transition-all items-center justify-between"
+              className="flex gap-4 p-4 bg-card rounded-2xl border border-border cursor-pointer hover:border-primary/40 transition-all items-center justify-between"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4">
                 <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-primary/10 text-primary">
                   <FolderGit2 size={16} />
                 </div>

@@ -233,168 +233,175 @@ export const Repositories: React.FC = () => {
     repoSortDirection !== 'desc';
 
   return (
-    <div className="animate-fade-up flex flex-col flex-1 min-h-0 w-full">
-      {/* 1. Header Toolbar with Scope Switcher */}
-      <div className="space-y-4 mb-4 shrink-0">
-        <div className="flex items-center gap-2">
-          {/* Search Input Container */}
-          <div className="bg-card rounded-xl px-4 h-10 flex items-center gap-2 border border-border flex-1 relative shadow-xs">
-            <AnimatedSearchIcon size={18} className="text-text-muted shrink-0" />
+    <div className="animate-fade-up flex flex-col flex-1 min-h-0 w-full px-5">
+      {/* 1. Sticky Controls Header Strip */}
+      <div className="space-y-3.5 mb-4 shrink-0 pt-3">
+        {/* Scope Selector: Personal vs Global Segmented Control */}
+        <div className="flex bg-[#1A1A1D] p-1 rounded-xl border border-[#2A2A2E] h-10 w-full shadow-inner">
+          <button
+            onClick={() => {
+              if (repoSearchScope !== 'personal') {
+                setRepoSearchScope('personal');
+                setRepoPage(1);
+                showToast('Searching personal & local repositories', 'info');
+              }
+            }}
+            className={`flex-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-2 ${
+              repoSearchScope === 'personal'
+                ? 'bg-[#242428] text-[#F4F4F5] shadow-sm font-bold border border-[#2A2A2E]'
+                : 'text-[#A1A1AA] hover:text-[#F4F4F5]'
+            }`}
+          >
+            <FolderGit2 size={14} className={repoSearchScope === 'personal' ? 'text-[#3B82F6]' : ''} />
+            <span>Personal</span>
+          </button>
+          <button
+            onClick={() => {
+              if (repoSearchScope !== 'global') {
+                setRepoSearchScope('global');
+                setRepoPage(1);
+                showToast('Searching entire GitHub directory', 'info');
+              }
+            }}
+            className={`flex-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-2 ${
+              repoSearchScope === 'global'
+                ? 'bg-[#242428] text-[#F4F4F5] shadow-sm font-bold border border-[#2A2A2E]'
+                : 'text-[#A1A1AA] hover:text-[#F4F4F5]'
+            }`}
+          >
+            <Globe size={14} className={repoSearchScope === 'global' ? 'text-[#3B82F6]' : ''} />
+            <span>Global GitHub</span>
+          </button>
+        </div>
+
+        {/* Search Input & Sort Action Row */}
+        <div className="flex items-center gap-2.5">
+          <div className="bg-[#1A1A1D] rounded-[10px] px-3.5 h-11 flex items-center gap-2.5 border border-[#2A2A2E] flex-1 relative shadow-xs">
+            <AnimatedSearchIcon size={17} className="text-[#71717A] shrink-0" />
             <input 
               ref={searchInputRef}
               type="text" 
-              placeholder={repoSearchScope === 'personal' ? "Filter personal repositories..." : "Search all GitHub repositories..."} 
-              className="bg-transparent border-none text-text-main w-full outline-none text-xs placeholder:text-text-muted pr-8"
+              placeholder={repoSearchScope === 'personal' ? "Filter personal repos..." : "Search GitHub..."} 
+              className="bg-transparent border-none text-[#F4F4F5] w-full outline-none text-sm placeholder:text-[#71717A] pr-8"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
             {searchQuery && (
               <button 
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 text-text-muted hover:text-text-main p-1 cursor-pointer"
+                className="absolute right-3 text-[#71717A] hover:text-[#F4F4F5] p-1 cursor-pointer"
                 title="Clear search query"
               >
-                <X size={14} />
+                <X size={15} />
               </button>
             )}
             {isFetchingRepos && (
               <div className="absolute right-8 top-1/2 -translate-y-1/2">
-                <Loader2 size={16} className="text-primary animate-spin" />
+                <Loader2 size={16} className="text-[#3B82F6] animate-spin" />
               </div>
             )}
           </div>
 
-          {/* Config & Sort Drawer Button */}
+          {/* Sort & Filter Button (44px target) */}
           <button
-            onClick={() => setIsConfigDrawerOpen(!isConfigDrawerOpen)}
-            className={`h-10 px-4 rounded-xl border flex items-center gap-2 text-xs font-semibold transition-all cursor-pointer relative shrink-0 ${
-              isConfigDrawerOpen || hasActiveCustomFilters 
-                ? 'bg-primary/10 border-primary/30 text-primary' 
-                : 'bg-card border-border text-text-muted hover:text-text-main'
+            onClick={() => setIsConfigDrawerOpen(true)}
+            className={`w-11 h-11 rounded-[10px] border flex items-center justify-center transition-all cursor-pointer relative shrink-0 ${
+              hasActiveCustomFilters 
+                ? 'bg-[#3B82F6]/15 border-[#3B82F6]/40 text-[#3B82F6]' 
+                : 'bg-[#1A1A1D] border-[#2A2A2E] text-[#A1A1AA] hover:text-[#F4F4F5]'
             }`}
-            title="Search and Sort Configuration"
+            title="Sort and Filter Options"
           >
-            <Sliders size={16} />
-            <span className="hidden sm:inline">Sort & Filter</span>
+            <Sliders size={17} />
             {hasActiveCustomFilters && (
-              <span className="w-2 h-2 rounded-full bg-primary absolute -top-1 -right-1 ring-2 ring-card" />
+              <span className="w-2 h-2 rounded-full bg-[#3B82F6] absolute top-1.5 right-1.5 ring-2 ring-[#121214]" />
             )}
           </button>
         </div>
 
-        {/* Scope Selector: Personal vs Global GitHub */}
+        {/* Filter Chips Horizontal Strip */}
         <div className="flex items-center justify-between gap-2">
-          <div className="flex bg-card p-1 rounded-xl border border-border text-xs font-medium shrink-0">
-            <button
-              onClick={() => {
-                if (repoSearchScope !== 'personal') {
-                  setRepoSearchScope('personal');
-                  setRepoPage(1);
-                  showToast('Searching personal & local repositories', 'info');
-                }
-              }}
-              className={`h-8 px-3 rounded-lg transition-all cursor-pointer flex items-center gap-2 ${
-                repoSearchScope === 'personal'
-                  ? 'bg-primary text-white font-bold shadow-xs'
-                  : 'text-text-muted hover:text-text-main'
-              }`}
-            >
-              <FolderGit2 size={14} />
-              <span>Personal Repos</span>
-            </button>
-            <button
-              onClick={() => {
-                if (repoSearchScope !== 'global') {
-                  setRepoSearchScope('global');
-                  setRepoPage(1);
-                  showToast('Searching entire GitHub directory', 'info');
-                }
-              }}
-              className={`h-8 px-3 rounded-lg transition-all cursor-pointer flex items-center gap-2 ${
-                repoSearchScope === 'global'
-                  ? 'bg-primary text-white font-bold shadow-xs'
-                  : 'text-text-muted hover:text-text-main'
-              }`}
-            >
-              <Globe size={14} />
-              <span>Global GitHub</span>
-            </button>
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 w-full">
+            {(['all', 'public', 'private', 'forks', 'sources'] as RepoTypeFilter[]).map((type) => {
+              const isActive = repoTypeFilter === type;
+              const labels: Record<RepoTypeFilter, string> = {
+                all: 'All',
+                public: 'Public',
+                private: 'Private',
+                forks: 'Forks',
+                sources: 'Sources'
+              };
+              return (
+                <button
+                  key={type}
+                  onClick={() => {
+                    setRepoTypeFilter(type);
+                    setRepoPage(1);
+                  }}
+                  className={`h-8 px-3 rounded-lg text-xs font-semibold whitespace-nowrap border transition-all cursor-pointer flex items-center gap-1.5 select-none ${
+                    isActive
+                      ? 'bg-[#3B82F6]/15 border-[#3B82F6]/40 text-[#3B82F6] font-bold shadow-xs'
+                      : 'bg-[#1A1A1D] border-[#2A2A2E] text-[#A1A1AA] hover:text-[#F4F4F5]'
+                  }`}
+                >
+                  {type === 'public' && <Globe size={12} />}
+                  {type === 'private' && <Lock size={12} />}
+                  {type === 'forks' && <GitFork size={12} />}
+                  <span>{labels[type]}</span>
+                </button>
+              );
+            })}
           </div>
-
-          {/* Count summary indicator */}
-          <div className="text-[11px] text-text-muted font-medium pr-1">
-            <span>{filteredAndSortedRepos.length} {filteredAndSortedRepos.length === 1 ? 'repository' : 'repositories'}</span>
-          </div>
+          <span className="text-xs font-mono text-[#71717A] shrink-0 tabular-nums hidden sm:inline">
+            {filteredAndSortedRepos.length}
+          </span>
         </div>
 
-        {/* 2. Quick Type Filter Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
-          {(['all', 'public', 'private', 'forks', 'sources'] as RepoTypeFilter[]).map((type) => {
-            const isActive = repoTypeFilter === type;
-            const labels: Record<RepoTypeFilter, string> = {
-              all: 'All Types',
-              public: 'Public',
-              private: 'Private',
-              forks: 'Forks',
-              sources: 'Sources'
-            };
-            return (
-              <button
-                key={type}
-                onClick={() => {
-                  setRepoTypeFilter(type);
-                  setRepoPage(1);
-                }}
-                className={`h-8 px-3 rounded-lg text-xs font-medium whitespace-nowrap border transition-all cursor-pointer flex items-center gap-2 ${
-                  isActive
-                    ? 'bg-primary/10 border-primary/30 text-primary font-bold'
-                    : 'bg-card border-border text-text-muted hover:text-text-main'
-                }`}
-              >
-                {type === 'public' && <Globe size={12} />}
-                {type === 'private' && <Lock size={12} />}
-                {type === 'forks' && <GitFork size={12} />}
-                <span>{labels[type]}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* 3. Expandable Advanced Configuration Drawer */}
+        {/* Native Sliding Sort & Filter Bottom Sheet */}
         <AnimatePresence>
           {isConfigDrawerOpen && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="overflow-hidden"
-            >
-              <div className="bg-card border border-border rounded-2xl p-4 mt-2 space-y-4 shadow-sm">
-                <div className="flex items-center justify-between pb-2 border-b border-border/80">
-                  <div className="flex items-center gap-2 text-xs font-bold text-text-main">
-                    <Sliders size={14} className="text-primary" />
-                    <span>Configuration & Sorting Parameters</span>
+            <>
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/75 backdrop-blur-sm z-[110]"
+                onClick={() => setIsConfigDrawerOpen(false)}
+              />
+              <motion.div
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+                className="fixed bottom-0 left-0 right-0 bg-[#121214] border-t border-[#2A2A2E] rounded-t-[20px] z-[111] px-5 pt-3 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl max-h-[85vh] overflow-y-auto"
+              >
+                {/* Tactile Drag Handle */}
+                <div className="w-9 h-1 bg-[#2A2A2E] rounded-full mx-auto mb-4" />
+
+                <div className="flex items-center justify-between pb-3 border-b border-[#2A2A2E]">
+                  <div>
+                    <h3 className="text-base font-semibold text-[#F4F4F5]">Sort & Filter</h3>
+                    <p className="text-xs text-[#A1A1AA]">Customize repository ranking and visibility</p>
                   </div>
                   {hasActiveCustomFilters && (
                     <button 
                       onClick={clearAllFilters}
-                      className="text-[11px] font-bold text-danger hover:underline cursor-pointer"
+                      className="text-xs font-semibold text-[#EF4444] hover:underline cursor-pointer"
                     >
-                      Reset All
+                      Reset
                     </button>
                   )}
                 </div>
 
                 {/* Sort Dimensions */}
-                <div className="space-y-2">
-                  <span className="text-[11px] font-bold text-text-muted uppercase tracking-wider block">Sort Repositories By</span>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <div className="py-4 space-y-2.5">
+                  <span className="text-xs font-semibold text-[#71717A] uppercase tracking-wider block">Sort by</span>
+                  <div className="grid grid-cols-2 gap-2">
                     {[
-                      { key: 'updated', label: 'Last Updated' },
-                      { key: 'stars', label: 'Star Count' },
-                      { key: 'forks', label: 'Fork Count' },
-                      { key: 'name', label: 'Name (A-Z)' },
+                      { key: 'updated', label: 'Recently Updated' },
+                      { key: 'stars', label: 'Most Stars' },
+                      { key: 'forks', label: 'Most Forks' },
+                      { key: 'name', label: 'Repository Name' },
                       { key: 'language', label: 'Language' },
                     ].map((item) => {
                       const isSelected = repoSortBy === item.key;
@@ -405,14 +412,14 @@ export const Repositories: React.FC = () => {
                             setRepoSortBy(item.key as RepoSortBy);
                             setRepoPage(1);
                           }}
-                          className={`p-2 rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer flex items-center justify-between ${
+                          className={`h-11 px-3.5 rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer flex items-center justify-between ${
                             isSelected
-                              ? 'border-primary bg-primary/10 text-primary font-bold'
-                              : 'border-border bg-main/50 text-text-muted hover:text-text-main'
+                              ? 'border-[#3B82F6]/50 bg-[#3B82F6]/10 text-[#3B82F6] font-bold'
+                              : 'border-[#2A2A2E] bg-[#1A1A1D] text-[#A1A1AA] hover:text-[#F4F4F5]'
                           }`}
                         >
-                          <span>{item.label}</span>
-                          {isSelected && <Check size={14} className="text-primary" />}
+                          <span className="truncate">{item.label}</span>
+                          {isSelected && <Check size={14} className="text-[#3B82F6] shrink-0" />}
                         </button>
                       );
                     })}
@@ -420,17 +427,16 @@ export const Repositories: React.FC = () => {
                 </div>
 
                 {/* Sort Direction & Language Filter */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-border/60">
-                  {/* Direction */}
+                <div className="space-y-4 pt-2 border-t border-[#2A2A2E]">
                   <div className="space-y-2">
-                    <span className="text-[11px] font-bold text-text-muted uppercase tracking-wider block">Sort Order</span>
+                    <span className="text-xs font-semibold text-[#71717A] uppercase tracking-wider block">Order</span>
                     <div className="flex gap-2">
                       <button
                         onClick={() => setRepoSortDirection('desc')}
                         className={`h-10 flex-1 px-4 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
                           repoSortDirection === 'desc'
-                            ? 'bg-primary text-white border-primary font-bold'
-                            : 'bg-main/50 border-border text-text-muted hover:text-text-main'
+                            ? 'bg-[#3B82F6] text-white border-[#3B82F6] font-bold shadow-xs'
+                            : 'bg-[#1A1A1D] border-[#2A2A2E] text-[#A1A1AA] hover:text-[#F4F4F5]'
                         }`}
                       >
                         <ArrowDown size={14} />
@@ -440,8 +446,8 @@ export const Repositories: React.FC = () => {
                         onClick={() => setRepoSortDirection('asc')}
                         className={`h-10 flex-1 px-4 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
                           repoSortDirection === 'asc'
-                            ? 'bg-primary text-white border-primary font-bold'
-                            : 'bg-main/50 border-border text-text-muted hover:text-text-main'
+                            ? 'bg-[#3B82F6] text-white border-[#3B82F6] font-bold shadow-xs'
+                            : 'bg-[#1A1A1D] border-[#2A2A2E] text-[#A1A1AA] hover:text-[#F4F4F5]'
                         }`}
                       >
                         <ArrowUp size={14} />
@@ -450,16 +456,15 @@ export const Repositories: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Language Filter Dropdown */}
                   <div className="space-y-2">
-                    <span className="text-[11px] font-bold text-text-muted uppercase tracking-wider block">Programming Language</span>
+                    <span className="text-xs font-semibold text-[#71717A] uppercase tracking-wider block">Language</span>
                     <select
                       value={repoLanguageFilter}
                       onChange={(e) => {
                         setRepoLanguageFilter(e.target.value);
                         setRepoPage(1);
                       }}
-                      className="h-10 w-full bg-main/50 border border-border text-text-main rounded-xl px-4 text-xs font-semibold outline-none focus:border-primary transition-colors cursor-pointer"
+                      className="h-11 w-full bg-[#1A1A1D] border border-[#2A2A2E] text-[#F4F4F5] rounded-xl px-4 text-xs font-semibold outline-none focus:border-[#3B82F6] transition-colors cursor-pointer"
                     >
                       <option value="all">All Languages</option>
                       {availableLanguages.map((lang) => (
@@ -467,9 +472,16 @@ export const Repositories: React.FC = () => {
                       ))}
                     </select>
                   </div>
+
+                  <button
+                    onClick={() => setIsConfigDrawerOpen(false)}
+                    className="w-full h-11 bg-[#3B82F6] hover:bg-[#2563EB] text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-sm shadow-[#3B82F6]/20 mt-2"
+                  >
+                    Apply Filters ({filteredAndSortedRepos.length} results)
+                  </button>
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            </>
           )}
         </AnimatePresence>
       </div>

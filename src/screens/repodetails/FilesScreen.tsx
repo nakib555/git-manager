@@ -256,18 +256,18 @@ export const FilesScreen = () => {
 
   return (
     <div className="bg-card rounded-2xl border border-border overflow-hidden flex flex-col h-[70vh]">
-      <div className="px-4 py-3 border-b border-border flex items-center justify-between shrink-0 bg-hover/10">
-        <div className="flex items-center gap-1.5 text-xs text-text-muted font-medium truncate pr-2">
+      <div className="px-4 h-12 border-b border-border flex items-center justify-between shrink-0 bg-hover/10">
+        <div className="flex items-center gap-2 text-xs text-text-muted font-medium truncate pr-2">
           {view === 'file' && (
             <button 
               onClick={() => setView('tree')}
-              className="mr-1 p-1 bg-card hover:bg-hover border border-border rounded-lg flex items-center justify-center transition-colors cursor-pointer"
+              className="mr-1 w-8 h-8 bg-card hover:bg-hover border border-border rounded-lg flex items-center justify-center transition-colors cursor-pointer"
               title="Back to file tree"
             >
               <ChevronRight size={14} className="rotate-180" />
             </button>
           )}
-          <Home size={13} className="text-primary shrink-0" /> 
+          <Home size={14} className="text-primary shrink-0" /> 
           <span className="shrink-0 text-text-muted">/</span> 
           <span className="text-text-main font-semibold truncate">{currentRepo || 'repo'}</span> 
           {view === 'file' && activeFileName && (
@@ -288,7 +288,7 @@ export const FilesScreen = () => {
                 setTimeout(() => setIsCopied(false), 2000);
               }
             }}
-            className="flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-card border border-border hover:bg-hover text-text-main transition-colors shrink-0 cursor-pointer"
+            className="flex items-center gap-2 text-xs font-semibold h-8 px-3 rounded-lg bg-card border border-border hover:bg-hover text-text-main transition-colors shrink-0 cursor-pointer"
           >
             {isCopied ? <Check size={12} className="text-success" /> : <Copy size={12} />}
             <span>{isCopied ? 'Copied' : 'Copy'}</span>
@@ -298,22 +298,22 @@ export const FilesScreen = () => {
 
       {/* Filter search bar in tree view */}
       {view === 'tree' && (
-        <div className="px-3 pt-3 pb-2 border-b border-border/60">
+        <div className="p-4 border-b border-border/60">
           <div className="relative flex items-center">
-            <Search size={13} className="absolute left-2.5 text-text-muted" />
+            <Search size={14} className="absolute left-3 text-text-muted" />
             <input
               type="text"
               placeholder="Search files in workspace..."
               value={searchFilter}
               onChange={(e) => setSearchFilter(e.target.value)}
-              className="w-full bg-main border border-border rounded-lg pl-8 pr-7 py-1.5 text-xs text-text-main placeholder:text-text-muted focus:outline-none focus:border-primary font-medium"
+              className="w-full h-10 bg-main border border-border rounded-lg pl-9 pr-8 text-xs text-text-main placeholder:text-text-muted focus:outline-none focus:border-primary font-medium"
             />
             {searchFilter && (
               <button
                 onClick={() => setSearchFilter('')}
-                className="absolute right-2 text-text-muted hover:text-text-main cursor-pointer"
+                className="absolute right-3 text-text-muted hover:text-text-main cursor-pointer"
               >
-                <X size={12} />
+                <X size={14} />
               </button>
             )}
           </div>
@@ -321,7 +321,7 @@ export const FilesScreen = () => {
       )}
       
       {view === 'tree' ? (
-        <div className="flex-1 overflow-y-auto bg-card p-3">
+        <div className="flex-1 overflow-y-auto bg-card p-4">
           <div className="flex items-center justify-between text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2 px-2">
             <span>Workspace Files</span>
             <span className="font-mono">{filteredFiles.length} items</span>
