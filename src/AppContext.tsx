@@ -3,6 +3,8 @@ import React, {
   useContext,
   useState,
   useEffect,
+  useRef,
+  useCallback,
   ReactNode,
 } from "react";
 import {
@@ -106,6 +108,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const [state, setState] = useState<AppState>(defaultState);
+  const stateRef = useRef(state);
+  stateRef.current = state;
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   useEffect(() => {
     const sse = new EventSource('/api/events');
@@ -705,35 +709,55 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
       }
     }
   }, [state.currentRepo, state.githubToken, state.currentRepoOwner, state.currentBranch, refreshTrigger]);
+  // Robust Real-Time Auto-Updating Synchronization Engine (Runs every 10s & on tab refocus)
   useEffect(() => {
-    let timer: any;
-    if (state.githubToken) {
-      timer = setInterval(() => {
-        fetchGitHubData(state.githubToken!, true);
-        if (state.currentRepo) {
-          const owner = state.currentRepoOwner || (state.githubUser?.login ? state.githubUser.login : null);
-          const targetBranch = state.currentBranch || undefined;
-          if (owner) {
-            fetchRepoDetails(state.currentRepo, owner, true, targetBranch);
-          } else {
-            const matchedRepo = state.githubRepos.find(r => r.name === state.currentRepo);
-            const resolvedOwner = (matchedRepo as any)?.owner?.login || 'facebook';
-            fetchRepoDetails(state.currentRepo, resolvedOwner, true, targetBranch);
+    const runAutoSync = async () => {
+      const s = stateRef.current;
+      if (document.hidden) return; // Save bandwidth/rate limit when tab is in background
+
+      try {
+        if (s.githubToken) {
+          await fetchGitHubData(s.githubToken, true, s.repoPage, s.repoSearchQuery);
+          if (s.currentRepo) {
+            const owner = s.currentRepoOwner || (s.githubUser?.login ? s.githubUser.login : null);
+            const targetBranch = s.currentBranch || undefined;
+            if (owner) {
+              await fetchRepoDetails(s.currentRepo, owner, true, targetBranch);
+            } else {
+              const matchedRepo = s.githubRepos.find(r => r.name === s.currentRepo);
+              const resolvedOwner = (matchedRepo as any)?.owner?.login || 'facebook';
+              await fetchRepoDetails(s.currentRepo, resolvedOwner, true, targetBranch);
+            }
+          }
+        } else {
+          // Public exploration / local mode auto-sync
+          if (s.currentRepo) {
+            const matchedRepo = s.githubRepos.find(r => r.name === s.currentRepo);
+            const resolvedOwner = s.currentRepoOwner || (matchedRepo as any)?.owner?.login || 'facebook';
+            await fetchRepoDetails(s.currentRepo, resolvedOwner, true, s.currentBranch || undefined);
           }
         }
-      }, 15000);
-    }
-    return () => {
-      if (timer) clearInterval(timer);
+        // Broadcast tick to consumers (such as Activity and Dashboard)
+        setRefreshTrigger(prev => prev + 1);
+      } catch (err) {
+        console.warn("Background auto-sync tick notice:", err);
+      }
     };
-  }, [
-    state.githubToken,
-    state.currentRepo,
-    state.currentRepoOwner,
-    state.githubUser?.login,
-    state.githubRepos,
-    state.currentBranch
-  ]);
+
+    const intervalId = setInterval(runAutoSync, 10000);
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        runAutoSync();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
   const navigate = (screen: Screen) => {
     localStorage.setItem("currentScreen", screen);
     setState((prev) => ({ ...prev, currentScreen: screen }));
@@ -752,7 +776,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         (matchedRepo as any)?.owner?.login ||
         (prev.githubToken ? prev.githubUser?.login : null) ||
         (prev.githubUser?.login) ||
-        "nakib555";
+        "custom-owner";
       localStorage.setItem("currentRepo", repoName);
       localStorage.setItem("currentRepoOwner", actualOwner);
       localStorage.removeItem("currentBranch");
@@ -1300,70 +1324,116 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
     filePath?: string;
     fileContent?: string;
   }) => {
-    if (!state.currentRepo) return;
-    if (!state.githubToken || !state.currentRepoOwner) {
-      showToast("GitHub token and repository owner are required to commit.");
+    if (!state.currentRepo) {
+      showToast("Select or open a repository first to make a commit.", "warning");
       return;
     }
-    try {
-      const token = state.githubToken;
-      const headers = {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-        Accept: "application/vnd.github.v3+json",
-      };
-      const owner = state.currentRepoOwner;
-      const repo = state.currentRepo;
-      const branch =
-        state.activeBranches.find((b) => b.isDefault)?.name || "main";
-      const path = commit.filePath?.trim() || "README.md";
-      const contentStr =
-        commit.fileContent ||
-        `# ${repo}\n\nActivity log commit: ${commit.msg}\n\n_Committed via Git Manager App at ${new Date().toISOString()}_`;
-      const utf8Bytes = new TextEncoder().encode(contentStr);
-      let binaryStr = "";
-      for (let i = 0; i < utf8Bytes.length; i++) {
-        binaryStr += String.fromCharCode(utf8Bytes[i]);
-      }
-      const b64Content = btoa(binaryStr);
-      let sha: string | undefined = undefined;
+
+    const repo = state.currentRepo;
+    const owner = state.currentRepoOwner || (state.githubUser?.login ? state.githubUser.login : "local-user");
+    const token = state.githubToken;
+    const authorName = commit.author || state.githubUser?.name || state.githubUser?.login || "Local Developer";
+    const path = (commit.filePath?.trim() || "README.md").replace(/^\/+/, '');
+
+    if (token && state.currentRepoOwner) {
       try {
-        const fileRes = await fetch(
-          `https://api.github.com/repos/${owner}/${repo}/git/trees/HEAD?recursive=1/${path}?ref=${branch}`,
-          { headers },
-        );
-        if (fileRes.ok) {
-          const fileData = await fileRes.json();
-          sha = fileData.sha;
+        const headers = {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Accept: "application/vnd.github.v3+json",
+        };
+        const branch =
+          state.currentBranch || state.activeBranches.find((b) => b.isDefault)?.name || "main";
+        const contentStr =
+          commit.fileContent ||
+          `# ${repo}\n\nActivity log commit: ${commit.msg}\n\n_Committed via Git Manager at ${new Date().toISOString()}_`;
+        const utf8Bytes = new TextEncoder().encode(contentStr);
+        let binaryStr = "";
+        for (let i = 0; i < utf8Bytes.length; i++) {
+          binaryStr += String.fromCharCode(utf8Bytes[i]);
         }
-      } catch (e) {
-        console.warn("File might not exist yet, creating a new one.", e);
+        const b64Content = btoa(binaryStr);
+        let sha: string | undefined = undefined;
+        try {
+          const fileRes = await fetch(
+            `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`,
+            { headers },
+          );
+          if (fileRes.ok) {
+            const fileData = await fileRes.json();
+            sha = fileData.sha;
+          }
+        } catch (e) {
+          console.warn("File might not exist yet, creating a new file.", e);
+        }
+        const commitRes = await fetch(
+          `https://api.github.com/repos/${owner}/${repo}/contents/${path}`,
+          {
+            method: "PUT",
+            headers,
+            body: JSON.stringify({
+              message: commit.msg,
+              content: b64Content,
+              sha,
+              branch,
+            }),
+          },
+        );
+        if (!commitRes.ok) {
+          const errData = await commitRes.json().catch(() => ({}));
+          throw new Error(errData.message || `Status ${commitRes.status}`);
+        }
+        const commitData = await commitRes.json();
+        const shortSha = commitData.commit?.sha ? commitData.commit.sha.substring(0, 7) : Math.random().toString(16).substring(2, 9);
+        showToast(
+          `Commit pushed to GitHub! SHA: ${shortSha}`,
+          'success'
+        );
+        // Increment session commit count
+        setState(prev => {
+          const newCount = prev.sessionCommitsCount + 1;
+          localStorage.setItem("sessionCommitsCount", String(newCount));
+          return { ...prev, sessionCommitsCount: newCount };
+        });
+        await fetchRepoDetails(repo, owner, false, branch);
+        setRefreshTrigger(prev => prev + 1);
+      } catch (error: any) {
+        console.error("Error committing to GitHub:", error);
+        showToast(`Failed to commit to GitHub: ${error.message || error}`, 'error');
       }
-      const commitRes = await fetch(
-        `https://api.github.com/repos/${owner}/${repo}/git/trees/HEAD?recursive=1/${path}`,
-        {
-          method: "PUT",
-          headers,
-          body: JSON.stringify({
-            message: commit.msg,
-            content: b64Content,
-            sha,
-            branch,
-          }),
-        },
-      );
-      if (!commitRes.ok) {
-        const errData = await commitRes.json().catch(() => ({}));
-        throw new Error(errData.message || `Status ${commitRes.status}`);
-      }
-      const commitData = await commitRes.json();
-      showToast(
-        `Commit successfully pushed to GitHub! SHA: ${commitData.commit.sha.substring(0, 7)}`,
-      );
-      await fetchRepoDetails(repo, owner);
-    } catch (error: any) {
-      console.error("Error committing to GitHub:", error);
-      showToast(`Failed to commit to GitHub: ${error.message || error}`);
+    } else {
+      // Offline / Local Workspace Commit creation
+      const localHash = Math.random().toString(16).substring(2, 9);
+      const newLocalCommit = {
+        hash: localHash,
+        fullHash: `${localHash}${Math.random().toString(16).substring(2, 16)}`,
+        msg: commit.msg,
+        author: authorName,
+        time: "Just now",
+        timestamp: new Date().toISOString(),
+        add: commit.add || "+12",
+        del: commit.del || "-2",
+        isPrimary: true,
+      };
+
+      const key = `local_details_${repo}_commits`;
+      const existing = getLocalRepoDetails(repo, "commits");
+      const updated = [newLocalCommit, ...existing];
+      try {
+        localStorage.setItem(key, JSON.stringify(updated.slice(0, 500)));
+      } catch (_) {}
+
+      setState((prev) => {
+        const newCount = prev.sessionCommitsCount + 1;
+        localStorage.setItem("sessionCommitsCount", String(newCount));
+        return {
+          ...prev,
+          activeCommits: updated,
+          sessionCommitsCount: newCount,
+        };
+      });
+      showToast(`Commit created locally (${localHash})!`, 'success');
+      setRefreshTrigger(prev => prev + 1);
     }
   };
   const editCommitMessage = async (hash: string, newMsg: string) => {

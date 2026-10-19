@@ -377,20 +377,32 @@ const DesktopDashboard: React.FC<{ globalSearch: string }> = ({ globalSearch }) 
   const [isLoadingEvents, setIsLoadingEvents] = useState(false);
 
   useEffect(() => {
+    const fetchEvents = () => {
+      if (githubUser && githubToken && typeof githubToken === 'string') {
+        const headers = {
+          Authorization: githubToken.startsWith('gh') ? `Bearer ${githubToken}` : `token ${githubToken}`
+        };
+        fetch(`https://api.github.com/users/${githubUser.login}/events?per_page=100`, { headers })
+          .then(res => res.json())
+          .then(data => {
+            if (Array.isArray(data)) {
+              setActualEvents(data);
+            }
+          })
+          .catch(console.error)
+          .finally(() => setIsLoadingEvents(false));
+      }
+    };
+
     if (githubUser && githubToken && typeof githubToken === 'string') {
       setIsLoadingEvents(true);
-      const headers = {
-        Authorization: githubToken.startsWith('gh') ? `Bearer ${githubToken}` : `token ${githubToken}`
-      };
-      fetch(`https://api.github.com/users/${githubUser.login}/events?per_page=100`, { headers })
-        .then(res => res.json())
-        .then(data => {
-          if (Array.isArray(data)) {
-            setActualEvents(data);
-          }
-        })
-        .catch(console.error)
-        .finally(() => setIsLoadingEvents(false));
+      fetchEvents();
+      const timer = setInterval(() => {
+        if (!document.hidden) {
+          fetchEvents();
+        }
+      }, 15000);
+      return () => clearInterval(timer);
     }
   }, [githubUser, githubToken]);
 

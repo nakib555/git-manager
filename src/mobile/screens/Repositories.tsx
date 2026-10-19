@@ -187,7 +187,7 @@ export const Repositories: React.FC = () => {
               key={repo.name}
               repo={repo}
               isActive={currentRepo === repo.name}
-              onClick={() => openRepo(repo.name)}
+              onClick={() => openRepo(repo.name, (repo as any).owner?.login)}
             />
           ))
         )}

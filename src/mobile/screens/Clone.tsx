@@ -1,15 +1,27 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../../AppContext';
-import { Download, Copy, Check, Terminal, ExternalLink, HardDrive } from 'lucide-react';
+import { 
+  Download, Copy, Check, Terminal, ExternalLink, HardDrive, 
+  Star, GitFork, ArrowDown, Sparkles 
+} from 'lucide-react';
 
 export const Clone: React.FC = () => {
-  const { currentRepo, githubUser, showToast, cloneRepository, navigate } = useAppContext();
+  const { currentRepo, githubUser, githubToken, showToast, cloneRepository, navigate } = useAppContext();
 
   const [repoUrl, setRepoUrl] = useState('');
   const [destName, setDestName] = useState('');
   const [cloneDepth, setCloneDepth] = useState<number | ''>(1);
   const [isCloning, setIsCloning] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [isDownloadingZip, setIsDownloadingZip] = useState(false);
+
+  const popularRepos = [
+    { name: 'react', owner: 'facebook', desc: 'The library for web and native UIs', stars: '224k' },
+    { name: 'tailwindcss', owner: 'tailwindlabs', desc: 'A utility-first CSS framework', stars: '81k' },
+    { name: 'vscode', owner: 'microsoft', desc: 'Visual Studio Code', stars: '162k' },
+    { name: 'next.js', owner: 'vercel', desc: 'The React Framework for Web', stars: '122k' },
+    { name: 'bun', owner: 'oven-sh', desc: 'Fast JavaScript runtime and toolchain', stars: '71k' },
+  ];
 
   // Auto-fill destination folder name when URL changes
   const handleUrlChange = (url: string) => {
@@ -19,6 +31,26 @@ export const Clone: React.FC = () => {
     if (lastPart && !destName) {
       setDestName(lastPart);
     }
+  };
+
+  const selectPopularRepo = (owner: string, name: string) => {
+    const fullUrl = `https://github.com/${owner}/${name}.git`;
+    setRepoUrl(fullUrl);
+    setDestName(name);
+    showToast(`Loaded ${owner}/${name}`, 'info');
+  };
+
+  const getOwnerAndRepo = () => {
+    if (!repoUrl) return null;
+    const clean = repoUrl.trim().replace(/\.git$/, '');
+    const parts = clean.split('/');
+    if (parts.length >= 2) {
+      return {
+        owner: parts[parts.length - 2],
+        repo: parts[parts.length - 1],
+      };
+    }
+    return null;
   };
 
   const generatedCommand = `git clone ${cloneDepth ? `--depth ${cloneDepth} ` : ''}${repoUrl || 'https://github.com/owner/repository.git'} ${destName || 'my-project'}`;
@@ -53,14 +85,72 @@ export const Clone: React.FC = () => {
     }
   };
 
+  const handleDownloadZip = async () => {
+    const parsed = getOwnerAndRepo();
+    if (!parsed) {
+      showToast('Please enter a valid GitHub repository URL', 'warning');
+      return;
+    }
+    setIsDownloadingZip(true);
+    try {
+      const tokenParam = githubToken ? `&token=${encodeURIComponent(githubToken)}` : '';
+      const downloadUrl = `/api/github/download?owner=${encodeURIComponent(parsed.owner)}&repo=${encodeURIComponent(parsed.repo)}&ref=main${tokenParam}`;
+      
+      const res = await fetch(downloadUrl);
+      if (!res.ok) {
+        throw new Error(`Download failed with status ${res.status}`);
+      }
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `${parsed.repo}-main.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+
+      showToast(`Repository ${parsed.repo}.zip downloaded!`, 'success');
+    } catch (err: any) {
+      showToast(`ZIP Download error: ${err.message || err}`, 'error');
+    } finally {
+      setIsDownloadingZip(false);
+    }
+  };
+
   return (
-    <div className="px-4 py-4 space-y-6">
+    <div className="px-4 py-4 space-y-5">
       {/* Title Header */}
       <div>
         <h2 className="text-lg font-semibold text-text-primary tracking-tight">Clone Repository</h2>
         <p className="text-xs text-text-tertiary mt-0.5">
-          Download remote repositories into your local browser workspace.
+          Download remote repositories into your local workspace.
         </p>
+      </div>
+
+      {/* Popular Open Source Repos Quick Pick */}
+      <div className="space-y-2">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary flex items-center gap-1.5">
+          <Sparkles size={12} className="text-accent" />
+          <span>Popular Repositories Quick-Pick</span>
+        </span>
+        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+          {popularRepos.map((pr) => (
+            <button
+              key={pr.name}
+              onClick={() => selectPopularRepo(pr.owner, pr.name)}
+              className="p-2.5 rounded-xl bg-surface-1 border border-border hover:border-accent/40 text-left shrink-0 w-36 transition-all active:scale-97 cursor-pointer"
+            >
+              <div className="flex items-center justify-between text-xs font-bold text-text-primary truncate">
+                <span className="truncate">{pr.name}</span>
+                <span className="text-[10px] text-amber-500 font-mono font-normal">★{pr.stars}</span>
+              </div>
+              <span className="text-[10px] text-text-tertiary block truncate mt-0.5">
+                {pr.owner}
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Step 1: Remote Repository URL */}
@@ -142,18 +232,28 @@ export const Clone: React.FC = () => {
         </div>
       </div>
 
-      {/* Step 4: Action Button */}
-      <button
-        onClick={handleClone}
-        disabled={!repoUrl.trim() || isCloning}
-        className="w-full h-12 rounded-xl bg-accent hover:opacity-90 disabled:opacity-40 text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-sm shadow-accent/25 active:scale-98 transition-all cursor-pointer"
-      >
-        <Download size={16} />
-        <span>{isCloning ? 'Cloning into Workspace...' : 'Initialize Local Workspace Clone'}</span>
-      </button>
+      {/* Action Buttons: Workspace Clone + Download ZIP */}
+      <div className="space-y-2 pt-1">
+        <button
+          onClick={handleClone}
+          disabled={!repoUrl.trim() || isCloning}
+          className="w-full min-h-[44px] h-12 rounded-xl bg-accent hover:opacity-90 disabled:opacity-40 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-sm shadow-accent/25 active:scale-98 transition-all cursor-pointer"
+        >
+          <HardDrive size={16} />
+          <span>{isCloning ? 'Cloning into Workspace...' : 'Initialize Local Workspace Clone'}</span>
+        </button>
+
+        <button
+          onClick={handleDownloadZip}
+          disabled={!repoUrl.trim() || isDownloadingZip}
+          className="w-full min-h-[44px] h-12 rounded-xl bg-surface-1 border border-border hover:bg-surface-2 disabled:opacity-40 text-text-primary font-semibold text-xs flex items-center justify-center gap-2 active:scale-98 transition-all cursor-pointer"
+        >
+          <Download size={16} className="text-accent" />
+          <span>{isDownloadingZip ? 'Preparing ZIP Archive...' : 'Download Repository as ZIP Archive'}</span>
+        </button>
+      </div>
     </div>
   );
 };
 
-// Aliases
 export const MobileClone = Clone;

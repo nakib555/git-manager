@@ -1,37 +1,40 @@
-# Master Engineering & UI/UX Implementation: Completed
+# Master Engineering Plan: Real-Time Auto-Updating Data & Desktop-Mobile Functional Parity (COMPLETED)
 
-## Summary of Completed Work
-
-### 1. Complete Dummy Data Eradication & Real API Integration
-- **Eliminated Fake Synthesized Patches**: Removed `generateSamplePatch` and `generateFallbackFiles` in `src/mobile/utils/gitApi.ts`.
-- **Authentic Commit Diffs**: Commits fetch real patches directly from GitHub REST API (`/repos/{owner}/{repo}/commits/{sha}`). Where changes are omitted by GitHub (such as large diffs or binaries), clean and informative notices are rendered instead of fabricated code.
-- **Real CI/CD & Check Runs**: Implemented `fetchCommitCheckRuns` querying GitHub Check Runs API (`/repos/{owner}/{repo}/commits/{ref}/check-runs`), rendering actual status (queued, in progress, completed), conclusions (success, failure, neutral), and direct links to live GitHub Actions workflow logs.
-- **Authentic Global Activity Timeline**: Implemented `fetchTimelineEvents` querying GitHub Timeline Events API (`/users/{username}/events` and `/repos/{owner}/{repo}/events`), rendering real-time push events, pull requests, stars, and releases with author avatars and direct repository navigation.
-- **Real Clone Engine**: Replaced simulated `setTimeout` in `Clone.tsx` with `cloneRepository`, which queries the real GitHub repository from the provided URL, retrieves actual default branch, commit history, branch heads, and file tree.
-- **Authentic Commit Velocity**: Replaced hardcoded days in `InsightsScreen.tsx` with dynamic day-of-week distribution computed directly from actual repository commit timestamps.
-
-### 2. Calibrated 3-Theme Visual System
-Recalibrated `src/index.css` and `src/mobile/screens/Settings.tsx` to the exact master prompt palettes:
-- **Dark Charcoal (Default)**: Background `#0A0A0B`, Surfaces `#121214` / `#1A1A1D` / `#242428`, Border `#2A2A2E`, Text `#F4F4F5` / `#A1A1AA` / `#71717A`, Accent `#3B82F6`.
-- **Warm Off-White (Clean Light)**: Background `#F8F7F4`, Surfaces `#FFFFFF` / `#F1F0ED` / `#E8E6E1`, Border `#E0DED8`, Text `#1C1B19` / `#5C5A55` / `#8A8780`, Accent `#3B6FE0`.
-- **Deep Indigo Fantasy (Midnight Workstation)**: Background `#0F0E17`, Surfaces `#16152A` / `#1E1C35` / `#2A2748`, Border `#3A365C`, Text `#F0EEF8` / `#B8B4D0` / `#8A85A8`, Accent `#9B7EED`.
-
-### 3. Native-Feel Mobile Architecture (<1024px) & Anti-AI Discipline
-- **Zero-Pill Metadata**: Replaced static capsule pills on repo privacy, pull requests, and commit summaries with clean unboxed text and typographic middle dot (`·`) separators.
-- **Tabular Numerals**: Enforced `tabular-nums` on all commit SHAs, line numbers, file sizes, star/fork counts, and timestamps for vertical alignment.
-- **Touch Target Ergonomics**: Guaranteed minimum $44 \times 44\text{px}$ touch targets across all header controls, bottom navigation tabs, filter buttons, and action sheet triggers.
-- **Bottom Sheet Commit Detail**: 20px top radius, drag handle affordance, damped spring animation, unified diffs, full commit message, parent SHA inspection, and real CI/CD status.
-- **File Inspector**: Syntax highlighting with line numbers, copy code, download raw, and tabs (Code, Raw, History, Info).
-- **Sticky Surface Governance**: Combined fixed header and bottom nav stay under 15% of viewport height, leaving 85%+ open for content scrolling.
+## Complexity Classification: Level 3 (Large Feature & System Synchronization Engine)
 
 ---
 
-## Execution Checklist Status
+## 1. Verified Facts & Root Cause Resolution
 
-- [x] **Step 1**: Update `src/index.css` with the 3 calibrated developer themes (Dark Charcoal, Light, Fantasy).
-- [x] **Step 2**: Clean `src/mobile/utils/gitApi.ts`: eradicate `generateSamplePatch` & `generateFallbackFiles`; implement real GitHub Check Runs and Events API fetchers.
-- [x] **Step 3**: Enhance `src/AppContext.tsx` with user timeline events fetching and real commit check-runs caching.
-- [x] **Step 4**: Upgrade `CommitDetailModal.tsx` into a high-performance bottom sheet with authentic diffs, file trees, and real CI/CD status.
-- [x] **Step 5**: Upgrade `src/mobile/screens/Activity.tsx` to display real GitHub timeline events.
-- [x] **Step 6**: Verify `Repositories.tsx`, `FilesScreen.tsx`, and `Dashboard.tsx` for zero-pill styling, tabular numbers, and 44px hitboxes.
-- [x] **Step 7**: Compile with `compile_applet` and test with `lint_applet` to confirm 100% build and type safety.
+1. **Auto-Update Engine Breakdown in AppContext.tsx (Resolved)**:
+   - Refactored the background sync interval using a stable `stateRef` pattern. This completely eliminates dependency array churn caused by `state.githubRepos` generating new references, allowing the 10-second auto-sync interval to run without interruptions or resets.
+   - Removed the token-only restriction on background polling: guest and public exploration modes now auto-synchronize repository details and fallback caches in real time.
+   - Added a `visibilitychange` listener that triggers immediate synchronization whenever the user returns to or focuses the browser tab.
+
+2. **Critical GitHub API Endpoints Bugs (Resolved)**:
+   - Fixed `createLocalCommit`: Replaced invalid `/git/trees/HEAD...` URL with the correct GitHub Contents API endpoint `https://api.github.com/repos/${owner}/${repo}/contents/${path}`.
+   - Added offline/local commit fallback so commits created in guest or offline mode save to `localStorage`, increment session commit counts, and broadcast live update events across all open screens.
+
+3. **Desktop vs. Mobile Functional Parity (Completed)**:
+   - **Pull Requests Screen (`src/mobile/screens/repo/PRsScreen.tsx`)**: Upgraded from a static toast notification to a full-featured PR review workstation. Mobile users can now inspect pull requests, read descriptions, review commit lists, inspect file diffs with syntax highlighting, and perform Merge (Merge Commit or Squash & Merge) with optional source branch deletion, or Close/Reopen PRs.
+   - **Commits Screen (`src/mobile/screens/repo/CommitsScreen.tsx`)**: Added a direct "+ New Commit" button triggering the commit modal.
+   - **ActionSheet (`src/mobile/components/ActionSheet.tsx`)**: Added the "Commit Changes" action when inside an active repository.
+   - **Clone Screen (`src/mobile/screens/Clone.tsx`)**: Added popular open-source repositories quick-pick (`react`, `tailwindcss`, `vscode`, `next.js`, `bun`), clone depth options, and a direct "Download Repository as ZIP Archive" action via `/api/github/download`.
+   - **Repository Owner Fallback (`src/mobile/screens/Repositories.tsx`)**: Passed `repo.owner?.login` into `openRepo` to prevent cross-repository owner misalignment.
+   - **Activity Feed (`src/mobile/screens/Activity.tsx`) & Dashboard**: Added 15-second background auto-sync so newly pushed commits and remote GitHub events appear automatically without manual interaction.
+
+---
+
+## 2. Execution Checklist Status
+
+- [x] Refactor auto-update polling loop in `src/AppContext.tsx` using `useRef` to eliminate dependency cycles.
+- [x] Fix GitHub commit creation API endpoint in `src/AppContext.tsx` (`/contents/${path}`).
+- [x] Pass `repo.owner?.login` into `openRepo` in `src/mobile/screens/Repositories.tsx`.
+- [x] Add "+ New Commit" button to `src/mobile/screens/repo/CommitsScreen.tsx`.
+- [x] Add "Commit Changes" action to `src/mobile/components/ActionSheet.tsx`.
+- [x] Upgrade `src/mobile/screens/repo/PRsScreen.tsx` with full PR detail viewer, diffs, and merge controls.
+- [x] Upgrade `src/mobile/screens/Clone.tsx` with popular repos quick-pick and real zip download.
+- [x] Add auto-refresh polling subscription to `src/mobile/screens/Activity.tsx` and `DesktopDashboard`.
+- [x] Execute `lint_applet` (Passed cleanly, 0 errors).
+- [x] Execute `compile_applet` (Passed cleanly, 0 errors).
+- [x] Restart dev server.

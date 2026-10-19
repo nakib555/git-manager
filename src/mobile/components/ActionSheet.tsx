@@ -91,10 +91,23 @@ export const ActionSheet: React.FC<ActionSheetProps> = ({ isOpen, onClose }) => 
                   </div>
 
                   <button
-                    onClick={() => handleAction(() => openModal('branch'))}
+                    onClick={() => handleAction(() => openModal('commit'))}
                     className="w-full h-12 px-3 rounded-xl flex items-center gap-3.5 hover:bg-surface-2 transition-colors text-left text-xs font-semibold text-text-primary cursor-pointer active:scale-98"
                   >
                     <div className="w-8 h-8 rounded-lg bg-accent-soft text-accent flex items-center justify-center shrink-0">
+                      <GitCommit size={17} />
+                    </div>
+                    <div>
+                      <span className="block font-semibold">Commit Changes</span>
+                      <span className="block text-[11px] text-text-tertiary font-normal">Stage and push changes to branch</span>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => handleAction(() => openModal('branch'))}
+                    className="w-full h-12 px-3 rounded-xl flex items-center gap-3.5 hover:bg-surface-2 transition-colors text-left text-xs font-semibold text-text-primary cursor-pointer active:scale-98"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-surface-2 text-text-primary flex items-center justify-center shrink-0 border border-border">
                       <GitBranchPlus size={17} />
                     </div>
                     <div>

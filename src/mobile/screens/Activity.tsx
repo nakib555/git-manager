@@ -45,6 +45,12 @@ export const Activity: React.FC = () => {
 
   useEffect(() => {
     loadTimeline();
+    const timer = setInterval(() => {
+      if (!document.hidden) {
+        loadTimeline();
+      }
+    }, 15000);
+    return () => clearInterval(timer);
   }, [githubUser?.login, currentRepo, currentRepoOwner, githubToken]);
 
   const handleCopyHash = (hash: string) => {
