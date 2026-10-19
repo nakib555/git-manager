@@ -68,11 +68,11 @@ export const MobileRepositories: React.FC = () => {
   ];
 
   return (
-    <div ref={scrollRef} className="space-y-4 px-5 py-4">
+    <div ref={scrollRef} className="space-y-4 px-4 py-4">
       {/* 1. Sticky Controls under Header */}
       <div className="space-y-3">
         {/* Segmented Scope: Personal vs Global */}
-        <div className="h-10 p-1 bg-[#121214] border border-[#2A2A2E] rounded-xl flex items-center gap-1 select-none">
+        <div className="h-10 p-1 bg-surface-1 border border-border rounded-xl flex items-center gap-1 select-none">
           <button
             onClick={() => {
               setRepoSearchScope('personal');
@@ -80,8 +80,8 @@ export const MobileRepositories: React.FC = () => {
             }}
             className={`flex-1 h-full rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               repoSearchScope === 'personal'
-                ? 'bg-[#1A1A1D] text-[#F4F4F5] shadow-sm border border-[#2A2A2E]'
-                : 'text-[#71717A] hover:text-[#A1A1AA]'
+                ? 'bg-surface-2 text-text-primary shadow-sm border border-border'
+                : 'text-text-tertiary hover:text-text-secondary'
             }`}
           >
             Personal Workspace
@@ -93,8 +93,8 @@ export const MobileRepositories: React.FC = () => {
             }}
             className={`flex-1 h-full rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               repoSearchScope === 'global'
-                ? 'bg-[#1A1A1D] text-[#F4F4F5] shadow-sm border border-[#2A2A2E]'
-                : 'text-[#71717A] hover:text-[#A1A1AA]'
+                ? 'bg-surface-2 text-text-primary shadow-sm border border-border'
+                : 'text-text-tertiary hover:text-text-secondary'
             }`}
           >
             Global GitHub Search
@@ -104,7 +104,7 @@ export const MobileRepositories: React.FC = () => {
         {/* 44px Search Input + Sort Button */}
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
-            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#71717A]" />
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-tertiary" />
             <input
               type="text"
               placeholder={repoSearchScope === 'personal' ? 'Filter personal repositories...' : 'Search public repositories (e.g. react)...'}
@@ -113,7 +113,7 @@ export const MobileRepositories: React.FC = () => {
                 setLocalSearch(e.target.value);
                 setRepoPage(1);
               }}
-              className="w-full h-11 pl-10 pr-9 rounded-xl bg-[#121214] border border-[#2A2A2E] text-xs font-medium text-[#F4F4F5] placeholder:text-[#71717A] outline-none focus:border-[#3B82F6] transition-colors"
+              className="w-full h-11 pl-10 pr-9 rounded-xl bg-surface-1 border border-border text-xs font-medium text-text-primary placeholder:text-text-tertiary outline-none focus:border-accent transition-colors"
             />
             {localSearch && (
               <button
@@ -122,7 +122,7 @@ export const MobileRepositories: React.FC = () => {
                   setRepoSearchQuery('');
                   setRepoPage(1);
                 }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#71717A] hover:text-[#F4F4F5] cursor-pointer"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-primary cursor-pointer"
               >
                 <X size={15} />
               </button>
@@ -131,7 +131,7 @@ export const MobileRepositories: React.FC = () => {
 
           <button
             onClick={() => setIsSortSheetOpen(true)}
-            className="w-11 h-11 rounded-xl bg-[#121214] border border-[#2A2A2E] hover:border-[#3B82F6]/40 flex items-center justify-center text-[#A1A1AA] hover:text-[#F4F4F5] transition-all cursor-pointer shrink-0"
+            className="w-11 h-11 rounded-xl bg-surface-1 border border-border hover:border-accent/40 flex items-center justify-center text-text-secondary hover:text-text-primary transition-all cursor-pointer shrink-0"
             aria-label="Sort repositories"
           >
             <SlidersHorizontal size={17} />
@@ -151,8 +151,8 @@ export const MobileRepositories: React.FC = () => {
                 }}
                 className={`h-8 px-3 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center justify-center ${
                   isActive
-                    ? 'bg-[#3B82F6]/15 border border-[#3B82F6]/40 text-[#3B82F6]'
-                    : 'bg-[#121214] border border-[#2A2A2E] text-[#71717A] hover:text-[#A1A1AA]'
+                    ? 'bg-accent-soft border border-accent/40 text-accent'
+                    : 'bg-surface-1 border border-border text-text-tertiary hover:text-text-secondary'
                 }`}
               >
                 {chip.label}
@@ -165,15 +165,15 @@ export const MobileRepositories: React.FC = () => {
       {/* 2. Repositories List */}
       <div className="space-y-3 pt-1">
         {isFetchingRepos ? (
-          <div className="py-16 text-center text-xs text-[#71717A] flex flex-col items-center justify-center gap-2">
-            <Loader2 size={24} className="animate-spin text-[#3B82F6]" />
+          <div className="py-16 text-center text-xs text-text-tertiary flex flex-col items-center justify-center gap-2">
+            <Loader2 size={24} className="animate-spin text-accent" />
             <span>Fetching repositories...</span>
           </div>
         ) : githubRepos.length === 0 ? (
-          <div className="bg-[#121214] border border-[#2A2A2E] rounded-xl p-8 text-center flex flex-col items-center justify-center">
-            <FolderGit2 size={32} className="text-[#71717A] mb-2 opacity-50" />
-            <span className="text-sm font-semibold text-[#F4F4F5] mb-1">No repositories found</span>
-            <span className="text-xs text-[#71717A]">
+          <div className="bg-surface-1 border border-border rounded-xl p-8 text-center flex flex-col items-center justify-center">
+            <FolderGit2 size={32} className="text-text-tertiary mb-2 opacity-50" />
+            <span className="text-sm font-semibold text-text-primary mb-1">No repositories found</span>
+            <span className="text-xs text-text-tertiary">
               {localSearch ? `No matches found for "${localSearch}".` : 'Try adjusting your search filters.'}
             </span>
           </div>
@@ -191,8 +191,8 @@ export const MobileRepositories: React.FC = () => {
 
       {/* 3. Bottom Pagination Controls */}
       {repoTotalPages > 1 && (
-        <div className="flex items-center justify-between pt-4 pb-2 border-t border-[#2A2A2E] select-none">
-          <span className="text-xs font-mono text-[#71717A] tabular-nums">
+        <div className="flex items-center justify-between pt-4 pb-2 border-t border-border select-none">
+          <span className="text-xs font-mono text-text-tertiary tabular-nums">
             Page {repoPage} of {repoTotalPages}
           </span>
 
@@ -200,14 +200,14 @@ export const MobileRepositories: React.FC = () => {
             <button
               onClick={() => setRepoPage(Math.max(1, repoPage - 1))}
               disabled={repoPage <= 1}
-              className="w-9 h-9 rounded-xl bg-[#121214] border border-[#2A2A2E] flex items-center justify-center text-[#A1A1AA] hover:text-[#F4F4F5] disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+              className="w-9 h-9 rounded-xl bg-surface-1 border border-border flex items-center justify-center text-text-secondary hover:text-text-primary disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
             >
               <ChevronLeft size={16} />
             </button>
             <button
               onClick={() => setRepoPage(Math.min(repoTotalPages, repoPage + 1))}
               disabled={repoPage >= repoTotalPages}
-              className="w-9 h-9 rounded-xl bg-[#121214] border border-[#2A2A2E] flex items-center justify-center text-[#A1A1AA] hover:text-[#F4F4F5] disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+              className="w-9 h-9 rounded-xl bg-surface-1 border border-border flex items-center justify-center text-text-secondary hover:text-text-primary disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
             >
               <ChevronRight size={16} />
             </button>
@@ -231,14 +231,14 @@ export const MobileRepositories: React.FC = () => {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-              className="relative w-full max-w-lg bg-[#121214] border-t border-x border-[#2A2A2E] rounded-t-[20px] pb-[calc(env(safe-area-inset-bottom,0px)+16px)] pt-3 px-5 shadow-2xl z-10"
+              className="relative w-full max-w-lg bg-surface-1 border-t border-x border-border rounded-t-[20px] pb-[calc(env(safe-area-inset-bottom,0px)+16px)] pt-3 px-5 shadow-2xl z-10"
             >
-              <div className="w-10 h-1 bg-[#2A2A2E] rounded-full mx-auto mb-4" />
-              <div className="flex items-center justify-between pb-3 border-b border-[#2A2A2E] mb-3">
-                <h3 className="text-sm font-semibold text-[#F4F4F5]">Sort Repositories</h3>
+              <div className="w-10 h-1 bg-border rounded-full mx-auto mb-4" />
+              <div className="flex items-center justify-between pb-3 border-b border-border mb-3">
+                <h3 className="text-sm font-semibold text-text-primary">Sort Repositories</h3>
                 <button
                   onClick={() => setIsSortSheetOpen(false)}
-                  className="w-7 h-7 rounded-full bg-[#1A1A1D] flex items-center justify-center text-[#71717A] hover:text-[#F4F4F5]"
+                  className="w-7 h-7 rounded-full bg-surface-2 flex items-center justify-center text-text-tertiary hover:text-text-primary"
                 >
                   <X size={15} />
                 </button>
@@ -255,8 +255,8 @@ export const MobileRepositories: React.FC = () => {
                     }}
                     className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
                       repoSortBy === item.id
-                        ? 'bg-[#3B82F6]/10 text-[#3B82F6] border border-[#3B82F6]/30'
-                        : 'text-[#A1A1AA] hover:bg-[#1A1A1D] border border-transparent'
+                        ? 'bg-accent-soft text-accent border border-accent/30'
+                        : 'text-text-secondary hover:bg-surface-2 border border-transparent'
                     }`}
                   >
                     <span>{item.label}</span>
@@ -266,7 +266,7 @@ export const MobileRepositories: React.FC = () => {
               </div>
 
               {/* Direction Toggle */}
-              <div className="flex gap-2 pt-2 border-t border-[#2A2A2E]">
+              <div className="flex gap-2 pt-2 border-t border-border">
                 <button
                   onClick={() => {
                     setRepoSortDirection('desc');
@@ -274,8 +274,8 @@ export const MobileRepositories: React.FC = () => {
                   }}
                   className={`flex-1 h-10 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
                     repoSortDirection === 'desc'
-                      ? 'bg-[#3B82F6] text-white border-[#3B82F6]'
-                      : 'bg-[#1A1A1D] border-[#2A2A2E] text-[#A1A1AA]'
+                      ? 'bg-accent text-white border-accent'
+                      : 'bg-surface-2 border-border text-text-secondary'
                   }`}
                 >
                   Descending
@@ -287,8 +287,8 @@ export const MobileRepositories: React.FC = () => {
                   }}
                   className={`flex-1 h-10 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
                     repoSortDirection === 'asc'
-                      ? 'bg-[#3B82F6] text-white border-[#3B82F6]'
-                      : 'bg-[#1A1A1D] border-[#2A2A2E] text-[#A1A1AA]'
+                      ? 'bg-accent text-white border-accent'
+                      : 'bg-surface-2 border-border text-text-secondary'
                   }`}
                 >
                   Ascending

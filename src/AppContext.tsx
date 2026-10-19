@@ -73,7 +73,7 @@ const defaultState: AppState = {
   toastMessage: null,
   toastType: 'info',
   isSearchFocused: false,
-  theme: (localStorage.getItem("theme") as "dark" | "light") || "light",
+  theme: (localStorage.getItem("theme") as "dark" | "light" | "fantasy") || "dark",
   githubToken: localStorage.getItem("githubToken") || null,
   githubUser: localStorage.getItem("githubUser") ? sanitizeGitHubUser(JSON.parse(localStorage.getItem("githubUser")!)) : null,
   githubRepos: getLocalRepos(),
@@ -116,8 +116,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
     });
     return () => sse.close();
   }, []);
-  // Apply theme to both document root and body
+  // Apply theme to document root and data-theme
   useEffect(() => {
+    document.documentElement.setAttribute('data-theme', state.theme);
     if (state.theme === "dark") {
       document.documentElement.classList.add("dark-theme");
       document.body.classList.add("dark-theme");
@@ -126,9 +127,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
       document.body.classList.remove("dark-theme");
     }
   }, [state.theme]);
+
+  const setTheme = (newTheme: 'dark' | 'light' | 'fantasy') => {
+    localStorage.setItem("theme", newTheme);
+    setState((prev) => ({ ...prev, theme: newTheme }));
+  };
+
   const toggleTheme = () => {
     setState((prev) => {
-      const newTheme = prev.theme === "dark" ? "light" : "dark";
+      const cycle: Record<'dark' | 'light' | 'fantasy', 'dark' | 'light' | 'fantasy'> = {
+        dark: 'light',
+        light: 'fantasy',
+        fantasy: 'dark',
+      };
+      const newTheme = cycle[prev.theme] || 'dark';
       localStorage.setItem("theme", newTheme);
       return { ...prev, theme: newTheme };
     });
@@ -1565,6 +1577,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         closeModals,
         setSearchFocus,
         toggleTheme,
+        setTheme,
         connectGitHub,
         disconnectGitHub,
         setManualToken,

@@ -19,9 +19,9 @@ export const MobileBottomNav: React.FC = () => {
   return (
     <nav 
       aria-label="Bottom Navigation"
-      className="fixed bottom-0 left-0 right-0 z-30 bg-[#0A0A0B]/95 backdrop-blur-lg border-t border-[#2A2A2E] pb-[env(safe-area-inset-bottom,0px)] select-none"
+      className="fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur-lg border-t border-border pb-[env(safe-area-inset-bottom,0px)] select-none"
     >
-      <div className="h-14 max-w-lg mx-auto flex items-center justify-around px-2">
+      <div className="h-14 w-full flex items-center justify-around px-3 sm:px-6">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const active = tab.isActive;
@@ -31,20 +31,20 @@ export const MobileBottomNav: React.FC = () => {
               onClick={() => navigate(tab.id as any)}
               className={`flex-1 flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all cursor-pointer ${
                 active 
-                  ? 'text-[#3B82F6]' 
-                  : 'text-[#71717A] hover:text-[#A1A1AA] active:scale-95'
+                  ? 'text-accent' 
+                  : 'text-text-tertiary hover:text-text-secondary active:scale-95'
               }`}
               aria-label={tab.label}
               aria-current={active ? 'page' : undefined}
             >
               <div
                 className={`w-11 h-7 flex items-center justify-center rounded-full transition-all duration-200 ${
-                  active ? 'bg-[#3B82F6]/15' : 'bg-transparent'
+                  active ? 'bg-accent-soft' : 'bg-transparent'
                 }`}
               >
                 <Icon size={20} strokeWidth={active ? 2.4 : 1.9} />
               </div>
-              <span className={`text-[10px] tracking-tight mt-0.5 ${active ? 'font-bold text-[#F4F4F5]' : 'font-medium'}`}>
+              <span className={`text-[10px] tracking-tight mt-0.5 ${active ? 'font-bold text-text-primary' : 'font-medium'}`}>
                 {tab.label}
               </span>
             </button>

@@ -48,7 +48,7 @@ export const MobileClone: React.FC = () => {
   };
 
   return (
-    <div className="px-5 py-4 space-y-6">
+    <div className="px-4 py-4 space-y-6">
       {/* Title Header */}
       <div>
         <h2 className="text-lg font-semibold text-[#F4F4F5] tracking-tight">Clone Repository</h2>

@@ -40,7 +40,7 @@ export const MobileRepoTabs: React.FC = () => {
     <nav
       ref={containerRef}
       aria-label="Repository Sub-navigation"
-      className="shrink-0 h-11 px-4 flex items-center gap-2 overflow-x-auto bg-[#0A0A0B] border-b border-[#2A2A2E] no-scrollbar select-none z-20"
+      className="shrink-0 h-11 px-4 flex items-center gap-2 overflow-x-auto bg-background border-b border-border no-scrollbar select-none z-20"
     >
       {tabs.map((tab) => {
         const isActive = currentScreen === tab.id;
@@ -52,8 +52,8 @@ export const MobileRepoTabs: React.FC = () => {
             onClick={() => navigate(tab.id as any)}
             className={`h-8 px-3.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-150 cursor-pointer flex items-center gap-1.5 shrink-0 ${
               isActive
-                ? 'bg-[#3B82F6] text-white shadow-sm shadow-[#3B82F6]/25 font-bold'
-                : 'bg-[#1A1A1D] text-[#A1A1AA] hover:text-[#F4F4F5] border border-[#2A2A2E] active:scale-96'
+                ? 'bg-accent text-white shadow-sm shadow-accent/25 font-bold'
+                : 'bg-surface-2 text-text-secondary hover:text-text-primary border border-border active:scale-96'
             }`}
           >
             <Icon size={13} strokeWidth={isActive ? 2.5 : 2} className="shrink-0" />

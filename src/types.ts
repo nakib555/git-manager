@@ -42,7 +42,7 @@ export interface AppState {
   toastMessage: string | null;
   toastType: 'info' | 'success' | 'error';
   isSearchFocused: boolean;
-  theme: 'dark' | 'light';
+  theme: 'dark' | 'light' | 'fantasy';
   githubToken: string | null;
   githubUser: GitHubUser | null;
   githubRepos: GitHubRepo[];
@@ -89,6 +89,7 @@ export type AppContextType = AppState & {
   closeModals: () => void;
   setSearchFocus: (focus: boolean) => void;
   toggleTheme: () => void;
+  setTheme: (theme: 'dark' | 'light' | 'fantasy') => void;
   connectGitHub: () => void;
   disconnectGitHub: () => void;
   setManualToken: (token: string) => void;

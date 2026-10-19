@@ -328,7 +328,7 @@ export const DesktopLayout: React.FC = () => {
         </header>
 
         {/* Content Viewport */}
-        <div className="flex-1 overflow-hidden p-6 lg:p-8 relative min-h-0 flex flex-col">
+        <div className="flex-1 overflow-hidden p-4 lg:p-6 relative min-h-0 flex flex-col">
           {!githubToken && currentScreen !== 'settings' ? (
             <UnauthenticatedState />
           ) : (
@@ -616,7 +616,7 @@ const DesktopDashboard: React.FC<{ globalSearch: string }> = ({ globalSearch }) 
   );
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="w-full space-y-6">
       {/* Intro section */}
       <div className="flex justify-between items-center">
         <div>
@@ -1060,7 +1060,7 @@ const DesktopRepositories: React.FC<{ globalSearch: string }> = ({ globalSearch 
   const selectedRepo = filteredRepos.find(r => r.id === selectedRepoId) || paginatedRepos[0];
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-6 flex-1 flex flex-col min-h-0">
+    <div className="w-full space-y-6 flex-1 flex flex-col min-h-0">
       <div className="flex justify-between items-center shrink-0">
         <div>
           <h1 className="text-xl font-bold tracking-tight">Repositories Explorer</h1>
@@ -1452,7 +1452,7 @@ const DesktopRepoWorkspace: React.FC = () => {
   const { currentScreen, isLoadingRepoDetails } = useAppContext();
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-6 flex-1 flex flex-col min-h-0">
+    <div className="w-full space-y-6 flex-1 flex flex-col min-h-0">
       {isLoadingRepoDetails ? (
         <div className="flex-1 flex flex-col items-center justify-center gap-3">
           <span className="w-10 h-10 rounded-full border-4 border-primary border-t-transparent animate-spin" />
@@ -2400,7 +2400,7 @@ const DesktopSettings: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="w-full space-y-6 max-w-5xl">
       <div>
         <h1 className="text-xl font-bold tracking-tight">Settings Panel</h1>
         <p className="text-xs text-text-muted mt-0.5 font-medium">Configure profile preferences, link security tokens, and select appearance systems.</p>

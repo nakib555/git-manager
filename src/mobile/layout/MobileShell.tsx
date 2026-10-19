@@ -31,15 +31,16 @@ export const MobileShell: React.FC = () => {
   const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
 
   return (
-    <div className="flex flex-col w-full h-full bg-[#0A0A0B] text-[#F4F4F5] relative overflow-hidden select-none">
-      {/* 1. Sticky 56px Top Header with Safe Area */}
-      <MobileHeader
-        onOpenDrawer={() => setIsDrawerOpen(true)}
-        onOpenActionSheet={() => setIsActionSheetOpen(true)}
-      />
+    <div className="flex flex-col w-full h-full bg-background text-text-primary relative overflow-hidden select-none">
+      <div className="w-full flex flex-col h-full relative">
+        {/* 1. Sticky 56px Top Header with Safe Area */}
+        <MobileHeader
+          onOpenDrawer={() => setIsDrawerOpen(true)}
+          onOpenActionSheet={() => setIsActionSheetOpen(true)}
+        />
 
-      {/* 2. Optional Contextual 44px Repo Sub-tabs */}
-      <MobileRepoTabs />
+        {/* 2. Optional Contextual 44px Repo Sub-tabs */}
+        <MobileRepoTabs />
 
       {/* 3. Main Scrollport with Damped Pull-to-Refresh & Safe Bottom Padding */}
       {!githubToken && currentScreen !== 'settings' && currentScreen !== 'repos' ? (
@@ -61,8 +62,9 @@ export const MobileShell: React.FC = () => {
         </MobilePullToRefresh>
       )}
 
-      {/* 4. Fixed 56px Bottom Navigation */}
-      <MobileBottomNav />
+        {/* 4. Fixed 56px Bottom Navigation */}
+        <MobileBottomNav />
+      </div>
 
       {/* 5. Interactive Overlays & Drawers */}
       <MobileActionSheet

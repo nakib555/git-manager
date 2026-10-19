@@ -12,7 +12,7 @@ export const MobileActivity: React.FC = () => {
   };
 
   return (
-    <div className="px-5 py-4 space-y-4">
+    <div className="px-4 py-4 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold text-[#F4F4F5] tracking-tight">Global Activity</h2>

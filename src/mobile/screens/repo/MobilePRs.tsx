@@ -9,7 +9,7 @@ export const MobilePRs: React.FC = () => {
   const filteredPRs = activePRs.filter(pr => (filterStatus === 'open' ? !pr.closed : pr.closed));
 
   return (
-    <div className="px-5 py-4 space-y-4">
+    <div className="px-4 py-4 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

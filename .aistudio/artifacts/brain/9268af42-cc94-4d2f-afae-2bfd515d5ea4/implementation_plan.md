@@ -1,226 +1,148 @@
-# Git Manager — Mobile Architecture, Design & Systems Specification
-## Professional Mobile Redesign & Noise Elimination Protocol (< 1024px)
+# Master Engineering Specification: 3-Theme System, Typography Scale & Layout Alignment
 
 ---
 
 ## 1. Objective
 
 ### Purpose
-Execute a professional, ground-up architectural restructuring and visual redesign of Git Manager exclusively for the mobile viewports (< 1024px). Decouple mobile from desktop dependencies, eliminate visual and architectural "noise" (inconsistent tokens, clutter, ad-hoc inline styles, desktop bleed-through), and establish a modular `src/mobile/` architecture that delivers a native iOS/Android developer tool feel (comparable to Linear, Raycast, and Arc Mobile).
+Implement a comprehensive, professional multi-theme color system supporting three switchable modes (**Dark Charcoal**, **Light**, and **Fantasy**), a production-grade typography scale (Geist/Inter & Geist Mono with tabular figures), and completely eliminate left/right gap spacing inconsistencies across all mobile screens and layout bars.
 
 ### Problem Statement
-The current mobile interface has grown through incremental feature additions:
-1. **Visual Noise**: Inconsistent color tokens (mixing legacy purple/sky blues with charcoal dark tokens), irregular padding/radii, and redundant borders.
-2. **Architectural Noise**: Mobile screens and components are mixed with desktop logic in monolithic files (e.g. `Layout.tsx`, `DesktopLayout.tsx`, `RepoDetails.tsx`), leading to maintenance hazards and brittle syntax.
-3. **Viewport Inconsistency**: Breakpoint logic toggles desktop at 768px in some places and 1024px in others, leaving tablet users with a squished desktop workbench instead of a tailored touch-first experience.
-4. **Touch Ergonomics**: Inconsistent touch target dimensions, sporadic bottom-sheet gesture dismissals, and toast/nav collisions on small screens with home indicators.
-
-### Business & Technical Value
-- **Developer Velocity**: Distinct `src/mobile/` layer allows mobile UI/UX to evolve rapidly without risking regressions in the desktop workbench.
-- **Cognitive Clarity**: Eliminates extraneous clutter so developers can inspect repos, diffs, branches, and commits with zero friction on the go.
-- **Reliability & Performance**: 60 FPS scrolling through virtualized lists, instant sub-tab switching, Map-based $O(1)$ file tree generation, and zero bundle bloat.
+1. **Left & Right Gap Spacing Misalignment**:
+   - `MobileHeader` uses `px-4` (16px).
+   - `MobileRepoTabs` uses `px-4` (16px).
+   - Screen contents use `px-5` (20px), causing card borders to misalign with header icons and sub-tab pills.
+   - `MobileBottomNav` had `max-w-lg mx-auto` while headers stretched `w-full`, creating asymmetrical side gutters on viewports between 512px and 1024px.
+2. **Theme System Limitations**:
+   - Currently hardcodes hex values (`#0A0A0B`, `#121214`, `#1A1A1D`, `#2A2A2E`) directly into Tailwind classes instead of dynamic theme-aware semantic tokens.
+   - Only basic dark/light toggling existed without the requested 3-mode system (**Dark Charcoal**, **Light**, **Fantasy**).
+3. **Typography Rigor**:
+   - Typography needs strict adherence to the defined type scale: Display (28px), Page Title (22px), Section Title (17px), Body (15px), Meta (13px), Caption (12px), Data (13px monospace with `tabular-nums`).
 
 ### Success Criteria
-- [x] Zero visual noise: Strict near-black charcoal surfaces (`#0A0A0B`, `#121214`, `#1A1A1D`, `#242428`, `#2A2A2E`) with a single desaturated accent (`#3B82F6`).
-- [x] Strict 8-point spatial grid: Every gap, padding, margin, radius, and height snaps strictly to 4/8/12/16/20/24/32px.
-- [x] Thumb-first ergonomics: Fixed 56px bottom navigation (5 tabs), sticky 56px header with safe areas, minimum 44×44px touch targets.
-- [x] Native gestures: Spring-physics pull-to-refresh, drag-to-dismiss bottom sheets, auto-centering repo sub-tabs.
-- [x] 100% clean build & TypeScript lint with zero errors.
-
-### Non-Goals
-- Modifying desktop workbench features (> 1024px) except for strictly separating the viewport router.
-- Altering backend API proxy contracts or GitHub OAuth token storage mechanisms in `AppContext.tsx`.
-- Introducing third-party UI library bloat (retaining Tailwind CSS + lightweight Lucide icons + Motion).
+- [x] Three complete switchable themes via `data-theme="dark" | "light" | "fantasy"`.
+- [x] Zero hardcoded surface/text hexes in mobile components: 100% theme-aware tokens (`bg-background`, `bg-surface-1`, `bg-surface-2`, `bg-surface-3`, `border-border`, `text-text-primary`, `text-text-secondary`, `text-text-tertiary`, `text-accent`, `bg-accent-soft`).
+- [x] Perfect horizontal grid alignment: Unified 16px (`px-4`) screen margins snapping Header, Sub-Tabs, Content Cards, and Bottom Navigation to the identical vertical guide rails.
+- [x] Responsive tablet/viewport centering: `max-w-xl mx-auto w-full` on mobile shell layout so wider touch screens (> 512px up to 1023px) have cohesive, balanced margins without awkward stretched gaps.
+- [x] Refined 3-mode Theme Selector in `MobileSettings` and desktop theme toggle.
+- [x] Clean compilation (`compile_applet`) and zero TypeScript lint errors (`lint_applet`).
 
 ---
 
 ## 2. Existing System Analysis
 
-### Architecture & Folder Structure
-- **Current Root**: `src/App.tsx` routes between `DesktopLayout` and mobile components using `useIsDesktop()`.
-- **Existing Files**:
-  - `src/components/Layout.tsx` (Contains mobile Header, RepoSubTabs, BottomNav, MobileDrawer)
-  - `src/components/UI.tsx` (Contains ActionSheet, NotificationDrawer, Toast, AnimatedNumber)
-  - `src/screens/` (Contains monolithic `Dashboard.tsx`, `Repositories.tsx`, `RepoDetails.tsx`, `CloneScreen.tsx`, `Settings.tsx`)
-  - `src/screens/repodetails/` (Contains `FilesScreen.tsx`, `CommitsScreen.tsx`, `BranchesScreen.tsx`, `PRsScreen.tsx`, `InsightsScreen.tsx`)
-- **Noise Analysis**:
-  - `src/components/Layout.tsx` has tangled state across header dropdowns, drawer toggles, and sub-tabs.
-  - Breakpoint boundary at `window.innerWidth >= 768` creates a cramped desktop layout on tablets (iPad portrait 768-834px).
-  - Repositories screen has overlapping floating pagination that clashes with the fixed bottom navigation on smaller heights.
-  - Color definitions contain legacy Tailwind palette references (`bg-purple-500/10`, `text-teal-500`) alongside the canonical charcoal design system.
-
 ### Verified Evidence
-- `src/index.css` defines the canonical charcoal variables: `--main: #0A0A0B`, `--card: #121214`, `--hover: #1A1A1D`, `--border: #2A2A2E`, `--accent: #3B82F6`.
-- `useResponsiveBreakpoints()` in `src/hooks/useIsDesktop.ts` already defines `isDesktop: width >= 1024`.
-- `App.tsx` currently imports separate screen components directly into a single layout tree.
+- `src/index.css`: Currently defines `@theme` block with `--color-main`, `--color-card`, etc., but does not yet declare the full set of `--color-surface-1/2/3`, `--color-text-primary/secondary/tertiary`, `--color-accent-soft`, and `[data-theme="fantasy"]` palette.
+- `index.html`: Pre-connects to Google Fonts for Inter and JetBrains Mono; can include Fontshare link for Geist & Geist Mono.
+- `src/AppContext.tsx`: Stores `theme: 'dark' | 'light'`; needs extension to `theme: 'dark' | 'light' | 'fantasy'` and `setTheme: (t: 'dark' | 'light' | 'fantasy') => void`.
+- `src/mobile/layout/MobileShell.tsx` and child screens:
+  - Header: `px-4`
+  - Sub-tabs: `px-4`
+  - Screens: `px-5` (needs normalization to `px-4`)
+  - BottomNav: `max-w-lg mx-auto` (needs normalization to match `max-w-xl mx-auto` shell).
 
 ---
 
-## 3. Architecture Design & "Noise Cleaning" Strategy
+## 3. Architecture Design
 
-### Implementation Strategy
-Create a dedicated, modular mobile package inside `src/mobile/` that encapsulates the complete mobile layout, navigation, screens, and components:
+### 3.1 Three Theme Color Palettes
 
-```
-src/
-├── mobile/
-│   ├── layout/
-│   │   ├── MobileShell.tsx       # Root mobile container with safe-area handling & toast positioning
-│   │   ├── MobileHeader.tsx      # Sticky 56px header with drawer toggle, title, search & action sheet
-│   │   ├── MobileBottomNav.tsx   # Fixed 56px bottom navigation with soft accent pill active indicator
-│   │   └── MobileRepoTabs.tsx    # Contextual 44px horizontal scrolling pill tabs with auto-center
-│   ├── screens/
-│   │   ├── MobileDashboard.tsx    # Greeting, stats row (Repos, Stars, PRs), clean activity feed
-│   │   ├── MobileRepositories.tsx # Sticky scope/search/filter toolbar + virtualized cards + bottom pagination
-│   │   ├── MobileClone.tsx        # 3-step clean mobile clone wizard
-│   │   ├── MobileActivity.tsx     # Clean timeline of cross-repo commits and events
-│   │   ├── MobileSettings.tsx     # Grouped iOS/Android style preferences and auth status
-│   │   └── repo/
-│   │       ├── MobileFiles.tsx    # Collapsible O(1) tree + bottom code preview sheet
-│   │       ├── MobileCommits.tsx  # Timeline cards with avatar, SHA, diff viewer
-│   │       ├── MobileBranches.tsx # Remote branch list with active indicator
-│   │       ├── MobilePRs.tsx       # Pull request status and review cards
-│   │       └── MobileInsights.tsx  # Compact single-column commit & language charts
-│   ├── components/
-│   │   ├── MobileRepoCard.tsx     # High-density repository card with 8-point spatial rhythm
-│   │   ├── MobileCommitCard.tsx   # Timeline commit item with monospace SHA
-│   │   ├── MobileActionSheet.tsx  # Native-feel bottom sheet with drag handle & haptic dismiss
-│   │   ├── MobileToast.tsx        # Floating top-center toast (calc(56px + safe-top + 12px))
-│   │   ├── MobilePullToRefresh.tsx# Spring physics pull-to-refresh
-│   │   └── MobileFileTree.tsx     # Fast hierarchical file browser
-│   └── hooks/
-│       ├── useSafeArea.ts         # Inset calculations for notch and home indicator
-│       └── usePullToRefresh.ts    # Damped spring gesture hook
-```
+#### 1. Dark Charcoal (Default)
+- Background: `#0A0A0B`
+- Surface 1: `#121214`
+- Surface 2: `#1A1A1D`
+- Surface 3: `#242428`
+- Border: `#2A2A2E`
+- Text Primary: `#F4F4F5`, Secondary: `#A1A1AA`, Tertiary: `#71717A`
+- Accent: `#3B82F6` | Accent Soft: `rgba(59, 130, 246, 0.15)`
+- Success: `#22C55E`, Danger: `#EF4444`, Warning: `#F59E0B`
+- Shadows: `0 4px 12px rgba(0, 0, 0, 0.35)`
 
-### Noise Cleaning Principles
-1. **Visual De-cluttering**:
-   - Single accent color: `#3B82F6` used exclusively for primary actions, active tabs, and focus states.
-   - Remove random gradient cards and multi-colored pills (e.g. purple, teal, amber) in favor of semantic status indicators (`#22C55E` success, `#EF4444` danger, `#F59E0B` warning).
-   - Strict surface hierarchy: `#0A0A0B` (Canvas) $\to$ `#121214` (Cards) $\to$ `#1A1A1D` (Hover/Nested elements) $\to$ `#242428` (Active controls) $\to$ `#2A2A2E` (Borders).
-2. **Structural De-cluttering**:
-   - Eliminate duplicated portal code, stray SVG tags, and nested ternaries.
-   - Decouple mobile sub-tabs from the global app header.
-   - Centralize safe-area bottom padding (`pb-[calc(56px+env(safe-area-inset-bottom)+16px)]`) so no screen list ever overlaps the navigation bar.
+#### 2. Light (Linear / Arc Style)
+- Background: `#F8F7F4` (warm off-white)
+- Surface 1: `#FFFFFF`
+- Surface 2: `#F1F0ED`
+- Surface 3: `#E8E6E1`
+- Border: `#E0DED8`
+- Text Primary: `#1C1B19`, Secondary: `#5C5A55`, Tertiary: `#8A8780`
+- Accent: `#3B6FE0` | Accent Soft: `rgba(59, 111, 224, 0.12)`
+- Success: `#16A34A`, Danger: `#DC2626`, Warning: `#D97706`
+- Shadows: `0 4px 12px rgba(28, 27, 25, 0.06)`
+
+#### 3. Fantasy (Magical Codex / Indigo)
+- Background: `#0F0E17` (deep indigo-black)
+- Surface 1: `#16152A`
+- Surface 2: `#1E1C35`
+- Surface 3: `#2A2748`
+- Border: `#3A365C`
+- Text Primary: `#F0EEF8`, Secondary: `#B8B4D0`, Tertiary: `#8A85A8`
+- Accent: `#9B7EED` (soft elegant violet) | Accent Soft: `rgba(155, 126, 237, 0.12)`
+- Success: `#4ADE80`, Danger: `#F87171`, Warning: `#FBBF24`
+- Shadows: `0 4px 16px rgba(15, 14, 23, 0.5)`
+
+### 3.2 Typography Scale Definition
+- `text-display`: `28px / 34px`, font-sans, -0.025em tracking, 600 weight
+- `text-title`: `22px / 28px`, font-sans, -0.02em tracking, 600 weight
+- `text-section`: `17px / 24px`, font-sans, -0.01em tracking, 600 weight
+- `text-body`: `15px / 22px`, font-sans, 0 tracking, 400 weight
+- `text-body-medium`: `15px / 22px`, font-sans, 0 tracking, 500 weight
+- `text-meta`: `13px / 18px`, font-sans, 0.01em tracking, 500 weight
+- `text-caption`: `12px / 16px`, font-sans, 0.02em tracking, 500 weight
+- `text-data`: `13px / 16px`, font-mono, 0 tracking, 500 weight, `tabular-nums`
+- `text-code`: `13px / 18px`, font-mono, 0 tracking, 400 weight
+
+### 3.3 Horizontal Spacing & Alignment Fix
+- Unified shell wrapper:
+  ```tsx
+  <div className="flex flex-col w-full h-full bg-background text-text-primary relative overflow-hidden select-none">
+    <div className="w-full max-w-xl mx-auto flex flex-col h-full relative">
+       {/* MobileHeader, RepoTabs, Scrollport, BottomNav all share exact same bounding container */}
+    </div>
+  </div>
+  ```
+- Normalizing screen padding to strict 16px (`px-4 py-4`) to eliminate jagged left/right alignment.
 
 ---
 
 ## 4. Implementation Breakdown
 
-### Phase 1: Foundations & Mobile Layout Shell
-- **Purpose**: Create `src/mobile/layout/` components and safe-area hooks adhering to the exact 56px sticky header, 44px repo sub-tabs, and 56px fixed bottom nav.
-- **Files Affected**:
-  - `src/mobile/hooks/useSafeArea.ts`
-  - `src/mobile/layout/MobileHeader.tsx`
-  - `src/mobile/layout/MobileBottomNav.tsx`
-  - `src/mobile/layout/MobileRepoTabs.tsx`
-  - `src/mobile/layout/MobileShell.tsx`
-- **Exit Criteria**: Shell renders cleanly with zero console warnings and perfect safe-area margins.
+### Phase 1: CSS Variables & Tailwind Semantic Tokens
+- Update `index.html` with Geist & Geist Mono font link.
+- Update `src/index.css` with `:root`, `[data-theme="dark"]`, `[data-theme="light"]`, and `[data-theme="fantasy"]` variable blocks.
+- Map semantic colors (`bg-background`, `bg-surface-1`, `bg-surface-2`, `bg-surface-3`, `border-border`, `text-text-primary`, etc.) in `@theme`.
 
-### Phase 2: Primitive Mobile Components & Interaction System
-- **Purpose**: Build noise-free, gesture-driven primitives: pull-to-refresh, bottom action sheet, floating top toast, and repo/commit cards.
-- **Files Affected**:
-  - `src/mobile/components/MobilePullToRefresh.tsx`
-  - `src/mobile/components/MobileActionSheet.tsx`
-  - `src/mobile/components/MobileToast.tsx`
-  - `src/mobile/components/MobileRepoCard.tsx`
-  - `src/mobile/components/MobileCommitCard.tsx`
-- **Exit Criteria**: Action sheet drags smoothly; toast floats at top-center without colliding with header.
+### Phase 2: AppContext Theme State Enhancement
+- Extend `theme` type in `src/types.ts` to `'dark' | 'light' | 'fantasy'`.
+- Implement `setTheme: (t: 'dark' | 'light' | 'fantasy') => void` in `src/AppContext.tsx` with persistence to `localStorage.getItem('git-manager-theme')` and `document.documentElement.setAttribute('data-theme', theme)`.
 
-### Phase 3: Core Mobile Screens
-- **Purpose**: Implement the 5 primary mobile screens with dense, noise-free layouts.
-- **Files Affected**:
-  - `src/mobile/screens/MobileDashboard.tsx`
-  - `src/mobile/screens/MobileRepositories.tsx`
-  - `src/mobile/screens/MobileClone.tsx`
-  - `src/mobile/screens/MobileActivity.tsx`
-  - `src/mobile/screens/MobileSettings.tsx`
-- **Exit Criteria**: Virtualized repository list with search/filter/sort, 3-step clone wizard, and user settings render cleanly.
+### Phase 3: Layout Alignment & Side-Gap Elimination
+- Update `MobileShell.tsx` to wrap header, content, and bottom navigation in a coherent `max-w-xl mx-auto w-full` responsive channel.
+- Standardize all screen containers (`MobileDashboard`, `MobileRepositories`, `MobileClone`, `MobileActivity`, `MobileSettings`, `MobileFiles`, `MobileCommits`, `MobileBranches`, `MobilePRs`, `MobileInsights`) from `px-5` to `px-4` so cards and controls align edge-to-edge with the header and tabs.
 
-### Phase 4: Contextual Repository Details Flow
-- **Purpose**: Deliver mobile-first repo inspection (Files, Commits, Branches, PRs, Insights) with code syntax viewer in bottom sheet.
-- **Files Affected**:
-  - `src/mobile/screens/repo/MobileFiles.tsx`
-  - `src/mobile/screens/repo/MobileCommits.tsx`
-  - `src/mobile/screens/repo/MobileBranches.tsx`
-  - `src/mobile/screens/repo/MobilePRs.tsx`
-  - `src/mobile/screens/repo/MobileInsights.tsx`
-- **Exit Criteria**: Fast file tree navigation with bottom sheet code preview and full unified commit diff viewer.
+### Phase 4: Full Semantic Token Migration across Mobile Components
+- Replace hardcoded charcoal hexes with theme-aware classes (`bg-surface-1`, `bg-surface-2`, `border-border`, `text-text-primary`, `text-text-secondary`, `text-text-tertiary`, `text-accent`, `bg-accent-soft`).
 
-### Phase 5: App Integration & Viewport Decoupling
-- **Purpose**: Wire `src/App.tsx` and `useIsDesktop.ts` to seamlessly route `< 1024px` to the new `MobileShell`, keeping desktop completely intact.
-- **Files Affected**:
-  - `src/hooks/useIsDesktop.ts`
-  - `src/App.tsx`
-- **Exit Criteria**: Mobile viewports (< 1024px) load `MobileShell`; desktop viewports (>= 1024px) load `DesktopLayout`.
+### Phase 5: 3-Mode Theme Selector UI
+- In `MobileSettings.tsx`, implement a visual 3-option card/segmented control for **Dark Charcoal**, **Light**, and **Fantasy** with active checkmark and color swatches.
+- Ensure desktop theme button also cycles cleanly through all 3 modes.
+
+### Phase 6: Quality Verification
+- Run `lint_applet` and `compile_applet` to verify clean build and type safety.
 
 ---
 
-## 5. Viewport Experience Specifications
+## 5. Execution Checklist
 
-### Mobile Experience (< 768px)
-- **Ergonomics**: Full thumb reachability. Navigation anchored at bottom. Header actions within comfortable index finger tap.
-- **Typography**: 15px body, 20px screen titles, 13px captions with Geist Mono for SHAs and stats (`font-variant-numeric: tabular-nums`).
-- **Safe Areas**: `pt-[env(safe-area-inset-top)]` on header; `pb-[env(safe-area-inset-bottom)]` on bottom nav.
-- **Touch Targets**: Minimum 44×44px interactive areas.
-
-### Tablet Experience (768px – 1023px)
-- **Layout**: Centered container with max-width 720px in portrait and 920px in landscape, maintaining mobile thumb-reachability without stretched or distorted cards.
-- **Multi-Column Adaptations**: Repositories and activity feed adapt from single column to balanced dual column on landscape tablets.
-- **Performance**: High refresh rate (120Hz ProMotion on iPad) supported via CSS hardware acceleration (`transform: translateZ(0)`).
-
-### Desktop Experience (>= 1024px)
-- Unchanged and fully isolated. The existing `DesktopLayout` continues to serve multi-pane rail, code editor, and command palette for large monitors.
+- [ ] Step 1: Update `index.html` with Geist/Inter and Geist Mono font headers.
+- [ ] Step 2: Define complete semantic CSS variables for dark, light, and fantasy in `src/index.css`.
+- [ ] Step 3: Update `src/types.ts` and `src/AppContext.tsx` to support 3-mode theme state (`'dark' | 'light' | 'fantasy'`).
+- [ ] Step 4: Fix horizontal gap spacing in `MobileShell.tsx`, `MobileHeader.tsx`, `MobileBottomNav.tsx`, and all mobile screens.
+- [ ] Step 5: Convert mobile layout and screen components to use semantic color tokens (`bg-background`, `bg-surface-1`, `border-border`, `text-text-primary`, etc.).
+- [ ] Step 6: Add 3-theme selector in `MobileSettings.tsx`.
+- [ ] Step 7: Verify with `lint_applet` and `compile_applet`.
 
 ---
 
-## 6. Performance, Accessibility & Security
+## 6. Approval Gate
 
-### Performance Targets
-- **FCP**: < 1.0s.
-- **List Scrolling**: 60 FPS under 1,000+ items via `@tanstack/react-virtual`.
-- **File Parsing**: $O(1)$ tree construction using `Map<string, TreeNode>`.
-
-### Accessibility (WCAG 2.1 AA)
-- Contrast ratio $\ge 4.5:1$ on all text (`#F4F4F5` and `#A1A1AA` on `#0A0A0B` / `#121214`).
-- Full keyboard/switch navigation and screen reader labels (`aria-label`, `role="tab"`, `role="dialog"`).
-- `prefers-reduced-motion` strictly honored for all slide and spring transitions.
-
-### Security
-- Client-side token storage in secure local storage with standard GitHub Bearer token headers.
-- Zero raw HTML injection; code syntax viewer uses sanitized text AST.
-
----
-
-## 7. Execution Checklist
-
-- [ ] Step 1: Create `src/mobile/hooks/useSafeArea.ts` for standardized safe area insets.
-- [ ] Step 2: Create `src/mobile/layout/MobileHeader.tsx` (56px sticky, safe-area aware, clean icons).
-- [ ] Step 3: Create `src/mobile/layout/MobileBottomNav.tsx` (56px fixed, 5 tabs, soft accent active pill).
-- [ ] Step 4: Create `src/mobile/layout/MobileRepoTabs.tsx` (44px horizontal scrolling pill bar with auto-centering).
-- [ ] Step 5: Create `src/mobile/components/MobilePullToRefresh.tsx` with damped spring physics.
-- [ ] Step 6: Create `src/mobile/components/MobileActionSheet.tsx` with native gesture dismissal.
-- [ ] Step 7: Create `src/mobile/components/MobileToast.tsx` with collision-free top-center positioning.
-- [ ] Step 8: Create `src/mobile/components/MobileRepoCard.tsx` and `MobileCommitCard.tsx` (strict 8-point spatial system).
-- [ ] Step 9: Create `src/mobile/screens/MobileDashboard.tsx` (clean greeting, stats, recent activity).
-- [ ] Step 10: Create `src/mobile/screens/MobileRepositories.tsx` (segmented scope, 44px search, filter chips, virtualized list, bottom pagination).
-- [ ] Step 11: Create `src/mobile/screens/MobileClone.tsx`, `MobileActivity.tsx`, and `MobileSettings.tsx`.
-- [ ] Step 12: Create `src/mobile/screens/repo/` (`MobileFiles.tsx`, `MobileCommits.tsx`, `MobileBranches.tsx`, `MobilePRs.tsx`, `MobileInsights.tsx`).
-- [ ] Step 13: Create `src/mobile/layout/MobileShell.tsx` assembling the entire mobile experience.
-- [ ] Step 14: Update `src/hooks/useIsDesktop.ts` and `src/App.tsx` to route `< 1024px` to `MobileShell`.
-- [ ] Step 15: Run `lint_applet` and `compile_applet` to verify compilation and clean type check.
-
----
-
-## 8. Quality Gates
-
-1. **Architecture Approved**: Plan verified against user's mobile architecture specification.
-2. **Noise Cleared**: Zero inline color hacks, zero legacy purple/teal badges, clean 8-point spatial rhythm.
-3. **Compatibility Preserved**: Desktop workbench remains completely unaffected and functional.
-4. **Verification Ready**: TypeScript and Vite build passes with zero errors.
-
----
-
-## 9. Approval Gate
-
-> **STOP**: In strict compliance with the Master Engineering Planning & Implementation Protocol, no implementation code has been written yet. Please review the plan above (or in the artifact `implementation_plan.md`). When you are ready, reply with **"Approved"**, **"Proceed"**, or **"Implement"** to begin execution.
+> **STOP**: In compliance with the Master Engineering Planning Protocol, implementation will begin immediately upon your confirmation. Reply with **"Approved"**, **"Proceed"**, or **"Implement"** to proceed.

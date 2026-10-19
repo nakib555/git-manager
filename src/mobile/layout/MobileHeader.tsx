@@ -43,12 +43,12 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-30 w-full bg-[#0A0A0B]/95 backdrop-blur-md border-b border-[#2A2A2E] pt-[env(safe-area-inset-top,0px)] shrink-0 select-none">
+    <header className="sticky top-0 z-30 w-full bg-background/95 backdrop-blur-md border-b border-border pt-[env(safe-area-inset-top,0px)] shrink-0 select-none">
       <div className="h-14 px-4 flex items-center justify-between">
         {/* Left: Hamburger menu icon (Account / Notifications Drawer) */}
         <button
           onClick={onOpenDrawer}
-          className="w-11 h-11 -ml-1.5 flex items-center justify-center rounded-xl text-[#A1A1AA] hover:text-[#F4F4F5] hover:bg-[#1A1A1D] active:scale-95 transition-all cursor-pointer"
+          className="w-11 h-11 -ml-1.5 flex items-center justify-center rounded-xl text-text-secondary hover:text-text-primary hover:bg-surface-2 active:scale-95 transition-all cursor-pointer"
           aria-label="Open Navigation Drawer"
         >
           <Menu size={20} strokeWidth={2.2} />
@@ -60,13 +60,13 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
             <div className="relative">
               <button
                 onClick={() => setIsBranchDropdownOpen(!isBranchDropdownOpen)}
-                className="h-9 px-3 max-w-[200px] sm:max-w-xs bg-[#121214] border border-[#2A2A2E] hover:border-[#3B82F6]/40 rounded-xl flex items-center gap-1.5 text-xs font-semibold text-[#F4F4F5] transition-all cursor-pointer shadow-sm active:scale-98"
+                className="h-9 px-3 max-w-[200px] sm:max-w-xs bg-surface-1 border border-border hover:border-accent/40 rounded-xl flex items-center gap-1.5 text-xs font-semibold text-text-primary transition-all cursor-pointer shadow-sm active:scale-98"
                 aria-expanded={isBranchDropdownOpen}
                 aria-label="Select branch"
               >
-                <GitBranch size={13} className="text-[#3B82F6] shrink-0" />
+                <GitBranch size={13} className="text-accent shrink-0" />
                 <span className="truncate">{currentBranch}</span>
-                <ChevronDown size={13} className={`text-[#71717A] shrink-0 transition-transform ${isBranchDropdownOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown size={13} className={`text-text-tertiary shrink-0 transition-transform ${isBranchDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {/* Branch Selector Dropdown */}
@@ -82,9 +82,9 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -4, scale: 0.98 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute left-1/2 -translate-x-1/2 top-11 z-50 w-64 bg-[#121214] border border-[#2A2A2E] rounded-xl shadow-2xl p-1.5 max-h-60 overflow-y-auto no-scrollbar"
+                      className="absolute left-1/2 -translate-x-1/2 top-11 z-50 w-64 bg-surface-1 border border-border rounded-xl shadow-2xl p-1.5 max-h-60 overflow-y-auto no-scrollbar"
                     >
-                      <div className="px-2.5 py-1.5 text-[10px] font-bold text-[#71717A] uppercase tracking-wider">
+                      <div className="px-2.5 py-1.5 text-[10px] font-bold text-text-tertiary uppercase tracking-wider">
                         Branches ({activeBranches.length})
                       </div>
                       {activeBranches.map(branch => (
@@ -96,15 +96,15 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
                           }}
                           className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-lg transition-colors cursor-pointer ${
                             branch.name === currentBranch
-                              ? 'bg-[#3B82F6]/15 text-[#3B82F6] font-semibold'
-                              : 'text-[#F4F4F5] hover:bg-[#1A1A1D]'
+                              ? 'bg-accent/15 text-accent font-semibold'
+                              : 'text-text-primary hover:bg-surface-2'
                           }`}
                         >
                           <div className="flex items-center gap-2 truncate">
                             <GitBranch size={13} className="shrink-0" />
                             <span className="truncate">{branch.name}</span>
                           </div>
-                          {branch.name === currentBranch && <Check size={14} className="text-[#3B82F6] shrink-0" />}
+                          {branch.name === currentBranch && <Check size={14} className="text-accent shrink-0" />}
                         </button>
                       ))}
                     </motion.div>
@@ -113,7 +113,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
               </AnimatePresence>
             </div>
           ) : (
-            <h1 className="text-base font-semibold text-[#F4F4F5] tracking-tight truncate text-center">
+            <h1 className="text-base font-semibold text-text-primary tracking-tight truncate text-center">
               {getScreenTitle()}
             </h1>
           )}
@@ -123,14 +123,14 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
         <div className="flex items-center gap-1 -mr-1.5">
           <button
             onClick={openCommandPalette}
-            className="w-11 h-11 flex items-center justify-center rounded-xl text-[#A1A1AA] hover:text-[#F4F4F5] hover:bg-[#1A1A1D] active:scale-95 transition-all cursor-pointer"
+            className="w-11 h-11 flex items-center justify-center rounded-xl text-text-secondary hover:text-text-primary hover:bg-surface-2 active:scale-95 transition-all cursor-pointer"
             aria-label="Search Workspace (Cmd+K)"
           >
             <Search size={19} strokeWidth={2.2} />
           </button>
           <button
             onClick={onOpenActionSheet}
-            className="w-11 h-11 flex items-center justify-center rounded-xl text-[#F4F4F5] bg-[#3B82F6] hover:bg-[#2563EB] shadow-sm shadow-[#3B82F6]/25 active:scale-95 transition-all cursor-pointer"
+            className="w-11 h-11 flex items-center justify-center rounded-xl text-white bg-accent hover:opacity-90 shadow-sm shadow-accent/25 active:scale-95 transition-all cursor-pointer"
             aria-label="Create New Action"
           >
             <Plus size={20} strokeWidth={2.5} />

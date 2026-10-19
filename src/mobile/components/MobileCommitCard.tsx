@@ -32,7 +32,7 @@ export const MobileCommitCard: React.FC<MobileCommitCardProps> = ({
           onClick();
         }
       }}
-      className="relative flex gap-3 p-3.5 rounded-xl bg-[#121214] border border-[#2A2A2E] hover:border-[#3B82F6]/30 hover:bg-[#1A1A1D] transition-all cursor-pointer select-none active:scale-[0.99] group"
+      className="relative flex gap-3 p-3.5 rounded-xl bg-surface-1 border border-border hover:border-accent/30 hover:bg-surface-2 transition-all cursor-pointer select-none active:scale-[0.99] group"
     >
       {/* Left Avatar / Indicator */}
       <div className="shrink-0 pt-0.5">
@@ -40,10 +40,10 @@ export const MobileCommitCard: React.FC<MobileCommitCardProps> = ({
           <img
             src={commit.avatarUrl}
             alt={commit.author}
-            className="w-8 h-8 rounded-full border border-[#2A2A2E] object-cover"
+            className="w-8 h-8 rounded-full border border-border object-cover"
           />
         ) : (
-          <div className="w-8 h-8 rounded-full bg-[#1A1A1D] border border-[#2A2A2E] flex items-center justify-center text-[#3B82F6]">
+          <div className="w-8 h-8 rounded-full bg-surface-2 border border-border flex items-center justify-center text-accent">
             <GitCommit size={15} />
           </div>
         )}
@@ -52,21 +52,21 @@ export const MobileCommitCard: React.FC<MobileCommitCardProps> = ({
       {/* Middle Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2 mb-1">
-          <span className="text-xs font-semibold text-[#F4F4F5] truncate">
+          <span className="text-xs font-semibold text-text-primary truncate">
             {commit.author}
           </span>
-          <div className="flex items-center gap-1.5 text-[11px] font-mono text-[#71717A] shrink-0">
+          <div className="flex items-center gap-1.5 text-[11px] font-mono text-text-tertiary shrink-0">
             <Clock size={11} />
             <span>{commit.date}</span>
           </div>
         </div>
 
-        <p className="text-xs text-[#A1A1AA] line-clamp-2 leading-relaxed mb-2 font-medium">
+        <p className="text-xs text-text-secondary line-clamp-2 leading-relaxed mb-2 font-medium">
           {commit.msg}
         </p>
 
         {/* Bottom row: SHA badge & diff stats */}
-        <div className="flex items-center justify-between pt-1.5 border-t border-[#2A2A2E]/50">
+        <div className="flex items-center justify-between pt-1.5 border-t border-border/50">
           <div className="flex items-center gap-2">
             <span
               onClick={(e) => {
@@ -76,14 +76,14 @@ export const MobileCommitCard: React.FC<MobileCommitCardProps> = ({
                 }
               }}
               title="Click to copy SHA"
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#1A1A1D] border border-[#2A2A2E] text-[11px] font-mono text-[#3B82F6] font-semibold hover:border-[#3B82F6]/40 transition-colors"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-surface-2 border border-border text-[11px] font-mono text-accent font-semibold hover:border-accent/40 transition-colors"
             >
               <span>{commit.hash.substring(0, 7)}</span>
-              <Copy size={10} className="text-[#71717A] hover:text-[#3B82F6]" />
+              <Copy size={10} className="text-text-tertiary hover:text-accent" />
             </span>
 
             {isLatest && (
-              <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#22C55E]/10 text-[#22C55E] border border-[#22C55E]/20">
+              <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-success/15 text-success border border-success/20">
                 HEAD
               </span>
             )}
@@ -91,12 +91,12 @@ export const MobileCommitCard: React.FC<MobileCommitCardProps> = ({
 
           {commit.stats && (
             <div className="flex items-center gap-1.5 text-[11px] font-mono font-medium">
-              <span className="text-[#22C55E]">+{commit.stats.additions}</span>
-              <span className="text-[#EF4444]">-{commit.stats.deletions}</span>
+              <span className="text-success">+{commit.stats.additions}</span>
+              <span className="text-danger">-{commit.stats.deletions}</span>
             </div>
           )}
 
-          <ChevronRight size={14} className="text-[#71717A] group-hover:text-[#F4F4F5] transition-colors" />
+          <ChevronRight size={14} className="text-text-tertiary group-hover:text-text-primary transition-colors" />
         </div>
       </div>
     </div>

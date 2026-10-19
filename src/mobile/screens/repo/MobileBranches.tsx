@@ -11,7 +11,7 @@ export const MobileBranches: React.FC = () => {
   };
 
   return (
-    <div className="px-5 py-4 space-y-4">
+    <div className="px-4 py-4 space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-base font-semibold text-[#F4F4F5] tracking-tight">Branches</h2>
