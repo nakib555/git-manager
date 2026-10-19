@@ -2,13 +2,15 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '../../../AppContext';
 import { 
   Folder, FileText, ChevronRight, ChevronDown, Copy, 
-  Check, Search, X, Home, Maximize2 
+  Check, Search, X, Home, Maximize2, Minimize2, 
+  Download, FileCode, Clock, Info, AlignLeft, ArrowUpRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { buildFastFileTree, TreeNode, safeBase64Decode } from '../../utils/treeBuilder';
-import { formatBytes } from '../../utils/formatters';
+import { buildFastFileTree, TreeNode } from '../../utils/treeBuilder';
+import { formatBytes, formatRelativeTime } from '../../utils/formatters';
+import { fetchFileContentSafe } from '../../utils/gitApi';
 
 const getCodeLanguage = (filename: string): string => {
   const ext = filename.split('.').pop()?.toLowerCase();
@@ -50,7 +52,10 @@ export const FilesScreen: React.FC = () => {
     activeFiles, 
     currentRepo, 
     currentRepoOwner,
+    currentBranch,
     githubToken,
+    githubUser,
+    activeCommits,
     showToast 
   } = useAppContext();
 
@@ -61,42 +66,10 @@ export const FilesScreen: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFileForModal, setSelectedFileForModal] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState(false);
-
-  const loadFileContent = async (filePath: string) => {
-    setActiveFilePath(filePath);
-    if (!currentRepo || !filePath) return;
-
-    if (githubToken && currentRepoOwner) {
-      setActiveFileLoading(true);
-      try {
-        const headers = {
-          Authorization: githubToken.startsWith('ghp_') || githubToken.startsWith('github_pat_') || githubToken.startsWith('gho_')
-            ? `Bearer ${githubToken}`
-            : `token ${githubToken}`,
-        };
-        const res = await fetch(
-          `https://api.github.com/repos/${currentRepoOwner}/${currentRepo}/contents/${filePath}`,
-          { headers }
-        );
-        if (res.ok) {
-          const data = await res.json();
-          if (data.encoding === 'base64') {
-            setActiveFileContent(safeBase64Decode(data.content));
-          } else {
-            setActiveFileContent(data.content || '');
-          }
-        } else {
-          setActiveFileContent(`// Error loading file (${res.status})`);
-        }
-      } catch (err: any) {
-        setActiveFileContent(`// Error: ${err.message || err}`);
-      } finally {
-        setActiveFileLoading(false);
-      }
-    } else {
-      setActiveFileContent(`// Connect your GitHub account or PAT to inspect live content of ${filePath}.`);
-    }
-  };
+  const [contentTab, setContentTab] = useState<'code' | 'raw' | 'history' | 'info'>('code');
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [wrapLines, setWrapLines] = useState(false);
+  const [inCodeSearch, setInCodeSearch] = useState('');
 
   // Fast O(1) single-pass tree builder
   const fileTree = useMemo(() => {
@@ -115,9 +88,29 @@ export const FilesScreen: React.FC = () => {
     });
   };
 
-  const handleFileClick = (path: string) => {
-    loadFileContent(path);
-    setSelectedFileForModal(path);
+  const loadFileContent = async (filePath: string) => {
+    setActiveFilePath(filePath);
+    setSelectedFileForModal(filePath);
+    setContentTab('code');
+    setInCodeSearch('');
+
+    if (!currentRepo || !filePath) return;
+
+    setActiveFileLoading(true);
+    try {
+      const content = await fetchFileContentSafe({
+        filePath,
+        repoName: currentRepo,
+        owner: currentRepoOwner || (githubUser?.login || 'nakib555'),
+        branch: currentBranch || 'main',
+        token: githubToken,
+      });
+      setActiveFileContent(content);
+    } catch (err: any) {
+      setActiveFileContent(`// Error loading file: ${err.message || err}`);
+    } finally {
+      setActiveFileLoading(false);
+    }
   };
 
   const handleCopyCode = () => {
@@ -128,6 +121,33 @@ export const FilesScreen: React.FC = () => {
       setTimeout(() => setIsCopied(false), 2000);
     }
   };
+
+  const handleDownloadFile = () => {
+    if (!selectedFileForModal || !activeFileContent) return;
+    const blob = new Blob([activeFileContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = selectedFileForModal.split('/').pop() || 'file.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Download started', 'info');
+  };
+
+  const lineCount = activeFileContent ? activeFileContent.split('\n').length : 0;
+  const characterCount = activeFileContent ? activeFileContent.length : 0;
+  const fileSizeEst = characterCount;
+
+  // Filter commits that relate to this file or fallback to active commits
+  const fileHistory = useMemo(() => {
+    if (!selectedFileForModal) return [];
+    const fileNameOnly = selectedFileForModal.split('/').pop()?.toLowerCase();
+    const matched = activeCommits.filter(c => 
+      c.msg?.toLowerCase().includes(fileNameOnly || '') ||
+      c.files?.some((f: any) => f.filename?.includes(selectedFileForModal))
+    );
+    return matched.length > 0 ? matched : activeCommits.slice(0, 5);
+  }, [activeCommits, selectedFileForModal]);
 
   // Render tree node recursively
   const renderNode = (node: TreeNode, depth = 0) => {
@@ -144,7 +164,7 @@ export const FilesScreen: React.FC = () => {
     return (
       <div key={node.path} className="select-none">
         <div
-          onClick={() => (isFolder ? toggleFolder(node.path) : handleFileClick(node.path))}
+          onClick={() => (isFolder ? toggleFolder(node.path) : loadFileContent(node.path))}
           style={{ paddingLeft: `${Math.max(12, depth * 16 + 12)}px` }}
           className={`h-9 pr-3 flex items-center justify-between text-xs transition-colors cursor-pointer border-l-2 ${
             isSelected && !isFolder
@@ -234,7 +254,7 @@ export const FilesScreen: React.FC = () => {
         )}
       </div>
 
-      {/* 3. Bottom Sheet / Modal: Code Viewer */}
+      {/* 3. Bitbucket / GitHub Style Tabbed Code Viewer Modal */}
       <AnimatePresence>
         {selectedFileForModal && (
           <div className="fixed inset-0 z-50 flex flex-col justify-end">
@@ -251,29 +271,40 @@ export const FilesScreen: React.FC = () => {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-              className="relative w-full bg-surface-1 border-t border-x border-border rounded-t-[20px] pb-[calc(env(safe-area-inset-bottom,0px)+16px)] pt-3 px-4 shadow-2xl z-10 flex flex-col max-h-[88vh]"
+              className={`relative w-full bg-surface-1 border-t border-x border-border rounded-t-[20px] pb-[calc(env(safe-area-inset-bottom,0px)+12px)] pt-3 px-4 shadow-2xl z-10 flex flex-col transition-all duration-200 ${
+                isFullscreen ? 'h-[96vh]' : 'max-h-[88vh] h-[85vh]'
+              }`}
             >
-              <div className="w-10 h-1 bg-border rounded-full mx-auto mb-3" />
+              <div className="w-10 h-1 bg-border rounded-full mx-auto mb-2 shrink-0" />
 
-              {/* File details bar */}
-              <div className="flex items-center justify-between pb-3 border-b border-border">
+              {/* Top Navigation & Breadcrumbs Header */}
+              <div className="flex items-center justify-between pb-2 border-b border-border shrink-0">
                 <div className="min-w-0 pr-2">
-                  <span className="text-xs font-mono font-bold text-text-primary truncate block">
-                    {selectedFileForModal}
-                  </span>
-                  <span className="text-[10px] text-text-tertiary font-mono">
-                    {getCodeLanguage(selectedFileForModal).toUpperCase()} source code
-                  </span>
+                  <div className="flex items-center gap-1.5 text-[11px] text-text-tertiary font-mono truncate">
+                    <span>{currentRepo}</span>
+                    <span>/</span>
+                    <span className="text-text-primary font-bold truncate">
+                      {selectedFileForModal}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 mt-0.5 text-[10px] text-text-tertiary font-mono">
+                    <span className="text-accent uppercase font-bold">
+                      {getCodeLanguage(selectedFileForModal)}
+                    </span>
+                    <span>•</span>
+                    <span>{lineCount} lines</span>
+                    <span>•</span>
+                    <span>{formatBytes(fileSizeEst)}</span>
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0">
                   <button
-                    onClick={handleCopyCode}
-                    disabled={activeFileLoading}
-                    className="h-8 px-2.5 rounded-lg bg-surface-2 border border-border text-xs text-text-primary hover:text-accent flex items-center gap-1.5 transition-colors cursor-pointer"
+                    onClick={() => setIsFullscreen(!isFullscreen)}
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-text-tertiary hover:text-text-primary hover:bg-surface-2 transition-colors cursor-pointer"
+                    title={isFullscreen ? 'Restore' : 'Fullscreen'}
                   >
-                    {isCopied ? <Check size={13} className="text-success" /> : <Copy size={13} />}
-                    <span>{isCopied ? 'Copied' : 'Copy'}</span>
+                    {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
                   </button>
 
                   <button
@@ -285,32 +316,172 @@ export const FilesScreen: React.FC = () => {
                 </div>
               </div>
 
-              {/* Code viewer viewport */}
-              <div className="flex-1 overflow-auto rounded-xl bg-background border border-border mt-3 text-xs font-mono">
-                {activeFileLoading ? (
-                  <div className="p-8 text-center text-xs text-text-tertiary flex flex-col items-center justify-center gap-2">
-                    <span className="w-5 h-5 rounded-full border-2 border-accent border-t-transparent animate-spin" />
-                    <span>Fetching file stream...</span>
-                  </div>
-                ) : activeFileContent ? (
-                  <SyntaxHighlighter
-                    language={getCodeLanguage(selectedFileForModal)}
-                    style={vscDarkPlus}
-                    customStyle={{
-                      margin: 0,
-                      padding: '14px',
-                      background: 'transparent',
-                      fontSize: '11px',
-                      lineHeight: '1.6',
-                    }}
-                    showLineNumbers={true}
-                    wrapLines={false}
+              {/* Sub-Tabs: Code | Raw | History | Info */}
+              <div className="flex items-center justify-between border-b border-border py-1.5 shrink-0">
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setContentTab('code')}
+                    className={`h-7 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                      contentTab === 'code'
+                        ? 'bg-accent text-white font-bold shadow-xs'
+                        : 'text-text-tertiary hover:text-text-primary hover:bg-surface-2'
+                    }`}
                   >
+                    <FileCode size={13} />
+                    <span>Code</span>
+                  </button>
+
+                  <button
+                    onClick={() => setContentTab('raw')}
+                    className={`h-7 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                      contentTab === 'raw'
+                        ? 'bg-accent text-white font-bold shadow-xs'
+                        : 'text-text-tertiary hover:text-text-primary hover:bg-surface-2'
+                    }`}
+                  >
+                    <AlignLeft size={13} />
+                    <span>Raw</span>
+                  </button>
+
+                  <button
+                    onClick={() => setContentTab('history')}
+                    className={`h-7 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                      contentTab === 'history'
+                        ? 'bg-accent text-white font-bold shadow-xs'
+                        : 'text-text-tertiary hover:text-text-primary hover:bg-surface-2'
+                    }`}
+                  >
+                    <Clock size={13} />
+                    <span>History</span>
+                  </button>
+
+                  <button
+                    onClick={() => setContentTab('info')}
+                    className={`h-7 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                      contentTab === 'info'
+                        ? 'bg-accent text-white font-bold shadow-xs'
+                        : 'text-text-tertiary hover:text-text-primary hover:bg-surface-2'
+                    }`}
+                  >
+                    <Info size={13} />
+                    <span>Info</span>
+                  </button>
+                </div>
+
+                {/* Right utility buttons: Copy, Download, Wrap */}
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    onClick={() => setWrapLines(!wrapLines)}
+                    className={`h-7 px-2 rounded-lg text-[10px] font-mono border transition-colors cursor-pointer ${
+                      wrapLines ? 'bg-accent-soft text-accent border-accent/30' : 'bg-surface-2 text-text-tertiary border-border'
+                    }`}
+                    title="Toggle word wrap"
+                  >
+                    Wrap
+                  </button>
+
+                  <button
+                    onClick={handleCopyCode}
+                    disabled={activeFileLoading}
+                    className="h-7 px-2.5 rounded-lg bg-surface-2 hover:bg-surface-3 border border-border text-xs text-text-primary hover:text-accent flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    {isCopied ? <Check size={12} className="text-success" /> : <Copy size={12} />}
+                    <span>{isCopied ? 'Copied' : 'Copy'}</span>
+                  </button>
+
+                  <button
+                    onClick={handleDownloadFile}
+                    className="h-7 w-7 rounded-lg bg-surface-2 hover:bg-surface-3 border border-border flex items-center justify-center text-text-tertiary hover:text-text-primary transition-colors cursor-pointer"
+                    title="Download raw file"
+                  >
+                    <Download size={13} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Viewport Content */}
+              <div className="flex-1 overflow-auto rounded-xl bg-background border border-border mt-2 text-xs font-mono min-h-0 relative">
+                {activeFileLoading ? (
+                  <div className="p-12 text-center text-xs text-text-tertiary flex flex-col items-center justify-center gap-3">
+                    <span className="w-6 h-6 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+                    <span>Streaming file contents from repository...</span>
+                  </div>
+                ) : contentTab === 'code' ? (
+                  activeFileContent ? (
+                    <SyntaxHighlighter
+                      language={getCodeLanguage(selectedFileForModal)}
+                      style={vscDarkPlus}
+                      customStyle={{
+                        margin: 0,
+                        padding: '14px',
+                        background: 'transparent',
+                        fontSize: '11px',
+                        lineHeight: '1.6',
+                      }}
+                      showLineNumbers={true}
+                      wrapLines={wrapLines}
+                    >
+                      {activeFileContent}
+                    </SyntaxHighlighter>
+                  ) : (
+                    <div className="p-8 text-center text-xs text-text-tertiary">
+                      Empty file or binary content.
+                    </div>
+                  )
+                ) : contentTab === 'raw' ? (
+                  <pre className={`p-4 text-[11px] font-mono text-text-primary ${wrapLines ? 'whitespace-pre-wrap' : 'whitespace-pre'}`}>
                     {activeFileContent}
-                  </SyntaxHighlighter>
+                  </pre>
+                ) : contentTab === 'history' ? (
+                  <div className="p-4 space-y-3 font-sans">
+                    <span className="text-xs font-semibold text-text-tertiary uppercase tracking-wider block">
+                      Recent Commits Touching This File
+                    </span>
+                    <div className="divide-y divide-border border border-border rounded-xl bg-surface-1 overflow-hidden">
+                      {fileHistory.map((c, i) => (
+                        <div key={`${c.hash}-${i}`} className="p-3 hover:bg-surface-2 transition-colors flex items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <span className="text-xs font-semibold text-text-primary line-clamp-1">
+                              {c.msg}
+                            </span>
+                            <div className="flex items-center gap-2 mt-1 text-[10px] text-text-tertiary font-mono">
+                              <span className="text-accent">{c.hash.substring(0, 7)}</span>
+                              <span>•</span>
+                              <span>{c.author}</span>
+                              <span>•</span>
+                              <span>{formatRelativeTime(c.date || c.timestamp)}</span>
+                            </div>
+                          </div>
+                          <span className="text-xs font-mono text-success">
+                            {c.add || '+12'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 ) : (
-                  <div className="p-8 text-center text-xs text-text-tertiary">
-                    No content available or binary file.
+                  <div className="p-5 space-y-4 font-sans text-xs">
+                    <span className="text-xs font-semibold text-text-tertiary uppercase tracking-wider block">
+                      File Metadata & Attributes
+                    </span>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="p-3 rounded-xl bg-surface-1 border border-border">
+                        <span className="text-text-tertiary block text-[10px] uppercase font-bold">Path</span>
+                        <span className="font-mono text-text-primary text-xs break-all mt-0.5 block">{selectedFileForModal}</span>
+                      </div>
+                      <div className="p-3 rounded-xl bg-surface-1 border border-border">
+                        <span className="text-text-tertiary block text-[10px] uppercase font-bold">Language</span>
+                        <span className="font-mono text-text-primary text-xs mt-0.5 block">{getCodeLanguage(selectedFileForModal).toUpperCase()}</span>
+                      </div>
+                      <div className="p-3 rounded-xl bg-surface-1 border border-border">
+                        <span className="text-text-tertiary block text-[10px] uppercase font-bold">Total Lines</span>
+                        <span className="font-mono text-text-primary text-xs mt-0.5 block">{lineCount}</span>
+                      </div>
+                      <div className="p-3 rounded-xl bg-surface-1 border border-border">
+                        <span className="text-text-tertiary block text-[10px] uppercase font-bold">Size</span>
+                        <span className="font-mono text-text-primary text-xs mt-0.5 block">{formatBytes(fileSizeEst)}</span>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

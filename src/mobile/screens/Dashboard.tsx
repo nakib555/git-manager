@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAppContext } from '../../AppContext';
 import { 
   FolderGit2, Star, GitPullRequest, GitCommit, 
   Plus, Download, ArrowUpRight, Github, Clock, ChevronRight
 } from 'lucide-react';
 import { formatRelativeTime } from '../utils/formatters';
+import { CommitDetailModal } from '../components/CommitDetailModal';
 
 export const Dashboard: React.FC = () => {
+  const [selectedCommit, setSelectedCommit] = useState<any | null>(null);
   const { 
     githubUser, 
     githubRepos, 
@@ -167,7 +169,8 @@ export const Dashboard: React.FC = () => {
             {activeCommits.slice(0, 4).map((commit, idx) => (
               <div 
                 key={`${commit.hash}-${idx}`} 
-                className="p-3 hover:bg-surface-2 transition-colors flex items-center justify-between gap-3"
+                onClick={() => setSelectedCommit(commit)}
+                className="p-3 hover:bg-surface-2 transition-colors flex items-center justify-between gap-3 cursor-pointer"
               >
                 <div className="flex items-start gap-2.5 min-w-0">
                   <div className="w-7 h-7 rounded-lg bg-surface-2 flex items-center justify-center text-text-secondary shrink-0 mt-0.5">
@@ -178,9 +181,9 @@ export const Dashboard: React.FC = () => {
                       {commit.msg}
                     </p>
                     <div className="flex items-center gap-2 mt-0.5 text-[10px] text-text-tertiary font-mono">
-                      <span>{commit.hash.substring(0, 7)}</span>
+                      <span className="text-accent font-semibold">{commit.hash.substring(0, 7)}</span>
                       <span>•</span>
-                      <span>{formatRelativeTime(commit.date)}</span>
+                      <span>{formatRelativeTime(commit.date || commit.timestamp)}</span>
                     </div>
                   </div>
                 </div>
@@ -193,6 +196,12 @@ export const Dashboard: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Bitbucket/Git style tabbed Commit Inspector */}
+      <CommitDetailModal
+        commit={selectedCommit}
+        onClose={() => setSelectedCommit(null)}
+      />
     </div>
   );
 };

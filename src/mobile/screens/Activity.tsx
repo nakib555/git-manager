@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAppContext } from '../../AppContext';
 import { CommitCard } from '../components/CommitCard';
+import { CommitDetailModal } from '../components/CommitDetailModal';
 import { GitCommit, Activity as ActivityIcon } from 'lucide-react';
 
 export const Activity: React.FC = () => {
   const { activeCommits, showToast, currentRepo } = useAppContext();
+  const [selectedCommit, setSelectedCommit] = useState<any | null>(null);
 
   const handleCopyHash = (hash: string) => {
     navigator.clipboard.writeText(hash);
@@ -42,19 +44,23 @@ export const Activity: React.FC = () => {
                 hash: commit.hash,
                 msg: commit.msg,
                 author: commit.author,
-                date: commit.date,
+                date: commit.date || commit.timestamp,
                 avatarUrl: commit.avatarUrl,
                 stats: commit.stats,
               }}
-              onClick={() => {
-                showToast(`Viewing commit ${commit.hash.substring(0, 7)}`, 'info');
-              }}
+              onClick={() => setSelectedCommit(commit)}
               onCopyHash={() => handleCopyHash(commit.hash)}
               isLatest={idx === 0}
             />
           ))}
         </div>
       )}
+
+      {/* Bitbucket/Git style tabbed Commit Inspector */}
+      <CommitDetailModal
+        commit={selectedCommit}
+        onClose={() => setSelectedCommit(null)}
+      />
     </div>
   );
 };

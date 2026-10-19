@@ -746,8 +746,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
   };
   const openRepo = (repoName: string, owner: string | null = null) => {
     setState((prev) => {
+      const matchedRepo = prev.githubRepos.find(r => r.name === repoName);
       const actualOwner =
-        owner || (prev.githubToken ? prev.githubUser?.login : null);
+        owner ||
+        (matchedRepo as any)?.owner?.login ||
+        (prev.githubToken ? prev.githubUser?.login : null) ||
+        (prev.githubUser?.login) ||
+        "nakib555";
       localStorage.setItem("currentRepo", repoName);
       localStorage.setItem("currentRepoOwner", actualOwner);
       localStorage.removeItem("currentBranch");

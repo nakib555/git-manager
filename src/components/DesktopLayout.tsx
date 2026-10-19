@@ -25,6 +25,7 @@ import { UnauthenticatedState } from './UnauthenticatedState';
 import { AnimatedNumber } from './UI';
 import { useStaggerList } from '../hooks/useAnime';
 import { RepoTypeFilter, RepoSortBy } from '../types';
+import { fetchFileContentSafe } from '../mobile/utils/gitApi';
 
 const getCodeLanguage = (filename: string): string => {
   const ext = filename.split('.').pop()?.toLowerCase();
@@ -1621,7 +1622,7 @@ const FileTreeItem = React.memo(({ item, depth, activeFileName, onSelect }: any)
 FileTreeItem.displayName = 'FileTreeItem';
 
 const DesktopFilesView: React.FC = () => {
-  const { activeFiles, currentRepo, githubToken, currentRepoOwner, showToast, theme } = useAppContext();
+  const { activeFiles, currentRepo, githubToken, currentRepoOwner, currentBranch, githubUser, showToast, theme } = useAppContext();
   const [selectedFile, setSelectedFile] = useState<string>('');
   const [fileContent, setFileContent] = useState<string>('');
   const [isLoadingFile, setIsLoadingFile] = useState<boolean>(false);
@@ -1642,40 +1643,28 @@ const DesktopFilesView: React.FC = () => {
 
   useEffect(() => {
     const fileName = selectedFile || activeFiles[0]?.name;
-    if (!fileName) return;
+    if (!fileName || !currentRepo) return;
 
-    if (githubToken && typeof githubToken === 'string' && currentRepoOwner) {
-      const fetchFileContent = async () => {
-        setIsLoadingFile(true);
-        try {
-          const headers = {
-            Authorization: githubToken.startsWith('ghp_') || githubToken.startsWith('github_pat_') || githubToken.startsWith('gho_')
-              ? `Bearer ${githubToken}`
-              : `token ${githubToken}`
-          };
-          const res = await fetch(`https://api.github.com/repos/${currentRepoOwner}/${currentRepo}/contents/${fileName}`, { headers });
-          if (res.ok) {
-            const data = await res.json();
-            if (data.encoding === 'base64') {
-              setFileContent(safeDecodeDesktopBase64(data.content));
-            } else {
-              setFileContent(data.content || '');
-            }
-          } else {
-            setFileContent(`// Error loading file from GitHub (status ${res.status})`);
-          }
-        } catch (err: any) {
-          console.error(err);
-          setFileContent(`// Error loading file: ${err.message || err}`);
-        } finally {
-          setIsLoadingFile(false);
-        }
-      };
-      fetchFileContent();
-    } else {
-      setFileContent('// Connect your GitHub account to inspect live file content.');
-    }
-  }, [selectedFile, activeFiles, githubToken, currentRepo, currentRepoOwner]);
+    const fetchFileContent = async () => {
+      setIsLoadingFile(true);
+      try {
+        const content = await fetchFileContentSafe({
+          filePath: fileName,
+          repoName: currentRepo,
+          owner: currentRepoOwner || (githubUser?.login || 'nakib555'),
+          branch: currentBranch || 'main',
+          token: githubToken,
+        });
+        setFileContent(content);
+      } catch (err: any) {
+        console.error(err);
+        setFileContent(`// Error loading file: ${err.message || err}`);
+      } finally {
+        setIsLoadingFile(false);
+      }
+    };
+    fetchFileContent();
+  }, [selectedFile, activeFiles, githubToken, currentRepo, currentRepoOwner, currentBranch, githubUser]);
 
   if (activeFiles.length === 0) {
     return (
