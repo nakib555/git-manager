@@ -2,12 +2,14 @@ import React from 'react';
 
 interface SkeletonProps {
   className?: string;
+  style?: React.CSSProperties;
 }
 
-export const Skeleton: React.FC<SkeletonProps> = ({ className = 'h-4 w-full' }) => {
+export const Skeleton: React.FC<SkeletonProps> = ({ className = 'h-4 w-full', style }) => {
   return (
     <div
       className={`ghost-shimmer rounded-lg bg-surface-2 ${className}`}
+      style={style}
       aria-hidden="true"
     />
   );
