@@ -291,10 +291,10 @@ export const FilesScreen: React.FC = () => {
                     <span className="text-accent uppercase font-bold">
                       {getCodeLanguage(selectedFileForModal)}
                     </span>
-                    <span>•</span>
-                    <span>{lineCount} lines</span>
-                    <span>•</span>
-                    <span>{formatBytes(fileSizeEst)}</span>
+                    <span aria-hidden="true">·</span>
+                    <span className="tabular-nums">{lineCount} lines</span>
+                    <span aria-hidden="true">·</span>
+                    <span className="tabular-nums">{formatBytes(fileSizeEst)}</span>
                   </div>
                 </div>
 
@@ -445,11 +445,11 @@ export const FilesScreen: React.FC = () => {
                               {c.msg}
                             </span>
                             <div className="flex items-center gap-2 mt-1 text-[10px] text-text-tertiary font-mono">
-                              <span className="text-accent">{c.hash.substring(0, 7)}</span>
-                              <span>•</span>
+                              <span className="text-accent font-semibold tabular-nums">{c.hash.substring(0, 7)}</span>
+                              <span aria-hidden="true">·</span>
                               <span>{c.author}</span>
-                              <span>•</span>
-                              <span>{formatRelativeTime(c.date || c.timestamp)}</span>
+                              <span aria-hidden="true">·</span>
+                              <span className="tabular-nums">{formatRelativeTime(c.date || c.timestamp)}</span>
                             </div>
                           </div>
                           <span className="text-xs font-mono text-success">

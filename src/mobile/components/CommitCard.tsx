@@ -1,6 +1,6 @@
 import React from 'react';
 import { GitCommit, Copy, Clock, ChevronRight } from 'lucide-react';
-import { formatRelativeTime, formatFullDateTime, formatShortDate } from '../utils/formatters';
+import { formatRelativeTime } from '../utils/formatters';
 
 export interface CommitCardProps {
   commit: {
@@ -61,30 +61,31 @@ export const CommitCard: React.FC<CommitCardProps> = ({
           {commit.msg}
         </p>
 
+        {/* Unboxed metadata with typographic separator */}
         <div className="flex items-center gap-2 mt-1.5 text-[11px] text-text-tertiary">
           <span className="font-medium text-text-secondary truncate max-w-[120px]">
             {commit.author}
           </span>
-          <span>•</span>
-          <span className="flex items-center gap-1 font-mono">
+          <span aria-hidden="true">·</span>
+          <span className="flex items-center gap-1 font-mono tabular-nums">
             <Clock size={11} />
             <span>{formatRelativeTime(commit.date)}</span>
           </span>
         </div>
       </div>
 
-      {/* Right Column: Copyable SHA pill */}
+      {/* Right Column: Copyable SHA button */}
       <div className="flex items-center gap-1.5 shrink-0 self-center">
         <button
           onClick={(e) => {
             e.stopPropagation();
             onCopyHash?.();
           }}
-          className="h-6 px-2 rounded-md bg-surface-2 hover:bg-surface-3 border border-border text-[10px] font-mono text-accent flex items-center gap-1 transition-all active:scale-95 cursor-pointer"
+          className="min-h-[30px] px-2 rounded-lg bg-surface-2 hover:bg-surface-3 border border-border text-[11px] font-mono tabular-nums text-accent flex items-center gap-1 transition-all active:scale-95 cursor-pointer"
           title="Copy SHA"
         >
           <span>{shortSha}</span>
-          <Copy size={10} className="opacity-70 group-hover:opacity-100" />
+          <Copy size={11} className="opacity-70 group-hover:opacity-100" />
         </button>
 
         <ChevronRight size={14} className="text-text-tertiary group-hover:text-text-secondary transition-colors" />
@@ -93,5 +94,4 @@ export const CommitCard: React.FC<CommitCardProps> = ({
   );
 };
 
-// Aliases
 export const MobileCommitCard = CommitCard;

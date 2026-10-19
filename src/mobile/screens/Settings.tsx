@@ -25,32 +25,32 @@ export const Settings: React.FC = () => {
   const themes = [
     {
       id: 'dark',
-      name: 'Developer Dark Slate',
+      name: 'Dark Charcoal',
       badge: 'Default',
-      bgHex: '#0D1117',
-      surfaceHex: '#161B22',
-      accentHex: '#388BFD',
-      desc: 'High-contrast dark slate workstation matching GitHub/Linear standards',
+      bgHex: '#0A0A0B',
+      surfaceHex: '#121214',
+      accentHex: '#3B82F6',
+      desc: 'Calibrated charcoal workstation with desaturated steel blue accent',
       icon: Moon,
     },
     {
       id: 'light',
-      name: 'Daylight Slate',
+      name: 'Warm Off-White',
       badge: 'Daylight',
-      bgHex: '#F6F8FA',
+      bgHex: '#F8F7F4',
       surfaceHex: '#FFFFFF',
-      accentHex: '#0969DA',
-      desc: 'Crisp light workstation with calibrated neutral borders and slate typography',
+      accentHex: '#3B6FE0',
+      desc: 'Warm off-white engineering surface with slate borders and typography',
       icon: Sun,
     },
     {
       id: 'fantasy',
-      name: 'Midnight Workstation',
-      badge: 'Deep Navy',
-      bgHex: '#0B0E14',
-      surfaceHex: '#121721',
-      accentHex: '#4B92F8',
-      desc: 'Deep midnight navy atmosphere with cool sapphire accent',
+      name: 'Deep Indigo',
+      badge: 'Midnight',
+      bgHex: '#0F0E17',
+      surfaceHex: '#16152A',
+      accentHex: '#9B7EED',
+      desc: 'Deep indigo midnight atmosphere with soft violet accent',
       icon: Sparkles,
     },
   ] as const;
@@ -71,10 +71,10 @@ export const Settings: React.FC = () => {
           <span className="text-xs font-bold uppercase tracking-wider text-text-tertiary">
             GitHub Connection
           </span>
-          <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+          <span className={`text-[11px] font-mono font-semibold ${
             githubUser 
-              ? 'bg-success/10 text-success border border-success/20' 
-              : 'bg-surface-2 text-text-tertiary border border-border'
+              ? 'text-success' 
+              : 'text-text-tertiary'
           }`}>
             {githubUser ? 'Connected' : 'Offline / Guest'}
           </span>
@@ -153,8 +153,8 @@ export const Settings: React.FC = () => {
                       <span className={`text-xs ${isSelected ? 'font-bold text-text-primary' : 'font-medium text-text-secondary'}`}>
                         {t.name}
                       </span>
-                      <span className="text-[10px] text-text-tertiary font-mono bg-surface-2 px-1.5 py-0.5 rounded border border-border">
-                        {t.badge}
+                      <span className="text-[10px] text-text-tertiary font-mono">
+                        · {t.badge}
                       </span>
                     </div>
                     <p className="text-[11px] text-text-tertiary truncate mt-0.5">
@@ -194,12 +194,11 @@ export const Settings: React.FC = () => {
 
       {/* 4. App Info & Version */}
       <div className="text-center text-[11px] text-text-tertiary font-mono pt-2 space-y-1">
-        <span>Git Manager PWA • v2.4.0</span>
+        <span>Git Manager PWA · v2.5.0</span>
         <p>Built for mobile-first version management.</p>
       </div>
     </div>
   );
 };
 
-// Aliases
 export const MobileSettings = Settings;

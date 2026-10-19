@@ -22,11 +22,8 @@ import { BranchesScreen } from '../screens/repo/BranchesScreen';
 import { PRsScreen } from '../screens/repo/PRsScreen';
 import { InsightsScreen } from '../screens/repo/InsightsScreen';
 
-// Unauthenticated component
-import { UnauthenticatedState } from '../../components/UnauthenticatedState';
-
 export const MobileShell: React.FC = () => {
-  const { currentScreen, githubToken } = useAppContext();
+  const { currentScreen } = useAppContext();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
 
@@ -42,12 +39,7 @@ export const MobileShell: React.FC = () => {
         {/* 2. Optional Contextual 44px Repo Sub-tabs */}
         <RepoTabs />
 
-      {/* 3. Main Scrollport with Damped Pull-to-Refresh & Safe Bottom Padding */}
-      {!githubToken && currentScreen !== 'settings' && currentScreen !== 'repos' ? (
-        <PullToRefresh>
-          <UnauthenticatedState />
-        </PullToRefresh>
-      ) : (
+        {/* 3. Main Scrollport with Damped Pull-to-Refresh & Safe Bottom Padding */}
         <PullToRefresh>
           {currentScreen === 'dash' && <Dashboard />}
           {currentScreen === 'repos' && <Repositories />}
@@ -60,7 +52,6 @@ export const MobileShell: React.FC = () => {
           {currentScreen === 'prs' && <PRsScreen />}
           {currentScreen === 'insights' && <InsightsScreen />}
         </PullToRefresh>
-      )}
 
         {/* 4. Fixed 56px Bottom Navigation */}
         <BottomNav />
@@ -81,3 +72,5 @@ export const MobileShell: React.FC = () => {
     </div>
   );
 };
+
+export const AppMobileShell = MobileShell;

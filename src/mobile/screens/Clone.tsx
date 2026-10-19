@@ -3,7 +3,7 @@ import { useAppContext } from '../../AppContext';
 import { Download, Copy, Check, Terminal, ExternalLink, HardDrive } from 'lucide-react';
 
 export const Clone: React.FC = () => {
-  const { currentRepo, githubUser, showToast, createLocalRepo, navigate } = useAppContext();
+  const { currentRepo, githubUser, showToast, cloneRepository, navigate } = useAppContext();
 
   const [repoUrl, setRepoUrl] = useState('');
   const [destName, setDestName] = useState('');
@@ -30,21 +30,27 @@ export const Clone: React.FC = () => {
     setTimeout(() => setIsCopied(false), 2000);
   };
 
-  const handleSimulateClone = () => {
-    if (!repoUrl.trim()) return;
+  const handleClone = async () => {
+    if (!repoUrl.trim()) {
+      showToast('Please enter a Git repository URL', 'warning');
+      return;
+    }
     setIsCloning(true);
-    setTimeout(() => {
-      setIsCloning(false);
+    try {
       const name = destName || repoUrl.split('/').pop()?.replace('.git', '') || 'cloned-repo';
-      createLocalRepo({
-        name,
-        desc: `Cloned from ${repoUrl}`,
-        isPrivate: false,
-        lang: 'TypeScript',
+      await cloneRepository({
+        url: repoUrl.trim(),
+        destFolder: name,
+        branch: 'main',
+        shallow: cloneDepth === 1,
+        submodules: false,
       });
-      showToast(`Repository "${name}" ready in workspace!`, 'success');
       navigate('repos');
-    }, 1200);
+    } catch (err: any) {
+      showToast(`Clone error: ${err.message || err}`, 'error');
+    } finally {
+      setIsCloning(false);
+    }
   };
 
   return (
@@ -138,7 +144,7 @@ export const Clone: React.FC = () => {
 
       {/* Step 4: Action Button */}
       <button
-        onClick={handleSimulateClone}
+        onClick={handleClone}
         disabled={!repoUrl.trim() || isCloning}
         className="w-full h-12 rounded-xl bg-accent hover:opacity-90 disabled:opacity-40 text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-sm shadow-accent/25 active:scale-98 transition-all cursor-pointer"
       >

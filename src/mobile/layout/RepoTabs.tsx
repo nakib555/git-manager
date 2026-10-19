@@ -52,8 +52,8 @@ export const RepoTabs: React.FC = () => {
             onClick={() => navigate(tab.id as any)}
             className={`h-8 px-3.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-150 cursor-pointer flex items-center gap-1.5 shrink-0 ${
               isActive
-                ? 'bg-accent text-white shadow-sm shadow-accent/25 font-bold'
-                : 'bg-surface-2 text-text-secondary hover:text-text-primary border border-border active:scale-96'
+                ? 'bg-accent-soft text-accent border border-accent/35 font-bold shadow-xs'
+                : 'bg-surface-1 text-text-secondary hover:text-text-primary border border-border active:scale-96'
             }`}
           >
             <Icon size={13} strokeWidth={isActive ? 2.5 : 2} className="shrink-0" />

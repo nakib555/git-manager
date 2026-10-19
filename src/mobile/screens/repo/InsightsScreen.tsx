@@ -6,18 +6,26 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 export const InsightsScreen: React.FC = () => {
   const { currentRepo, activeCommits, activeFiles } = useAppContext();
 
-  // Commit history chart data
+  // Real Day-of-Week commit velocity calculated from actual repository commits
+  const dayCounts = [0, 0, 0, 0, 0, 0, 0];
+  activeCommits.forEach(c => {
+    const d = new Date(c.timestamp || c.date);
+    if (!isNaN(d.getTime())) {
+      dayCounts[d.getDay()]++;
+    }
+  });
+
   const chartData = [
-    { name: 'Mon', commits: 3 },
-    { name: 'Tue', commits: 7 },
-    { name: 'Wed', commits: 4 },
-    { name: 'Thu', commits: 9 },
-    { name: 'Fri', commits: 6 },
-    { name: 'Sat', commits: 2 },
-    { name: 'Sun', commits: 5 },
+    { name: 'Mon', commits: dayCounts[1] },
+    { name: 'Tue', commits: dayCounts[2] },
+    { name: 'Wed', commits: dayCounts[3] },
+    { name: 'Thu', commits: dayCounts[4] },
+    { name: 'Fri', commits: dayCounts[5] },
+    { name: 'Sat', commits: dayCounts[6] },
+    { name: 'Sun', commits: dayCounts[0] },
   ];
 
-  // Language composition calculation
+  // Language composition calculation from actual active file tree
   const langCounts: Record<string, number> = {};
   activeFiles.forEach(f => {
     const ext = f.name.split('.').pop()?.toUpperCase() || 'OTHER';
@@ -34,7 +42,7 @@ export const InsightsScreen: React.FC = () => {
       <div>
         <h2 className="text-base font-semibold text-text-primary tracking-tight">Insights</h2>
         <p className="text-xs text-text-tertiary mt-0.5">
-          Activity telemetry and code composition for {currentRepo}
+          Activity analytics and code composition for {currentRepo}
         </p>
       </div>
 
@@ -43,10 +51,10 @@ export const InsightsScreen: React.FC = () => {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <TrendingUp size={15} className="text-accent" />
-            <span className="text-xs font-semibold text-text-primary">Weekly Commit Velocity</span>
+            <span className="text-xs font-semibold text-text-primary">Commit Activity by Day</span>
           </div>
-          <span className="text-xs font-mono text-accent font-bold">
-            {activeCommits.length} total
+          <span className="text-xs font-mono text-accent font-bold tabular-nums">
+            {activeCommits.length} commits analyzed
           </span>
         </div>
 
@@ -55,25 +63,25 @@ export const InsightsScreen: React.FC = () => {
             <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
               <defs>
                 <linearGradient id="mobileVelocity" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#388BFD" stopOpacity={0.25} />
-                  <stop offset="95%" stopColor="#388BFD" stopOpacity={0.0} />
+                  <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.25} />
+                  <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.0} />
                 </linearGradient>
               </defs>
-              <XAxis dataKey="name" stroke="#8B949E" fontSize={10} tickLine={false} />
-              <YAxis stroke="#8B949E" fontSize={10} tickLine={false} />
+              <XAxis dataKey="name" stroke="var(--color-text-tertiary)" fontSize={10} tickLine={false} />
+              <YAxis stroke="var(--color-text-tertiary)" fontSize={10} tickLine={false} allowDecimals={false} />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#161B22',
-                  border: '1px solid #30363D',
-                  borderRadius: '8px',
+                  backgroundColor: 'var(--color-surface-1)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: '10px',
                   fontSize: '11px',
-                  color: '#F0F6FC',
+                  color: 'var(--color-text-primary)',
                 }}
               />
               <Area
                 type="monotone"
                 dataKey="commits"
-                stroke="#388BFD"
+                stroke="#3B82F6"
                 strokeWidth={2}
                 fill="url(#mobileVelocity)"
               />
@@ -89,7 +97,7 @@ export const InsightsScreen: React.FC = () => {
             <Code2 size={15} className="text-accent" />
             <span className="text-xs font-semibold text-text-primary">File Type Composition</span>
           </div>
-          <span className="text-xs font-mono text-text-tertiary">
+          <span className="text-xs font-mono text-text-tertiary tabular-nums">
             {activeFiles.length} files tracked
           </span>
         </div>
@@ -97,7 +105,7 @@ export const InsightsScreen: React.FC = () => {
         {/* Progress bar */}
         <div className="h-2 w-full bg-surface-2 rounded-full overflow-hidden flex">
           {sortedLangs.map(([lang, count], idx) => {
-            const colors = ['#388BFD', '#3FB950', '#D29922', '#8B949E'];
+            const colors = ['#3B82F6', '#3FB950', '#D29922', '#71717A'];
             const pct = Math.round((count / totalFiles) * 100);
             return (
               <div
@@ -113,13 +121,13 @@ export const InsightsScreen: React.FC = () => {
           })}
         </div>
 
-        {/* Legend */}
+        {/* Legend with tabular numbers */}
         <div className="grid grid-cols-2 gap-2 pt-1">
           {sortedLangs.map(([lang, count], idx) => {
-            const colors = ['#388BFD', '#3FB950', '#D29922', '#8B949E'];
+            const colors = ['#3B82F6', '#3FB950', '#D29922', '#71717A'];
             const pct = Math.round((count / totalFiles) * 100);
             return (
-              <div key={lang} className="flex items-center justify-between text-xs font-mono">
+              <div key={lang} className="flex items-center justify-between text-xs font-mono tabular-nums">
                 <div className="flex items-center gap-1.5 min-w-0">
                   <span
                     className="w-2 h-2 rounded-full shrink-0"
@@ -137,5 +145,4 @@ export const InsightsScreen: React.FC = () => {
   );
 };
 
-// Aliases
 export const MobileInsights = InsightsScreen;

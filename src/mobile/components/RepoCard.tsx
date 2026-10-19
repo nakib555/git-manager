@@ -26,7 +26,7 @@ const getLanguageColor = (lang?: string | null): string => {
     case 'css':
       return '#563D7C';
     default:
-      return '#388BFD';
+      return '#3B82F6';
   }
 };
 
@@ -49,13 +49,13 @@ export const RepoCard: React.FC<RepoCardProps> = ({
           onClick();
         }
       }}
-      className={`w-full rounded-xl p-3.5 transition-all duration-150 cursor-pointer border select-none ${
+      className={`w-full rounded-xl p-4 transition-all duration-150 cursor-pointer border select-none ${
         isActive
           ? 'bg-surface-2 border-accent shadow-sm'
           : 'bg-surface-1 border-border hover:border-accent/40 hover:bg-surface-2 active:scale-99'
       }`}
     >
-      {/* Top row: Name & Badges */}
+      {/* Top row: Name & Privacy status (Clean unboxed text, zero-pill discipline) */}
       <div className="flex items-start justify-between gap-2 mb-1.5">
         <div className="flex items-center gap-1.5 min-w-0">
           <span className="font-semibold text-sm text-text-primary truncate tracking-tight">
@@ -63,17 +63,16 @@ export const RepoCard: React.FC<RepoCardProps> = ({
           </span>
         </div>
 
-        <div className="flex items-center gap-1 shrink-0">
-          <span
-            className={`text-[10px] px-2 py-0.5 rounded-full font-semibold border flex items-center gap-1 ${
-              repo.private
-                ? 'bg-surface-2 text-text-tertiary border-border'
-                : 'bg-surface-2 text-text-secondary border-border'
-            }`}
-          >
-            {repo.private ? <Lock size={10} /> : <Globe size={10} />}
-            <span>{repo.private ? 'Private' : 'Public'}</span>
-          </span>
+        <div className="flex items-center gap-1 shrink-0 text-text-tertiary text-xs">
+          {repo.private ? (
+            <span className="flex items-center gap-1 text-[11px] font-medium text-text-tertiary">
+              <Lock size={11} /> Private
+            </span>
+          ) : (
+            <span className="flex items-center gap-1 text-[11px] font-medium text-text-tertiary">
+              <Globe size={11} /> Public
+            </span>
+          )}
         </div>
       </div>
 
@@ -88,31 +87,31 @@ export const RepoCard: React.FC<RepoCardProps> = ({
         </p>
       )}
 
-      {/* Bottom metadata row */}
-      <div className="flex items-center justify-between text-xs text-text-tertiary font-mono pt-2 border-t border-border">
-        {/* Language pill */}
+      {/* Bottom metadata row (Unboxed text with tabular-nums) */}
+      <div className="flex items-center justify-between text-xs text-text-tertiary font-mono pt-2.5 border-t border-border">
+        {/* Language */}
         <div className="flex items-center gap-1.5 min-w-0">
           <span
             className="w-2.5 h-2.5 rounded-full shrink-0"
             style={{ backgroundColor: getLanguageColor(repo.language) }}
           />
-          <span className="truncate max-w-[80px]">{repo.language || 'Markdown'}</span>
+          <span className="truncate max-w-[90px] text-text-secondary">{repo.language || 'Markdown'}</span>
         </div>
 
-        {/* Stars, Forks & Updated */}
-        <div className="flex items-center gap-3 shrink-0">
-          <span className="flex items-center gap-1">
-            <Star size={12} className="text-warning" />
+        {/* Stars, Forks & Updated with Tabular Numbers */}
+        <div className="flex items-center gap-3 shrink-0 tabular-nums">
+          <span className="flex items-center gap-1 text-text-secondary">
+            <Star size={12} className="text-warning shrink-0" />
             <span>{repo.stargazers_count || 0}</span>
           </span>
 
-          <span className="flex items-center gap-1">
-            <GitFork size={12} className="text-text-tertiary" />
+          <span className="flex items-center gap-1 text-text-tertiary">
+            <GitFork size={12} className="shrink-0" />
             <span>{repo.forks_count || 0}</span>
           </span>
 
-          <span className="flex items-center gap-1">
-            <Clock size={11} className="text-text-tertiary" />
+          <span className="flex items-center gap-1 text-text-tertiary">
+            <Clock size={11} className="shrink-0" />
             <span>{formatRelativeTime(repo.pushed_at || repo.updated_at || '')}</span>
           </span>
         </div>
@@ -121,5 +120,4 @@ export const RepoCard: React.FC<RepoCardProps> = ({
   );
 };
 
-// Aliases
 export const MobileRepoCard = RepoCard;

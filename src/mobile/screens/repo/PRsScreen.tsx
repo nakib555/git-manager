@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../../../AppContext';
 import { GitPullRequest, Plus, CheckCircle2, Clock, MessageSquare } from 'lucide-react';
+import { formatRelativeTime } from '../../utils/formatters';
 
 export const PRsScreen: React.FC = () => {
   const { activePRs, openModal, currentRepo, showToast } = useAppContext();
   const [filterStatus, setFilterStatus] = useState<'open' | 'closed'>('open');
 
-  const filteredPRs = activePRs.filter(pr => (filterStatus === 'open' ? !pr.closed : pr.closed));
+  const filteredPRs = activePRs.filter(pr => (filterStatus === 'open' ? (pr.status === 'Open' || !pr.closed) : (pr.status !== 'Open' || pr.closed)));
 
   return (
     <div className="px-4 py-4 space-y-4">
@@ -20,7 +21,7 @@ export const PRsScreen: React.FC = () => {
         </div>
         <button
           onClick={() => openModal('pr')}
-          className="h-8 px-3 rounded-lg bg-success hover:opacity-90 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm shadow-success/20 cursor-pointer"
+          className="h-8 px-3 rounded-lg bg-accent hover:opacity-90 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm shadow-accent/20 cursor-pointer"
         >
           <Plus size={13} strokeWidth={2.5} />
           <span>New PR</span>
@@ -33,21 +34,21 @@ export const PRsScreen: React.FC = () => {
           onClick={() => setFilterStatus('open')}
           className={`flex-1 h-full rounded-lg text-xs font-semibold transition-all cursor-pointer ${
             filterStatus === 'open'
-              ? 'bg-surface-2 text-success shadow-sm border border-border font-bold'
+              ? 'bg-accent-soft text-accent shadow-xs border border-accent/25 font-bold'
               : 'text-text-tertiary hover:text-text-secondary'
           }`}
         >
-          Open ({activePRs.filter(p => !p.closed).length})
+          Open ({activePRs.filter(p => p.status === 'Open' || !p.closed).length})
         </button>
         <button
           onClick={() => setFilterStatus('closed')}
           className={`flex-1 h-full rounded-lg text-xs font-semibold transition-all cursor-pointer ${
             filterStatus === 'closed'
-              ? 'bg-surface-2 text-text-secondary shadow-sm border border-border font-bold'
+              ? 'bg-accent-soft text-accent shadow-xs border border-accent/25 font-bold'
               : 'text-text-tertiary hover:text-text-secondary'
           }`}
         >
-          Closed ({activePRs.filter(p => p.closed).length})
+          Closed ({activePRs.filter(p => p.status !== 'Open' || p.closed).length})
         </button>
       </div>
 
@@ -67,44 +68,43 @@ export const PRsScreen: React.FC = () => {
           {filteredPRs.map((pr) => (
             <div
               key={pr.id}
-              onClick={() => showToast(`Opening PR #${pr.number}: ${pr.title}`, 'info')}
+              onClick={() => showToast(`PR #${pr.id || pr.number}: ${pr.title}`, 'info')}
               className="bg-surface-1 border border-border hover:border-accent/40 rounded-xl p-3.5 space-y-2 transition-all cursor-pointer"
             >
               <div className="flex items-start justify-between gap-2">
-                <div className="flex items-start gap-2">
+                <div className="flex items-start gap-2.5 min-w-0 pr-2">
                   <GitPullRequest 
                     size={16} 
-                    className={`shrink-0 mt-0.5 ${pr.closed ? 'text-text-tertiary' : 'text-success'}`} 
+                    className={`shrink-0 mt-0.5 ${pr.status === 'Open' ? 'text-success' : 'text-text-tertiary'}`} 
                   />
-                  <div>
-                    <h3 className="text-xs font-semibold text-text-primary line-clamp-1">
+                  <div className="min-w-0">
+                    <h3 className="text-xs font-semibold text-text-primary truncate">
                       {pr.title}
                     </h3>
                     <div className="flex items-center gap-2 mt-1 text-[10px] text-text-tertiary font-mono">
-                      <span>#{pr.number}</span>
-                      <span>•</span>
-                      <span className="truncate max-w-[150px]">by {pr.author}</span>
-                      <span>•</span>
-                      <span>{pr.created_at || 'yesterday'}</span>
+                      <span className="text-accent font-semibold tabular-nums">#{pr.id || pr.number}</span>
+                      <span aria-hidden="true">·</span>
+                      <span className="truncate max-w-[140px]">by {pr.author}</span>
+                      <span aria-hidden="true">·</span>
+                      <span className="tabular-nums">{pr.time || formatRelativeTime(pr.created_at || '')}</span>
                     </div>
                   </div>
                 </div>
 
-                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0 ${
-                  pr.closed 
-                    ? 'bg-surface-2 text-text-tertiary border border-border' 
-                    : 'bg-success/10 text-success border border-success/20'
+                {/* Zero-pill status tag: clean unboxed text */}
+                <span className={`text-[11px] font-semibold font-mono shrink-0 ${
+                  pr.status === 'Open' ? 'text-success' : 'text-text-tertiary'
                 }`}>
-                  {pr.closed ? 'Closed' : 'Open'}
+                  {pr.status || (pr.closed ? 'Closed' : 'Open')}
                 </span>
               </div>
 
               {/* Branch indicator */}
               <div className="flex items-center justify-between text-[11px] font-mono text-text-tertiary pt-2 border-t border-border">
-                <span>{pr.headBranch || 'feature'} → {pr.baseBranch || 'main'}</span>
-                <div className="flex items-center gap-1">
+                <span className="truncate pr-2">{pr.source || pr.headBranch || 'feature'} → {pr.target || pr.baseBranch || 'main'}</span>
+                <div className="flex items-center gap-1 shrink-0 tabular-nums">
                   <MessageSquare size={12} />
-                  <span>{pr.commentsCount || 0}</span>
+                  <span>{pr.comments || pr.commentsCount || 0}</span>
                 </div>
               </div>
             </div>
@@ -115,5 +115,4 @@ export const PRsScreen: React.FC = () => {
   );
 };
 
-// Aliases
 export const MobilePRs = PRsScreen;

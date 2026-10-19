@@ -2,10 +2,20 @@ import { safeBase64Decode } from './treeBuilder';
 
 export interface ChangedFileDiff {
   filename: string;
-  status: 'modified' | 'added' | 'removed';
+  status: 'modified' | 'added' | 'removed' | 'renamed';
   additions: number;
   deletions: number;
   patch?: string;
+}
+
+export interface CheckRunItem {
+  id: number;
+  name: string;
+  status: 'queued' | 'in_progress' | 'completed';
+  conclusion: 'success' | 'failure' | 'neutral' | 'cancelled' | 'skipped' | 'timed_out' | 'action_required' | null;
+  startedAt?: string;
+  completedAt?: string;
+  htmlUrl?: string;
 }
 
 export interface DetailedCommitInfo {
@@ -24,6 +34,21 @@ export interface DetailedCommitInfo {
     deletions: number;
   };
   files: ChangedFileDiff[];
+  checkRuns?: CheckRunItem[];
+}
+
+export interface TimelineEventItem {
+  id: string;
+  type: string;
+  actor: {
+    login: string;
+    avatarUrl?: string;
+  };
+  repo: {
+    name: string;
+  };
+  createdAt: string;
+  payload: any;
 }
 
 /**
@@ -79,8 +104,7 @@ export async function fetchFileContentSafe({
     const rawUrl = `https://raw.githubusercontent.com/${resolvedOwner}/${repoName}/${resolvedBranch}/${filePath}`;
     const rawRes = await fetch(rawUrl);
     if (rawRes.ok) {
-      const text = await rawRes.text();
-      return text;
+      return await rawRes.text();
     }
   } catch (_) {}
 
@@ -116,23 +140,12 @@ export async function fetchFileContentSafe({
     }
   } catch (_) {}
 
-  // 5. Try local app workspace if viewing this project's own files
-  try {
-    const localRes = await fetch(`/${filePath}`);
-    if (localRes.ok) {
-      const text = await localRes.text();
-      if (!text.includes('<!doctype html>') && !text.includes('<!DOCTYPE html>')) {
-        return text;
-      }
-    }
-  } catch (_) {}
-
-  return `// Unable to fetch remote content for "${filePath}".\n// If this is a private repository, please verify your Personal Access Token in Settings.`;
+  return `// Unable to fetch remote content for "${filePath}".\n// If this repository is private, please configure a Personal Access Token in Settings.`;
 }
 
 /**
- * Fetches real commit changed files and unified diff patches from GitHub API,
- * with graceful fallback to synthesized realistic diffs.
+ * Fetches real commit changed files and unified diff patches from GitHub REST API.
+ * Eliminates all dummy data and synthetic mocks.
  */
 export async function fetchCommitDetailsSafe({
   commitSha,
@@ -171,8 +184,29 @@ export async function fetchCommitDetailsSafe({
         status: f.status || 'modified',
         additions: f.additions || 0,
         deletions: f.deletions || 0,
-        patch: f.patch || generateSamplePatch(f.filename),
+        patch: f.patch || (f.status === 'added' ? '(New file added)' : '(Diff omitted by GitHub API or binary file)'),
       }));
+
+      // Fetch authentic check runs for this commit
+      let checkRuns: CheckRunItem[] = [];
+      try {
+        const checksRes = await fetch(
+          `https://api.github.com/repos/${resolvedOwner}/${repoName}/commits/${commitSha}/check-runs`,
+          { headers }
+        );
+        if (checksRes.ok) {
+          const checksData = await checksRes.json();
+          checkRuns = (checksData.check_runs || []).map((cr: any) => ({
+            id: cr.id,
+            name: cr.name,
+            status: cr.status,
+            conclusion: cr.conclusion,
+            startedAt: cr.started_at,
+            completedAt: cr.completed_at,
+            htmlUrl: cr.html_url,
+          }));
+        }
+      } catch (_) {}
 
       return {
         hash: data.sha?.substring(0, 7) || commitSha.substring(0, 7),
@@ -182,86 +216,139 @@ export async function fetchCommitDetailsSafe({
         authorEmail: data.commit?.author?.email,
         authorAvatar: data.author?.avatar_url || fallbackCommit?.avatarUrl,
         date: data.commit?.author?.date || fallbackCommit?.date || new Date().toISOString(),
-        verified: data.commit?.verification?.verified ?? true,
+        verified: data.commit?.verification?.verified ?? false,
         parentSha: data.parents?.[0]?.sha,
         stats: {
-          total: data.stats?.total || files.reduce((acc, f) => acc + f.additions + f.deletions, 0) || 16,
-          additions: data.stats?.additions || files.reduce((acc, f) => acc + f.additions, 0) || 12,
-          deletions: data.stats?.deletions || files.reduce((acc, f) => acc + f.deletions, 0) || 4,
+          total: data.stats?.total || files.reduce((acc, f) => acc + f.additions + f.deletions, 0),
+          additions: data.stats?.additions || files.reduce((acc, f) => acc + f.additions, 0),
+          deletions: data.stats?.deletions || files.reduce((acc, f) => acc + f.deletions, 0),
         },
-        files: files.length > 0 ? files : generateFallbackFiles(fallbackCommit),
+        files,
+        checkRuns,
       };
     }
   } catch (err) {
     console.warn('[GitAPI] Error fetching remote commit detail:', err);
   }
 
-  // Fallback for offline / rate-limited / local commits
-  const files = generateFallbackFiles(fallbackCommit);
+  // Clean, honest fallback when remote API cannot be reached or for offline commits
+  const fallbackFiles: ChangedFileDiff[] = Array.isArray(fallbackCommit?.files) ? fallbackCommit.files : [];
   return {
     hash: fallbackCommit?.hash || commitSha.substring(0, 7),
     fullHash: fallbackCommit?.fullHash || commitSha,
-    msg: fallbackCommit?.msg || 'feat: commit updates',
-    author: fallbackCommit?.author || 'nakib555',
+    msg: fallbackCommit?.msg || 'Commit update',
+    author: fallbackCommit?.author || 'Developer',
     authorAvatar: fallbackCommit?.avatarUrl,
     date: fallbackCommit?.date || fallbackCommit?.timestamp || new Date().toISOString(),
-    verified: true,
+    verified: false,
     stats: {
-      total: files.reduce((acc, f) => acc + f.additions + f.deletions, 0),
-      additions: files.reduce((acc, f) => acc + f.additions, 0),
-      deletions: files.reduce((acc, f) => acc + f.deletions, 0),
+      total: fallbackFiles.reduce((acc, f) => acc + f.additions + f.deletions, 0),
+      additions: fallbackFiles.reduce((acc, f) => acc + f.additions, 0),
+      deletions: fallbackFiles.reduce((acc, f) => acc + f.deletions, 0),
     },
-    files,
+    files: fallbackFiles,
+    checkRuns: [],
   };
 }
 
-function generateSamplePatch(filename: string): string {
-  return `@@ -1,8 +1,12 @@
- import React from 'react';
-+import { useSyncExternalStore } from 'react';
- 
--export function init() {
--  return false;
-+export function initConfig() {
-+  const store = getStore();
-+  store.hydrate();
-+  return true;
- }
-`;
+/**
+ * Fetches authentic GitHub check runs (CI/CD workflows) for a commit ref.
+ */
+export async function fetchCommitCheckRuns({
+  owner,
+  repo,
+  ref,
+  token,
+}: {
+  owner: string;
+  repo: string;
+  ref: string;
+  token?: string | null;
+}): Promise<CheckRunItem[]> {
+  const headers: Record<string, string> = {
+    Accept: 'application/vnd.github.v3+json',
+  };
+  if (token) {
+    headers['Authorization'] = token.startsWith('ghp_') || token.startsWith('github_pat_') || token.startsWith('gho_') || token.startsWith('Bearer ')
+      ? (token.startsWith('Bearer ') ? token : `Bearer ${token}`)
+      : `token ${token}`;
+  }
+
+  try {
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/commits/${ref}/check-runs`, { headers });
+    if (res.ok) {
+      const data = await res.json();
+      return (data.check_runs || []).map((cr: any) => ({
+        id: cr.id,
+        name: cr.name,
+        status: cr.status,
+        conclusion: cr.conclusion,
+        startedAt: cr.started_at,
+        completedAt: cr.completed_at,
+        htmlUrl: cr.html_url,
+      }));
+    }
+  } catch (e) {
+    console.warn('[GitAPI] Check runs fetch error:', e);
+  }
+  return [];
 }
 
-function generateFallbackFiles(commit: any): ChangedFileDiff[] {
-  return [
-    {
-      filename: 'src/mobile/screens/repo/CommitsScreen.tsx',
-      status: 'modified',
-      additions: 18,
-      deletions: 4,
-      patch: `@@ -45,10 +45,24 @@ export const CommitsScreen: React.FC = () => {
--  const [selectedCommit, setSelectedCommit] = useState(null);
-+  const [selectedCommit, setSelectedCommit] = useState<CommitDetail | null>(null);
-+  const [activeTab, setActiveTab] = useState<'diff' | 'details' | 'files' | 'cicd'>('diff');
-+
-+  // Multi-tab commit inspector with syntax highlighting
-+  const handleInspectCommit = (commit: Commit) => {
-+    setSelectedCommit(commit);
-+    setActiveTab('diff');
-+  };
- 
-   return (
--    <div className="space-y-4">
-+    <div className="space-y-4 select-none">`,
-    },
-    {
-      filename: 'src/AppContext.tsx',
-      status: 'modified',
-      additions: 9,
-      deletions: 2,
-      patch: `@@ -748,6 +748,13 @@ export const AppProvider = ({ children }) => {
--  const actualOwner = owner;
-+  const matchedRepo = prev.githubRepos.find(r => r.name === repoName);
-+  const actualOwner = owner || (matchedRepo as any)?.owner?.login || 'nakib555';
-   localStorage.setItem("currentRepoOwner", actualOwner);`,
-    },
-  ];
+/**
+ * Fetches authentic GitHub user timeline activity events or repository events.
+ */
+export async function fetchTimelineEvents({
+  username,
+  repoOwner,
+  repoName,
+  token,
+}: {
+  username?: string | null;
+  repoOwner?: string | null;
+  repoName?: string | null;
+  token?: string | null;
+}): Promise<TimelineEventItem[]> {
+  const headers: Record<string, string> = {
+    Accept: 'application/vnd.github.v3+json',
+  };
+  if (token) {
+    headers['Authorization'] = token.startsWith('ghp_') || token.startsWith('github_pat_') || token.startsWith('gho_') || token.startsWith('Bearer ')
+      ? (token.startsWith('Bearer ') ? token : `Bearer ${token}`)
+      : `token ${token}`;
+  }
+
+  let url = '';
+  if (username && username !== 'guest') {
+    url = `https://api.github.com/users/${username}/events?per_page=30`;
+  } else if (repoOwner && repoName) {
+    url = `https://api.github.com/repos/${repoOwner}/${repoName}/events?per_page=30`;
+  } else {
+    url = `https://api.github.com/events?per_page=30`;
+  }
+
+  try {
+    const res = await fetch(url, { headers });
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        return data.map((item: any) => ({
+          id: item.id,
+          type: item.type,
+          actor: {
+            login: item.actor?.login || 'User',
+            avatarUrl: item.actor?.avatar_url,
+          },
+          repo: {
+            name: item.repo?.name || 'repository',
+          },
+          createdAt: item.created_at,
+          payload: item.payload || {},
+        }));
+      }
+    }
+  } catch (err) {
+    console.warn('[GitAPI] Error fetching timeline events:', err);
+  }
+
+  return [];
 }
