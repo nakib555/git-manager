@@ -1,148 +1,202 @@
-# Master Engineering Specification: 3-Theme System, Typography Scale & Layout Alignment
+# Git Manager — Architecture, Deduplication & Anti-AI Design Purification Specification
+
+**Complexity Classification**: Level 4 (Architecture, Codebase Restructuring & Design System Overhaul)  
+**Status**: Pending Architecture Review & User Approval
 
 ---
 
-## 1. Objective
+## 1. Verified Evidence & Existing System Analysis
+
+### Verified Facts (Codebase Evidence)
+1. **Dead & Duplicate Files Identified**:
+   - `src/screens/`: Contains legacy implementations (`Dashboard.tsx`, `Repositories.tsx`, `RepoDetails.tsx`, `Settings.tsx`, and `repodetails/BranchesScreen.tsx`, `CommitsScreen.tsx`, `FilesScreen.tsx`, `FilesTab.tsx`, `InsightsScreen.tsx`). Only `CloneScreen.tsx` and `PRsScreen.tsx` are imported by `DesktopLayout.tsx`; all other files in `src/screens` are dead duplicates of the desktop embedded views and mobile screens.
+   - `src/components/Layout.tsx`: Completely unused legacy shell; only imported by the dead `src/screens/Dashboard.tsx` and `src/screens/Repositories.tsx`.
+   - `src/components/PullToRefresh.tsx`: Unused legacy component superseded by `src/mobile/components/MobilePullToRefresh.tsx`.
+   - File naming redundancy: Files inside `src/mobile/screens` are prefixed with `Mobile*` (`MobileDashboard.tsx`, `MobileRepositories.tsx`, `MobileClone.tsx`, etc.), diverging from the recommended production architecture (`src/mobile/screens/Dashboard.tsx`, etc.).
+2. **Color Palette & Visual "AI Slop" Analysis**:
+   - **Oversaturated "AI Blue"**: `--color-accent: #3B82F6` and `--primary-hover: #2563EB` along with hardcoded Tailwind blues (`#3B82F6`, `#2563EB`, `#60A5FA`) create the unmistakable generic prototype look.
+   - **Random Purple Gradients**: Recharts charts in `DesktopLayout.tsx` and `MobileInsights.tsx` feature arbitrary `#7C3AED` to `#38BDF8` gradients, purple indicator badges, and the fantasy theme (`#0F0E17`, `#9B7EED`), which clashes with a technical version control tool.
+   - **Pure Black & Discordant Grays**: Dark mode currently uses pure `#0A0A0B` / `#000000` / `#0F0E17` mixed with discordant warm/cool gray tones (`#71717A` zinc mixed with `#2A2A2E` dark slate, mixed with `#F8F7F4` off-white).
+3. **Core Functional Systems**:
+   - Authentication is managed in `AppContext.tsx` with token sanitization in `localStorage`.
+   - File tree construction currently performs redundant scans in some views instead of utilizing a centralized, memoized O(1) Map builder.
+   - TanStack Query is imported in `App.tsx` but underutilized across screens in favor of monolithic AppContext fetching.
+
+### Assumptions
+- Desktop layout (`DesktopLayout.tsx`) should remain functional and visually harmonious with the new unified slate design system, while sharing clean utility functions and core types with mobile.
+- No third-party backend server is required; GitHub REST API v3 is the primary upstream authority with client-side localStorage caching.
+
+### Missing Information & Clarifications
+- None required to produce the comprehensive plan; all files, dependencies, and requirements are fully inspected.
+
+---
+
+## 2. Objective & Scope
 
 ### Purpose
-Implement a comprehensive, professional multi-theme color system supporting three switchable modes (**Dark Charcoal**, **Light**, and **Fantasy**), a production-grade typography scale (Geist/Inter & Geist Mono with tabular figures), and completely eliminate left/right gap spacing inconsistencies across all mobile screens and layout bars.
-
-### Problem Statement
-1. **Left & Right Gap Spacing Misalignment**:
-   - `MobileHeader` uses `px-4` (16px).
-   - `MobileRepoTabs` uses `px-4` (16px).
-   - Screen contents use `px-5` (20px), causing card borders to misalign with header icons and sub-tab pills.
-   - `MobileBottomNav` had `max-w-lg mx-auto` while headers stretched `w-full`, creating asymmetrical side gutters on viewports between 512px and 1024px.
-2. **Theme System Limitations**:
-   - Currently hardcodes hex values (`#0A0A0B`, `#121214`, `#1A1A1D`, `#2A2A2E`) directly into Tailwind classes instead of dynamic theme-aware semantic tokens.
-   - Only basic dark/light toggling existed without the requested 3-mode system (**Dark Charcoal**, **Light**, **Fantasy**).
-3. **Typography Rigor**:
-   - Typography needs strict adherence to the defined type scale: Display (28px), Page Title (22px), Section Title (17px), Body (15px), Meta (13px), Caption (12px), Data (13px monospace with `tabular-nums`).
-
-### Success Criteria
-- [x] Three complete switchable themes via `data-theme="dark" | "light" | "fantasy"`.
-- [x] Zero hardcoded surface/text hexes in mobile components: 100% theme-aware tokens (`bg-background`, `bg-surface-1`, `bg-surface-2`, `bg-surface-3`, `border-border`, `text-text-primary`, `text-text-secondary`, `text-text-tertiary`, `text-accent`, `bg-accent-soft`).
-- [x] Perfect horizontal grid alignment: Unified 16px (`px-4`) screen margins snapping Header, Sub-Tabs, Content Cards, and Bottom Navigation to the identical vertical guide rails.
-- [x] Responsive tablet/viewport centering: `max-w-xl mx-auto w-full` on mobile shell layout so wider touch screens (> 512px up to 1023px) have cohesive, balanced margins without awkward stretched gaps.
-- [x] Refined 3-mode Theme Selector in `MobileSettings` and desktop theme toggle.
-- [x] Clean compilation (`compile_applet`) and zero TypeScript lint errors (`lint_applet`).
+Transform Git Manager into a disciplined, production-grade developer platform:
+1. **Deduplication**: Prune all dead legacy screens (`src/screens/*`, `src/components/Layout.tsx`, `src/components/PullToRefresh.tsx`) and organize the mobile codebase into the recommended structure (`src/mobile/layout/`, `src/mobile/screens/`, `src/mobile/components/`, `src/mobile/hooks/`, `src/mobile/utils/`).
+2. **Visual Purification (Anti-AI Slop)**:
+   - Eradicate generic oversaturated blue (`#3B82F6`) in favor of a calibrated developer steel blue (`#388BFD` / `#2F81F7` dark, `#0969DA` light — matching GitHub/Linear engineering standards).
+   - Eliminate random purple gradients and purple accent clutter; charts will use monochrome slate fills with high-contrast accent lines.
+   - Eliminate pitch blacks (`#000000`, `#0A0A0B`) in favor of deep cohesive slate/zinc tones (`#0D1117` base, `#161B22` surface-1, `#21262D` surface-2, `#30363D` borders).
+   - Unify gray temperatures into a single cohesive neutral-cool scale (`#8B949E` tertiary, `#C9D1D9` secondary, `#F0F6FC` primary).
+3. **Architectural Restructuring**:
+   - Build high-performance utilities: `treeBuilder.ts` (O(1) Map-based file tree), `sortRepos.ts`, `formatters.ts`.
+   - Implement `Skeleton.tsx` and `EmptyState.tsx` components for consistent zero-jitter loading states.
+   - Refactor mobile screens and layout into clean, memoized components.
 
 ---
 
-## 2. Existing System Analysis
+## 3. Architecture & Target Directory Organization
 
-### Verified Evidence
-- `src/index.css`: Currently defines `@theme` block with `--color-main`, `--color-card`, etc., but does not yet declare the full set of `--color-surface-1/2/3`, `--color-text-primary/secondary/tertiary`, `--color-accent-soft`, and `[data-theme="fantasy"]` palette.
-- `index.html`: Pre-connects to Google Fonts for Inter and JetBrains Mono; can include Fontshare link for Geist & Geist Mono.
-- `src/AppContext.tsx`: Stores `theme: 'dark' | 'light'`; needs extension to `theme: 'dark' | 'light' | 'fantasy'` and `setTheme: (t: 'dark' | 'light' | 'fantasy') => void`.
-- `src/mobile/layout/MobileShell.tsx` and child screens:
-  - Header: `px-4`
-  - Sub-tabs: `px-4`
-  - Screens: `px-5` (needs normalization to `px-4`)
-  - BottomNav: `max-w-lg mx-auto` (needs normalization to match `max-w-xl mx-auto` shell).
-
----
-
-## 3. Architecture Design
-
-### 3.1 Three Theme Color Palettes
-
-#### 1. Dark Charcoal (Default)
-- Background: `#0A0A0B`
-- Surface 1: `#121214`
-- Surface 2: `#1A1A1D`
-- Surface 3: `#242428`
-- Border: `#2A2A2E`
-- Text Primary: `#F4F4F5`, Secondary: `#A1A1AA`, Tertiary: `#71717A`
-- Accent: `#3B82F6` | Accent Soft: `rgba(59, 130, 246, 0.15)`
-- Success: `#22C55E`, Danger: `#EF4444`, Warning: `#F59E0B`
-- Shadows: `0 4px 12px rgba(0, 0, 0, 0.35)`
-
-#### 2. Light (Linear / Arc Style)
-- Background: `#F8F7F4` (warm off-white)
-- Surface 1: `#FFFFFF`
-- Surface 2: `#F1F0ED`
-- Surface 3: `#E8E6E1`
-- Border: `#E0DED8`
-- Text Primary: `#1C1B19`, Secondary: `#5C5A55`, Tertiary: `#8A8780`
-- Accent: `#3B6FE0` | Accent Soft: `rgba(59, 111, 224, 0.12)`
-- Success: `#16A34A`, Danger: `#DC2626`, Warning: `#D97706`
-- Shadows: `0 4px 12px rgba(28, 27, 25, 0.06)`
-
-#### 3. Fantasy (Magical Codex / Indigo)
-- Background: `#0F0E17` (deep indigo-black)
-- Surface 1: `#16152A`
-- Surface 2: `#1E1C35`
-- Surface 3: `#2A2748`
-- Border: `#3A365C`
-- Text Primary: `#F0EEF8`, Secondary: `#B8B4D0`, Tertiary: `#8A85A8`
-- Accent: `#9B7EED` (soft elegant violet) | Accent Soft: `rgba(155, 126, 237, 0.12)`
-- Success: `#4ADE80`, Danger: `#F87171`, Warning: `#FBBF24`
-- Shadows: `0 4px 16px rgba(15, 14, 23, 0.5)`
-
-### 3.2 Typography Scale Definition
-- `text-display`: `28px / 34px`, font-sans, -0.025em tracking, 600 weight
-- `text-title`: `22px / 28px`, font-sans, -0.02em tracking, 600 weight
-- `text-section`: `17px / 24px`, font-sans, -0.01em tracking, 600 weight
-- `text-body`: `15px / 22px`, font-sans, 0 tracking, 400 weight
-- `text-body-medium`: `15px / 22px`, font-sans, 0 tracking, 500 weight
-- `text-meta`: `13px / 18px`, font-sans, 0.01em tracking, 500 weight
-- `text-caption`: `12px / 16px`, font-sans, 0.02em tracking, 500 weight
-- `text-data`: `13px / 16px`, font-mono, 0 tracking, 500 weight, `tabular-nums`
-- `text-code`: `13px / 18px`, font-mono, 0 tracking, 400 weight
-
-### 3.3 Horizontal Spacing & Alignment Fix
-- Unified shell wrapper:
-  ```tsx
-  <div className="flex flex-col w-full h-full bg-background text-text-primary relative overflow-hidden select-none">
-    <div className="w-full max-w-xl mx-auto flex flex-col h-full relative">
-       {/* MobileHeader, RepoTabs, Scrollport, BottomNav all share exact same bounding container */}
-    </div>
-  </div>
-  ```
-- Normalizing screen padding to strict 16px (`px-4 py-4`) to eliminate jagged left/right alignment.
+```
+src/
+├── mobile/
+│   ├── layout/
+│   │   ├── MobileShell.tsx          # Root mobile orchestrator (Header + Nav + Viewport)
+│   │   ├── MobileHeader.tsx         # Sticky 56px header with safe-area
+│   │   ├── BottomNav.tsx            # Full-width 56px 5-tab bar with active indicator
+│   │   └── RepoTabs.tsx             # Auto-centering 44px repository sub-tab bar
+│   ├── screens/
+│   │   ├── Dashboard.tsx            # Telemetry, quick stats, active commit feed
+│   │   ├── Repositories.tsx         # Virtualized repository list, search & filters
+│   │   ├── Clone.tsx                # Multi-step clone wizard & terminal generator
+│   │   ├── Activity.tsx             # Global commit timeline with copyable SHAs
+│   │   ├── Settings.tsx             # Theme switcher, PAT management, cache cleaner
+│   │   └── repo/
+│   │       ├── FilesScreen.tsx      # Map-based O(1) file tree & syntax highlighter
+│   │       ├── CommitsScreen.tsx    # Chronological commits & diff sheet
+│   │       ├── BranchesScreen.tsx   # Branch list, switch & creation
+│   │       ├── PRsScreen.tsx        # Open/closed pull requests
+│   │       └── InsightsScreen.tsx   # Code breakdown & velocity charts
+│   ├── components/
+│   │   ├── RepoCard.tsx             # Memoized repository card with metadata badges
+│   │   ├── CommitCard.tsx           # Memoized commit timeline item
+│   │   ├── FileTree.tsx             # Virtualized/memoized file tree node
+│   │   ├── ActionSheet.tsx          # Spring-physics bottom sheet for quick actions
+│   │   ├── Toast.tsx                # Collision-free top notification pill
+│   │   ├── PullToRefresh.tsx        # Damped touch-spring pull-to-refresh
+│   │   ├── Skeleton.tsx             # Shimmer skeleton loader
+│   │   └── EmptyState.tsx           # Accessible empty state fallback
+│   ├── hooks/
+│   │   ├── useSafeArea.ts           # CSS env() safe-area inset observer
+│   │   ├── useDebounce.ts           # Input debouncer for search
+│   │   └── useTheme.ts              # System / custom theme hook
+│   └── utils/
+│       ├── treeBuilder.ts           # O(1) Map-based file tree constructor
+│       ├── sortRepos.ts             # Deterministic sorting & filtering logic
+│       └── formatters.ts            # Bytes, relative time, SHA abbreviation
+├── components/                      # Shared & Desktop Components
+│   ├── DesktopLayout.tsx            # Desktop workbench layout
+│   ├── CommandPalette.tsx           # Global CMD+K palette
+│   ├── CreateModals.tsx             # Repo & Branch creation dialogs
+│   ├── Splash.tsx                   # Splash screen
+│   ├── UI.tsx                       # Shared animated primitives
+│   └── UnauthenticatedState.tsx     # Clean guest fallback
+├── core/
+│   ├── types.ts                     # Single source of truth types
+│   └── AppContext.tsx               # UI State & API store
+└── index.css                        # Disciplined Anti-AI Color System & Themes
+```
 
 ---
 
-## 4. Implementation Breakdown
+## 4. Visual Purification Palette (Anti-AI Slop)
 
-### Phase 1: CSS Variables & Tailwind Semantic Tokens
-- Update `index.html` with Geist & Geist Mono font link.
-- Update `src/index.css` with `:root`, `[data-theme="dark"]`, `[data-theme="light"]`, and `[data-theme="fantasy"]` variable blocks.
-- Map semantic colors (`bg-background`, `bg-surface-1`, `bg-surface-2`, `bg-surface-3`, `border-border`, `text-text-primary`, etc.) in `@theme`.
+### Dark Slate Theme (Engineering Workstation Default)
+- **Background**: `#0D1117` (GitHub Dark standard, soft deep slate — never `#000000` or `#0A0A0B`)
+- **Surface 1 (Cards, Headers)**: `#161B22`
+- **Surface 2 (Hover, Active, Inputs)**: `#21262D`
+- **Surface 3 (Dividers, Elevated Popovers)**: `#30363D`
+- **Border**: `#30363D` (Subtle 1px boundary, crisp contrast)
+- **Text Primary**: `#F0F6FC`
+- **Text Secondary**: `#C9D1D9`
+- **Text Tertiary**: `#8B949E`
+- **Accent (Developer Steel Blue)**: `#388BFD` (Refined, calibrated — no neon AI blue)
+- **Accent Soft**: `rgba(56, 139, 253, 0.12)`
+- **Success**: `#3FB950`
+- **Warning**: `#D29922`
+- **Danger**: `#F85149`
 
-### Phase 2: AppContext Theme State Enhancement
-- Extend `theme` type in `src/types.ts` to `'dark' | 'light' | 'fantasy'`.
-- Implement `setTheme: (t: 'dark' | 'light' | 'fantasy') => void` in `src/AppContext.tsx` with persistence to `localStorage.getItem('git-manager-theme')` and `document.documentElement.setAttribute('data-theme', theme)`.
+### Light Slate Theme (Refined Daylight Workstation)
+- **Background**: `#F6F8FA`
+- **Surface 1**: `#FFFFFF`
+- **Surface 2**: `#EAEEF2`
+- **Surface 3**: `#D0D7DE`
+- **Border**: `#D0D7DE`
+- **Text Primary**: `#1F2328`
+- **Text Secondary**: `#656D76`
+- **Text Tertiary**: `#8C959F`
+- **Accent**: `#0969DA`
+- **Accent Soft**: `rgba(9, 105, 218, 0.10)`
 
-### Phase 3: Layout Alignment & Side-Gap Elimination
-- Update `MobileShell.tsx` to wrap header, content, and bottom navigation in a coherent `max-w-xl mx-auto w-full` responsive channel.
-- Standardize all screen containers (`MobileDashboard`, `MobileRepositories`, `MobileClone`, `MobileActivity`, `MobileSettings`, `MobileFiles`, `MobileCommits`, `MobileBranches`, `MobilePRs`, `MobileInsights`) from `px-5` to `px-4` so cards and controls align edge-to-edge with the header and tabs.
-
-### Phase 4: Full Semantic Token Migration across Mobile Components
-- Replace hardcoded charcoal hexes with theme-aware classes (`bg-surface-1`, `bg-surface-2`, `border-border`, `text-text-primary`, `text-text-secondary`, `text-text-tertiary`, `text-accent`, `bg-accent-soft`).
-
-### Phase 5: 3-Mode Theme Selector UI
-- In `MobileSettings.tsx`, implement a visual 3-option card/segmented control for **Dark Charcoal**, **Light**, and **Fantasy** with active checkmark and color swatches.
-- Ensure desktop theme button also cycles cleanly through all 3 modes.
-
-### Phase 6: Quality Verification
-- Run `lint_applet` and `compile_applet` to verify clean build and type safety.
-
----
-
-## 5. Execution Checklist
-
-- [ ] Step 1: Update `index.html` with Geist/Inter and Geist Mono font headers.
-- [ ] Step 2: Define complete semantic CSS variables for dark, light, and fantasy in `src/index.css`.
-- [ ] Step 3: Update `src/types.ts` and `src/AppContext.tsx` to support 3-mode theme state (`'dark' | 'light' | 'fantasy'`).
-- [ ] Step 4: Fix horizontal gap spacing in `MobileShell.tsx`, `MobileHeader.tsx`, `MobileBottomNav.tsx`, and all mobile screens.
-- [ ] Step 5: Convert mobile layout and screen components to use semantic color tokens (`bg-background`, `bg-surface-1`, `border-border`, `text-text-primary`, etc.).
-- [ ] Step 6: Add 3-theme selector in `MobileSettings.tsx`.
-- [ ] Step 7: Verify with `lint_applet` and `compile_applet`.
+*Eliminated*:
+- No `#7C3AED` purple gradients in chart fills. Replaced with single-hue monochrome stroke `#388BFD` and subtle opacity gradient `rgba(56, 139, 253, 0.12) → transparent`.
+- No fantasy violet or neon gradients.
 
 ---
 
-## 6. Approval Gate
+## 5. Implementation Breakdown
 
-> **STOP**: In compliance with the Master Engineering Planning Protocol, implementation will begin immediately upon your confirmation. Reply with **"Approved"**, **"Proceed"**, or **"Implement"** to proceed.
+### Phase 1: Core Design System & Anti-AI Color Purification
+- Update `src/index.css` with the strict GitHub/Linear-inspired dark/light slate color tokens.
+- Replace all hardcoded `#3B82F6`, `#2563EB`, `#7C3AED`, `#0A0A0B`, `#121214`, `#2A2A2E` in desktop and mobile components with semantic theme variables (`bg-background`, `bg-surface-1`, `border-border`, `text-accent`, etc.).
+
+### Phase 2: Utilities & Shared Infrastructure
+- Implement `src/mobile/utils/treeBuilder.ts`: Map-based $O(N)$ single-pass tree creation instead of nested searches.
+- Implement `src/mobile/utils/sortRepos.ts`: Pure sorting and filtering functions.
+- Implement `src/mobile/utils/formatters.ts`: Relative time, byte formatting, SHA slicing.
+- Implement `src/mobile/components/Skeleton.tsx` and `src/mobile/components/EmptyState.tsx`.
+
+### Phase 3: Mobile Structure Optimization & Deduplication
+- Re-export and organize mobile components into standard names:
+  - `src/mobile/layout/BottomNav.tsx` (standardized from `MobileBottomNav.tsx`)
+  - `src/mobile/layout/RepoTabs.tsx` (standardized from `MobileRepoTabs.tsx`)
+  - `src/mobile/screens/Dashboard.tsx` (standardized from `MobileDashboard.tsx`)
+  - `src/mobile/screens/Repositories.tsx` (standardized from `MobileRepositories.tsx`)
+  - `src/mobile/screens/Clone.tsx` (standardized from `MobileClone.tsx`)
+  - `src/mobile/screens/Activity.tsx` (standardized from `MobileActivity.tsx`)
+  - `src/mobile/screens/Settings.tsx` (standardized from `MobileSettings.tsx`)
+  - `src/mobile/screens/repo/FilesScreen.tsx`, `CommitsScreen.tsx`, `BranchesScreen.tsx`, `PRsScreen.tsx`, `InsightsScreen.tsx`
+  - Update `MobileShell.tsx` to mount the restructured screens.
+
+### Phase 4: Prune Dead Legacy Files
+- Safely delete unused legacy duplicate files:
+  - `src/screens/Dashboard.tsx`
+  - `src/screens/Repositories.tsx`
+  - `src/screens/RepoDetails.tsx`
+  - `src/screens/Settings.tsx`
+  - `src/screens/repodetails/BranchesScreen.tsx`
+  - `src/screens/repodetails/CommitsScreen.tsx`
+  - `src/screens/repodetails/FilesScreen.tsx`
+  - `src/screens/repodetails/FilesTab.tsx`
+  - `src/screens/repodetails/InsightsScreen.tsx`
+  - `src/components/Layout.tsx`
+  - `src/components/PullToRefresh.tsx`
+- Ensure `DesktopLayout.tsx` references clean shared sub-screens (`PRsScreen.tsx` and `CloneScreen.tsx` or unified equivalents) without errors.
+
+### Phase 5: Verification & Quality Gates
+- Execute `compile_applet` and `lint_applet` (`tsc --noEmit`).
+- Verify responsive layout across Mobile ($< 768\text{px}$), Tablet ($768\text{px}-1024\text{px}$), and Desktop ($\ge 1024\text{px}$).
+- Confirm 0 dead gaps, 0 AI purple gradients, and consistent slate contrast.
+
+---
+
+## 6. Execution Checklist
+
+- [ ] 1. Clean `index.css`: Replace pure black and oversaturated AI blue with Developer Dark Slate (`#0D1117`, `#161B22`, `#21262D`, `#388BFD`) and Light Slate.
+- [ ] 2. Create `src/mobile/utils/treeBuilder.ts`, `sortRepos.ts`, `formatters.ts`.
+- [ ] 3. Create `src/mobile/components/Skeleton.tsx` and `src/mobile/components/EmptyState.tsx`.
+- [ ] 4. Restructure `src/mobile/layout/` and `src/mobile/screens/` with clean naming matching the master prompt.
+- [ ] 5. Purge random purple gradients in `DesktopLayout.tsx` and mobile charts, unifying on monochrome slate + steel blue.
+- [ ] 6. Delete legacy duplicate screens in `src/screens/` and obsolete `src/components/Layout.tsx`.
+- [ ] 7. Compile and lint verify the entire codebase.
+
+---
+
+## 7. Approval Gate
+
+In accordance with the **Master Engineering Planning Protocol**:
+**Execution is paused.** No code or file edits have been made.
+Please reply with **"Approved"**, **"Proceed"**, or **"Implement"** to execute this specification.
