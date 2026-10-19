@@ -796,7 +796,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
     }));
   const setSearchFocus = (focus: boolean) =>
     setState((prev) => ({ ...prev, isSearchFocused: focus }));
-  const showToast = (msg: string, type: 'info' | 'success' | 'error' = 'info') => {
+  const showToast = (msg: string, type: 'info' | 'success' | 'warning' | 'error' = 'info') => {
     setState((prev) => ({ ...prev, toastMessage: msg, toastType: type }));
   };
   const setRepoSearchScope = (scope: any) => {

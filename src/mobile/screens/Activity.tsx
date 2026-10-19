@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAppContext } from '../../AppContext';
-import { MobileCommitCard } from '../components/MobileCommitCard';
+import { CommitCard } from '../components/CommitCard';
 import { GitCommit, Activity as ActivityIcon } from 'lucide-react';
 
 export const Activity: React.FC = () => {
@@ -36,7 +36,7 @@ export const Activity: React.FC = () => {
       ) : (
         <div className="space-y-2.5">
           {activeCommits.map((commit, idx) => (
-            <MobileCommitCard
+            <CommitCard
               key={`${commit.hash}-${idx}`}
               commit={{
                 hash: commit.hash,

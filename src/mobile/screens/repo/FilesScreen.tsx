@@ -48,18 +48,55 @@ const getCodeLanguage = (filename: string): string => {
 export const FilesScreen: React.FC = () => {
   const { 
     activeFiles, 
-    loadFileContent, 
-    activeFileContent, 
-    activeFilePath, 
-    activeFileLoading, 
     currentRepo, 
+    currentRepoOwner,
+    githubToken,
     showToast 
   } = useAppContext();
 
+  const [activeFilePath, setActiveFilePath] = useState<string | null>(null);
+  const [activeFileContent, setActiveFileContent] = useState<string>('');
+  const [activeFileLoading, setActiveFileLoading] = useState<boolean>(false);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['src', 'components']));
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFileForModal, setSelectedFileForModal] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState(false);
+
+  const loadFileContent = async (filePath: string) => {
+    setActiveFilePath(filePath);
+    if (!currentRepo || !filePath) return;
+
+    if (githubToken && currentRepoOwner) {
+      setActiveFileLoading(true);
+      try {
+        const headers = {
+          Authorization: githubToken.startsWith('ghp_') || githubToken.startsWith('github_pat_') || githubToken.startsWith('gho_')
+            ? `Bearer ${githubToken}`
+            : `token ${githubToken}`,
+        };
+        const res = await fetch(
+          `https://api.github.com/repos/${currentRepoOwner}/${currentRepo}/contents/${filePath}`,
+          { headers }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          if (data.encoding === 'base64') {
+            setActiveFileContent(safeBase64Decode(data.content));
+          } else {
+            setActiveFileContent(data.content || '');
+          }
+        } else {
+          setActiveFileContent(`// Error loading file (${res.status})`);
+        }
+      } catch (err: any) {
+        setActiveFileContent(`// Error: ${err.message || err}`);
+      } finally {
+        setActiveFileLoading(false);
+      }
+    } else {
+      setActiveFileContent(`// Connect your GitHub account or PAT to inspect live content of ${filePath}.`);
+    }
+  };
 
   // Fast O(1) single-pass tree builder
   const fileTree = useMemo(() => {

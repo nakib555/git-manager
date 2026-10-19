@@ -40,7 +40,7 @@ export interface AppState {
   isActionSheetOpen: boolean;
   isDrawerOpen: boolean;
   toastMessage: string | null;
-  toastType: 'info' | 'success' | 'error';
+  toastType: 'info' | 'success' | 'warning' | 'error';
   isSearchFocused: boolean;
   theme: 'dark' | 'light' | 'fantasy';
   githubToken: string | null;
@@ -80,7 +80,7 @@ export type AppContextType = AppState & {
   closeActionSheet: () => void;
   openDrawer: () => void;
   closeDrawer: () => void;
-  showToast: (msg: string, type?: 'info' | 'success' | 'error') => void;
+  showToast: (msg: string, type?: 'info' | 'success' | 'warning' | 'error') => void;
   setRepoSearchScope: (scope: RepoSearchScope) => void;
   setRepoSortBy: (sortBy: RepoSortBy) => void;
   setRepoSortDirection: (dir: RepoSortDirection) => void;

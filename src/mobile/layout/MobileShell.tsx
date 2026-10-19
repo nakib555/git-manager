@@ -3,10 +3,10 @@ import { useAppContext } from '../../AppContext';
 import { MobileHeader } from './MobileHeader';
 import { RepoTabs } from './RepoTabs';
 import { BottomNav } from './BottomNav';
-import { MobilePullToRefresh } from '../components/MobilePullToRefresh';
-import { MobileActionSheet } from '../components/MobileActionSheet';
+import { PullToRefresh } from '../components/PullToRefresh';
+import { ActionSheet } from '../components/ActionSheet';
 import { MobileDrawer } from '../components/MobileDrawer';
-import { MobileToast } from '../components/MobileToast';
+import { Toast } from '../components/Toast';
 
 // Canonical Mobile Screens
 import { Dashboard } from '../screens/Dashboard';
@@ -44,11 +44,11 @@ export const MobileShell: React.FC = () => {
 
       {/* 3. Main Scrollport with Damped Pull-to-Refresh & Safe Bottom Padding */}
       {!githubToken && currentScreen !== 'settings' && currentScreen !== 'repos' ? (
-        <MobilePullToRefresh>
+        <PullToRefresh>
           <UnauthenticatedState />
-        </MobilePullToRefresh>
+        </PullToRefresh>
       ) : (
-        <MobilePullToRefresh>
+        <PullToRefresh>
           {currentScreen === 'dash' && <Dashboard />}
           {currentScreen === 'repos' && <Repositories />}
           {currentScreen === 'clone' && <Clone />}
@@ -59,7 +59,7 @@ export const MobileShell: React.FC = () => {
           {currentScreen === 'branches' && <BranchesScreen />}
           {currentScreen === 'prs' && <PRsScreen />}
           {currentScreen === 'insights' && <InsightsScreen />}
-        </MobilePullToRefresh>
+        </PullToRefresh>
       )}
 
         {/* 4. Fixed 56px Bottom Navigation */}
@@ -67,7 +67,7 @@ export const MobileShell: React.FC = () => {
       </div>
 
       {/* 5. Interactive Overlays & Drawers */}
-      <MobileActionSheet
+      <ActionSheet
         isOpen={isActionSheetOpen}
         onClose={() => setIsActionSheetOpen(false)}
       />
@@ -77,7 +77,7 @@ export const MobileShell: React.FC = () => {
       />
 
       {/* 6. Floating Top Toast */}
-      <MobileToast />
+      <Toast />
     </div>
   );
 };

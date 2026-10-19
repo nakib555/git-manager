@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../../../AppContext';
-import { MobileCommitCard } from '../../components/MobileCommitCard';
+import { CommitCard } from '../../components/CommitCard';
 import { GitCommit, Copy, Check, X, FileDiff, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -41,7 +41,7 @@ export const CommitsScreen: React.FC = () => {
       ) : (
         <div className="space-y-2.5">
           {activeCommits.map((commit, idx) => (
-            <MobileCommitCard
+            <CommitCard
               key={`${commit.hash}-${idx}`}
               commit={{
                 hash: commit.hash,

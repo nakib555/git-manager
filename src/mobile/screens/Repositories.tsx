@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppContext } from '../../AppContext';
-import { MobileRepoCard } from '../components/MobileRepoCard';
+import { RepoCard } from '../components/RepoCard';
 import { 
   Search, SlidersHorizontal, X, ChevronLeft, ChevronRight, 
   Check, FolderGit2, Loader2 
@@ -183,7 +183,7 @@ export const Repositories: React.FC = () => {
           </div>
         ) : (
           githubRepos.map((repo) => (
-            <MobileRepoCard
+            <RepoCard
               key={repo.name}
               repo={repo}
               isActive={currentRepo === repo.name}
