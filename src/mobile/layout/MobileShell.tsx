@@ -1,26 +1,26 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../../AppContext';
 import { MobileHeader } from './MobileHeader';
-import { MobileRepoTabs } from './MobileRepoTabs';
-import { MobileBottomNav } from './MobileBottomNav';
+import { RepoTabs } from './RepoTabs';
+import { BottomNav } from './BottomNav';
 import { MobilePullToRefresh } from '../components/MobilePullToRefresh';
 import { MobileActionSheet } from '../components/MobileActionSheet';
 import { MobileDrawer } from '../components/MobileDrawer';
 import { MobileToast } from '../components/MobileToast';
 
-// Screens
-import { MobileDashboard } from '../screens/MobileDashboard';
-import { MobileRepositories } from '../screens/MobileRepositories';
-import { MobileClone } from '../screens/MobileClone';
-import { MobileActivity } from '../screens/MobileActivity';
-import { MobileSettings } from '../screens/MobileSettings';
+// Canonical Mobile Screens
+import { Dashboard } from '../screens/Dashboard';
+import { Repositories } from '../screens/Repositories';
+import { Clone } from '../screens/Clone';
+import { Activity } from '../screens/Activity';
+import { Settings } from '../screens/Settings';
 
-// Repo Sub-screens
-import { MobileFiles } from '../screens/repo/MobileFiles';
-import { MobileCommits } from '../screens/repo/MobileCommits';
-import { MobileBranches } from '../screens/repo/MobileBranches';
-import { MobilePRs } from '../screens/repo/MobilePRs';
-import { MobileInsights } from '../screens/repo/MobileInsights';
+// Canonical Repo Sub-screens
+import { FilesScreen } from '../screens/repo/FilesScreen';
+import { CommitsScreen } from '../screens/repo/CommitsScreen';
+import { BranchesScreen } from '../screens/repo/BranchesScreen';
+import { PRsScreen } from '../screens/repo/PRsScreen';
+import { InsightsScreen } from '../screens/repo/InsightsScreen';
 
 // Unauthenticated component
 import { UnauthenticatedState } from '../../components/UnauthenticatedState';
@@ -40,7 +40,7 @@ export const MobileShell: React.FC = () => {
         />
 
         {/* 2. Optional Contextual 44px Repo Sub-tabs */}
-        <MobileRepoTabs />
+        <RepoTabs />
 
       {/* 3. Main Scrollport with Damped Pull-to-Refresh & Safe Bottom Padding */}
       {!githubToken && currentScreen !== 'settings' && currentScreen !== 'repos' ? (
@@ -49,21 +49,21 @@ export const MobileShell: React.FC = () => {
         </MobilePullToRefresh>
       ) : (
         <MobilePullToRefresh>
-          {currentScreen === 'dash' && <MobileDashboard />}
-          {currentScreen === 'repos' && <MobileRepositories />}
-          {currentScreen === 'clone' && <MobileClone />}
-          {currentScreen === 'activity' && <MobileActivity />}
-          {currentScreen === 'settings' && <MobileSettings />}
-          {currentScreen === 'files' && <MobileFiles />}
-          {currentScreen === 'commits' && <MobileCommits />}
-          {currentScreen === 'branches' && <MobileBranches />}
-          {currentScreen === 'prs' && <MobilePRs />}
-          {currentScreen === 'insights' && <MobileInsights />}
+          {currentScreen === 'dash' && <Dashboard />}
+          {currentScreen === 'repos' && <Repositories />}
+          {currentScreen === 'clone' && <Clone />}
+          {currentScreen === 'activity' && <Activity />}
+          {currentScreen === 'settings' && <Settings />}
+          {currentScreen === 'files' && <FilesScreen />}
+          {currentScreen === 'commits' && <CommitsScreen />}
+          {currentScreen === 'branches' && <BranchesScreen />}
+          {currentScreen === 'prs' && <PRsScreen />}
+          {currentScreen === 'insights' && <InsightsScreen />}
         </MobilePullToRefresh>
       )}
 
         {/* 4. Fixed 56px Bottom Navigation */}
-        <MobileBottomNav />
+        <BottomNav />
       </div>
 
       {/* 5. Interactive Overlays & Drawers */}
