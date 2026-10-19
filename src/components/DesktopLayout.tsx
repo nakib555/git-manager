@@ -744,12 +744,12 @@ const DesktopDashboard: React.FC<{ globalSearch: string }> = ({ globalSearch }) 
               <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
                 <defs>
                   <linearGradient id="primaryGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#388BFD" stopOpacity={0.25}/>
-                    <stop offset="95%" stopColor="#388BFD" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#7C3AED" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#7C3AED" stopOpacity={0}/>
                   </linearGradient>
                   <linearGradient id="infoGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3FB950" stopOpacity={0.25}/>
-                    <stop offset="95%" stopColor="#3FB950" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#38BDF8" stopOpacity={0.25}/>
+                    <stop offset="95%" stopColor="#38BDF8" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
                 {showGrid && <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.5} />}
@@ -771,7 +771,7 @@ const DesktopDashboard: React.FC<{ globalSearch: string }> = ({ globalSearch }) 
                 <Tooltip cursor={false} 
                   contentStyle={{ 
                     backgroundColor: 'var(--card)', 
-                    border: '1px solid var(--border)', 
+                    border: 'none', 
                     borderRadius: '12px', 
                     fontSize: '11px',
                     color: 'var(--text-main)',
@@ -780,10 +780,10 @@ const DesktopDashboard: React.FC<{ globalSearch: string }> = ({ globalSearch }) 
                   itemStyle={{ color: 'var(--text-main)' }}
                 />
                 {showCommitsLine && (
-                  <Area type="monotone" dataKey="commits" name="Commits Volume" stroke="#388BFD" strokeWidth={2.5} fillOpacity={1} fill="url(#primaryGrad)" />
+                  <Area type="monotone" dataKey="commits" name="Commits Volume" stroke="#7C3AED" strokeWidth={2.5} fillOpacity={1} fill="url(#primaryGrad)" />
                 )}
                 {showPRsLine && (
-                  <Area type="monotone" dataKey="prs" name="Pull Request Activity" stroke="#3FB950" strokeWidth={2.5} fillOpacity={1} fill="url(#infoGrad)" />
+                  <Area type="monotone" dataKey="prs" name="Pull Request Activity" stroke="#38BDF8" strokeWidth={2.5} fillOpacity={1} fill="url(#infoGrad)" />
                 )}
               </AreaChart>
             </ResponsiveContainer>
@@ -799,10 +799,10 @@ const DesktopDashboard: React.FC<{ globalSearch: string }> = ({ globalSearch }) 
             </button>
             <div className="flex gap-4 text-[10px] font-bold text-text-muted">
               <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-[#388BFD]" /> Commits
+                <span className="w-2 h-2 rounded-full bg-[#7C3AED]" /> Commits
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-[#3FB950]" /> PR Activity
+                <span className="w-2 h-2 rounded-full bg-[#38BDF8]" /> PR Activity
               </span>
             </div>
           </div>
@@ -822,13 +822,13 @@ const DesktopDashboard: React.FC<{ globalSearch: string }> = ({ globalSearch }) 
                     <div className="flex flex-wrap gap-2">
                       <button 
                         onClick={() => setShowCommitsLine(!showCommitsLine)}
-                        className={`px-3 py-1.5 rounded-full border text-[11px] font-bold transition-all cursor-pointer ${showCommitsLine ? 'bg-accent-soft border-accent/40 text-accent' : 'border-border text-text-muted bg-card'}`}
+                        className={`px-3 py-1.5 rounded-full border text-[11px] font-bold transition-all cursor-pointer ${showCommitsLine ? 'bg-[#7C3AED]/10 border-[#7C3AED]/35 text-[#7C3AED]' : 'border-border text-text-muted bg-card'}`}
                       >
                         {showCommitsLine ? '✓ Commits Visible' : '✗ Commits Hidden'}
                       </button>
                       <button 
                         onClick={() => setShowPRsLine(!showPRsLine)}
-                        className={`px-3 py-1.5 rounded-full border text-[11px] font-bold transition-all cursor-pointer ${showPRsLine ? 'bg-success/10 border-success/40 text-success' : 'border-border text-text-muted bg-card'}`}
+                        className={`px-3 py-1.5 rounded-full border text-[11px] font-bold transition-all cursor-pointer ${showPRsLine ? 'bg-[#38BDF8]/10 border-[#38BDF8]/35 text-[#38BDF8]' : 'border-border text-text-muted bg-card'}`}
                       >
                         {showPRsLine ? '✓ PRs Visible' : '✗ PRs Hidden'}
                       </button>
@@ -1408,7 +1408,7 @@ const DesktopRepositories: React.FC<{ globalSearch: string }> = ({ globalSearch 
                 <div className="border border-border p-4 rounded-xl bg-hover/10 space-y-1">
                   <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider block">Repository Directory Owner</span>
                   <span className="text-xs font-bold text-text-main flex items-center gap-2">
-                    <User size={12} className="text-accent" /> {selectedRepo.owner || 'Offline Mode'}
+                    <User size={12} className="text-purple-500" /> {selectedRepo.owner || 'Offline Mode'}
                   </span>
                 </div>
               </div>
@@ -2367,11 +2367,11 @@ const DesktopInsightsView: React.FC = () => {
               <AreaChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="insGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#388BFD" stopOpacity={0.25}/>
-                    <stop offset="95%" stopColor="#388BFD" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#7C3AED" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#7C3AED" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <Area type="monotone" dataKey="uv" stroke="#388BFD" strokeWidth={2.5} fillOpacity={1} fill="url(#insGrad)" />
+                <Area type="monotone" dataKey="uv" stroke="#7C3AED" strokeWidth={2.5} fillOpacity={1} fill="url(#insGrad)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>

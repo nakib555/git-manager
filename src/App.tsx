@@ -15,7 +15,7 @@ const MainApp = () => {
   const isDesktop = useIsDesktop();
 
   return (
-    <div className="flex flex-col w-full h-full bg-background text-text-primary opacity-0 animate-[fadeUp_0.3s_ease_forwards] relative">
+    <div className="flex flex-col w-full h-full bg-[#0A0A0B] opacity-0 animate-[fadeUp_0.3s_ease_forwards] relative">
       {isDesktop ? (
         <DesktopLayout />
       ) : (
