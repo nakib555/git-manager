@@ -1,6 +1,6 @@
 import React from 'react';
 import { GitCommit, Copy, Clock, ChevronRight } from 'lucide-react';
-import { formatRelativeTime } from '../utils/formatters';
+import { formatRelativeTime, formatFullDateTime, formatShortDate } from '../utils/formatters';
 
 export interface CommitCardProps {
   commit: {
