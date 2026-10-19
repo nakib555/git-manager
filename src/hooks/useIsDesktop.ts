@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 export function useIsDesktop(): boolean {
   const [isDesktop, setIsDesktop] = useState(() => {
     if (typeof window !== 'undefined') {
-      return window.innerWidth >= 768;
+      return window.innerWidth >= 1024;
     }
     return false;
   });
@@ -12,7 +12,7 @@ export function useIsDesktop(): boolean {
     if (typeof window === 'undefined') return;
 
     const handleResize = () => {
-      setIsDesktop(window.innerWidth >= 768);
+      setIsDesktop(window.innerWidth >= 1024);
     };
 
     window.addEventListener('resize', handleResize);

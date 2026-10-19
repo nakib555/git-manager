@@ -1,59 +1,28 @@
 import React, { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppProvider, useAppContext } from './AppContext';
-import { Header, BottomNav, RepoTabs } from './components/Layout';
-import { ActionSheet, NotificationDrawer, Toast } from './components/UI';
 import { Splash } from './components/Splash';
 import { CreateModals } from './components/CreateModals';
-import { PullToRefresh } from './components/PullToRefresh';
 import { useIsDesktop } from './hooks/useIsDesktop';
 import { DesktopLayout } from './components/DesktopLayout';
-import { Dashboard } from './screens/Dashboard';
-import { Repositories } from './screens/Repositories';
-import { RepoDetails } from './screens/RepoDetails';
-import { CloneScreen } from './screens/CloneScreen';
-import { Settings } from './screens/Settings';
-
 import { CommandPalette } from './components/CommandPalette';
-import { UnauthenticatedState } from './components/UnauthenticatedState';
+import { MobileShell } from './mobile/layout/MobileShell';
 
 const queryClient = new QueryClient();
 
 const MainApp = () => {
-  const { currentScreen, githubToken, isCommandPaletteOpen, closeCommandPalette } = useAppContext();
+  const { isCommandPaletteOpen, closeCommandPalette } = useAppContext();
   const isDesktop = useIsDesktop();
 
   return (
-    <div className="flex flex-col w-full h-full bg-main opacity-0 animate-[fadeUp_0.3s_ease_forwards] relative">
+    <div className="flex flex-col w-full h-full bg-[#0A0A0B] opacity-0 animate-[fadeUp_0.3s_ease_forwards] relative">
       {isDesktop ? (
         <DesktopLayout />
       ) : (
-        <>
-          <Header />
-          {!githubToken && currentScreen !== 'settings' ? (
-            <PullToRefresh>
-              <UnauthenticatedState />
-            </PullToRefresh>
-          ) : (
-            <>
-              <RepoTabs />
-              <PullToRefresh>
-                {currentScreen === 'dash' && <Dashboard />}
-                {currentScreen === 'repos' && <Repositories />}
-                {['commits', 'prs', 'branches', 'files', 'insights'].includes(currentScreen) && <RepoDetails />}
-                {currentScreen === 'clone' && <CloneScreen />}
-                {currentScreen === 'settings' && <Settings />}
-              </PullToRefresh>
-            </>
-          )}
-          <BottomNav />
-          <ActionSheet />
-          <NotificationDrawer />
-        </>
+        <MobileShell />
       )}
       <CommandPalette isOpen={isCommandPaletteOpen} onClose={closeCommandPalette} />
       <CreateModals />
-      <Toast />
     </div>
   );
 };

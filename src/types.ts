@@ -1,4 +1,4 @@
-export type Screen = 'dash' | 'repos' | 'commits' | 'prs' | 'branches' | 'files' | 'insights' | 'settings' | 'clone';
+export type Screen = 'dash' | 'repos' | 'commits' | 'prs' | 'branches' | 'files' | 'insights' | 'settings' | 'clone' | 'activity';
 
 export interface GitHubUser {
   login: string;
@@ -16,6 +16,8 @@ export interface GitHubRepo {
   description: string;
   language: string;
   pushed_at: string;
+  updated_at?: string;
+  fork?: boolean;
   owner?: {
     login: string;
     avatar_url?: string;
