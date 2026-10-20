@@ -1377,7 +1377,7 @@ export default function App() {
                 </div>
                 <button 
                   onClick={() => setIsPlaceModalOpen(false)}
-                  className="p-1 hover:bg-hover rounded-md text-text-muted hover:text-text-main transition-colors cursor-pointer"
+                  className="p-1 hover:bg-hover rounded-full text-text-muted hover:text-text-main transition-colors cursor-pointer"
                 >
                   <X size={18} />
                 </button>

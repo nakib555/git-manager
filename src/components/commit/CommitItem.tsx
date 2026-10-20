@@ -75,9 +75,7 @@ export const CommitItem = memo(({ commit, isSelected, isLatest, onSelect, onActi
                     {commit.avatar ? (
                       <img src={commit.avatar} alt="Author" className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full bg-surface-2 flex items-center justify-center text-[8px] font-bold text-text-muted">
-                        {commit.author?.[0]?.toUpperCase() || 'U'}
-                      </div>
+                      <div className="w-full h-full bg-gradient-to-br from-primary/40 to-info/40"></div>
                     )}
                   </div>
                   <span className="text-[10px] font-bold text-text-main/80 truncate max-w-[100px]">{commit.author}</span>
@@ -95,7 +93,7 @@ export const CommitItem = memo(({ commit, isSelected, isLatest, onSelect, onActi
                 e.stopPropagation();
                 onActionClick(commit);
               }}
-              className="w-8 h-8 rounded-md flex items-center justify-center text-text-muted hover:text-text-main hover:bg-hover active:bg-border transition-colors -mr-1"
+              className="w-8 h-8 rounded-full flex items-center justify-center text-text-muted hover:text-text-main hover:bg-hover active:bg-border transition-colors -mr-1"
             >
               <MoreVertical size={16} />
             </button>

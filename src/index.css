@@ -18,15 +18,6 @@
   --color-danger: var(--color-danger);
   --color-warning: var(--color-warning);
 
-  /* Purpose-Driven Domain Tokens */
-  --color-pr-open: var(--color-pr-open);
-  --color-pr-merged: var(--color-pr-merged);
-  --color-pr-closed: var(--color-pr-closed);
-  --color-pr-draft: var(--color-pr-draft);
-
-  --color-chart-commits: var(--color-chart-commits);
-  --color-chart-prs: var(--color-chart-prs);
-
   /* Legacy mappings */
   --color-main: var(--color-background);
   --color-card: var(--color-surface-1);
@@ -64,14 +55,6 @@
   --color-success: #3E7E55;
   --color-danger: #A24B49;
   --color-warning: #9C7436;
-
-  --color-pr-open: #3E7E55;
-  --color-pr-merged: #8B809E;
-  --color-pr-closed: #A24B49;
-  --color-pr-draft: #70757E;
-
-  --color-chart-commits: #5E7896;
-  --color-chart-prs: #3FB950;
 
   --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.25);
   --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.35);
@@ -123,14 +106,6 @@
   --color-danger: #933836;
   --color-warning: #875F25;
 
-  --color-pr-open: #286840;
-  --color-pr-merged: #6B627E;
-  --color-pr-closed: #933836;
-  --color-pr-draft: #5C5E67;
-
-  --color-chart-commits: #3E5670;
-  --color-chart-prs: #1A7F37;
-
   --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.06);
   --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.08);
 
@@ -179,14 +154,6 @@
   --color-success: #3E7E55;
   --color-danger: #A24B49;
   --color-warning: #9C7436;
-
-  --color-pr-open: #3E7E55;
-  --color-pr-merged: #8B809E;
-  --color-pr-closed: #A24B49;
-  --color-pr-draft: #68717D;
-
-  --color-chart-commits: #667C8F;
-  --color-chart-prs: #3FB950;
 
   --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.3);
   --shadow-medium: 0 4px 14px rgba(0, 0, 0, 0.4);

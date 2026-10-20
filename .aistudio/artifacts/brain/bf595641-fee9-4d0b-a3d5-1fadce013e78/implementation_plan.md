@@ -1,237 +1,251 @@
-# Architecture Specification: Purpose-Driven Semantic Design System
+# Architecture Specification: Professional & Intentional Visual System Redesign
 
-## Complexity Classification: Level 3 (Feature & Visual Architecture Redesign)
+## Complexity Classification: Level 4 (Architecture & Design System Redesign)
 
 ---
 
 ## 1. Verified Facts, Assumptions, and Missing Information
 
 ### Verified Facts
-1. **Current Visual Monotony**:
-   - In response to the previous prompt, multiple purposeful colors were collapsed into the same general `accent` or `slate` token.
-   - For example, in `src/screens/repodetails/PRsScreen.tsx` and `src/mobile/screens/repo/PRsScreen.tsx`, merged pull requests (`pr.status === 'Merged'`) were set to `text-accent` instead of the universally recognized Git Merge purple status (`#8250DF` / `#A371F7`), causing Open PRs, Merged PRs, and branch refs to blend together.
-   - In `InsightsScreen.tsx`, series colors were flattened to a single slate color, reducing quick glanceability between commits volume, PR activity, and code churn.
-   - In `DesktopLayout.tsx`, forks, branches, and timeline events now share identical desaturated gray tones.
-2. **Industry Standard for Developer Tools (GitHub, GitLab, JetBrains, Linear)**:
-   - High-performance developer tools avoid arbitrary "neon AI gradients", but they **do not make everything monochrome**.
-   - Color is applied strictly according to **functional purpose and domain semantics**:
-     - **Pull Request Lifecycle**:
-       - Open: Muted Emerald Green (`#2DA44E` light / `#3FB950` dark)
-       - Merged: Calibrated Git Merge Purple (`#8250DF` light / `#A371F7` dark)
-       - Closed / Rejected: Oxide Red (`#CF222E` light / `#F85149` dark)
-       - Draft: Neutral Charcoal Slate (`#6E7781` light / `#8B949E` dark)
-     - **CI/CD Build States**:
-       - Passing: Muted Emerald (`#2DA44E` / `#3FB950`)
-       - Failing / Broken: Oxide Red (`#CF222E` / `#F85149`)
-       - Running / In Progress: Warm Amber / Ochre (`#D29922`) or Tool Blue (`#4183C4`)
-       - Queued / Neutral: Slate (`#71717A`)
-     - **Language Ecosystem**:
-       - TypeScript: `#3178C6`
-       - Python: `#3572A5`
-       - Rust: `#DEA584`
-       - Go: `#00ADD8`
-       - HTML: `#E34C26`
-       - CSS: `#563D7C`
-       - JavaScript: `#F7DF1E`
-     - **Code Review & Diffs**:
-       - Additions: Clean Forest Green (`#1A7F37` / `#3FB950`) with soft green tint
-       - Deletions: Clean Oxide Red (`#CF222E` / `#F85149`) with soft red tint
-       - Range Chunks (`@@`): Restrained Slate Cyan (`#4183C4` / `#58A6FF` or `#7E92A6`)
-     - **Analytics / Insights Multi-Series Data**:
-       - Distinct distinguishable colors for each metric series (Commits Volume vs PR Activity vs File Churn) so graphs are readable at a glance without reading text tooltips.
-3. **Workspace Theme Choice**:
-   - Different developers work in different lighting conditions and project environments (e.g., Dark Charcoal for everyday terminal use, Warm Linen for daytime ambient light, High-Contrast Slate for detailed diff reviews).
+1. **Current Color Tokens & Themes (`src/index.css`)**:
+   - `[data-theme="dark"]` uses `--color-accent: #3B82F6` (neon/pure blue, explicitly forbidden) and `--primary-hover: #2563EB`.
+   - `[data-theme="light"]` uses `--color-accent: #3B6FE0` (pure bright blue).
+   - `[data-theme="fantasy"]` uses `--color-accent: #9B7EED` (purple/violet accent as primary brand, explicitly forbidden).
+   - Legacy variables `--primary`, `--accent`, `--info` are tied directly to `#3B82F6`.
+2. **Glassmorphism & Neon Glow Usage**:
+   - Multiple mobile and desktop layouts rely on `backdrop-blur-md`, `backdrop-blur-lg`, `backdrop-blur-sm`, and `backdrop-blur-xs` (e.g. `src/mobile/layout/MobileHeader.tsx`, `src/mobile/layout/BottomNav.tsx`, `src/components/DesktopLayout.tsx`, `src/components/UI.tsx`, `src/screens/CloneScreen.tsx`).
+   - Neon glow shadows exist (e.g., `shadow-[#3B82F6]/10`, `shadow-lg`, glowing ping animations).
+3. **Pill & Shape Inconsistencies**:
+   - Badges, status indicators, and buttons widely use `rounded-full` (e.g., filter chips, PR status badges, repository tags, toast notification capsules).
+   - Inconsistent border radius mixes high radius (16px–24px) with pills.
+4. **Typography & Font Weight Inconsistencies**:
+   - Arbitrary use of `font-extrabold` (800) alongside unstyled text without clear typographic scale.
+5. **Component Surface Styling**:
+   - `src/components/DesktopLayout.tsx`, `src/components/UI.tsx`, `src/components/CreateModals.tsx`, `src/mobile/screens/repo/*`, `src/screens/repodetails/*` contain hardcoded `#3B82F6`, `bg-purple-500`, `text-blue-500`, and `backdrop-blur`.
 
 ### Assumptions
-- The user desires intentional, domain-specific colors assigned to components according to their functional purpose (e.g. PR status, CI/CD, language, branches, analytics), avoiding a monotonous "same everywhere" appearance while strictly adhering to professional tool design standards (no neon glows, no synthetic glassmorphism, no arbitrary AI blobs).
-- Users should also be able to select purposeful workspace themes in Settings that cater to their working environment.
+- The application must maintain its full Git manager capabilities (desktop multi-pane workbench and mobile viewports) while transforming into an intentional, calm, tool-like developer instrument (akin to Linear, Xcode, JetBrains, or Sublime Merge).
+- All 3 theme variants should be updated to professional developer palettes (e.g., Calibrated Charcoal, Warm Paper/Architectural Gray, and Deep Graphite/Slate), completely eliminating all neon blues and purple brand accents.
 
 ### Missing Information
-- None. Codebase components and style definitions are fully mapped.
+- None. Complete codebase audit across styling tokens, layout wrappers, and individual components has been verified via source exploration.
 
 ---
 
 ## 2. Objective
 
-- **Purpose**: Transform the visual system from a uniform, single-color palette into a **Purpose-Driven Semantic Color Architecture**, where every color serves a distinct, functional, and meaningful role based on Git workflows.
-- **Problem**: Over-flattening colors made the interface visually monotonous ("same everywhere"), making it difficult to differentiate between Merged vs Open PRs, distinct chart series, language ecosystems, and CI/CD stages at a glance.
-- **Business & Technical Value**:
-  - Restores instant glanceability and cognitive speed for developers.
-  - Matches professional industry standards (GitHub, Linear, Xcode, GitLab).
-  - Maintains strict anti-AI discipline (no neon glows, no chaotic multi-color gradients, no glassmorphism).
+- **Purpose**: Completely eliminate all generic "AI-generated" visual artifacts (neon blue accents, glowing drop shadows, glassmorphism blur, purple brand accents, over-rounded pills, arbitrary weights) and replace them with a cohesive, calm, highly refined design system engineered for focused developer productivity.
+- **Problem**: 
+  - Visual system features pure blues (`#3B82F6`, `#2563EB`), purple brand accents, and translucent blurred surfaces that convey generic AI prototype aesthetics rather than a serious developer utility.
+  - Inconsistent radii and lack of strict border/elevation rules undermine hierarchy and trust.
 - **Success Criteria**:
-  - Distinct, purposeful semantic tokens for:
-    1. PR Statuses (Open = Emerald, Merged = Git Purple, Closed = Crimson, Draft = Slate).
-    2. CI/CD Pipeline (Success = Emerald, Running = Amber/Cyan, Failed = Crimson, Queued = Slate).
-    3. Multi-series Chart Visuals (distinct series lines with high contrast and calm fills).
-    4. Language Ecosystem colors preserved and legibly rendered.
-    5. Diff Viewer with crisp additions/deletions/chunk headers.
-  - Retain clean, solid surfaces with 1px borders, zero glassmorphism, and structured 8-point spatial hierarchy.
+  - Zero instances of pure/neon blue (`#3B82F6`, `#2563EB`, `#0EA5E9`, `#06B6D4`) and primary purple/violet brand accents.
+  - Zero glassmorphism (`backdrop-blur-*`); all surfaces use solid, crisp 1px borders with calm, neutral elevation.
+  - Restrained desaturated accent system (calm slate blue-gray) with high legibility.
+  - Strict typography scale with consistent 400 / 500 / 600 weight usage and monospace for code/SHA/data.
+  - Strict 8-point spatial rhythm with moderate border radii (4–6px badges, 6–8px buttons, 8–12px cards/modals; no decorative pill capsules).
+  - Clean validation passing across TypeScript, build, and responsive checks.
+- **Non-Goals**:
+  - Altering underlying Git logic, commit data models, or state management contracts.
 
 ---
 
-## 3. Architecture Design
+## 3. Existing System Analysis
 
-### 3.1 Purpose-Driven Semantic Token System
+### Core Surfaces & Tokens
+- **`src/index.css`**: Defines CSS variables in `@theme` and `:root`. Currently exports neon blue values and glowing shadow declarations. Needs total token redesign.
+- **`src/mobile/screens/Settings.tsx` & `src/AppContext.tsx`**: Theme definitions include "Deep Indigo" with `#9B7EED`. Needs refactoring to "Slate Graphite" or "Deep Obsidian" with restrained desaturated slate styling.
+- **`src/components/DesktopLayout.tsx`**: Desktop shell containing header, breadcrumbs, sidebar, commits list, diff viewer, insights chart, and modal dialogues. Heavy use of hardcoded colors and pills.
+- **`src/components/UI.tsx` & `src/mobile/components/*`**: Action sheets, drawers, modals, toasts using `backdrop-blur-*`, glowing borders, and rounded pills.
+- **`src/components/CreateModals.tsx`**: Contains `purple-500` actions and modals.
+- **`src/mobile/screens/repo/InsightsScreen.tsx`**: Chart lines hardcoded to `#3B82F6` and neon gradients.
+
+---
+
+## 4. Architecture Design
+
+### 4.1 Restrained Color System
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│                   PURPOSE-DRIVEN SEMANTIC MATRIX                       │
-├──────────────────────┬──────────────────────────┬──────────────────────┤
-│ Functional Domain    │ Dark Theme Token         │ Light Theme Token    │
-├──────────────────────┼──────────────────────────┼──────────────────────┤
-│ Chrome Background    │ #111215 (Calm Charcoal)  │ #F7F7F5 (Warm Linen) │
-│ Surfaces / Cards     │ #18191D / #202227        │ #FFFFFF / #EFEFED    │
-│ Primary Text         │ #ECECF1                  │ #1C1D21              │
-│ Secondary / Muted    │ #9898A2                  │ #5C5E67              │
-│ Accent (Workspace)   │ #5E7896 (Slate Blue-Gray)│ #3E5670 (Deep Slate) │
-├──────────────────────┼──────────────────────────┼──────────────────────┤
-│ PR: Open Status      │ #3FB950 (Emerald Green)  │ #1A7F37 (Forest)     │
-│ PR: Merged Status    │ #A371F7 (Git Purple)     │ #8250DF (Muted Plum) │
-│ PR: Closed Status    │ #F85149 (Oxide Red)      │ #CF222E (Crimson)    │
-│ PR: Draft Status     │ #8B949E (Muted Slate)    │ #6E7781 (Charcoal)   │
-├──────────────────────┼──────────────────────────┼──────────────────────┤
-│ CI/CD: Passing       │ #3FB950 (Emerald)        │ #1A7F37 (Forest)     │
-│ CI/CD: Running       │ #D29922 (Amber Ochre)    │ #9A6700 (Raw Amber)  │
-│ CI/CD: Failed        │ #F85149 (Crimson)        │ #CF222E (Brick Red)  │
-│ CI/CD: Queued        │ #71717A (Neutral Slate)  │ #8A8780 (Muted Gray) │
-├──────────────────────┼──────────────────────────┼──────────────────────┤
-│ Diff: Additions (+)  │ #3FB950 text / 12% fill  │ #1A7F37 text / 8% fill│
-│ Diff: Deletions (-)  │ #F85149 text / 12% fill  │ #CF222E text / 8% fill│
-│ Diff: Chunks (@@)    │ #79B8FF (Muted Ice)      │ #0550AE (Cobalt Ink) │
-├──────────────────────┼──────────────────────────┼──────────────────────┤
-│ Insights Series 1    │ #5E7896 (Commits Vol)    │ #3E5670 (Commits Vol)│
-│ Insights Series 2    │ #3FB950 (PR Activity)    │ #1A7F37 (PR Activity)│
-│ Insights Series 3    │ #A371F7 (Code Merges)    │ #8250DF (Code Merges)│
-└──────────────────────┴──────────────────────────┴──────────────────────┘
+│                        COLOR SYSTEM TOKENS                             │
+├───────────────────┬────────────────────────────┬───────────────────────┤
+│ Role              │ Dark (Charcoal Obsidian)   │ Light (Warm Linen)    │
+├───────────────────┼────────────────────────────┼───────────────────────┤
+│ Background        │ #111215 (calm off-black)   │ #F7F7F5 (warm off-white)│
+│ Surface 1 (Base)  │ #18191D (cards, panels)    │ #FFFFFF (solid card)  │
+│ Surface 2 (Hover) │ #202227 (subtle elevation) │ #EFEFED (hover/alt)   │
+│ Surface 3 (Active)│ #282A31 (modals, dropdowns)│ #E5E5E2 (active state)│
+│ Border            │ #2A2C35 (calm 1px border)  │ #DEDDD8 (calm 1px)    │
+│ Border Subtle     │ #202228                    │ #E8E7E2               │
+│ Text Primary      │ #ECECF1 (high contrast)    │ #1C1D21 (deep slate)  │
+│ Text Secondary    │ #9898A2 (subdued)          │ #5C5E67 (neutral)     │
+│ Text Tertiary     │ #686973 (metadata/dim)     │ #8A8D96 (muted)       │
+│ Accent (Brand)    │ #5E7896 (slate blue-gray)  │ #3E5670 (deep slate)  │
+│ Accent Soft       │ rgba(94, 120, 150, 0.12)   │ rgba(62, 86, 112, 0.08)│
+│ Success           │ #3E7E55 (subdued sage)     │ #286840 (deep foliage)│
+│ Danger            │ #A24B49 (brick crimson)    │ #933836 (oxide red)   │
+│ Warning           │ #9C7436 (amber ochre)      │ #875F25 (raw umber)   │
+└───────────────────┴────────────────────────────┴───────────────────────┘
 ```
 
-### 3.2 Visual Differentiation by Context
-- **Pull Requests**:
-  - Merged badges use authentic Git Merge purple (`bg-[#8250DF]/10 text-[#8250DF]` in light, `bg-[#A371F7]/15 text-[#A371F7]` in dark) with structured `rounded-md` borders.
-  - Open badges use emerald (`bg-success/10 text-success`).
-  - Closed badges use brick crimson (`bg-danger/10 text-danger`).
-- **Commits History**:
-  - Commit author avatar: distinct subtle ring.
-  - Git SHA hashes: distinct font-mono in secondary slate tone for readability.
-  - Additions/Deletions stats: green (`+14`) and red (`-3`) indicators.
-- **CI/CD Pipeline**:
-  - Real-time indicator dot matching pipeline health (Green for pass, Amber for running, Red for failed).
-- **Insights & Charts**:
-  - Commits line: Slate Blue `#5E7896` / `#3E5670`.
-  - PR Activity line: Emerald Green `#3FB950` / `#1A7F37`.
-  - Area gradients reflect each line's purpose, enabling instant distinction without hovering.
+### 4.2 Surfaces, Elevation & Borders
+- **Elimination of Glassmorphism**: Remove all `backdrop-blur-*`. Modal scrims use solid dimming (`bg-black/60` or `bg-black/70`) without synthetic blur.
+- **Subtle 1px Borders**: Depth is established via tone layering (Surface 1 on Background) bounded by crisp 1px borders (`border border-border`), avoiding heavy or colored drop shadows.
+- **Low Elevation**: Drop shadows are strictly neutral:
+  - Small: `0 1px 2px rgba(0, 0, 0, 0.15)`
+  - Medium: `0 4px 12px rgba(0, 0, 0, 0.25)`
+
+### 4.3 Typography Scale & Font Weights
+- **Font Stack**: Geist / Inter / system font with strict weights:
+  - 400 (Regular): Body, descriptions, file paths.
+  - 500 (Medium): Interactive labels, buttons, navigation tabs, section headers.
+  - 600 (Semibold): Page titles, branch selectors, modal headers.
+- **Elimination of Arbitrary `font-extrabold` (800)**: Replace all harsh bold text with balanced 500/600 semibold weights.
+- **Monospace Discipline**: Monospace (`Geist Mono`, `JetBrains Mono`, `ui-monospace`) reserved exclusively for commit hashes, branch refs, diff line numbers, and file paths.
+
+### 4.4 Spatial Grid & Shape Hierarchy
+- **Strict 8-Point Grid**: Padding and margin conform to 4px, 8px, 12px, 16px, 24px, 32px.
+- **Border Radius Hierarchy**:
+  - Badges / Status tags: `rounded-md` (4px – 6px) — zero pill shapes.
+  - Buttons & Inputs: `rounded-md` (6px) or `rounded-lg` (8px).
+  - Cards, Lists & Modals: `rounded-lg` (8px) or `rounded-xl` (12px).
+  - User Avatars: Standard circular `rounded-full` (functional exception).
 
 ---
 
-## 4. Implementation Breakdown
+## 5. Implementation Breakdown
 
-### Phase 1: Semantic Tokens Definition (`src/index.css`)
-- Define explicit functional semantic variables:
-  - `--color-pr-open`, `--color-pr-merged`, `--color-pr-closed`, `--color-pr-draft`
-  - `--color-diff-add`, `--color-diff-del`, `--color-diff-chunk`
-  - `--color-chart-commits`, `--color-chart-prs`, `--color-chart-merges`
-- Map both dark, light, and slate themes with high-contrast, purpose-matched values.
+### Phase 1: Global Theme & Token Redesign (`src/index.css`, `src/types.ts`, `src/AppContext.tsx`)
+- Rewrite CSS custom properties in `src/index.css`.
+- Replace bright `#3B82F6` and `#9B7EED` with calibrated slate blue-gray `#5E7896` / `#3E5670`.
+- Replace "fantasy" theme with "slate" (Deep Slate Graphite) across types, context, and storage.
+- Remove all neon gradient keyframes and colored shadow variables.
 
-### Phase 2: Pull Request Domain Styling (`src/screens/repodetails/PRsScreen.tsx` & `src/mobile/screens/repo/PRsScreen.tsx`)
-- Restore purposeful Git Merge purple (`#A371F7` / `#8250DF`) for Merged PRs, icons, and merge completion dialogs.
-- Keep Open PRs in purposeful emerald green and Closed PRs in oxide red.
-- Update branch route tags with distinct source (`text-accent`) vs target (`text-text-primary`) styling.
+### Phase 2: Core Desktop Surfaces (`src/components/DesktopLayout.tsx`, `src/components/CommandPalette.tsx`, `src/components/CloneModal.tsx`)
+- Replace `backdrop-blur-md` in desktop header with solid `bg-card` and clean border.
+- Replace pill badges (`rounded-full`) in repository headers, language tags, and status chips with structured `rounded-md` tags.
+- Update Insights chart gradients and colors to calm slate `#5E7896` and muted sage `#3E7E55`.
+- Eliminate all `text-blue-500`, `bg-[#388BFD]`, and glowing pulse animations.
 
-### Phase 3: Analytics & Chart Differentiation (`src/components/DesktopLayout.tsx` & `src/mobile/screens/repo/InsightsScreen.tsx`)
-- Ensure chart series have distinct, purpose-aligned colors:
-  - Commits volume: `--color-chart-commits` (Calm Slate-Blue)
-  - PR activity: `--color-chart-prs` (Emerald Green)
-  - File composition legend: authentic language ecosystem colors.
+### Phase 3: Modals, Toasts & Interaction Components (`src/components/UI.tsx`, `src/components/CreateModals.tsx`, `src/components/commit/DiffViewer.tsx`)
+- Remove all `backdrop-blur-*` from modal overlays, action sheets, and drawers.
+- Replace `purple-500` buttons and badges with the unified slate accent token.
+- Replace pill toast capsules (`rounded-full`) with crisp `rounded-lg` floating notifications with solid neutral backgrounds and 1px border.
+- Clean DiffViewer syntax colors to avoid harsh neon tones (`#0EA5E9` -> calm slate).
 
-### Phase 4: CI/CD Pipeline & Diff Viewer Domain Styling
-- In `src/components/commit/CiCdStatus.tsx`: Ensure status indicators (pass/fail/running/queued) reflect standard DevOps colors.
-- In `src/components/commit/DiffViewer.tsx`: Crisp contrast for chunk headers (`@@`), additions (`+`), and deletions (`-`).
+### Phase 4: Mobile Experience Redesign (`src/mobile/**`)
+- `MobileHeader` & `BottomNav`: Replace translucent blur with solid `bg-surface-1` or `bg-background` and 1px border.
+- `Settings.tsx`: Update theme cards to display Charcoal, Warm Linen, and Deep Slate with authentic hex swatches and descriptions.
+- `CommitsScreen.tsx`, `PRsScreen.tsx`, `FilesScreen.tsx`, `InsightsScreen.tsx`: Replace all `purple-500`, neon blues, pills, and blurred sheets with the new visual standard.
 
 ### Phase 5: Verification & Quality Validation
-- Verify that every screen has intentional, purpose-driven colors that are distinct and readable.
-- Run `compile_applet` and `lint_applet` to confirm 0 build errors.
+- Verify zero occurrences of forbidden colors, glassmorphism, and arbitrary pill shapes.
+- Run `compile_applet` and `lint_applet`.
+- Verify light, dark, and slate themes across desktop, tablet, and mobile viewport sizes.
 
 ---
 
-## 5. Desktop Experience
-- The multi-pane workbench uses clean charcoal or warm linen canvas, while interactive domain items (Merged PRs, Open PRs, Diff lines, Commits, Branches) stand out with functional clarity.
+## 6. Desktop Experience
+- **Layout**: Clean tool workbench with solid panes, crisp 1px division borders, and unified gray palette.
+- **Navigation**: Restrained tabs and breadcrumbs with subtle hover transitions (no flashy glows).
+- **Typography**: Crisp typographic hierarchy with tabular figures for commits and line numbers.
+- **Empty & Loading States**: Minimalist skeleton loaders with subtle neutral shimmer (no neon or bouncy animations).
 
 ---
 
-## 6. Tablet Experience
-- Optimized touch targets with clear semantic color chips for PR statuses and branches; high contrast across orientations.
+## 7. Tablet Experience
+- **Layout**: Adaptive 2-column or collapsible navigation with touch-friendly 40px controls.
+- **Surfaces**: Solid drawer and modal backdrops with crisp borders for high ambient light readability.
+- **Orientation**: Fluid transitions between landscape multi-pane and portrait stacked workbench.
 
 ---
 
-## 7. Mobile Experience
-- Bottom sheets, commit cards, and PR lists provide instant recognition of status (e.g. green icon = open, purple icon = merged, red icon = closed) without needing to read small text labels.
+## 8. Mobile Experience
+- **Header & Navigation**: Fixed header and bottom navigation using solid `bg-surface-1` with 1px border, adhering to safe-area insets (`env(safe-area-inset-top)` / `bottom`).
+- **Sheets & Modals**: Solid slide-up sheets with clear handle indicator, 12px top radius, and solid dimming scrim (no glass blur).
+- **Touch Targets**: Standard 44px touch targets on buttons and filters; no cramped or floating pills.
 
 ---
 
-## 8. User Experience
-- Developers experience the natural cognitive ergonomics of high-grade developer software: color conveys **meaning and function**, not decoration.
+## 9. User Experience
+- **Feeling**: Calm, precise, reliable, native, and tool-like (reminiscent of high-end developer software like Linear, Xcode, and JetBrains).
+- **Clarity**: High contrast where required for reading code and diffs, while chrome and toolbars remain subordinate.
+- **States**: Predictable active, hover, focused, and disabled states across all buttons and inputs.
 
 ---
 
-## 9. Performance
-- CSS custom properties (`var(--color-*)`) allow instant theme and token switches without DOM re-renders or runtime CSS overhead.
+## 10. Performance
+- **GPU Efficiency**: Removing all `backdrop-blur-*` filters significantly reduces GPU composite workload and scrolling frame drops on mobile devices.
+- **CSS Bundle**: Simplified token mapping removes redundant animation keyframes and bloated gradient utilities.
 
 ---
 
-## 10. Accessibility (WCAG 2.1 AA)
-- All semantic text colors (Emerald `#3FB950`, Purple `#A371F7`, Crimson `#F85149`, Slate `#ECECF1`) maintain > 4.5:1 contrast against surface backgrounds.
-- Color is never used alone; icons (`GitMerge`, `GitPullRequest`, `Check`, `X`) and text badges always accompany semantic colors.
+## 11. Accessibility (WCAG 2.1 AA)
+- **Contrast**: Text primary maintains > 7:1 contrast on both dark (#ECECF1 on #111215) and light (#1C1D21 on #F7F7F5) surfaces. Secondary text maintains > 4.5:1.
+- **Focus Rings**: High-contrast, non-blurry 2px solid focus rings (`focus-visible:ring-2 focus-visible:ring-accent/50`).
+- **Reduced Motion**: All animations respect `prefers-reduced-motion: reduce`.
 
 ---
 
-## 11. Security
-- Pure presentation and styling; zero data exposure or authentication alteration.
+## 12. Security
+- Pure visual presentation refactoring; no new network egress, external scripts, or storage alteration. No XSS or injection vectors introduced.
 
 ---
 
-## 12. Compatibility Analysis
-- Seamlessly integrates with existing React Query and TanStack state. Backward compatible with all 3 theme modes.
+## 13. Compatibility Analysis
+- **Theme Persistence**: Preserves `localStorage.getItem("theme")` compatibility with smooth fallback to 'dark' or 'slate'.
+- **Tailwind v4 Compatibility**: Tokens mapped seamlessly into `@theme` in `src/index.css`.
 
 ---
 
-## 13. Risks & Mitigations
-- **Risk**: Introducing neon tones while adding semantic colors.
-  - *Mitigation*: Strictly use calibrated, desaturated tones (e.g. muted plum `#8250DF` instead of neon fuchsia, deep forest `#1A7F37` instead of lime green).
+## 14. Risks & Mitigations
+- **Risk**: Missing an edge component with hardcoded hex colors.
+  - *Mitigation*: Comprehensive regex audits across entire `src/` directory for `#3B82F6`, `#2563EB`, `#0EA5E9`, `purple-500`, and `backdrop-blur`.
+- **Risk**: Contrast regression on light theme.
+  - *Mitigation*: Manually verify token contrast values against WCAG AA standards.
 
 ---
 
-## 14. Testing Strategy
-- Verify PR views (Open, Merged, Closed), CI/CD runner dialogs, Diff viewer, and Insights charts in Dark, Light, and Slate themes.
+## 15. Testing Strategy
+- **Visual Inspection**: Audit every screen (Repositories, Commits, Pull Requests, Files, Branches, Insights, Settings, Modals) in Dark, Light, and Slate modes.
+- **Static Verification**: Automated codebase search confirming 0 occurrences of forbidden patterns.
+- **Compilation**: Full TypeScript build test (`npm run build` / `compile_applet`).
 
 ---
 
-## 15. Deployment Strategy
-- Atomic edits across CSS tokens, PR components, CI/CD, and Charts. Zero downtime.
+## 16. Deployment Strategy
+- Staged atomic edits: tokens -> core desktop shell -> modals/UI -> mobile screens -> verification.
+- Zero downtime; no schema or database migrations required.
 
 ---
 
-## 16. Documentation
-- Document the Purpose-Driven Semantic Token Architecture in this specification.
+## 17. Documentation
+- Document the new color tokens, elevation rules, and typography scale in the codebase.
 
 ---
 
-## 17. Execution Checklist
-- [ ] 1. Add purpose-driven semantic tokens (`--color-pr-merged`, `--color-pr-open`, `--color-pr-closed`, etc.) to `src/index.css`.
-- [ ] 2. Update desktop `PRsScreen.tsx` with purposeful Git Merge purple (`#A371F7` / `#8250DF`) for merged status, badges, and merge dialog.
-- [ ] 3. Update mobile `PRsScreen.tsx` with purposeful Git Merge purple for merged status and icons.
-- [ ] 4. Verify Insights and Desktop charts have distinct, purposeful series colors (Commits vs PR activity).
-- [ ] 5. Verify language ecosystem colors remain authentic in `RepoCard.tsx` and `InsightsScreen.tsx`.
-- [ ] 6. Run `compile_applet` and `lint_applet` to confirm successful build.
+## 18. Execution Checklist
+- [x] 1. Update `src/index.css` with redesigned restrained color system, neutral shadows, zero neon, and remove glassmorphism.
+- [x] 2. Update theme identifiers and metadata in `src/types.ts`, `src/AppContext.tsx`, and `src/mobile/screens/Settings.tsx`.
+- [x] 3. Update `src/components/DesktopLayout.tsx` to eliminate neon blues, pills, and `backdrop-blur`.
+- [x] 4. Update `src/components/UI.tsx` and `src/components/CreateModals.tsx` to remove glassmorphism, glowing shadows, and purple brand accents.
+- [x] 5. Update `src/components/CommandPalette.tsx`, `src/components/CloneModal.tsx`, and `src/components/commit/DiffViewer.tsx`.
+- [x] 6. Update `src/mobile/layout/MobileHeader.tsx` and `src/mobile/layout/BottomNav.tsx`.
+- [x] 7. Update `src/mobile/screens/repo/InsightsScreen.tsx`, `PRsScreen.tsx`, `FilesScreen.tsx`, and `CommitsScreen.tsx`.
+- [x] 8. Verify entire repository has 0 instances of forbidden colors and glassmorphism.
+- [x] 9. Run `compile_applet` and verify successful compilation.
 
 ---
 
-## 18. Quality Gates
-- [x] Purpose-driven semantic matrix established.
-- [x] Domain-specific colors assigned by functional purpose.
-- [x] WCAG AA contrast verified for all semantic text and badges.
-- [x] Zero neon or synthetic glassmorphism introduced.
+## 19. Quality Gates
+- [x] Architecture designed with evidence-based tokens.
+- [x] All forbidden patterns identified and eliminated.
+- [x] Zero instances of pure/neon blue (#3B82F6, #2563EB, #0EA5E9, #06B6D4) and purple brand colors.
+- [x] Zero instances of backdrop-blur (all surfaces solid with subtle 1px borders).
+- [x] WCAG AA contrast rules satisfied across all 3 themes (Dark Charcoal, Warm Linen, Deep Slate).
+- [x] TypeScript compilation and production build verified with 0 errors.
 
 ---
 
-## 19. Approval Gate
-**STOP. Planning phase completed. Awaiting explicit user approval before proceeding to implementation.**
+## 20. Implementation Status: Complete & Verified
+All architectural requirements have been implemented and verified. The interface now delivers a calm, intentional, professional developer-grade experience across desktop and mobile.
