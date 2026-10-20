@@ -74,8 +74,8 @@ export const getCiCdStatus = (hash: string): CiCdState => {
     return {
       status: 'success',
       label: 'Passed',
-      color: 'text-emerald-500 dark:text-emerald-400 border-emerald-500/20 bg-emerald-500/10 dark:bg-emerald-500/5',
-      badgeBg: 'bg-emerald-500/10 dark:bg-emerald-500/5',
+      color: 'text-[#3FB950] border-[#3FB950]/20 bg-[#3FB950]/10',
+      badgeBg: 'bg-[#3FB950]/10',
       duration: durationStr,
       steps: [
         { name: 'lint-and-format', status: 'success', duration: '12s', log: '✔ ESLint checks passed successfully\n✔ Prettier formatting verified\n✔ No unused imports or variables found' },
@@ -89,8 +89,8 @@ export const getCiCdStatus = (hash: string): CiCdState => {
     return {
       status: 'running',
       label: 'Running',
-      color: 'text-sky-500 dark:text-sky-400 border-sky-500/20 bg-sky-500/10 dark:bg-sky-500/5',
-      badgeBg: 'bg-sky-500/10 dark:bg-sky-500/5',
+      color: 'text-[#D29922] border-[#D29922]/20 bg-[#D29922]/10',
+      badgeBg: 'bg-[#D29922]/10',
       duration: 'Running...',
       steps: [
         { 
@@ -121,8 +121,8 @@ export const getCiCdStatus = (hash: string): CiCdState => {
     return {
       status: 'failed',
       label: 'Failed',
-      color: 'text-rose-500 dark:text-rose-400 border-rose-500/20 bg-rose-500/10 dark:bg-rose-500/5',
-      badgeBg: 'bg-rose-500/10 dark:bg-rose-500/5',
+      color: 'text-[#F85149] border-[#F85149]/20 bg-[#F85149]/10',
+      badgeBg: 'bg-[#F85149]/10',
       duration: `${failStepIdx * 25 + 15}s`,
       steps: [
         { 
@@ -475,21 +475,21 @@ export const useCiCdStatus = (hash: string) => {
             overallDuration = sumSec >= 60 ? `${Math.floor(sumSec / 60)}m ${sumSec % 60}s` : `${sumSec}s`;
           }
 
-          let color = 'text-emerald-500 dark:text-emerald-400 border-emerald-500/20 bg-emerald-500/10 dark:bg-emerald-500/5';
-          let badgeBg = 'bg-emerald-500/10 dark:bg-emerald-500/5';
+          let color = 'text-[#3FB950] border-[#3FB950]/20 bg-[#3FB950]/10';
+          let badgeBg = 'bg-[#3FB950]/10';
           let label = 'Passed';
 
           if (overallStatus === 'failed') {
-            color = 'text-rose-500 dark:text-rose-400 border-rose-500/20 bg-rose-500/10 dark:bg-rose-500/5';
-            badgeBg = 'bg-rose-500/10 dark:bg-rose-500/5';
+            color = 'text-[#F85149] border-[#F85149]/20 bg-[#F85149]/10';
+            badgeBg = 'bg-[#F85149]/10';
             label = 'Failed';
           } else if (overallStatus === 'running') {
-            color = 'text-sky-500 dark:text-sky-400 border-sky-500/20 bg-sky-500/10 dark:bg-sky-500/5';
-            badgeBg = 'bg-sky-500/10 dark:bg-sky-500/5';
+            color = 'text-[#D29922] border-[#D29922]/20 bg-[#D29922]/10';
+            badgeBg = 'bg-[#D29922]/10';
             label = 'Running';
           } else if (overallStatus === 'pending') {
-            color = 'text-amber-500 dark:text-amber-400 border-amber-500/20 bg-amber-500/10 dark:bg-amber-500/5';
-            badgeBg = 'bg-amber-500/10 dark:bg-amber-500/5';
+            color = 'text-[#8B949E] border-[#8B949E]/20 bg-[#8B949E]/10';
+            badgeBg = 'bg-[#8B949E]/10';
             label = 'Pending';
           }
 

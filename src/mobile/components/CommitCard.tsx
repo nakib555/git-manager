@@ -62,7 +62,7 @@ export const CommitCard: React.FC<CommitCardProps> = ({
         </p>
 
         {/* Unboxed metadata with typographic separator */}
-        <div className="flex items-center gap-2 mt-1.5 text-[11px] text-text-tertiary">
+        <div className="flex items-center gap-2 mt-1.5 text-[11px] text-text-tertiary flex-wrap">
           <span className="font-medium text-text-secondary truncate max-w-[120px]">
             {commit.author}
           </span>
@@ -71,6 +71,13 @@ export const CommitCard: React.FC<CommitCardProps> = ({
             <Clock size={11} />
             <span>{formatRelativeTime(commit.date)}</span>
           </span>
+          {commit.stats && (
+            <>
+              <span aria-hidden="true">·</span>
+              <span className="font-mono text-[10px] text-[#3FB950] font-bold">+{commit.stats.additions}</span>
+              <span className="font-mono text-[10px] text-[#F85149] font-bold">-{commit.stats.deletions}</span>
+            </>
+          )}
         </div>
       </div>
 

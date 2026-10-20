@@ -214,7 +214,7 @@ export const PRsScreen: React.FC = () => {
                     <GitPullRequest 
                       size={16} 
                       className={`shrink-0 mt-0.5 ${
-                        isMerged ? 'text-accent' : isClosed ? 'text-text-tertiary' : 'text-success'
+                        isMerged ? 'text-[#A371F7]' : isClosed ? 'text-[#F85149]' : 'text-[#3FB950]'
                       }`} 
                     />
                     <div className="min-w-0">
@@ -232,8 +232,12 @@ export const PRsScreen: React.FC = () => {
                   </div>
 
                   {/* Status tag */}
-                  <span className={`text-[11px] font-semibold font-mono shrink-0 ${
-                    isMerged ? 'text-accent' : isClosed ? 'text-text-tertiary' : 'text-success'
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border font-mono shrink-0 ${
+                    isMerged 
+                      ? 'bg-[#A371F7]/10 text-[#A371F7] border-[#A371F7]/30' 
+                      : isClosed 
+                      ? 'bg-[#F85149]/10 text-[#F85149] border-[#F85149]/30' 
+                      : 'bg-[#3FB950]/10 text-[#3FB950] border-[#3FB950]/30'
                   }`}>
                     {pr.status || (isClosed ? 'Closed' : 'Open')}
                   </span>
@@ -286,8 +290,12 @@ export const PRsScreen: React.FC = () => {
                     <span className="text-[10px] font-mono font-bold text-accent bg-accent/10 border border-accent/20 px-2 py-0.5 rounded">
                       #{selectedPR.id || (selectedPR as any).number}
                     </span>
-                    <span className={`text-[10px] font-mono font-bold uppercase tracking-wider ${
-                      selectedPR.status === 'Merged' ? 'text-accent' : selectedPR.status === 'Closed' ? 'text-text-tertiary' : 'text-success'
+                    <span className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${
+                      selectedPR.status === 'Merged' 
+                        ? 'bg-[#A371F7]/10 text-[#A371F7] border-[#A371F7]/30' 
+                        : selectedPR.status === 'Closed' 
+                        ? 'bg-[#F85149]/10 text-[#F85149] border-[#F85149]/30' 
+                        : 'bg-[#3FB950]/10 text-[#3FB950] border-[#3FB950]/30'
                     }`}>
                       {selectedPR.status || 'Open'}
                     </span>

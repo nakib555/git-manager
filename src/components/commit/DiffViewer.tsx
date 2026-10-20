@@ -22,15 +22,17 @@ export const DiffViewer = ({ patch, filename, isDark = false }: { patch: string;
             let style: React.CSSProperties = { display: 'block' };
             if (line) {
                if (line.startsWith('+')) {
-                  style.backgroundColor = 'rgba(62, 126, 85, 0.12)';
-                  style.color = 'var(--color-success)';
-                  style.borderLeft = '3px solid var(--color-success)';
+                  style.backgroundColor = 'rgba(63, 185, 80, 0.14)';
+                  style.color = '#3FB950';
+                  style.borderLeft = '3px solid #3FB950';
                } else if (line.startsWith('-')) {
-                  style.backgroundColor = 'rgba(162, 75, 73, 0.12)';
-                  style.color = 'var(--color-danger)';
-                  style.borderLeft = '3px solid var(--color-danger)';
+                  style.backgroundColor = 'rgba(248, 81, 73, 0.14)';
+                  style.color = '#F85149';
+                  style.borderLeft = '3px solid #F85149';
                } else if (line.startsWith('@@')) {
-                  style.color = 'var(--color-accent)';
+                  style.color = '#388BFD';
+                  style.backgroundColor = 'rgba(56, 139, 253, 0.08)';
+                  style.borderLeft = '3px solid rgba(56, 139, 253, 0.4)';
                   style.fontWeight = '600';
                }
             }

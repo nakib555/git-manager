@@ -272,7 +272,7 @@ export const PRsScreen = () => {
                     className="bg-card border border-border/60 rounded-2xl p-4 hover:border-primary/35 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer group shadow-sm flex items-start gap-4"
                   >
                     <div className={`w-8 h-8 rounded-lg shrink-0 flex items-center justify-center ${
-                      pr.status === 'Merged' ? 'bg-accent/10 text-accent' :
+                      pr.status === 'Merged' ? 'bg-[#A371F7]/10 text-[#A371F7]' :
                       pr.status === 'Closed' ? 'bg-danger/10 text-danger' :
                       'bg-success/10 text-success'
                     }`}>
@@ -283,9 +283,9 @@ export const PRsScreen = () => {
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs font-bold text-text-muted">#{pr.id}</span>
                         <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-md border ${
-                          pr.status === 'Merged' ? 'bg-accent/10 border-accent/20 text-accent' :
-                          pr.status === 'Closed' ? 'bg-danger/10 border-danger/20 text-danger' :
-                          'bg-success/10 border-success/20 text-success'
+                          pr.status === 'Merged' ? 'bg-[#A371F7]/10 border-[#A371F7]/30 text-[#A371F7]' :
+                          pr.status === 'Closed' ? 'bg-danger/10 border-danger/30 text-danger' :
+                          'bg-success/10 border-success/30 text-success'
                         }`}>
                           {pr.status}
                         </span>
@@ -342,9 +342,9 @@ export const PRsScreen = () => {
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-text-muted">PR #{selectedPR.id}</span>
                       <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-md border ${
-                        selectedPR.status === 'Merged' ? 'bg-accent/10 border-accent/20 text-accent' :
-                        selectedPR.status === 'Closed' ? 'bg-danger/10 border-danger/20 text-danger' :
-                        'bg-success/10 border-success/20 text-success'
+                        selectedPR.status === 'Merged' ? 'bg-[#A371F7]/10 border-[#A371F7]/30 text-[#A371F7]' :
+                        selectedPR.status === 'Closed' ? 'bg-danger/10 border-danger/30 text-danger' :
+                        'bg-success/10 border-success/30 text-success'
                       }`}>
                         {selectedPR.status}
                       </span>

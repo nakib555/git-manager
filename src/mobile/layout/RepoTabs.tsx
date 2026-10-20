@@ -10,11 +10,46 @@ export const RepoTabs: React.FC = () => {
   const isRepoScreen = ['files', 'commits', 'branches', 'prs', 'insights'].includes(currentScreen);
 
   const tabs = [
-    { id: 'files', label: 'Files', icon: Files },
-    { id: 'commits', label: 'Commits', icon: GitCommit },
-    { id: 'branches', label: 'Branches', icon: GitBranch },
-    { id: 'prs', label: 'PRs', icon: GitPullRequest },
-    { id: 'insights', label: 'Insights', icon: BarChart2 },
+    { 
+      id: 'files', 
+      label: 'Files', 
+      icon: Files,
+      color: '#388BFD',
+      bgTint: 'rgba(56, 139, 253, 0.14)',
+      border: 'rgba(56, 139, 253, 0.35)',
+    },
+    { 
+      id: 'commits', 
+      label: 'Commits', 
+      icon: GitCommit,
+      color: '#58A6FF',
+      bgTint: 'rgba(88, 166, 255, 0.14)',
+      border: 'rgba(88, 166, 255, 0.35)',
+    },
+    { 
+      id: 'branches', 
+      label: 'Branches', 
+      icon: GitBranch,
+      color: '#1F6FEB',
+      bgTint: 'rgba(31, 111, 235, 0.14)',
+      border: 'rgba(31, 111, 235, 0.35)',
+    },
+    { 
+      id: 'prs', 
+      label: 'PRs', 
+      icon: GitPullRequest,
+      color: '#A371F7',
+      bgTint: 'rgba(163, 113, 247, 0.14)',
+      border: 'rgba(163, 113, 247, 0.35)',
+    },
+    { 
+      id: 'insights', 
+      label: 'Insights', 
+      icon: BarChart2,
+      color: '#E3B341',
+      bgTint: 'rgba(227, 179, 65, 0.14)',
+      border: 'rgba(227, 179, 65, 0.35)',
+    },
   ] as const;
 
   // Auto-center the active sub-tab with smooth physics
@@ -52,9 +87,15 @@ export const RepoTabs: React.FC = () => {
             onClick={() => navigate(tab.id as any)}
             className={`h-8 px-3.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-150 cursor-pointer flex items-center gap-1.5 shrink-0 ${
               isActive
-                ? 'bg-accent-soft text-accent border border-accent/35 font-bold shadow-xs'
+                ? 'font-bold shadow-xs'
                 : 'bg-surface-1 text-text-secondary hover:text-text-primary border border-border active:scale-96'
             }`}
+            style={{
+              backgroundColor: isActive ? tab.bgTint : undefined,
+              color: isActive ? tab.color : undefined,
+              borderColor: isActive ? tab.border : undefined,
+              borderWidth: isActive ? '1px' : undefined,
+            }}
           >
             <Icon size={13} strokeWidth={isActive ? 2.5 : 2} className="shrink-0" />
             <span>{tab.label}</span>

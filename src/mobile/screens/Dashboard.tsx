@@ -97,7 +97,7 @@ export const Dashboard: React.FC = () => {
       <div className="grid grid-cols-2 gap-3">
         <button
           onClick={() => openModal('repo')}
-          className="min-h-[44px] h-12 px-4 rounded-[10px] bg-accent text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-sm shadow-accent/25 hover:opacity-90 active:scale-95 transition-all cursor-pointer"
+          className="min-h-[44px] h-12 px-4 rounded-[10px] bg-[#388BFD] hover:bg-[#1F6FEB] text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-sm shadow-[#388BFD]/25 active:scale-95 transition-all cursor-pointer"
         >
           <Plus size={16} strokeWidth={2.4} />
           <span>New Repository</span>
@@ -105,9 +105,9 @@ export const Dashboard: React.FC = () => {
 
         <button
           onClick={() => navigate('clone')}
-          className="min-h-[44px] h-12 px-4 rounded-[10px] bg-surface-1 border border-border text-text-primary hover:bg-surface-2 font-semibold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer"
+          className="min-h-[44px] h-12 px-4 rounded-[10px] bg-[#D29922]/12 border border-[#D29922]/30 text-[#D29922] hover:bg-[#D29922]/20 font-semibold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer shadow-sm shadow-[#D29922]/10"
         >
-          <Download size={16} strokeWidth={2.4} className="text-text-secondary" />
+          <Download size={16} strokeWidth={2.4} />
           <span>Clone Repo</span>
         </button>
       </div>
