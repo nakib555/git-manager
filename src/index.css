@@ -273,6 +273,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
 /* 8-Point Spatial Grid Architecture System */
 :root {
   --grid-base: 8px;

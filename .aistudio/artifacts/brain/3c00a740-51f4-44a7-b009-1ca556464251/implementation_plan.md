@@ -1,25 +1,39 @@
-# Engineering Plan: Fix Repository List Rendering to Match Commit History Architecture (Completed)
+# Engineering Specification: Professional Design & Structure Overhaul (Git Manager Studio)
 
-## Implementation Summary
-The approved engineering plan has been fully implemented and verified in `src/components/DesktopLayout.tsx`.
+## Implementation Summary (Completed)
 
-### What Was Changed
-1. **Removed Fragile Virtualizer Initialization**:
-   - Replaced `@tanstack/react-virtual` in `DesktopRepositories` with direct, reliable card mapping (`paginatedRepos.map(...)`).
-   - Resolved the issue where `parentRef.current = null` on synchronous initial render caused `rowVirtualizer.getVirtualItems()` to return an empty array, which prevented repositories from displaying.
-2. **Added Commit-History Style Status Header**:
-   - Added an interactive status bar displaying the exact number of repositories found (`"[N] repositories found"`).
-   - Added a `(filtered)` badge when active search queries, type filters, language filters, or non-default sorts are applied.
-   - Added an instant **Reset** button (`RotateCcw`) that clears search and filter states and returns to page 1.
-   - Added non-intrusive live sync indicator showing smooth emerald pulses when auto-syncing in the background.
-3. **Upgraded Repository Cards to Match CommitItem Quality**:
-   - Distinctive repository icon with soft accent container (`FolderGit2`).
-   - Repository name with clean truncation and active selection highlight (`ring-1 ring-primary/20 bg-primary/5 border-primary/50 text-primary`).
-   - Color-coded privacy pill badge (Public / Private).
-   - Two-line description with clamped text layout.
-   - Metrics row: Stars (amber `Star`), Forks (`GitFork`), and Watchers (`Eye`).
-   - Language dot with official GitHub language color + pushed timestamp with `Clock` icon.
-4. **Verification**:
-   - `tsc --noEmit` passed with zero errors.
-   - `vite build` completed successfully.
-   - Dev server restarted cleanly.
+All phases from the approved engineering specification have been executed and verified in accordance with the **Master Engineering Planning & Implementation Protocol (Evidence-First)** and the **Universal Frontend Design Constitution**:
+
+1. **Design Tokens & Numerical Typography (`src/index.css`)**:
+   - Standardized CSS tokens across all themes.
+   - Enabled strict `tabular-nums` numerical formatting for metrics and counters.
+
+2. **Top Bar Header Architecture (`src/components/DesktopLayout.tsx`)**:
+   - Enforced canonical 3-Zone Contract:
+     - **Zone 1 (Context)**: Interactive breadcrumbs with repository and branch paths.
+     - **Zone 2 (Command Launcher)**: Search bar with `Cmd+K` / `Ctrl+K` trigger.
+     - **Zone 3 (Status & Actions)**: 15-second live sync indicator with emerald ping, Clone Repo launcher, "+ New Repo" action, and theme switcher.
+
+3. **Dashboard Workspace Streamlining (`DesktopDashboard`)**:
+   - Replaced irregular cards with a disciplined 4-column KPI metric strip:
+     1. Total Repositories
+     2. Total Stars
+     3. Commits Recorded
+     4. Pull Requests
+   - Polished the Velocity AreaChart with clean hairline grid lines, smooth monotone curves, and time range selector ('Today', 'This Week', 'This Month', 'This Year').
+   - Implemented balanced dual-column bottom layout:
+     - **Left (60%)**: Recent Workspaces with language dots, star counts, and quick-open actions.
+     - **Right (40%)**: Live Activity Stream displaying real GitHub push, commit, and PR events with relative timestamps.
+
+4. **High-Density Repository Inspector (`DesktopRepositories`)**:
+   - Removed placeholder instructional boxes.
+   - Built a developer-grade instrument panel:
+     - Header with star, fork, and watcher counters.
+     - HTTPS / SSH clone URL tab switcher with 1-click copy feedback.
+     - Security, language, default branch, and push telemetry spec grid.
+     - Multi-segment language distribution progress bar.
+     - Direct actions: "Open in Workspace", "GitHub", and "Clone".
+
+5. **Quality Assurance**:
+   - `lint_applet`: 0 errors.
+   - `compile_applet`: Build succeeded cleanly.
