@@ -32,6 +32,24 @@ export type RepoSortBy = 'updated' | 'stars' | 'forks' | 'name' | 'language';
 export type RepoSortDirection = 'desc' | 'asc';
 export type RepoTypeFilter = 'all' | 'public' | 'private' | 'forks' | 'sources';
 
+export interface GitCommitNode {
+  hash: string;
+  fullHash: string;
+  timestamp: string;
+  msg: string;
+  author: string;
+  time: string;
+  avatar?: string;
+  avatarUrl?: string;
+  add?: string;
+  del?: string;
+  parents?: string[];
+  isPrimary?: boolean;
+  date?: string;
+  stats?: any;
+  files?: any[];
+}
+
 export interface AppState {
   currentScreen: Screen;
   currentRepo: string | null;
@@ -58,7 +76,7 @@ export interface AppState {
   isFetchingRepos: boolean;
   
   // Repo details state
-  activeCommits: any[];
+  activeCommits: GitCommitNode[];
   activePRs: any[];
   activeBranches: any[];
   activeFiles: any[];
@@ -68,6 +86,7 @@ export interface AppState {
   sessionCommitsCount: number;
   recentClones: { name: string; url: string; dest: string; timestamp: number }[];
   isCommandPaletteOpen: boolean;
+  lastSyncTimestamp: number;
 }
 
 export type AppContextType = AppState & {

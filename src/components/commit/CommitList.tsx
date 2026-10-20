@@ -1,7 +1,13 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useCommits, CommitFilter, DatePreset } from '../../hooks/useCommits';
+import { useAppContext } from '../../AppContext';
 import { CommitItem } from './CommitItem';
-import { Search, Loader2, RefreshCw, X, Filter, ChevronLeft, ChevronRight, Calendar, Check, RotateCcw } from 'lucide-react';
+import { GitGraph } from './GitGraph';
+import { PaginationControls } from '../common/PaginationControls';
+import { 
+  Search, Loader2, RefreshCw, X, Filter, ChevronLeft, ChevronRight, 
+  Calendar, Check, RotateCcw, GitGraph as GitGraphIcon, List, Columns 
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import emptyStateImage from '../../assets/images/empty_commits_state_1784913881320.jpg';
@@ -13,6 +19,8 @@ export const CommitList = ({
   selectedCommitId,
   parentRef 
 }: any) => {
+  const { activeCommits } = useAppContext();
+  const [viewMode, setViewMode] = useState<'list' | 'graph' | 'split'>(isDesktop ? 'split' : 'list');
   const [filters, setFilters] = useState<CommitFilter>({ 
     query: '', 
     branch: '', 
@@ -125,14 +133,14 @@ export const CommitList = ({
     <div className={`flex flex-col ${parentRef ? '' : 'h-full overflow-hidden'}`}>
       {/* Search and Filters */}
       <div className={`shrink-0 flex flex-col gap-2 ${isDesktop ? 'mb-4' : 'mb-3'}`}>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
           <div className="relative flex-1">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search size={14} className="text-text-muted" />
             </div>
             <input
               type="text"
-              className="w-full bg-card border border-border text-text-main text-xs rounded-xl pl-9 pr-8 py-2.5 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-text-muted/60"
+              className="w-full bg-card border border-border text-text-main text-xs rounded-xl pl-9 pr-8 py-2 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-text-muted/60"
               placeholder="Search by message or SHA..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
@@ -147,16 +155,57 @@ export const CommitList = ({
               </button>
             )}
           </div>
+
+          {/* View switcher: List, Git Graph, Split */}
+          <div className="flex items-center bg-card border border-border rounded-xl p-0.5">
+            <button
+              type="button"
+              onClick={() => setViewMode('list')}
+              title="List View (10 items/page)"
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer ${
+                viewMode === 'list' ? 'bg-primary text-white shadow-xs font-bold' : 'text-text-muted hover:text-text-main'
+              }`}
+            >
+              <List size={13} />
+              <span className="hidden md:inline">List</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('graph')}
+              title="Interactive D3 Git Graph"
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer ${
+                viewMode === 'graph' ? 'bg-primary text-white shadow-xs font-bold' : 'text-text-muted hover:text-text-main'
+              }`}
+            >
+              <GitGraphIcon size={13} />
+              <span className="hidden md:inline">Graph</span>
+            </button>
+            {isDesktop && (
+              <button
+                type="button"
+                onClick={() => setViewMode('split')}
+                title="Split View (Graph & List)"
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer ${
+                  viewMode === 'split' ? 'bg-primary text-white shadow-xs font-bold' : 'text-text-muted hover:text-text-main'
+                }`}
+              >
+                <Columns size={13} />
+                <span className="hidden md:inline">Split</span>
+              </button>
+            )}
+          </div>
+
           <button 
             onClick={() => setShowFilters(!showFilters)}
-            className={`px-3 py-2 border rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+            className={`px-3 py-1.5 border rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer text-xs ${
               showFilters || activeFilterCount > 0 
-                ? 'bg-primary/10 border-primary/40 text-primary' 
+                ? 'bg-primary/10 border-primary/40 text-primary font-semibold' 
                 : 'bg-card border-border text-text-muted hover:text-text-main'
             }`}
             title="Toggle filters"
           >
-            <Filter size={15} />
+            <Filter size={14} />
+            <span className="hidden sm:inline">Filter</span>
             {activeFilterCount > 0 && (
               <span className="min-w-[16px] h-4 px-1 rounded-md bg-primary text-white text-[10px] font-semibold flex items-center justify-center">
                 {activeFilterCount}
@@ -342,6 +391,70 @@ export const CommitList = ({
                 : 'This repository has no commits yet. Make your first staging commit to start tracking changes!'}
             </div>
           </div>
+        ) : viewMode === 'graph' ? (
+          <div className="flex-1 w-full h-full min-h-[350px]">
+            <GitGraph
+              commits={activeCommits && activeCommits.length > 0 ? activeCommits : commits}
+              selectedCommitId={selectedCommitId}
+              onSelectCommit={onSelectCommit}
+              isDesktop={isDesktop}
+            />
+          </div>
+        ) : viewMode === 'split' ? (
+          <div className="flex-1 flex flex-col w-full h-full gap-3 overflow-hidden">
+            {/* Top Half: Interactive D3 Git Graph */}
+            <div className="h-[260px] shrink-0 w-full overflow-hidden">
+              <GitGraph
+                commits={activeCommits && activeCommits.length > 0 ? activeCommits : commits}
+                selectedCommitId={selectedCommitId}
+                onSelectCommit={onSelectCommit}
+                isDesktop={isDesktop}
+              />
+            </div>
+
+            {/* Bottom Half: 10-item virtualized list */}
+            <div className="flex-1 overflow-y-auto min-h-0 border-t border-border pt-2 relative">
+              <div 
+                className="relative pb-6 pt-1"
+                style={{
+                  height: `${rowVirtualizer.getTotalSize()}px`,
+                  width: '100%',
+                }}
+              >
+                <div className="absolute top-4 bottom-6 left-[15px] w-[2px] bg-border/60 z-0"></div>
+                {rowVirtualizer.getVirtualItems().map((virtualItem) => {
+                  const commit = commits[virtualItem.index];
+                  if (!commit) return null;
+                  const isLatest = virtualItem.index === 0 && !filters.query && filters.page === 1;
+
+                  return (
+                    <div
+                      key={virtualItem.key}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: `${virtualItem.size}px`,
+                        transform: `translateY(${virtualItem.start}px)`,
+                        paddingBottom: '20px',
+                        paddingLeft: '32px'
+                      }}
+                    >
+                      <CommitItem
+                        commit={commit}
+                        isLatest={isLatest}
+                        isSelected={selectedCommitId === commit.hash}
+                        onSelect={onSelectCommit}
+                        onActionClick={onActionClick}
+                        isDesktop={isDesktop}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         ) : (
           <div 
             className="relative pb-6 pt-2"
@@ -387,57 +500,17 @@ export const CommitList = ({
         )}
       </div>
 
-      {/* Pagination Footer */}
-      {!isLoading && !isError && totalPages > 0 && (
-        <div className="shrink-0 flex items-center justify-between py-3 mt-2 border-t border-border">
-          <div className="text-xs text-text-muted">
-             Page {currentPage} of {totalPages}
-          </div>
-          <div className="flex items-center gap-1">
-            <button 
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1 || isFetching}
-              className="p-1.5 rounded-lg border border-border text-text-main disabled:opacity-30 disabled:cursor-not-allowed hover:bg-hover/10 transition-colors"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <div className="flex items-center gap-1 mx-1">
-               {/* Display some page numbers */}
-               {[...Array(totalPages)].map((_, i) => {
-                 const pageNum = i + 1;
-                 // Show first, last, current, and adjacent
-                 if (
-                   pageNum === 1 || 
-                   pageNum === totalPages || 
-                   (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
-                 ) {
-                   return (
-                     <button
-                       key={pageNum}
-                       onClick={() => handlePageChange(pageNum)}
-                       disabled={isFetching}
-                       className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs transition-colors disabled:opacity-50 ${currentPage === pageNum ? 'bg-primary text-white font-bold' : 'text-text-main hover:bg-hover/10'}`}
-                     >
-                       {pageNum}
-                     </button>
-                   );
-                 } else if (
-                   pageNum === currentPage - 2 || 
-                   pageNum === currentPage + 2
-                 ) {
-                   return <span key={pageNum} className="text-text-muted text-xs">...</span>;
-                 }
-                 return null;
-               })}
-            </div>
-            <button 
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages || isFetching}
-              className="p-1.5 rounded-lg border border-border text-text-main disabled:opacity-30 disabled:cursor-not-allowed hover:bg-hover/10 transition-colors"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
+      {/* Unified Pagination Footer (10 items per page) */}
+      {!isLoading && !isError && (
+        <div className="shrink-0 pt-2.5 mt-1 border-t border-border">
+          <PaginationControls
+            currentPage={currentPage}
+            totalItems={data?.totalCount || (activeCommits?.length ?? commits.length)}
+            pageSize={10}
+            onPageChange={handlePageChange}
+            isLoading={isFetching}
+            itemName="commits"
+          />
         </div>
       )}
     </div>

@@ -23,6 +23,7 @@ import { vscDarkPlus, vs } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
 import { UnauthenticatedState } from './UnauthenticatedState';
 import { AnimatedNumber } from './UI';
+import { PaginationControls } from './common/PaginationControls';
 import { useStaggerList } from '../hooks/useAnime';
 import { RepoTypeFilter, RepoSortBy } from '../types';
 import { fetchFileContentSafe } from '../mobile/utils/gitApi';
@@ -84,7 +85,7 @@ export const DesktopLayout: React.FC = () => {
     currentScreen, currentRepo, navigate, githubUser, githubRepos, 
     disconnectGitHub, theme, toggleTheme, connectGitHub, openModal,
     toastMessage, githubToken, setRepoSearchQuery, isFetchingRepos,
-    openCommandPalette
+    openCommandPalette, refreshData, lastSyncTimestamp
   } = useAppContext();
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -301,6 +302,21 @@ export const DesktopLayout: React.FC = () => {
 
           {/* Right Action Widgets */}
           <div className="flex items-center gap-2">
+            {/* 15-Second Live Sync Indicator */}
+            <button 
+              type="button"
+              onClick={() => refreshData()}
+              className="hidden md:flex items-center gap-2 h-10 px-3 rounded-xl border border-border/80 bg-card hover:bg-hover/20 text-xs text-text-muted hover:border-primary/40 hover:text-text-main transition-all cursor-pointer shadow-xs"
+              title="Auto-syncs live every 15 seconds. Click to refresh now."
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span className="font-mono text-[11px] font-medium text-text-main">15s Live Sync</span>
+              <RefreshCw size={12} className={`text-text-muted ${isFetchingRepos ? 'animate-spin text-primary' : ''}`} />
+            </button>
+
             {/* Quick Clone repo button */}
             <button 
               onClick={() => navigate('clone')}
@@ -1294,53 +1310,18 @@ const DesktopRepositories: React.FC<{ globalSearch: string }> = ({ globalSearch 
             )}
           </div>
 
-          {/* Desktop Pagination Footer */}
-          {totalPages > 1 && (
-            <div className="shrink-0 flex items-center justify-between p-3 border-t border-border bg-card">
-              <div className="text-[10px] text-text-muted">
-                 Page <span className="font-bold text-text-main">{repoPage}</span> of {totalPages}
-              </div>
-              <div className="flex items-center gap-1">
-                <button 
-                  onClick={() => setRepoPage(Math.max(1, repoPage - 1))}
-                  disabled={repoPage === 1 || isFetchingRepos}
-                  className="p-1 rounded-md border border-border text-text-main disabled:opacity-30 disabled:cursor-not-allowed hover:bg-hover/15 transition-colors cursor-pointer"
-                >
-                  <ChevronLeft size={13} />
-                </button>
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1)
-                    .filter(p => p === 1 || p === totalPages || Math.abs(p - repoPage) <= 1)
-                    .map((pageNum, idx, arr) => {
-                      const prev = arr[idx - 1];
-                      const showEllipsis = prev && pageNum - prev > 1;
-                      return (
-                        <React.Fragment key={pageNum}>
-                          {showEllipsis && <span className="text-text-muted text-[10px]">..</span>}
-                          <button
-                            key={pageNum}
-                            onClick={() => setRepoPage(pageNum)}
-                            disabled={isFetchingRepos}
-                            className={`w-5 h-5 flex items-center justify-center rounded text-[10px] transition-colors disabled:opacity-50 cursor-pointer ${
-                              repoPage === pageNum ? 'bg-primary text-white font-bold' : 'text-text-main hover:bg-hover/15'
-                            }`}
-                          >
-                            {pageNum}
-                          </button>
-                        </React.Fragment>
-                      );
-                    })}
-                </div>
-                <button 
-                  onClick={() => setRepoPage(Math.min(totalPages, repoPage + 1))}
-                  disabled={repoPage === totalPages || isFetchingRepos}
-                  className="p-1 rounded-md border border-border text-text-main disabled:opacity-30 disabled:cursor-not-allowed hover:bg-hover/15 transition-colors cursor-pointer"
-                >
-                  <ChevronRight size={13} />
-                </button>
-              </div>
-            </div>
-          )}
+          {/* Desktop Pagination Footer (10 items per page) */}
+          <div className="shrink-0 p-3 border-t border-border bg-card">
+            <PaginationControls
+              currentPage={repoPage}
+              totalItems={repoSearchScope === 'personal' ? filteredRepos.length : (repoTotalPages * (repoPerPage || 10))}
+              pageSize={repoPerPage || 10}
+              onPageChange={(page) => setRepoPage(page)}
+              isLoading={isFetchingRepos}
+              compact={false}
+              itemName="repos"
+            />
+          </div>
         </div>
 
         {/* Right column: Selected Repository Details Inspector */}

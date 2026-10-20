@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useAppContext } from '../../AppContext';
 import { RepoCard } from '../components/RepoCard';
+import { PaginationControls } from '../../components/common/PaginationControls';
 import { 
   Search, SlidersHorizontal, X, ChevronLeft, ChevronRight, 
   Check, FolderGit2, Loader2 
@@ -66,6 +67,17 @@ export const Repositories: React.FC = () => {
     { id: 'forks', label: 'Most Forks' },
     { id: 'name', label: 'Repository Name' },
   ] as const;
+
+  // Enforce 10 items per page standard
+  const pageSize = 10;
+  const totalItems = repoSearchScope === 'personal' ? githubRepos.length : (repoTotalPages * pageSize);
+  const paginatedRepos = useMemo(() => {
+    if (repoSearchScope === 'personal') {
+      const start = (repoPage - 1) * pageSize;
+      return githubRepos.slice(start, start + pageSize);
+    }
+    return githubRepos;
+  }, [repoSearchScope, githubRepos, repoPage]);
 
   return (
     <div className="flex flex-col h-full relative" ref={scrollRef}>
@@ -182,7 +194,7 @@ export const Repositories: React.FC = () => {
             )}
           </div>
         ) : (
-          githubRepos.map((repo) => (
+          paginatedRepos.map((repo) => (
             <RepoCard
               key={repo.name}
               repo={repo}
@@ -193,31 +205,18 @@ export const Repositories: React.FC = () => {
         )}
       </div>
 
-      {/* 3. Pagination Controls (Sticky Bottom if multi-page) */}
-      {repoTotalPages > 1 && (
-        <div className="sticky bottom-0 bg-surface-1 border-t border-border px-4 py-2 flex items-center justify-between shrink-0 select-none">
-          <span className="text-xs text-text-tertiary font-mono">
-            Page <span className="font-bold text-text-primary">{repoPage}</span> of {repoTotalPages}
-          </span>
-
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => setRepoPage(Math.max(1, repoPage - 1))}
-              disabled={repoPage <= 1 || isFetchingRepos}
-              className="w-8 h-8 rounded-lg bg-surface-1 border border-border text-text-primary disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center active:scale-95 transition-all cursor-pointer"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <button
-              onClick={() => setRepoPage(Math.min(repoTotalPages, repoPage + 1))}
-              disabled={repoPage >= repoTotalPages || isFetchingRepos}
-              className="w-8 h-8 rounded-lg bg-surface-1 border border-border text-text-primary disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center active:scale-95 transition-all cursor-pointer"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
-      )}
+      {/* 3. Pagination Controls (Sticky Bottom with 10 items/page standard) */}
+      <div className="sticky bottom-0 bg-surface-1 border-t border-border px-3 py-2 shrink-0 select-none shadow-md">
+        <PaginationControls
+          currentPage={repoPage}
+          totalItems={totalItems}
+          pageSize={10}
+          onPageChange={(page) => setRepoPage(page)}
+          isLoading={isFetchingRepos}
+          compact={true}
+          itemName="repos"
+        />
+      </div>
 
       {/* 4. Bottom Sheet: Sort & Ordering */}
       <AnimatePresence>

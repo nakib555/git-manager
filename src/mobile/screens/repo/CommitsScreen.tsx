@@ -3,15 +3,19 @@ import { useAppContext } from '../../../AppContext';
 import { CommitCard } from '../../components/CommitCard';
 import { CommitDetailModal } from '../../components/CommitDetailModal';
 import { filterLocalCommits, DatePreset } from '../../../hooks/useCommits';
+import { GitGraph } from '../../../components/commit/GitGraph';
+import { PaginationControls } from '../../../components/common/PaginationControls';
 import { 
   GitCommit, Search, X, Filter, Calendar, User, 
-  RotateCcw, Plus, ChevronDown, ChevronUp 
+  RotateCcw, Plus, ChevronDown, ChevronUp, GitGraph as GitGraphIcon, List
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export const CommitsScreen: React.FC = () => {
   const { activeCommits, showToast, currentRepo, openModal } = useAppContext();
   const [selectedCommit, setSelectedCommit] = useState<any | null>(null);
+  const [viewMode, setViewMode] = useState<'list' | 'graph'>('list');
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Search & Filter States
   const [searchQuery, setSearchQuery] = useState('');
@@ -88,6 +92,14 @@ export const CommitsScreen: React.FC = () => {
     });
   }, [activeCommits, searchQuery, authorFilter, sinceDate, untilDate]);
 
+  // Enforce 10 items per page standard
+  const pageSize = 10;
+  const totalCommitsCount = filteredCommits.length;
+  const paginatedCommits = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredCommits.slice(start, start + pageSize);
+  }, [filteredCommits, currentPage]);
+
   return (
     <div className="px-4 py-4 space-y-3.5">
       {/* 1. Header Banner */}
@@ -99,16 +111,37 @@ export const CommitsScreen: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs font-mono text-accent font-semibold bg-accent-soft px-2.5 py-1 rounded-lg border border-accent/25">
-            {activeCommits.length}
-          </span>
+          {/* View switcher: List vs D3 Git Graph */}
+          <div className="flex items-center bg-surface-1 border border-border rounded-xl p-0.5">
+            <button
+              type="button"
+              onClick={() => setViewMode('list')}
+              className={`px-2 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer ${
+                viewMode === 'list' ? 'bg-accent text-white shadow-xs font-bold' : 'text-text-tertiary hover:text-text-primary'
+              }`}
+            >
+              <List size={12} />
+              <span>List</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('graph')}
+              className={`px-2 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer ${
+                viewMode === 'graph' ? 'bg-accent text-white shadow-xs font-bold' : 'text-text-tertiary hover:text-text-primary'
+              }`}
+            >
+              <GitGraphIcon size={12} />
+              <span>Graph</span>
+            </button>
+          </div>
+
           <button
             onClick={() => openModal('commit')}
-            className="h-8 px-3 rounded-lg bg-accent hover:opacity-90 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm shadow-accent/20 cursor-pointer active:scale-95"
+            className="h-8 px-2.5 rounded-lg bg-accent hover:opacity-90 text-white text-xs font-semibold flex items-center gap-1 transition-colors shadow-sm shadow-accent/20 cursor-pointer active:scale-95"
             title="Create New Commit"
           >
             <Plus size={13} strokeWidth={2.5} />
-            <span>New Commit</span>
+            <span className="hidden sm:inline">New</span>
           </button>
         </div>
       </div>
@@ -311,8 +344,17 @@ export const CommitsScreen: React.FC = () => {
         </AnimatePresence>
       </div>
 
-      {/* 4. Commit Feed List */}
-      {filteredCommits.length === 0 ? (
+      {/* 4. Commit Feed List or D3 Git Graph */}
+      {viewMode === 'graph' ? (
+        <div className="h-[460px] w-full bg-surface-1 rounded-xl overflow-hidden border border-border">
+          <GitGraph
+            commits={filteredCommits.length > 0 ? filteredCommits : activeCommits}
+            selectedCommitId={selectedCommit?.hash}
+            onSelectCommit={(c) => setSelectedCommit(c)}
+            isDesktop={false}
+          />
+        </div>
+      ) : filteredCommits.length === 0 ? (
         <div className="bg-surface-1 border border-border rounded-xl p-8 text-center flex flex-col items-center justify-center">
           <GitCommit size={32} className="text-text-tertiary mb-2 opacity-50" />
           <span className="text-sm font-semibold text-text-primary mb-1">
@@ -333,23 +375,37 @@ export const CommitsScreen: React.FC = () => {
           )}
         </div>
       ) : (
-        <div className="space-y-2.5">
-          {filteredCommits.map((commit, idx) => (
-            <CommitCard
-              key={`${commit.hash}-${idx}`}
-              commit={{
-                hash: commit.hash,
-                msg: commit.msg,
-                author: commit.author,
-                date: commit.date || commit.timestamp,
-                avatarUrl: commit.avatarUrl,
-                stats: commit.stats,
-              }}
-              onClick={() => setSelectedCommit(commit)}
-              onCopyHash={() => handleCopyHash(commit.hash)}
-              isLatest={idx === 0 && !searchQuery && !sinceDate && !untilDate && !authorFilter}
+        <div className="space-y-3">
+          <div className="space-y-2.5">
+            {paginatedCommits.map((commit, idx) => (
+              <CommitCard
+                key={`${commit.hash}-${idx}`}
+                commit={{
+                  hash: commit.hash,
+                  msg: commit.msg,
+                  author: commit.author,
+                  date: commit.date || commit.timestamp,
+                  avatarUrl: commit.avatarUrl,
+                  stats: commit.stats,
+                }}
+                onClick={() => setSelectedCommit(commit)}
+                onCopyHash={() => handleCopyHash(commit.hash)}
+                isLatest={idx === 0 && currentPage === 1 && !searchQuery && !sinceDate && !untilDate && !authorFilter}
+              />
+            ))}
+          </div>
+
+          {/* 10 Items Per Page standard pagination bar */}
+          <div className="pt-2 border-t border-border/80">
+            <PaginationControls
+              currentPage={currentPage}
+              totalItems={totalCommitsCount}
+              pageSize={10}
+              onPageChange={(p) => setCurrentPage(p)}
+              compact={true}
+              itemName="commits"
             />
-          ))}
+          </div>
         </div>
       )}
 

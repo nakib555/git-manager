@@ -103,7 +103,7 @@ export const useCommits = (filters: CommitFilter) => {
       // Helper to generate fallback result from activeCommits
       const getFallbackResult = () => {
         const filtered = filterLocalCommits(activeCommits || [], filters);
-        const pageSize = 30;
+        const pageSize = 10;
         const startIndex = ((filters.page || 1) - 1) * pageSize;
         const pageItems = filtered.slice(startIndex, startIndex + pageSize);
         return {
@@ -132,9 +132,9 @@ export const useCommits = (filters: CommitFilter) => {
             q += ` committer-date:<=${filters.until}`;
           }
           
-          url = `https://api.github.com/search/commits?q=${encodeURIComponent(q)}&per_page=30&page=${filters.page}`;
+          url = `https://api.github.com/search/commits?q=${encodeURIComponent(q)}&per_page=10&page=${filters.page}`;
         } else {
-          url = `https://api.github.com/repos/${currentRepoOwner}/${currentRepo}/commits?per_page=30&page=${filters.page}`;
+          url = `https://api.github.com/repos/${currentRepoOwner}/${currentRepo}/commits?per_page=10&page=${filters.page}`;
           if (filters.branch) {
             url += `&sha=${encodeURIComponent(filters.branch)}`;
           }
@@ -211,6 +211,9 @@ export const useCommits = (filters: CommitFilter) => {
                    } catch (_) {}
                 }
                 const authorDate = c.commit?.author?.date || c.commit?.committer?.date || new Date().toISOString();
+                const parents = Array.isArray(c.parents) 
+                  ? c.parents.map((p: any) => (typeof p === 'string' ? p : p.sha)) 
+                  : [];
                 return {
                   hash: (c.sha || '').substring(0, 7),
                   fullHash: c.sha || '',
@@ -221,6 +224,7 @@ export const useCommits = (filters: CommitFilter) => {
                   avatar: c.author?.avatar_url,
                   add,
                   del,
+                  parents,
                 };
              }));
              results.push(...batchResults);
@@ -233,7 +237,7 @@ export const useCommits = (filters: CommitFilter) => {
         return {
           items,
           totalCount,
-          totalPages: Math.max(1, Math.ceil(totalCount / 30)),
+          totalPages: Math.max(1, Math.ceil(totalCount / 10)),
           isFallback: false,
         };
       } catch (err: any) {

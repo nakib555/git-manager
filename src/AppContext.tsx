@@ -80,7 +80,7 @@ const defaultState: AppState = {
   githubUser: localStorage.getItem("githubUser") ? sanitizeGitHubUser(JSON.parse(localStorage.getItem("githubUser")!)) : null,
   githubRepos: getLocalRepos(),
   repoPage: 1,
-  repoPerPage: 15,
+  repoPerPage: 10,
   repoTotalPages: 1,
   repoSearchQuery: "",
   repoSearchScope: 'personal',
@@ -102,6 +102,7 @@ const defaultState: AppState = {
   ),
   recentClones: JSON.parse(localStorage.getItem("recentClones") || "[]"),
   isCommandPaletteOpen: false,
+  lastSyncTimestamp: Date.now(),
 };
 const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: ReactNode }> = ({
@@ -455,7 +456,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
       
       console.log(`Fetching commits for ${owner}/${repoName} on branch ${activeBranch}...`);
       const commitsRes = await fetch(
-        `https://api.github.com/repos/${owner}/${repoName}/commits?sha=${activeBranch}&per_page=15`,
+        `https://api.github.com/repos/${owner}/${repoName}/commits?sha=${activeBranch}&per_page=100`,
         { headers },
       );
       if (!commitsRes.ok) {
@@ -481,6 +482,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
                 }
               } catch (_) {}
             }
+            const parents = Array.isArray(c.parents)
+              ? c.parents.map((p: any) => (typeof p === 'string' ? p : p.sha))
+              : [];
             return {
               hash: c.sha.substring(0, 7),
               fullHash: c.sha,
@@ -490,6 +494,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
               time: formatTime(c.commit.author?.date || c.commit.committer?.date),
               add,
               del,
+              parents,
               isPrimary: true,
             };
           })
@@ -740,13 +745,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
           }
         }
         // Broadcast tick to consumers (such as Activity and Dashboard)
+        setState(prev => ({ ...prev, lastSyncTimestamp: Date.now() }));
         setRefreshTrigger(prev => prev + 1);
       } catch (err) {
         console.warn("Background auto-sync tick notice:", err);
       }
     };
 
-    const intervalId = setInterval(runAutoSync, 10000);
+    const intervalId = setInterval(runAutoSync, 15000);
 
     const handleVisibilityChange = () => {
       if (!document.hidden) {
@@ -1406,6 +1412,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
     } else {
       // Offline / Local Workspace Commit creation
       const localHash = Math.random().toString(16).substring(2, 9);
+      const key = `local_details_${repo}_commits`;
+      const existing = getLocalRepoDetails(repo, "commits");
       const newLocalCommit = {
         hash: localHash,
         fullHash: `${localHash}${Math.random().toString(16).substring(2, 16)}`,
@@ -1415,11 +1423,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         timestamp: new Date().toISOString(),
         add: commit.add || "+12",
         del: commit.del || "-2",
+        parents: existing.length > 0 ? [existing[0].hash] : [],
         isPrimary: true,
       };
 
-      const key = `local_details_${repo}_commits`;
-      const existing = getLocalRepoDetails(repo, "commits");
       const updated = [newLocalCommit, ...existing];
       try {
         localStorage.setItem(key, JSON.stringify(updated.slice(0, 500)));
