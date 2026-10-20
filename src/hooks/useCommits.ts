@@ -85,10 +85,10 @@ export const filterLocalCommits = (commits: any[], filters: Partial<CommitFilter
 };
 
 export const useCommits = (filters: CommitFilter) => {
-  const { currentRepo, currentRepoOwner, githubToken, activeCommits, lastSyncTimestamp } = useAppContext();
+  const { currentRepo, currentRepoOwner, githubToken, activeCommits } = useAppContext();
 
   return useQuery({
-    queryKey: ['commits', currentRepoOwner, currentRepo, filters, activeCommits?.length, lastSyncTimestamp],
+    queryKey: ['commits', currentRepoOwner, currentRepo, filters, activeCommits?.length],
     queryFn: async () => {
       const { sinceDate, untilDate } = normalizeDateRange(filters.since, filters.until);
       const headers: any = {};
@@ -262,5 +262,6 @@ export const useCommits = (filters: CommitFilter) => {
     enabled: !!currentRepo,
     staleTime: 10 * 1000,
     refetchInterval: 15 * 1000,
+    placeholderData: (previousData: any) => previousData,
   });
 };

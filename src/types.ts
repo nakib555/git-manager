@@ -87,6 +87,7 @@ export interface AppState {
   recentClones: { name: string; url: string; dest: string; timestamp: number }[];
   isCommandPaletteOpen: boolean;
   lastSyncTimestamp: number;
+  isAutoSyncing: boolean;
 }
 
 export type AppContextType = AppState & {

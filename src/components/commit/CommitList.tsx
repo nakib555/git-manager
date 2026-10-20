@@ -216,16 +216,24 @@ export const CommitList = ({
 
         {/* Status header with total counts */}
         <div className="flex items-center justify-between px-1 text-[11px] text-text-muted">
-          <span>
-            {isLoading ? (
-              'Loading commits...'
-            ) : (
-              <>
-                <span className="font-semibold text-text-main">{data?.totalCount ?? commits.length}</span> commits found
-                {activeFilterCount > 0 && <span className="text-primary ml-1 font-medium">(filtered)</span>}
-              </>
+          <div className="flex items-center gap-2">
+            <span>
+              {isLoading && commits.length === 0 ? (
+                'Loading commits...'
+              ) : (
+                <>
+                  <span className="font-semibold text-text-main">{data?.totalCount ?? commits.length}</span> commits found
+                  {activeFilterCount > 0 && <span className="text-primary ml-1 font-medium">(filtered)</span>}
+                </>
+              )}
+            </span>
+            {isFetching && commits.length > 0 && (
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-accent-soft text-accent text-[10px] font-medium animate-pulse border border-accent/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-accent animate-ping" />
+                Live updating...
+              </span>
             )}
-          </span>
+          </div>
           {activeFilterCount > 0 && (
             <button
               onClick={handleClearAllFilters}
@@ -351,7 +359,7 @@ export const CommitList = ({
         ref={scrollElementRef} 
         className={`${parentRef ? '' : 'flex-1 overflow-y-auto no-scrollbar'} relative`}
       >
-        {isLoading || isFetching ? (
+        {isLoading && commits.length === 0 ? (
           <div className="flex flex-col gap-4 animate-pulse pt-2 pl-8 relative">
             <div className="absolute top-4 bottom-0 left-[15px] w-[2px] bg-border/60 z-0"></div>
             {[1, 2, 3, 4, 5].map((i) => (

@@ -17,7 +17,8 @@ export const Activity: React.FC = () => {
     currentRepoOwner, 
     githubToken, 
     githubUser,
-    openRepo
+    openRepo,
+    isAutoSyncing
   } = useAppContext();
 
   const [selectedCommit, setSelectedCommit] = useState<any | null>(null);
@@ -26,8 +27,10 @@ export const Activity: React.FC = () => {
   const [activeFeedTab, setActiveFeedTab] = useState<'events' | 'commits'>('events');
   const [eventFilter, setEventFilter] = useState<'all' | 'push' | 'pr' | 'star'>('all');
 
-  const loadTimeline = async () => {
-    setIsLoadingEvents(true);
+  const loadTimeline = async (isBackground = false) => {
+    if (!isBackground && events.length === 0) {
+      setIsLoadingEvents(true);
+    }
     try {
       const data = await fetchTimelineEvents({
         username: githubUser?.login,
@@ -44,10 +47,10 @@ export const Activity: React.FC = () => {
   };
 
   useEffect(() => {
-    loadTimeline();
+    loadTimeline(false);
     const timer = setInterval(() => {
       if (!document.hidden) {
-        loadTimeline();
+        loadTimeline(true);
       }
     }, 15000);
     return () => clearInterval(timer);
@@ -78,7 +81,7 @@ export const Activity: React.FC = () => {
         </div>
 
         <button
-          onClick={loadTimeline}
+          onClick={() => loadTimeline(false)}
           disabled={isLoadingEvents}
           className="w-9 h-9 rounded-xl bg-surface-1 border border-border text-text-secondary hover:text-text-primary flex items-center justify-center cursor-pointer transition-colors active:scale-95 disabled:opacity-50"
           title="Refresh activity"
@@ -139,7 +142,7 @@ export const Activity: React.FC = () => {
             ))}
           </div>
 
-          {isLoadingEvents ? (
+          {isLoadingEvents && events.length === 0 ? (
             <div className="py-12 flex flex-col items-center justify-center gap-2 text-xs text-text-tertiary">
               <span className="w-6 h-6 rounded-full border-2 border-accent border-t-transparent animate-spin" />
               <span>Fetching live GitHub event stream...</span>

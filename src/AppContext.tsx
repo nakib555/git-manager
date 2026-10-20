@@ -100,6 +100,7 @@ const defaultState: AppState = {
   recentClones: JSON.parse(localStorage.getItem("recentClones") || "[]"),
   isCommandPaletteOpen: false,
   lastSyncTimestamp: Date.now(),
+  isAutoSyncing: false,
 };
 const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: ReactNode }> = ({
@@ -634,15 +635,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
       } else {
         console.error("Error fetching repo details:", error);
       }
-      setState((prev) => ({
-        ...prev,
-        activeCommits: getLocalRepoDetails(repoName, "commits"),
-        activeBranches: getLocalRepoDetails(repoName, "branches"),
-        activePRs: getLocalRepoDetails(repoName, "prs"),
-        activeFiles: getLocalRepoDetails(repoName, "files"),
-        activeLanguages: {},
-        isLoadingRepoDetails: false,
-      }));
+      if (!isBackground) {
+        setState((prev) => ({
+          ...prev,
+          activeCommits: getLocalRepoDetails(repoName, "commits"),
+          activeBranches: getLocalRepoDetails(repoName, "branches"),
+          activePRs: getLocalRepoDetails(repoName, "prs"),
+          activeFiles: getLocalRepoDetails(repoName, "files"),
+          activeLanguages: {},
+          isLoadingRepoDetails: false,
+        }));
+      }
     }
   };
   useEffect(() => {
@@ -696,11 +699,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
       }
     }
   }, [state.currentRepo, state.githubToken, state.currentRepoOwner, state.currentBranch, refreshTrigger]);
-  // Robust Real-Time Auto-Updating Synchronization Engine (Runs every 15s & on tab refocus)
+  // Robust Real-Time Auto-Updating Synchronization Engine (Runs silently every 15s & on tab refocus)
   useEffect(() => {
+    let isSyncInProgress = false;
+
     const runAutoSync = async () => {
+      if (isSyncInProgress || document.hidden) return;
+      isSyncInProgress = true;
       const s = stateRef.current;
-      if (document.hidden) return; // Save bandwidth/rate limit when tab is in background
+
+      setState(prev => ({ ...prev, isAutoSyncing: true }));
 
       try {
         if (s.githubToken) {
@@ -724,11 +732,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
             await fetchRepoDetails(s.currentRepo, s.currentRepoOwner, true, s.currentBranch || undefined);
           }
         }
-        // Broadcast tick to consumers (such as Activity and Dashboard)
-        setState(prev => ({ ...prev, lastSyncTimestamp: Date.now() }));
-        setRefreshTrigger(prev => prev + 1);
+        // Smooth background completion: update lastSyncTimestamp and clear isAutoSyncing
+        // WITHOUT triggering setRefreshTrigger, so components never reload or flash skeletons
+        setState(prev => ({ ...prev, lastSyncTimestamp: Date.now(), isAutoSyncing: false }));
       } catch (err) {
         console.warn("Background auto-sync tick notice:", err);
+        setState(prev => ({ ...prev, isAutoSyncing: false }));
+      } finally {
+        isSyncInProgress = false;
       }
     };
 

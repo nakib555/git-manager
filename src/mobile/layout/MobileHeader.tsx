@@ -18,7 +18,8 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
     currentBranch, 
     activeBranches, 
     switchBranch, 
-    openCommandPalette 
+    openCommandPalette,
+    isAutoSyncing
   } = useAppContext();
 
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
@@ -66,6 +67,9 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
               >
                 <GitBranch size={13} className="text-accent shrink-0" />
                 <span className="truncate">{currentBranch}</span>
+                {isAutoSyncing && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping shrink-0" title="Syncing..." />
+                )}
                 <ChevronDown size={13} className={`text-text-tertiary shrink-0 transition-transform ${isBranchDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
 
@@ -113,9 +117,17 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
               </AnimatePresence>
             </div>
           ) : (
-            <h1 className="text-base font-semibold text-text-primary tracking-tight truncate text-center">
-              {getScreenTitle()}
-            </h1>
+            <div className="flex items-center justify-center gap-1.5 min-w-0">
+              <h1 className="text-base font-semibold text-text-primary tracking-tight truncate text-center">
+                {getScreenTitle()}
+              </h1>
+              {isAutoSyncing && (
+                <span className="relative flex h-2 w-2 shrink-0" title="Syncing live...">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+              )}
+            </div>
           )}
         </div>
 

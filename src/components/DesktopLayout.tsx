@@ -85,7 +85,7 @@ export const DesktopLayout: React.FC = () => {
     currentScreen, currentRepo, navigate, githubUser, githubRepos, 
     disconnectGitHub, theme, toggleTheme, connectGitHub, openModal,
     toastMessage, githubToken, setRepoSearchQuery, isFetchingRepos,
-    openCommandPalette, refreshData, lastSyncTimestamp
+    openCommandPalette, refreshData, lastSyncTimestamp, isAutoSyncing
   } = useAppContext();
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -306,15 +306,24 @@ export const DesktopLayout: React.FC = () => {
             <button 
               type="button"
               onClick={() => refreshData()}
-              className="hidden md:flex items-center gap-2 h-10 px-3 rounded-xl border border-border/80 bg-card hover:bg-hover/20 text-xs text-text-muted hover:border-primary/40 hover:text-text-main transition-all cursor-pointer shadow-xs"
+              className={`hidden md:flex items-center gap-2 h-10 px-3 rounded-xl border transition-all cursor-pointer shadow-xs ${
+                isAutoSyncing 
+                  ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-400' 
+                  : 'border-border/80 bg-card hover:bg-hover/20 text-xs text-text-muted hover:border-primary/40 hover:text-text-main'
+              }`}
               title="Auto-syncs live every 15 seconds. Click to refresh now."
             >
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${isAutoSyncing ? 'bg-emerald-300 opacity-90' : 'bg-emerald-400 opacity-60'}`}></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
-              <span className="font-mono text-[11px] font-medium text-text-main">15s Live Sync</span>
-              <RefreshCw size={12} className={`text-text-muted ${isFetchingRepos ? 'animate-spin text-primary' : ''}`} />
+              <span className="font-mono text-[11px] font-medium tracking-tight">
+                {isAutoSyncing ? 'Syncing...' : '15s Live Sync'}
+              </span>
+              <RefreshCw 
+                size={12} 
+                className={`transition-transform duration-500 ${isAutoSyncing ? 'animate-spin text-emerald-400' : 'text-text-muted'}`} 
+              />
             </button>
 
             {/* Quick Clone repo button */}
@@ -1230,7 +1239,7 @@ const DesktopRepositories: React.FC<{ globalSearch: string }> = ({ globalSearch 
           {/* Scrollable Repo List */}
           <div 
             ref={parentRef}
-            className={`flex-1 overflow-y-auto p-3 no-scrollbar transition-opacity duration-200 ${isFetchingRepos ? 'opacity-60 pointer-events-none' : ''}`}
+            className="flex-1 overflow-y-auto p-3 no-scrollbar"
           >
             {paginatedRepos.length === 0 ? (
               <div className="py-12 flex flex-col items-center justify-center text-center h-full">
@@ -1443,17 +1452,24 @@ const DesktopRepositories: React.FC<{ globalSearch: string }> = ({ globalSearch 
  * 3. DESKTOP REPO DETAILS WORKSPACE (INTEGRATES FILES, COMMITS, PRs, BRANCHES, INSIGHTS)
  */
 const DesktopRepoWorkspace: React.FC = () => {
-  const { currentScreen, isLoadingRepoDetails } = useAppContext();
+  const { currentScreen, isLoadingRepoDetails, activeCommits, activeBranches, activeFiles, isAutoSyncing } = useAppContext();
+  const hasWorkspaceData = (activeCommits && activeCommits.length > 0) || (activeBranches && activeBranches.length > 0) || (activeFiles && activeFiles.length > 0);
 
   return (
-    <div className="w-full space-y-6 flex-1 flex flex-col min-h-0">
-      {isLoadingRepoDetails ? (
+    <div className="w-full space-y-6 flex-1 flex flex-col min-h-0 relative">
+      {isLoadingRepoDetails && !hasWorkspaceData ? (
         <div className="flex-1 flex flex-col items-center justify-center gap-3">
           <span className="w-10 h-10 rounded-full border-4 border-primary border-t-transparent animate-spin" />
           <span className="text-xs text-text-muted font-bold tracking-widest uppercase">Loading workspace metadata...</span>
         </div>
       ) : (
-        <div className="flex-1 min-h-0 flex flex-col">
+        <div className="flex-1 min-h-0 flex flex-col relative">
+          {isAutoSyncing && (
+            <div className="absolute top-2 right-4 z-30 pointer-events-none flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-card/90 backdrop-blur-xs border border-emerald-500/30 text-[10px] font-medium text-emerald-400 shadow-xs animate-fade-in">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+              <span>Syncing workspace...</span>
+            </div>
+          )}
           {currentScreen === 'files' && <DesktopFilesView />}
           {currentScreen === 'commits' && <DesktopCommitsView />}
           {currentScreen === 'prs' && (
