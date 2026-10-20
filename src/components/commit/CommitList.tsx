@@ -508,13 +508,15 @@ export const CommitList = ({
         )}
       </div>
 
-      {/* Unified Pagination Footer (10 items per page) */}
+      {/* Unified Pagination Footer with page size selector */}
       {!isLoading && !isError && (
         <div className="shrink-0 pt-2.5 mt-1 border-t border-border">
           <PaginationControls
             currentPage={currentPage}
             totalItems={data?.totalCount || (activeCommits?.length ?? commits.length)}
-            pageSize={10}
+            pageSize={filters.pageSize || 10}
+            pageSizeOptions={[10, 25, 50, -1]}
+            onPageSizeChange={(newSize) => setFilters(prev => ({ ...prev, pageSize: newSize, page: 1 }))}
             onPageChange={handlePageChange}
             isLoading={isFetching}
             itemName="commits"

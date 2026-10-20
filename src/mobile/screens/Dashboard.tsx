@@ -23,7 +23,7 @@ export const Dashboard: React.FC = () => {
   const totalForks = githubRepos.reduce((acc, r) => acc + (r.forks_count || 0), 0);
 
   return (
-    <div className="px-4 py-4 space-y-6">
+    <div className="px-4 py-4 space-y-6 pb-6">
       {/* 1. Header greeting & profile status */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -31,11 +31,11 @@ export const Dashboard: React.FC = () => {
             <img 
               src={githubUser.avatar_url} 
               alt={githubUser.login} 
-              className="w-11 h-11 rounded-full border border-border object-cover"
+              className="w-12 h-12 rounded-full border border-border object-cover"
             />
           ) : (
-            <div className="w-11 h-11 rounded-full bg-surface-1 border border-border flex items-center justify-center text-text-tertiary">
-              <Github size={20} />
+            <div className="w-12 h-12 rounded-full bg-surface-1 border border-border flex items-center justify-center text-text-tertiary">
+              <Github size={22} />
             </div>
           )}
           <div>
@@ -48,21 +48,22 @@ export const Dashboard: React.FC = () => {
 
         {!githubUser && (
           <button
+            type="button"
             onClick={connectGitHub}
-            className="h-10 px-4 rounded-xl bg-accent hover:opacity-90 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm shadow-accent/25 active:scale-95 transition-all cursor-pointer"
+            className="h-10 px-4 rounded-xl bg-accent hover:opacity-90 text-white text-xs font-semibold flex items-center gap-2 shadow-sm shadow-accent/25 active:scale-95 transition-all cursor-pointer"
           >
-            <Github size={14} />
+            <Github size={15} />
             <span>Connect</span>
           </button>
         )}
       </div>
 
       {/* 2. Compact Stats Row (3 Columns with Tabular Numbers) */}
-      <div className="grid grid-cols-3 gap-2.5">
-        <div className="bg-surface-1 border border-border rounded-xl p-3.5 flex flex-col justify-between">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+        <div className="bg-surface-1 border border-border rounded-2xl p-4 flex flex-col justify-between min-h-[96px]">
           <div className="flex items-center justify-between text-text-tertiary mb-1">
             <span className="text-[10px] font-semibold uppercase tracking-wider">Repos</span>
-            <FolderGit2 size={13} className="text-accent" />
+            <FolderGit2 size={14} className="text-accent" />
           </div>
           <span className="text-2xl font-bold font-mono tabular-nums tracking-tight text-text-primary">
             {githubRepos.length}
@@ -70,10 +71,10 @@ export const Dashboard: React.FC = () => {
           <span className="text-[10px] text-text-tertiary font-medium mt-1">Active sync</span>
         </div>
 
-        <div className="bg-surface-1 border border-border rounded-xl p-3.5 flex flex-col justify-between">
+        <div className="bg-surface-1 border border-border rounded-2xl p-4 flex flex-col justify-between min-h-[96px]">
           <div className="flex items-center justify-between text-text-tertiary mb-1">
             <span className="text-[10px] font-semibold uppercase tracking-wider">Stars</span>
-            <Star size={13} className="text-warning" />
+            <Star size={14} className="text-warning" />
           </div>
           <span className="text-2xl font-bold font-mono tabular-nums tracking-tight text-text-primary">
             {totalStars}
@@ -81,10 +82,10 @@ export const Dashboard: React.FC = () => {
           <span className="text-[10px] text-text-tertiary font-medium mt-1 font-mono tabular-nums">{totalForks} forks</span>
         </div>
 
-        <div className="bg-surface-1 border border-border rounded-xl p-3.5 flex flex-col justify-between">
+        <div className="bg-surface-1 border border-border rounded-2xl p-4 flex flex-col justify-between min-h-[96px]">
           <div className="flex items-center justify-between text-text-tertiary mb-1">
             <span className="text-[10px] font-semibold uppercase tracking-wider">Commits</span>
-            <GitCommit size={13} className="text-success" />
+            <GitCommit size={14} className="text-success" />
           </div>
           <span className="text-2xl font-bold font-mono tabular-nums tracking-tight text-text-primary">
             {activeCommits.length}
@@ -93,19 +94,21 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* 3. Quick Action Buttons Row (min 44px height, 10px radius) */}
+      {/* 3. Quick Action Buttons Row (min 48px height, 12px radius) */}
       <div className="grid grid-cols-2 gap-3">
         <button
+          type="button"
           onClick={() => openModal('repo')}
-          className="min-h-[44px] h-12 px-4 rounded-[10px] bg-[#388BFD] hover:bg-[#1F6FEB] text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-sm shadow-[#388BFD]/25 active:scale-95 transition-all cursor-pointer"
+          className="min-h-[48px] h-12 px-4 rounded-xl bg-[#388BFD] hover:bg-[#1F6FEB] text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-sm shadow-[#388BFD]/25 active:scale-95 transition-all cursor-pointer"
         >
           <Plus size={16} strokeWidth={2.4} />
           <span>New Repository</span>
         </button>
 
         <button
+          type="button"
           onClick={() => navigate('clone')}
-          className="min-h-[44px] h-12 px-4 rounded-[10px] bg-[#D29922]/12 border border-[#D29922]/30 text-[#D29922] hover:bg-[#D29922]/20 font-semibold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer shadow-sm shadow-[#D29922]/10"
+          className="min-h-[48px] h-12 px-4 rounded-xl bg-[#D29922]/12 border border-[#D29922]/30 text-[#D29922] hover:bg-[#D29922]/20 font-semibold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer shadow-sm shadow-[#D29922]/10"
         >
           <Download size={16} strokeWidth={2.4} />
           <span>Clone Repo</span>
@@ -114,7 +117,7 @@ export const Dashboard: React.FC = () => {
 
       {/* 4. Active Repository Banner (if any) */}
       {githubRepos.length > 0 && (
-        <div className="bg-surface-1 border border-border rounded-xl p-4">
+        <div className="bg-surface-1 border border-border rounded-2xl p-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">
               Latest Pushed Repository
@@ -131,14 +134,14 @@ export const Dashboard: React.FC = () => {
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-text-primary group-hover:text-accent transition-colors flex items-center gap-1.5">
                 <span>{githubRepos[0].name}</span>
-                <ArrowUpRight size={14} className="text-text-tertiary group-hover:text-accent transition-colors" />
+                <ArrowUpRight size={15} className="text-text-tertiary group-hover:text-accent transition-colors" />
               </h3>
               <span className="text-[11px] text-text-tertiary font-mono">
                 {githubRepos[0].language || 'Markdown'}
               </span>
             </div>
             {githubRepos[0].description && (
-              <p className="text-xs text-text-secondary mt-1 line-clamp-1">
+              <p className="text-xs text-text-secondary mt-1 line-clamp-1 leading-relaxed">
                 {githubRepos[0].description}
               </p>
             )}
@@ -153,36 +156,37 @@ export const Dashboard: React.FC = () => {
             Recent Commits
           </h3>
           <button 
+            type="button"
             onClick={() => navigate('activity')}
-            className="text-xs text-accent font-semibold flex items-center gap-0.5 hover:underline cursor-pointer min-h-[36px]"
+            className="text-xs text-accent font-semibold flex items-center gap-0.5 hover:underline cursor-pointer min-h-[40px] px-2 -mr-2"
           >
             <span>View all</span>
-            <ChevronRight size={14} />
+            <ChevronRight size={15} />
           </button>
         </div>
 
         {activeCommits.length === 0 ? (
-          <div className="bg-surface-1 border border-border rounded-xl p-6 text-center">
+          <div className="bg-surface-1 border border-border rounded-2xl p-6 text-center">
             <GitCommit size={24} className="mx-auto text-text-tertiary mb-2 opacity-60" />
             <p className="text-xs text-text-tertiary">No recent commits recorded yet</p>
           </div>
         ) : (
-          <div className="bg-surface-1 border border-border rounded-xl divide-y divide-border overflow-hidden">
+          <div className="bg-surface-1 border border-border rounded-2xl divide-y divide-border overflow-hidden">
             {activeCommits.slice(0, 4).map((commit, idx) => (
               <div 
                 key={`${commit.hash}-${idx}`} 
                 onClick={() => setSelectedCommit(commit)}
-                className="p-3.5 hover:bg-surface-2 transition-colors flex items-center justify-between gap-3 cursor-pointer select-none"
+                className="p-4 hover:bg-surface-2 transition-colors flex items-center justify-between gap-3 cursor-pointer select-none min-h-[56px]"
               >
-                <div className="flex items-start gap-2.5 min-w-0">
-                  <div className="w-7 h-7 rounded-lg bg-surface-2 flex items-center justify-center text-text-secondary shrink-0 mt-0.5">
-                    <GitCommit size={14} />
+                <div className="flex items-start gap-3 min-w-0">
+                  <div className="w-8 h-8 rounded-xl bg-surface-2 flex items-center justify-center text-text-secondary shrink-0 mt-0.5">
+                    <GitCommit size={15} />
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs font-medium text-text-primary truncate">
                       {commit.msg}
                     </p>
-                    <div className="flex items-center gap-2 mt-0.5 text-[10px] text-text-tertiary font-mono">
+                    <div className="flex items-center gap-2 mt-1 text-[11px] text-text-tertiary font-mono">
                       <span className="text-accent font-semibold tabular-nums">{commit.hash.substring(0, 7)}</span>
                       <span aria-hidden="true">·</span>
                       <span className="tabular-nums">{formatRelativeTime(commit.date || commit.timestamp)}</span>
@@ -190,7 +194,7 @@ export const Dashboard: React.FC = () => {
                   </div>
                 </div>
 
-                <span className="text-[10px] text-text-tertiary font-mono shrink-0">
+                <span className="text-[11px] text-text-tertiary font-mono shrink-0">
                   {commit.author.split(' ')[0]}
                 </span>
               </div>

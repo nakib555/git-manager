@@ -165,14 +165,14 @@ export const FilesScreen: React.FC = () => {
       <div key={node.path} className="select-none">
         <div
           onClick={() => (isFolder ? toggleFolder(node.path) : loadFileContent(node.path))}
-          style={{ paddingLeft: `${Math.max(12, depth * 16 + 12)}px` }}
-          className={`h-9 pr-3 flex items-center justify-between text-xs transition-colors cursor-pointer border-l-2 ${
+          style={{ paddingLeft: `${Math.max(16, depth * 16 + 16)}px` }}
+          className={`h-10 pr-4 flex items-center justify-between text-xs transition-colors cursor-pointer border-l-2 ${
             isSelected && !isFolder
               ? 'bg-accent-soft text-accent border-accent font-semibold'
               : 'border-transparent text-text-secondary hover:text-text-primary hover:bg-surface-2'
           }`}
         >
-          <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center gap-2.5 min-w-0">
             {isFolder ? (
               <>
                 {isExpanded ? (
@@ -180,19 +180,19 @@ export const FilesScreen: React.FC = () => {
                 ) : (
                   <ChevronRight size={14} className="text-text-tertiary shrink-0" />
                 )}
-                <Folder size={15} className="text-accent shrink-0" />
+                <Folder size={16} className="text-accent shrink-0" />
               </>
             ) : (
               <>
                 <span className="w-3.5" />
-                <FileText size={14} className="text-text-tertiary shrink-0" />
+                <FileText size={15} className="text-text-tertiary shrink-0" />
               </>
             )}
             <span className="truncate">{node.name}</span>
           </div>
 
           {!isFolder && node.size !== undefined && (
-            <span className="text-[10px] text-text-tertiary font-mono shrink-0 ml-2">
+            <span className="text-[10px] text-text-tertiary font-mono shrink-0 ml-2 tabular-nums">
               {formatBytes(node.size)}
             </span>
           )}
@@ -208,43 +208,43 @@ export const FilesScreen: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-full relative">
+    <div className="flex flex-col relative w-full pb-6">
       {/* 1. Header Toolbar */}
-      <div className="sticky top-0 z-10 bg-background border-b border-border px-4 py-2.5 space-y-2 shrink-0">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-3 space-y-2 shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5 text-xs text-text-tertiary font-mono truncate">
-            <Home size={13} className="text-text-tertiary shrink-0" />
+            <Home size={14} className="text-text-tertiary shrink-0" />
             <span>/</span>
             <span className="text-text-primary font-semibold truncate">{currentRepo}</span>
           </div>
-          <span className="text-[11px] font-mono text-accent font-semibold bg-accent-soft px-2 py-0.5 rounded border border-accent/20">
+          <span className="text-[11px] font-mono text-accent font-semibold bg-accent-soft px-2.5 py-1 rounded-lg border border-accent/20">
             {activeFiles.length} files
           </span>
         </div>
 
-        {/* Quick file search filter */}
+        {/* Quick file search filter (40px = 5x8pt) */}
         <div className="relative flex items-center">
-          <Search size={14} className="absolute left-3 text-text-tertiary pointer-events-none" />
+          <Search size={15} className="absolute left-3 text-text-tertiary pointer-events-none" />
           <input
             type="text"
             placeholder="Search file name..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-9 pl-9 pr-8 bg-surface-1 border border-border rounded-xl text-xs text-text-primary placeholder:text-text-tertiary outline-none focus:border-accent transition-colors"
+            className="w-full h-10 pl-9 pr-8 bg-surface-1 border border-border rounded-xl text-xs text-text-primary placeholder:text-text-tertiary outline-none focus:border-accent transition-colors"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 text-text-tertiary hover:text-text-primary"
+              className="absolute right-3 text-text-tertiary hover:text-text-primary"
             >
-              <X size={13} />
+              <X size={14} />
             </button>
           )}
         </div>
       </div>
 
       {/* 2. File Tree Container */}
-      <div className="flex-1 overflow-y-auto divide-y divide-border/20 py-2">
+      <div className="divide-y divide-border/20 py-2">
         {activeFiles.length === 0 ? (
           <div className="p-8 text-center text-xs text-text-tertiary">
             Loading file tree structure...
@@ -271,14 +271,14 @@ export const FilesScreen: React.FC = () => {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-              className={`relative w-full bg-surface-1 border-t border-x border-border rounded-t-xl pb-[calc(env(safe-area-inset-bottom,0px)+12px)] pt-3 px-4 shadow-2xl z-10 flex flex-col transition-all duration-200 ${
+              className={`relative w-full bg-surface-1 border-t border-x border-border rounded-t-2xl pb-[calc(env(safe-area-inset-bottom,0px)+24px)] pt-3 px-4 shadow-2xl z-10 flex flex-col transition-all duration-200 ${
                 isFullscreen ? 'h-[96vh]' : 'max-h-[88vh] h-[85vh]'
               }`}
             >
               <div className="w-10 h-1 bg-border rounded-full mx-auto mb-2 shrink-0" />
 
               {/* Top Navigation & Breadcrumbs Header */}
-              <div className="flex items-center justify-between pb-2 border-b border-border shrink-0">
+              <div className="flex items-center justify-between pb-2 border-b border-border shrink-0 min-h-[44px]">
                 <div className="min-w-0 pr-2">
                   <div className="flex items-center gap-1.5 text-[11px] text-text-tertiary font-mono truncate">
                     <span>{currentRepo}</span>
@@ -301,67 +301,68 @@ export const FilesScreen: React.FC = () => {
                 <div className="flex items-center gap-1.5 shrink-0">
                   <button
                     onClick={() => setIsFullscreen(!isFullscreen)}
-                    className="w-8 h-8 rounded-lg flex items-center justify-center text-text-tertiary hover:text-text-primary hover:bg-surface-2 transition-colors cursor-pointer"
+                    className="w-9 h-9 rounded-xl flex items-center justify-center text-text-tertiary hover:text-text-primary hover:bg-surface-2 transition-colors cursor-pointer"
                     title={isFullscreen ? 'Restore' : 'Fullscreen'}
                   >
-                    {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+                    {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
                   </button>
 
                   <button
                     onClick={() => setSelectedFileForModal(null)}
-                    className="w-8 h-8 rounded-lg flex items-center justify-center text-text-tertiary hover:text-text-primary hover:bg-surface-2 transition-colors cursor-pointer"
+                    className="w-9 h-9 rounded-xl flex items-center justify-center text-text-tertiary hover:text-text-primary hover:bg-surface-2 transition-colors cursor-pointer"
+                    aria-label="Close code modal"
                   >
-                    <X size={16} />
+                    <X size={17} />
                   </button>
                 </div>
               </div>
 
-              {/* Sub-Tabs: Code | Raw | History | Info */}
-              <div className="flex items-center justify-between border-b border-border py-1.5 shrink-0">
-                <div className="flex items-center gap-1">
+              {/* Sub-Tabs: Code | Raw | History | Info (32px height = 4x8pt) */}
+              <div className="flex items-center justify-between border-b border-border py-2 shrink-0">
+                <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => setContentTab('code')}
-                    className={`h-7 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                    className={`h-8 px-3 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
                       contentTab === 'code'
                         ? 'bg-accent text-white font-bold shadow-xs'
                         : 'text-text-tertiary hover:text-text-primary hover:bg-surface-2'
                     }`}
                   >
-                    <FileCode size={13} />
+                    <FileCode size={14} />
                     <span>Code</span>
                   </button>
 
                   <button
                     onClick={() => setContentTab('history')}
-                    className={`h-7 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                    className={`h-8 px-3 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
                       contentTab === 'history'
                         ? 'bg-accent text-white font-bold shadow-xs'
                         : 'text-text-tertiary hover:text-text-primary hover:bg-surface-2'
                     }`}
                   >
-                    <Clock size={13} />
+                    <Clock size={14} />
                     <span>History</span>
                   </button>
 
                   <button
                     onClick={() => setContentTab('info')}
-                    className={`h-7 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                    className={`h-8 px-3 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
                       contentTab === 'info'
                         ? 'bg-accent text-white font-bold shadow-xs'
                         : 'text-text-tertiary hover:text-text-primary hover:bg-surface-2'
                     }`}
                   >
-                    <Info size={13} />
+                    <Info size={14} />
                     <span>Info</span>
                   </button>
                 </div>
 
                 {/* Right utility buttons: Copy, Download, Wrap */}
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0">
                   <button
                     onClick={() => setWrapLines(!wrapLines)}
-                    className={`h-7 px-2 rounded-lg text-[10px] font-mono border transition-colors cursor-pointer ${
-                      wrapLines ? 'bg-accent-soft text-accent border-accent/30' : 'bg-surface-2 text-text-tertiary border-border'
+                    className={`h-8 px-2.5 rounded-xl text-[10px] font-mono border transition-colors cursor-pointer ${
+                      wrapLines ? 'bg-accent-soft text-accent border-accent/30 font-bold' : 'bg-surface-2 text-text-tertiary border-border'
                     }`}
                     title="Toggle word wrap"
                   >
@@ -371,18 +372,18 @@ export const FilesScreen: React.FC = () => {
                   <button
                     onClick={handleCopyCode}
                     disabled={activeFileLoading}
-                    className="h-7 px-2.5 rounded-lg bg-surface-2 hover:bg-surface-3 border border-border text-xs text-text-primary hover:text-accent flex items-center gap-1.5 transition-colors cursor-pointer"
+                    className="h-8 px-3 rounded-xl bg-surface-2 hover:bg-surface-3 border border-border text-xs text-text-primary hover:text-accent flex items-center gap-1.5 transition-colors cursor-pointer"
                   >
-                    {isCopied ? <Check size={12} className="text-success" /> : <Copy size={12} />}
+                    {isCopied ? <Check size={13} className="text-success" /> : <Copy size={13} />}
                     <span>{isCopied ? 'Copied' : 'Copy'}</span>
                   </button>
 
                   <button
                     onClick={handleDownloadFile}
-                    className="h-7 w-7 rounded-lg bg-surface-2 hover:bg-surface-3 border border-border flex items-center justify-center text-text-tertiary hover:text-text-primary transition-colors cursor-pointer"
+                    className="h-8 w-8 rounded-xl bg-surface-2 hover:bg-surface-3 border border-border flex items-center justify-center text-text-tertiary hover:text-text-primary transition-colors cursor-pointer"
                     title="Download raw file"
                   >
-                    <Download size={13} />
+                    <Download size={14} />
                   </button>
                 </div>
               </div>

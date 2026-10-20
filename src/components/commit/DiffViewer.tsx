@@ -6,9 +6,9 @@ export const DiffViewer = ({ patch, filename, isDark = false }: { patch: string;
   if (!patch) return <div className="text-text-muted italic pl-2 p-2">Binary or empty file change.</div>;
 
   return (
-    <div className="w-full text-[12px] md:text-sm font-mono relative overflow-hidden rounded-lg border border-border bg-card">
-      <div className="bg-main border-b border-border px-4 py-2 flex items-center justify-between text-text-muted">
-         <span className="font-semibold text-text-main">{filename}</span>
+    <div className="w-full text-[12px] md:text-sm font-mono relative overflow-hidden rounded-2xl border border-border bg-card">
+      <div className="bg-main border-b border-border px-4 py-3 min-h-[48px] flex items-center justify-between text-text-muted">
+         <span className="font-semibold text-text-main text-xs">{filename}</span>
       </div>
       <div className="w-full overflow-x-auto">
         <SyntaxHighlighter

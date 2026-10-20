@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '../../AppContext';
 import { CommitCard } from '../components/CommitCard';
 import { CommitDetailModal } from '../components/CommitDetailModal';
+import { PaginationControls } from '../../components/common/PaginationControls';
 import { 
   GitCommit, Activity as ActivityIcon, GitPullRequest, 
   Star, GitBranch, ArrowUpRight, RefreshCw, Clock, User
@@ -18,7 +19,6 @@ export const Activity: React.FC = () => {
     githubToken, 
     githubUser,
     openRepo,
-    isAutoSyncing
   } = useAppContext();
 
   const [selectedCommit, setSelectedCommit] = useState<any | null>(null);
@@ -26,6 +26,10 @@ export const Activity: React.FC = () => {
   const [isLoadingEvents, setIsLoadingEvents] = useState(false);
   const [activeFeedTab, setActiveFeedTab] = useState<'events' | 'commits'>('events');
   const [eventFilter, setEventFilter] = useState<'all' | 'push' | 'pr' | 'star'>('all');
+
+  // Pagination for branch commits
+  const [activityPage, setActivityPage] = useState(1);
+  const [activityPageSize, setActivityPageSize] = useState(10);
 
   const loadTimeline = async (isBackground = false) => {
     if (!isBackground && events.length === 0) {
@@ -69,6 +73,12 @@ export const Activity: React.FC = () => {
     return true;
   });
 
+  const paginatedActivityCommits = useMemo(() => {
+    if (activityPageSize === -1) return activeCommits;
+    const start = (activityPage - 1) * activityPageSize;
+    return activeCommits.slice(start, start + activityPageSize);
+  }, [activeCommits, activityPage, activityPageSize]);
+
   return (
     <div className="px-4 py-4 space-y-4">
       {/* 1. Header with Refresh */}
@@ -83,16 +93,16 @@ export const Activity: React.FC = () => {
         <button
           onClick={() => loadTimeline(false)}
           disabled={isLoadingEvents}
-          className="w-9 h-9 rounded-xl bg-surface-1 border border-border text-text-secondary hover:text-text-primary flex items-center justify-center cursor-pointer transition-colors active:scale-95 disabled:opacity-50"
+          className="w-10 h-10 rounded-xl bg-surface-1 border border-border text-text-secondary hover:text-text-primary flex items-center justify-center cursor-pointer transition-colors active:scale-95 disabled:opacity-50"
           title="Refresh activity"
           aria-label="Refresh activity"
         >
-          <RefreshCw size={15} className={isLoadingEvents ? 'animate-spin' : ''} />
+          <RefreshCw size={16} className={isLoadingEvents ? 'animate-spin' : ''} />
         </button>
       </div>
 
       {/* 2. Feed Mode Segmented Control: Real Events vs Commits */}
-      <div className="h-9 p-1 bg-surface-1 border border-border rounded-xl flex items-center gap-1 select-none">
+      <div className="h-10 p-1 bg-surface-1 border border-border rounded-xl flex items-center gap-1 select-none">
         <button
           onClick={() => setActiveFeedTab('events')}
           className={`flex-1 h-full rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
@@ -101,7 +111,7 @@ export const Activity: React.FC = () => {
               : 'text-text-secondary hover:text-text-primary'
           }`}
         >
-          <ActivityIcon size={13} />
+          <ActivityIcon size={14} />
           <span>GitHub Timeline</span>
         </button>
 
@@ -113,15 +123,15 @@ export const Activity: React.FC = () => {
               : 'text-text-secondary hover:text-text-primary'
           }`}
         >
-          <GitCommit size={13} />
+          <GitCommit size={14} />
           <span>Branch Commits ({activeCommits.length})</span>
         </button>
       </div>
 
       {activeFeedTab === 'events' ? (
         <div className="space-y-3">
-          {/* Sub-filter chips for events */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar select-none">
+          {/* Sub-filter chips for events (32px height = 4x8pt) */}
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar select-none py-0.5">
             {[
               { id: 'all', label: 'All Events' },
               { id: 'push', label: 'Pushes' },
@@ -131,7 +141,7 @@ export const Activity: React.FC = () => {
               <button
                 key={f.id}
                 onClick={() => setEventFilter(f.id as any)}
-                className={`h-7 px-3 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                className={`h-8 px-3 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                   eventFilter === f.id
                     ? 'bg-accent-soft text-accent border border-accent/25 font-bold'
                     : 'bg-surface-1 border border-border text-text-tertiary hover:text-text-secondary'
@@ -148,7 +158,7 @@ export const Activity: React.FC = () => {
               <span>Fetching live GitHub event stream...</span>
             </div>
           ) : filteredEvents.length === 0 ? (
-            <div className="bg-surface-1 border border-border rounded-xl p-8 text-center flex flex-col items-center justify-center">
+            <div className="bg-surface-1 border border-border rounded-2xl p-8 text-center flex flex-col items-center justify-center">
               <ActivityIcon size={32} className="text-text-tertiary mb-2 opacity-50" />
               <span className="text-sm font-semibold text-text-primary mb-1">No timeline events found</span>
               <span className="text-xs text-text-tertiary max-w-[260px] leading-relaxed">
@@ -158,7 +168,7 @@ export const Activity: React.FC = () => {
               </span>
             </div>
           ) : (
-            <div className="space-y-2.5">
+            <div className="space-y-3 pb-6">
               {filteredEvents.map((ev) => {
                 const isPush = ev.type === 'PushEvent';
                 const isPR = ev.type === 'PullRequestEvent';
@@ -168,7 +178,7 @@ export const Activity: React.FC = () => {
                 return (
                   <div
                     key={ev.id}
-                    className="p-3.5 rounded-xl bg-surface-1 border border-border space-y-2 hover:border-accent/40 transition-colors"
+                    className="p-4 rounded-2xl bg-surface-1 border border-border space-y-2.5 hover:border-accent/40 transition-colors"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 min-w-0 pr-2">
@@ -176,11 +186,11 @@ export const Activity: React.FC = () => {
                           <img
                             src={ev.actor.avatarUrl}
                             alt=""
-                            className="w-5 h-5 rounded-full border border-border shrink-0"
+                            className="w-6 h-6 rounded-full border border-border shrink-0 object-cover"
                           />
                         ) : (
-                          <div className="w-5 h-5 rounded-full bg-surface-2 flex items-center justify-center text-text-tertiary shrink-0">
-                            <User size={12} />
+                          <div className="w-6 h-6 rounded-full bg-surface-2 flex items-center justify-center text-text-tertiary shrink-0">
+                            <User size={13} />
                           </div>
                         )}
                         <span className="text-xs font-semibold text-text-primary truncate">
@@ -196,7 +206,7 @@ export const Activity: React.FC = () => {
                       </span>
                     </div>
 
-                    {/* Repository Anchor */}
+                    {/* Repository Anchor (44px min height touch target) */}
                     <div
                       onClick={() => {
                         const parts = ev.repo.name.split('/');
@@ -204,35 +214,35 @@ export const Activity: React.FC = () => {
                         const repoOwner = parts[0];
                         openRepo(repoName, repoOwner);
                       }}
-                      className="group flex items-center justify-between p-2 rounded-lg bg-background border border-border cursor-pointer hover:border-accent transition-colors"
+                      className="group flex items-center justify-between min-h-[44px] p-2.5 rounded-xl bg-background border border-border cursor-pointer hover:border-accent transition-colors"
                     >
                       <div className="flex items-center gap-2 min-w-0 pr-2">
                         {isPush ? (
-                          <GitCommit size={14} className="text-accent shrink-0" />
+                          <GitCommit size={15} className="text-accent shrink-0" />
                         ) : isPR ? (
-                          <GitPullRequest size={14} className="text-warning shrink-0" />
+                          <GitPullRequest size={15} className="text-warning shrink-0" />
                         ) : isWatch ? (
-                          <Star size={14} className="text-warning shrink-0" />
+                          <Star size={15} className="text-warning shrink-0" />
                         ) : (
-                          <GitBranch size={14} className="text-success shrink-0" />
+                          <GitBranch size={15} className="text-success shrink-0" />
                         )}
                         <span className="font-mono text-xs font-semibold text-text-primary truncate group-hover:text-accent transition-colors">
                           {ev.repo.name}
                         </span>
                       </div>
-                      <ArrowUpRight size={13} className="text-text-tertiary group-hover:text-accent transition-colors shrink-0" />
+                      <ArrowUpRight size={14} className="text-text-tertiary group-hover:text-accent transition-colors shrink-0" />
                     </div>
 
                     {/* Commits detail summary if a push event */}
                     {isPush && commitsList.length > 0 && (
-                      <div className="pl-2 border-l border-border space-y-1">
+                      <div className="pl-2 border-l-2 border-border/70 space-y-1.5 pt-0.5">
                         {commitsList.slice(0, 2).map((c: any) => (
                           <div
                             key={c.sha}
                             onClick={() => setSelectedCommit({ hash: c.sha.substring(0, 7), fullHash: c.sha, msg: c.message, author: ev.actor.login, date: ev.createdAt })}
-                            className="text-xs font-mono text-text-secondary hover:text-accent truncate cursor-pointer flex items-center gap-1.5"
+                            className="text-xs font-mono text-text-secondary hover:text-accent truncate cursor-pointer flex items-center gap-1.5 py-0.5"
                           >
-                            <span className="text-[10px] text-accent font-bold tabular-nums shrink-0">
+                            <span className="text-[11px] text-accent font-bold tabular-nums shrink-0">
                               {c.sha.substring(0, 7)}
                             </span>
                             <span className="truncate">{c.message}</span>
@@ -247,10 +257,10 @@ export const Activity: React.FC = () => {
           )}
         </div>
       ) : (
-        /* Commits Feed View */
-        <div className="space-y-3">
+        /* Commits Feed View with Enhanced Pagination */
+        <div className="space-y-4">
           {activeCommits.length === 0 ? (
-            <div className="bg-surface-1 border border-border rounded-xl p-8 text-center flex flex-col items-center justify-center">
+            <div className="bg-surface-1 border border-border rounded-2xl p-8 text-center flex flex-col items-center justify-center">
               <GitCommit size={32} className="text-text-tertiary mb-2 opacity-50" />
               <span className="text-sm font-semibold text-text-primary mb-1">No commits on active branch</span>
               <span className="text-xs text-text-tertiary">
@@ -258,23 +268,42 @@ export const Activity: React.FC = () => {
               </span>
             </div>
           ) : (
-            <div className="space-y-2.5">
-              {activeCommits.map((commit, idx) => (
-                <CommitCard
-                  key={`${commit.hash}-${idx}`}
-                  commit={{
-                    hash: commit.hash,
-                    msg: commit.msg,
-                    author: commit.author,
-                    date: commit.date || commit.timestamp,
-                    avatarUrl: commit.avatarUrl,
-                    stats: commit.stats,
+            <div className="space-y-3">
+              <div className="space-y-3">
+                {paginatedActivityCommits.map((commit, idx) => (
+                  <CommitCard
+                    key={`${commit.hash}-${idx}`}
+                    commit={{
+                      hash: commit.hash,
+                      msg: commit.msg,
+                      author: commit.author,
+                      date: commit.date || commit.timestamp,
+                      avatarUrl: commit.avatarUrl,
+                      stats: commit.stats,
+                    }}
+                    onClick={() => setSelectedCommit(commit)}
+                    onCopyHash={() => handleCopyHash(commit.hash)}
+                    isLatest={idx === 0 && activityPage === 1}
+                  />
+                ))}
+              </div>
+
+              {/* Enhanced Pagination Bar for Activity Commits */}
+              <div className="pt-3 pb-6 border-t border-border/80">
+                <PaginationControls
+                  currentPage={activityPage}
+                  totalItems={activeCommits.length}
+                  pageSize={activityPageSize}
+                  pageSizeOptions={[10, 25, 50, -1]}
+                  onPageSizeChange={(newSize) => {
+                    setActivityPageSize(newSize);
+                    setActivityPage(1);
                   }}
-                  onClick={() => setSelectedCommit(commit)}
-                  onCopyHash={() => handleCopyHash(commit.hash)}
-                  isLatest={idx === 0}
+                  onPageChange={(p) => setActivityPage(p)}
+                  compact={false}
+                  itemName="commits"
                 />
-              ))}
+              </div>
             </div>
           )}
         </div>

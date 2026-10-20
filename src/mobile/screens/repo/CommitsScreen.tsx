@@ -92,16 +92,18 @@ export const CommitsScreen: React.FC = () => {
     });
   }, [activeCommits, searchQuery, authorFilter, sinceDate, untilDate]);
 
-  // Enforce 10 items per page standard
-  const pageSize = 10;
+  const [pageSize, setPageSize] = useState<number>(10);
   const totalCommitsCount = filteredCommits.length;
   const paginatedCommits = useMemo(() => {
+    if (pageSize === -1) {
+      return filteredCommits;
+    }
     const start = (currentPage - 1) * pageSize;
     return filteredCommits.slice(start, start + pageSize);
-  }, [filteredCommits, currentPage]);
+  }, [filteredCommits, currentPage, pageSize]);
 
   return (
-    <div className="px-4 py-4 space-y-3.5">
+    <div className="px-4 py-4 space-y-4">
       {/* 1. Header Banner */}
       <div className="flex items-center justify-between">
         <div>
@@ -151,29 +153,31 @@ export const CommitsScreen: React.FC = () => {
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-tertiary">
-              <Search size={14} />
+              <Search size={15} />
             </div>
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search commits by message, SHA..."
-              className="w-full h-9 pl-9 pr-8 bg-surface-1 border border-border rounded-xl text-xs text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/40 transition-colors"
+              className="w-full h-10 pl-9 pr-8 bg-surface-1 border border-border rounded-xl text-xs text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/40 transition-colors"
             />
             {searchQuery && (
               <button
+                type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-text-tertiary hover:text-text-primary cursor-pointer"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-text-tertiary hover:text-text-primary cursor-pointer"
                 title="Clear search"
               >
-                <X size={13} />
+                <X size={14} />
               </button>
             )}
           </div>
 
           <button
+            type="button"
             onClick={() => setShowFilters(!showFilters)}
-            className={`h-9 px-3 rounded-xl border flex items-center gap-1.5 text-xs font-medium transition-colors cursor-pointer ${
+            className={`h-10 px-3.5 rounded-xl border flex items-center gap-1.5 text-xs font-medium transition-colors cursor-pointer ${
               showFilters || activeFilterCount > 0
                 ? 'bg-accent-soft border-accent/40 text-accent font-semibold'
                 : 'bg-surface-1 border-border text-text-secondary hover:text-text-primary'
@@ -395,14 +399,19 @@ export const CommitsScreen: React.FC = () => {
             ))}
           </div>
 
-          {/* 10 Items Per Page standard pagination bar */}
-          <div className="pt-2 border-t border-border/80">
+          {/* Enhanced pagination bar with page size selection and 8pt clearance */}
+          <div className="pt-3 pb-6 border-t border-border/80">
             <PaginationControls
               currentPage={currentPage}
               totalItems={totalCommitsCount}
-              pageSize={10}
+              pageSize={pageSize}
+              pageSizeOptions={[10, 25, 50, -1]}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setCurrentPage(1);
+              }}
               onPageChange={(p) => setCurrentPage(p)}
-              compact={true}
+              compact={false}
               itemName="commits"
             />
           </div>

@@ -35,67 +35,69 @@ export const CommitCard: React.FC<CommitCardProps> = ({
           onClick?.();
         }
       }}
-      className="group relative flex items-start gap-3 p-3.5 bg-surface-1 border border-border hover:border-accent/40 hover:bg-surface-2 rounded-xl transition-all cursor-pointer select-none"
+      className="group relative flex items-start gap-3 p-4 bg-surface-1 border border-border hover:border-accent/40 hover:bg-surface-2 rounded-2xl transition-all cursor-pointer select-none min-h-[64px]"
     >
-      {/* Author avatar or commit glyph */}
+      {/* Author avatar or commit glyph (32px = 4x8pt) */}
       <div className="relative shrink-0 mt-0.5">
         {commit.avatarUrl ? (
           <img
             src={commit.avatarUrl}
             alt={commit.author}
-            className="w-7 h-7 rounded-full border border-border object-cover"
+            className="w-8 h-8 rounded-full border border-border object-cover"
           />
         ) : (
-          <div className="w-7 h-7 rounded-full bg-surface-2 border border-border flex items-center justify-center text-text-secondary">
-            <GitCommit size={14} />
+          <div className="w-8 h-8 rounded-full bg-surface-2 border border-border flex items-center justify-center text-text-secondary">
+            <GitCommit size={15} />
           </div>
         )}
         {isLatest && (
-          <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-success border-2 border-surface-1" />
+          <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-success border-2 border-surface-1" />
         )}
       </div>
 
       {/* Main Commit Info */}
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-semibold text-text-primary leading-snug line-clamp-2 group-hover:text-accent transition-colors">
+        <p className="text-xs font-semibold text-text-primary leading-relaxed line-clamp-2 group-hover:text-accent transition-colors">
           {commit.msg}
         </p>
 
-        {/* Unboxed metadata with typographic separator */}
+        {/* Unboxed metadata with typographic separator on 8pt rhythm */}
         <div className="flex items-center gap-2 mt-1.5 text-[11px] text-text-tertiary flex-wrap">
-          <span className="font-medium text-text-secondary truncate max-w-[120px]">
+          <span className="font-medium text-text-secondary truncate max-w-[130px]">
             {commit.author}
           </span>
           <span aria-hidden="true">·</span>
           <span className="flex items-center gap-1 font-mono tabular-nums">
-            <Clock size={11} />
+            <Clock size={12} />
             <span>{formatRelativeTime(commit.date)}</span>
           </span>
           {commit.stats && (
             <>
               <span aria-hidden="true">·</span>
-              <span className="font-mono text-[10px] text-[#3FB950] font-bold">+{commit.stats.additions}</span>
-              <span className="font-mono text-[10px] text-[#F85149] font-bold">-{commit.stats.deletions}</span>
+              <span className="font-mono tabular-nums text-[11px] text-[#3FB950] font-bold">+{commit.stats.additions}</span>
+              <span className="font-mono tabular-nums text-[11px] text-[#F85149] font-bold">-{commit.stats.deletions}</span>
             </>
           )}
         </div>
       </div>
 
-      {/* Right Column: Copyable SHA button */}
-      <div className="flex items-center gap-1.5 shrink-0 self-center">
+      {/* Right Column: Copyable SHA button and chevron */}
+      <div className="flex items-center gap-2 shrink-0 self-center">
         <button
+          type="button"
           onClick={(e) => {
             e.stopPropagation();
             onCopyHash?.();
           }}
-          className="min-h-[30px] px-2 rounded-lg bg-surface-2 hover:bg-surface-3 border border-border text-[11px] font-mono tabular-nums text-accent flex items-center gap-1 transition-all active:scale-95 cursor-pointer"
+          className="h-8 px-2.5 rounded-lg bg-surface-2 hover:bg-surface-3 border border-border text-xs font-mono tabular-nums text-accent flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-2xs"
           title="Copy SHA"
+          aria-label={`Copy SHA ${shortSha}`}
         >
           <span>{shortSha}</span>
-          <Copy size={11} className="opacity-70 group-hover:opacity-100" />
+          <Copy size={12} className="opacity-70 group-hover:opacity-100" />
         </button>
 
-        <ChevronRight size={14} className="text-text-tertiary group-hover:text-text-secondary transition-colors" />
+        <ChevronRight size={16} className="text-text-tertiary group-hover:text-text-secondary transition-colors" />
       </div>
     </div>
   );

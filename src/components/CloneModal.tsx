@@ -252,16 +252,16 @@ export const CloneModal = () => {
             </div>
           )}
 
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <div className="flex justify-between items-center">
               <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Repository URL</label>
-              <div className="flex gap-1.5">
+              <div className="flex gap-2">
                 {(['https', 'ssh', 'cli'] as const).map((mode) => (
                   <button
                     key={mode}
                     type="button"
                     onClick={() => handleModeChange(mode)}
-                    className={`text-[9px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded transition-all cursor-pointer ${
+                    className={`text-[10px] uppercase tracking-wider font-extrabold px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
                       urlMode === mode 
                         ? 'bg-primary/10 text-primary border border-primary/25' 
                         : 'text-text-muted hover:text-text-main hover:bg-hover border border-transparent'
@@ -278,9 +278,9 @@ export const CloneModal = () => {
                 placeholder={urlMode === 'cli' ? 'e.g. gh repo clone owner/repo' : urlMode === 'ssh' ? 'git@github.com:owner/repo.git' : 'https://github.com/owner/repo.git'}
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                className="w-full bg-main/50 text-sm font-semibold pl-4 pr-12 py-3 rounded-xl border border-border/50 focus:outline-none focus:border-primary/50 text-text-main transition-colors"
+                className="w-full bg-main/50 text-sm font-semibold pl-4 pr-12 h-12 rounded-xl border border-border/50 focus:outline-none focus:border-primary/50 text-text-main transition-colors"
               />
-              <div className="absolute right-2.5 top-[7px] flex items-center">
+              <div className="absolute right-2 top-2 flex items-center">
                 <button
                   type="button"
                   onClick={async () => {
@@ -293,7 +293,7 @@ export const CloneModal = () => {
                       // fallback
                     }
                   }}
-                  className={`p-2 hover:bg-hover rounded-lg transition-all duration-300 transform active:scale-90 cursor-pointer flex items-center justify-center ${
+                  className={`w-8 h-8 hover:bg-hover rounded-lg transition-all duration-300 transform active:scale-90 cursor-pointer flex items-center justify-center ${
                     isCopied ? 'bg-emerald-500/10 text-emerald-500' : 'text-text-muted hover:text-primary'
                   }`}
                   title="Copy to clipboard"
@@ -306,7 +306,7 @@ export const CloneModal = () => {
                       exit={{ scale: 0.8, opacity: 0 }}
                       transition={{ duration: 0.15 }}
                     >
-                      {isCopied ? <Check size={14} className="text-emerald-500 font-bold" /> : <Copy size={14} />}
+                      {isCopied ? <Check size={16} className="text-emerald-500 font-bold" /> : <Copy size={16} />}
                     </motion.div>
                   </AnimatePresence>
                 </button>
@@ -314,29 +314,29 @@ export const CloneModal = () => {
             </div>
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Destination Folder</label>
             <div className="relative">
-              <Folder className="absolute left-3.5 top-[13px] text-text-muted" size={16} />
+              <Folder className="absolute left-3.5 top-3.5 text-text-muted" size={18} />
               <input 
                 type="text" 
                 value={dest}
                 onChange={(e) => setDest(e.target.value)}
-                className="w-full bg-main/50 text-sm font-semibold pl-10 pr-4 py-3 rounded-xl border border-border/50 focus:outline-none focus:border-primary/50 text-text-main transition-colors"
+                className="w-full bg-main/50 text-sm font-semibold pl-11 pr-4 h-12 rounded-xl border border-border/50 focus:outline-none focus:border-primary/50 text-text-main transition-colors"
               />
             </div>
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Branch (Optional)</label>
             <div className="relative">
-              <GitBranch className="absolute left-3.5 top-[13px] text-text-muted" size={16} />
+              <GitBranch className="absolute left-3.5 top-3.5 text-text-muted" size={18} />
               <input 
                 type="text" 
                 placeholder="Default"
                 value={branch}
                 onChange={(e) => setBranch(e.target.value)}
-                className="w-full bg-main/50 text-sm font-semibold pl-10 pr-4 py-3 rounded-xl border border-border/50 focus:outline-none focus:border-primary/50 text-text-main transition-colors"
+                className="w-full bg-main/50 text-sm font-semibold pl-11 pr-4 h-12 rounded-xl border border-border/50 focus:outline-none focus:border-primary/50 text-text-main transition-colors"
               />
             </div>
           </div>
@@ -416,14 +416,14 @@ export const CloneModal = () => {
              <button 
                 type="button"
                 onClick={closeModal}
-                className="flex-1 bg-card border border-border hover:bg-hover text-text-main text-sm font-bold py-3 rounded-xl transition-all cursor-pointer shadow-sm"
+                className="flex-1 bg-card border border-border hover:bg-hover text-text-main text-sm font-bold h-12 rounded-xl transition-all cursor-pointer shadow-sm flex items-center justify-center"
               >
                 Cancel
               </button>
               <button 
                 type="submit" 
                 disabled={!url.trim()}
-                className="flex-[2] bg-primary hover:bg-primary-hover text-white font-semibold text-sm py-3 rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+                className="flex-[2] bg-primary hover:bg-primary-hover text-white font-semibold text-sm h-12 rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer shadow-sm"
               >
                 <HardDrive size={16} strokeWidth={2.5} /> Clone Repository
               </button>
@@ -452,7 +452,7 @@ export const CloneModal = () => {
 
           <button 
             onClick={closeModal}
-            className="text-xs font-medium text-danger hover:opacity-80 transition-opacity cursor-pointer"
+            className="text-xs font-medium text-danger hover:opacity-80 transition-opacity cursor-pointer h-10 px-4 rounded-lg inline-flex items-center justify-center"
           >
             Cancel
           </button>
@@ -466,7 +466,7 @@ export const CloneModal = () => {
           </div>
           <div>
              <h3 className="text-base font-semibold text-text-main mb-1">Repository Cloned!</h3>
-             <p className="text-xs text-text-muted">Successfully cloned to <code className="font-mono text-[10px] bg-main px-1 py-0.5 rounded border border-border">{dest}</code></p>
+             <p className="text-xs text-text-muted">Successfully cloned to <code className="font-mono text-[10px] bg-main px-1.5 py-0.5 rounded border border-border">{dest}</code></p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4 border-t border-border/40 text-left">
@@ -476,30 +476,36 @@ export const CloneModal = () => {
                  let n = parts[parts.length - 1] || 'repo';
                  if (n.endsWith('.git')) n = n.slice(0, -4);
                  openRepo(n);
-             }} className="flex items-center gap-3 p-3 bg-card border border-border hover:border-primary/50 hover:bg-primary/5 rounded-xl transition-all cursor-pointer group">
+             }} className="flex items-center gap-3 p-3 min-h-[48px] bg-card border border-border hover:border-primary/50 hover:bg-primary/5 rounded-xl transition-all cursor-pointer group">
                 <Folder size={18} className="text-primary" />
                 <span className="text-xs font-bold text-text-main group-hover:text-primary transition-colors">Open Repository</span>
              </button>
              <button onClick={() => {
                  closeModal();
-             }} className="flex items-center gap-3 p-3 bg-card border border-border hover:border-text-main/50 hover:bg-hover rounded-xl transition-all cursor-pointer group">
+             }} className="flex items-center gap-3 p-3 min-h-[48px] bg-card border border-border hover:border-text-main/50 hover:bg-hover rounded-xl transition-all cursor-pointer group">
                 <Monitor size={18} className="text-text-muted" />
                 <span className="text-xs font-bold text-text-main">Open in Git Manager</span>
              </button>
-             <button onClick={() => {
-                 closeModal();
-                 window.open(`${url.replace('.git', '')}#readme`, '_blank');
-             }} className="flex items-center gap-3 p-3 bg-card border border-border hover:border-text-main/50 hover:bg-hover rounded-xl transition-all cursor-pointer group">
+             <a 
+               href={`${url.replace('.git', '')}#readme`} 
+               target="_blank" 
+               rel="noreferrer"
+               onClick={closeModal}
+               className="flex items-center gap-3 p-3 min-h-[48px] bg-card border border-border hover:border-text-main/50 hover:bg-hover rounded-xl transition-all cursor-pointer group"
+             >
                 <ExternalLink size={18} className="text-text-muted" />
                 <span className="text-xs font-bold text-text-main">View README</span>
-             </button>
-             <button onClick={() => {
-                 closeModal();
-                 window.open(url.replace('.git', ''), '_blank');
-             }} className="flex items-center gap-3 p-3 bg-card border border-border hover:border-text-main/50 hover:bg-hover rounded-xl transition-all cursor-pointer group">
+             </a>
+             <a 
+               href={url.replace('.git', '')} 
+               target="_blank" 
+               rel="noreferrer"
+               onClick={closeModal}
+               className="flex items-center gap-3 p-3 min-h-[48px] bg-card border border-border hover:border-text-main/50 hover:bg-hover rounded-xl transition-all cursor-pointer group"
+             >
                 <Github size={18} className="text-text-muted" />
                 <span className="text-xs font-bold text-text-main">Open GitHub</span>
-             </button>
+             </a>
           </div>
         </div>
       )}

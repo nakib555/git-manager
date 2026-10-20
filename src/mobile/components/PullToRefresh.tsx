@@ -63,9 +63,9 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({ children }) => {
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      className="flex-1 overflow-y-auto overflow-x-hidden relative no-scrollbar"
+      className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden relative no-scrollbar overscroll-contain"
       style={{
-        paddingBottom: 'calc(56px + env(safe-area-inset-bottom, 0px) + 16px)',
+        paddingBottom: 'calc(56px + env(safe-area-inset-bottom, 0px) + 24px)',
       }}
     >
       {/* Pull indicator */}

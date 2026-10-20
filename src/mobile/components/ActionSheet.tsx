@@ -38,26 +38,27 @@ export const ActionSheet: React.FC<ActionSheetProps> = ({ isOpen, onClose }) => 
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-            className="relative w-full bg-surface-1 border-t border-x border-border rounded-t-xl pb-[calc(env(safe-area-inset-bottom,0px)+16px)] pt-3 px-5 shadow-2xl z-10 max-h-[85vh] overflow-y-auto no-scrollbar"
+            className="relative w-full bg-surface-1 border-t border-x border-border rounded-t-3xl pb-[calc(env(safe-area-inset-bottom,0px)+24px)] pt-3 px-4 shadow-2xl z-10 max-h-[85vh] overflow-y-auto no-scrollbar"
           >
             {/* Grab handle */}
-            <div className="w-10 h-1 bg-border rounded-full mx-auto mb-4" />
+            <div className="w-10 h-1 bg-border rounded-full mx-auto mb-3" />
 
-            <div className="flex items-center justify-between pb-3 border-b border-border">
+            <div className="flex items-center justify-between pb-3 border-b border-border min-h-[44px]">
               <h3 className="text-sm font-semibold text-text-primary">Quick Actions</h3>
               <button
                 onClick={onClose}
-                className="w-7 h-7 flex items-center justify-center text-text-tertiary hover:text-text-primary rounded-md hover:bg-surface-2 transition-colors cursor-pointer"
+                className="w-9 h-9 flex items-center justify-center text-text-tertiary hover:text-text-primary rounded-xl hover:bg-surface-2 transition-colors cursor-pointer"
+                aria-label="Close action sheet"
               >
-                <X size={16} />
+                <X size={18} />
               </button>
             </div>
 
-            <div className="py-2 space-y-1">
+            <div className="py-2 space-y-2">
               {/* Primary Actions */}
               <button
                 onClick={() => handleAction(() => openModal('repo'))}
-                className="w-full h-12 px-3 rounded-xl flex items-center gap-3.5 hover:bg-surface-2 transition-colors text-left text-xs font-semibold text-text-primary cursor-pointer active:scale-98"
+                className="w-full min-h-[48px] h-12 px-3 rounded-xl flex items-center gap-4 hover:bg-surface-2 transition-colors text-left text-xs font-semibold text-text-primary cursor-pointer active:scale-98"
               >
                 <div className="w-8 h-8 rounded-lg bg-[#388BFD]/14 text-[#388BFD] flex items-center justify-center shrink-0">
                   <FolderPlus size={17} />
@@ -70,7 +71,7 @@ export const ActionSheet: React.FC<ActionSheetProps> = ({ isOpen, onClose }) => 
 
               <button
                 onClick={() => handleAction(() => navigate('clone'))}
-                className="w-full h-12 px-3 rounded-xl flex items-center gap-3.5 hover:bg-surface-2 transition-colors text-left text-xs font-semibold text-text-primary cursor-pointer active:scale-98"
+                className="w-full min-h-[48px] h-12 px-3 rounded-xl flex items-center gap-4 hover:bg-surface-2 transition-colors text-left text-xs font-semibold text-text-primary cursor-pointer active:scale-98"
               >
                 <div className="w-8 h-8 rounded-lg bg-[#D29922]/14 text-[#D29922] flex items-center justify-center shrink-0">
                   <Download size={17} />
@@ -92,7 +93,7 @@ export const ActionSheet: React.FC<ActionSheetProps> = ({ isOpen, onClose }) => 
 
                   <button
                     onClick={() => handleAction(() => openModal('commit'))}
-                    className="w-full h-12 px-3 rounded-xl flex items-center gap-3.5 hover:bg-surface-2 transition-colors text-left text-xs font-semibold text-text-primary cursor-pointer active:scale-98"
+                    className="w-full min-h-[48px] h-12 px-3 rounded-xl flex items-center gap-4 hover:bg-surface-2 transition-colors text-left text-xs font-semibold text-text-primary cursor-pointer active:scale-98"
                   >
                     <div className="w-8 h-8 rounded-lg bg-[#58A6FF]/14 text-[#58A6FF] flex items-center justify-center shrink-0">
                       <GitCommit size={17} />
@@ -105,7 +106,7 @@ export const ActionSheet: React.FC<ActionSheetProps> = ({ isOpen, onClose }) => 
 
                   <button
                     onClick={() => handleAction(() => openModal('branch'))}
-                    className="w-full h-12 px-3 rounded-xl flex items-center gap-3.5 hover:bg-surface-2 transition-colors text-left text-xs font-semibold text-text-primary cursor-pointer active:scale-98"
+                    className="w-full min-h-[48px] h-12 px-3 rounded-xl flex items-center gap-4 hover:bg-surface-2 transition-colors text-left text-xs font-semibold text-text-primary cursor-pointer active:scale-98"
                   >
                     <div className="w-8 h-8 rounded-lg bg-[#1F6FEB]/14 text-[#1F6FEB] flex items-center justify-center shrink-0">
                       <GitBranchPlus size={17} />
@@ -118,7 +119,7 @@ export const ActionSheet: React.FC<ActionSheetProps> = ({ isOpen, onClose }) => 
 
                   <button
                     onClick={() => handleAction(() => openModal('pr'))}
-                    className="w-full h-12 px-3 rounded-xl flex items-center gap-3.5 hover:bg-surface-2 transition-colors text-left text-xs font-semibold text-text-primary cursor-pointer active:scale-98"
+                    className="w-full min-h-[48px] h-12 px-3 rounded-xl flex items-center gap-4 hover:bg-surface-2 transition-colors text-left text-xs font-semibold text-text-primary cursor-pointer active:scale-98"
                   >
                     <div className="w-8 h-8 rounded-lg bg-[#3FB950]/14 text-[#3FB950] flex items-center justify-center shrink-0">
                       <GitPullRequest size={17} />

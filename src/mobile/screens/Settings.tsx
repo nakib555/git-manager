@@ -2,18 +2,19 @@ import React from 'react';
 import { useAppContext } from '../../AppContext';
 import { 
   Github, Moon, Sun, Sparkles, 
-  Trash2, CheckCircle2, Check
+  Trash2, Check, Grid
 } from 'lucide-react';
 
 export const Settings: React.FC = () => {
   const { 
     githubUser, 
-    githubToken, 
     connectGitHub, 
     disconnectGitHub, 
     theme, 
     setTheme, 
-    showToast 
+    showToast,
+    showGridOverlay,
+    toggleGridOverlay
   } = useAppContext();
 
   const handleClearCache = () => {
@@ -56,7 +57,7 @@ export const Settings: React.FC = () => {
   ] as const;
 
   return (
-    <div className="px-4 py-4 space-y-6">
+    <div className="px-4 py-4 space-y-6 pb-6">
       {/* Title */}
       <div>
         <h2 className="text-lg font-semibold text-text-primary tracking-tight">Settings</h2>
@@ -66,7 +67,7 @@ export const Settings: React.FC = () => {
       </div>
 
       {/* 1. GitHub Connection & Profile Status */}
-      <div className="bg-surface-1 border border-border rounded-xl p-4 space-y-4">
+      <div className="bg-surface-1 border border-border rounded-2xl p-4 space-y-4">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold uppercase tracking-wider text-text-tertiary">
             GitHub Connection
@@ -99,8 +100,9 @@ export const Settings: React.FC = () => {
             </div>
 
             <button
+              type="button"
               onClick={disconnectGitHub}
-              className="h-8 px-3 rounded-lg border border-danger/30 text-danger hover:bg-danger/10 text-xs font-semibold active:scale-95 transition-all cursor-pointer"
+              className="h-9 px-3.5 rounded-lg border border-danger/30 text-danger hover:bg-danger/10 text-xs font-semibold active:scale-95 transition-all cursor-pointer"
             >
               Disconnect
             </button>
@@ -111,10 +113,11 @@ export const Settings: React.FC = () => {
               Connect your GitHub account or use a Personal Access Token (PAT) to commit code, manage pull requests, and synchronize workspaces.
             </p>
             <button
+              type="button"
               onClick={connectGitHub}
-              className="w-full h-11 rounded-xl bg-accent hover:opacity-90 text-white font-semibold text-xs flex items-center justify-center gap-2 border border-accent/20 active:scale-98 transition-all cursor-pointer"
+              className="w-full min-h-[48px] h-12 rounded-xl bg-accent hover:opacity-90 text-white font-semibold text-xs flex items-center justify-center gap-2 border border-accent/20 active:scale-98 transition-all cursor-pointer shadow-sm shadow-accent/25"
             >
-              <Github size={16} />
+              <Github size={17} />
               <span>Connect with GitHub</span>
             </button>
           </div>
@@ -127,7 +130,7 @@ export const Settings: React.FC = () => {
           Appearance Theme
         </span>
 
-        <div className="space-y-2.5">
+        <div className="space-y-3">
           {themes.map((t) => {
             const isSelected = theme === t.id;
             const Icon = t.icon;
@@ -135,18 +138,18 @@ export const Settings: React.FC = () => {
               <div
                 key={t.id}
                 onClick={() => setTheme(t.id as any)}
-                className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+                className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between min-h-[64px] ${
                   isSelected 
-                    ? 'bg-surface-2 border-accent shadow-sm' 
+                    ? 'bg-surface-2 border-accent shadow-xs' 
                     : 'bg-surface-1 border-border hover:bg-surface-2'
                 }`}
               >
-                <div className="flex items-center gap-3 min-w-0">
+                <div className="flex items-center gap-3.5 min-w-0">
                   <div 
                     className="w-10 h-10 rounded-xl border border-border flex items-center justify-center shrink-0"
                     style={{ backgroundColor: t.surfaceHex }}
                   >
-                    <Icon size={18} style={{ color: t.accentHex }} />
+                    <Icon size={19} style={{ color: t.accentHex }} />
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
@@ -164,7 +167,7 @@ export const Settings: React.FC = () => {
                 </div>
 
                 <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${
-                  isSelected ? 'border-accent bg-accent text-white' : 'border-border'
+                  isSelected ? 'border-accent bg-accent text-white shadow-2xs' : 'border-border'
                 }`}>
                   {isSelected && <Check size={12} strokeWidth={3} />}
                 </div>
@@ -174,8 +177,53 @@ export const Settings: React.FC = () => {
         </div>
       </div>
 
-      {/* 3. Cache & Storage Management */}
-      <div className="bg-surface-1 border border-border rounded-xl p-4 space-y-3">
+      {/* 3. Developer & Layout Inspection: 8-Point Grid Overlay */}
+      <div className="bg-surface-1 border border-border rounded-2xl p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-bold uppercase tracking-wider text-text-tertiary">
+            Layout Engineering
+          </span>
+          <span className="text-[10px] font-mono text-accent font-semibold px-2 py-0.5 rounded-md bg-accent-soft border border-accent/20">
+            8pt System
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between gap-3 pt-1">
+          <div className="flex items-start gap-3 min-w-0 pr-2">
+            <div className="w-10 h-10 rounded-xl bg-accent-soft text-accent border border-accent/20 flex items-center justify-center shrink-0 mt-0.5">
+              <Grid size={18} />
+            </div>
+            <div>
+              <span className="text-xs font-semibold text-text-primary block">
+                Visual 8-Point Grid Overlay
+              </span>
+              <p className="text-[11px] text-text-tertiary leading-relaxed mt-0.5">
+                Displays real-time 8px grid divisions, 16px/48px touch targets, and 80px bottom safe zone indicators across the UI.
+              </p>
+            </div>
+          </div>
+
+          {/* Toggle Switch */}
+          <button
+            type="button"
+            role="switch"
+            aria-checked={showGridOverlay}
+            onClick={toggleGridOverlay}
+            className={`w-12 h-7 rounded-full p-1 transition-colors cursor-pointer shrink-0 relative ${
+              showGridOverlay ? 'bg-accent' : 'bg-surface-3 border border-border'
+            }`}
+          >
+            <div
+              className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200 ${
+                showGridOverlay ? 'translate-x-5' : 'translate-x-0'
+              }`}
+            />
+          </button>
+        </div>
+      </div>
+
+      {/* 4. Cache & Storage Management */}
+      <div className="bg-surface-1 border border-border rounded-2xl p-4 space-y-3">
         <span className="text-xs font-bold uppercase tracking-wider text-text-tertiary block">
           Cache & Storage
         </span>
@@ -184,10 +232,11 @@ export const Settings: React.FC = () => {
         </p>
 
         <button
+          type="button"
           onClick={handleClearCache}
-          className="h-10 px-4 rounded-xl bg-surface-2 border border-border hover:bg-hover text-text-primary text-xs font-semibold flex items-center gap-2 active:scale-95 transition-all cursor-pointer"
+          className="h-11 px-4 rounded-xl bg-surface-2 border border-border hover:bg-surface-3 text-text-primary text-xs font-semibold flex items-center gap-2 active:scale-95 transition-all cursor-pointer"
         >
-          <Trash2 size={14} className="text-text-tertiary" />
+          <Trash2 size={15} className="text-text-tertiary" />
           <span>Purge Local Storage Cache</span>
         </button>
       </div>

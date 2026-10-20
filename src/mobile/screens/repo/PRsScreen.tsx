@@ -134,7 +134,7 @@ export const PRsScreen: React.FC = () => {
   });
 
   return (
-    <div className="px-4 py-4 space-y-4">
+    <div className="px-4 py-4 space-y-4 pb-6">
       {/* 1. Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -144,17 +144,19 @@ export const PRsScreen: React.FC = () => {
           </p>
         </div>
         <button
+          type="button"
           onClick={() => openModal('pr')}
-          className="h-8 px-3 rounded-lg bg-accent hover:opacity-90 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm shadow-accent/20 cursor-pointer active:scale-95"
+          className="h-10 px-3.5 rounded-xl bg-accent hover:opacity-90 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm shadow-accent/20 cursor-pointer active:scale-95"
         >
-          <Plus size={13} strokeWidth={2.5} />
+          <Plus size={15} strokeWidth={2.5} />
           <span>New PR</span>
         </button>
       </div>
 
-      {/* 2. Segmented Filter */}
-      <div className="h-9 p-1 bg-surface-1 border border-border rounded-xl flex items-center gap-1 select-none">
+      {/* 2. Segmented Filter (40px = 5x8pt) */}
+      <div className="h-10 p-1 bg-surface-1 border border-border rounded-xl flex items-center gap-1 select-none">
         <button
+          type="button"
           onClick={() => setFilterStatus('open')}
           className={`flex-1 h-full rounded-lg text-xs font-semibold transition-all cursor-pointer ${
             filterStatus === 'open'
@@ -165,6 +167,7 @@ export const PRsScreen: React.FC = () => {
           Open ({activePRs.filter(p => p.status === 'Open' || (!p.closed && p.status !== 'Merged' && p.status !== 'Closed')).length})
         </button>
         <button
+          type="button"
           onClick={() => setFilterStatus('closed')}
           className={`flex-1 h-full rounded-lg text-xs font-semibold transition-all cursor-pointer ${
             filterStatus === 'closed'
@@ -172,9 +175,10 @@ export const PRsScreen: React.FC = () => {
               : 'text-text-tertiary hover:text-text-secondary'
           }`}
         >
-          Closed / Merged ({activePRs.filter(p => p.status !== 'Open' && (p.closed || p.status === 'Merged' || p.status === 'Closed')).length})
+          Closed ({activePRs.filter(p => p.status !== 'Open' && (p.closed || p.status === 'Merged' || p.status === 'Closed')).length})
         </button>
         <button
+          type="button"
           onClick={() => setFilterStatus('all')}
           className={`flex-1 h-full rounded-lg text-xs font-semibold transition-all cursor-pointer ${
             filterStatus === 'all'
@@ -188,7 +192,7 @@ export const PRsScreen: React.FC = () => {
 
       {/* 3. PR List */}
       {filteredPRs.length === 0 ? (
-        <div className="bg-surface-1 border border-border rounded-xl p-8 text-center flex flex-col items-center justify-center">
+        <div className="bg-surface-1 border border-border rounded-2xl p-8 text-center flex flex-col items-center justify-center">
           <GitPullRequest size={32} className="text-text-tertiary mb-2 opacity-50" />
           <span className="text-sm font-semibold text-text-primary mb-1">
             No {filterStatus} pull requests
@@ -198,7 +202,7 @@ export const PRsScreen: React.FC = () => {
           </span>
         </div>
       ) : (
-        <div className="space-y-2.5">
+        <div className="space-y-3">
           {filteredPRs.map((pr) => {
             const prNum = pr.id || (pr as any).number;
             const isMerged = pr.status === 'Merged';
@@ -207,7 +211,7 @@ export const PRsScreen: React.FC = () => {
               <div
                 key={prNum}
                 onClick={() => setSelectedPRId(prNum)}
-                className="bg-surface-1 border border-border hover:border-accent/40 rounded-xl p-3.5 space-y-2 transition-all cursor-pointer active:scale-99 shadow-xs"
+                className="bg-surface-1 border border-border hover:border-accent/40 rounded-2xl p-4 space-y-2.5 transition-all cursor-pointer active:scale-99 shadow-xs min-h-[56px]"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-start gap-2.5 min-w-0 pr-2">
@@ -221,7 +225,7 @@ export const PRsScreen: React.FC = () => {
                       <h3 className="text-xs font-semibold text-text-primary truncate">
                         {pr.title}
                       </h3>
-                      <div className="flex items-center gap-2 mt-1 text-[10px] text-text-tertiary font-mono">
+                      <div className="flex items-center gap-2 mt-1 text-[11px] text-text-tertiary font-mono">
                         <span className="text-accent font-semibold tabular-nums">#{prNum}</span>
                         <span aria-hidden="true">·</span>
                         <span className="truncate max-w-[130px]">by {pr.author}</span>
@@ -247,11 +251,11 @@ export const PRsScreen: React.FC = () => {
                 <div className="flex items-center justify-between text-[11px] font-mono text-text-tertiary pt-2 border-t border-border">
                   <div className="flex items-center gap-1.5 truncate pr-2">
                     <span className="text-accent font-medium truncate max-w-[110px]">{pr.source || 'feature'}</span>
-                    <ArrowRight size={11} className="shrink-0 opacity-60" />
+                    <ArrowRight size={12} className="shrink-0 opacity-60" />
                     <span className="text-text-secondary font-medium truncate max-w-[110px]">{pr.target || 'main'}</span>
                   </div>
                   <div className="flex items-center gap-1 shrink-0 tabular-nums text-text-tertiary">
-                    <MessageSquare size={12} />
+                    <MessageSquare size={13} />
                     <span>{pr.comments || 0}</span>
                   </div>
                 </div>

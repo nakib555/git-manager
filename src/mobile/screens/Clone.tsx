@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../../AppContext';
 import { 
-  Download, Copy, Check, Terminal, ExternalLink, HardDrive, 
-  Star, GitFork, ArrowDown, Sparkles 
+  Download, Copy, Check, Terminal, HardDrive, 
+  Sparkles 
 } from 'lucide-react';
 
 export const Clone: React.FC = () => {
-  const { currentRepo, githubUser, githubToken, showToast, cloneRepository, navigate } = useAppContext();
+  const { githubToken, showToast, cloneRepository, navigate } = useAppContext();
 
   const [repoUrl, setRepoUrl] = useState('');
   const [destName, setDestName] = useState('');
@@ -119,7 +119,7 @@ export const Clone: React.FC = () => {
   };
 
   return (
-    <div className="px-4 py-4 space-y-5">
+    <div className="px-4 py-4 space-y-6 pb-6">
       {/* Title Header */}
       <div>
         <h2 className="text-lg font-semibold text-text-primary tracking-tight">Clone Repository</h2>
@@ -131,15 +131,16 @@ export const Clone: React.FC = () => {
       {/* Popular Open Source Repos Quick Pick */}
       <div className="space-y-2">
         <span className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary flex items-center gap-1.5">
-          <Sparkles size={12} className="text-accent" />
+          <Sparkles size={13} className="text-accent" />
           <span>Popular Repositories Quick-Pick</span>
         </span>
-        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+        <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1">
           {popularRepos.map((pr) => (
             <button
               key={pr.name}
+              type="button"
               onClick={() => selectPopularRepo(pr.owner, pr.name)}
-              className="p-2.5 rounded-xl bg-surface-1 border border-border hover:border-accent/40 text-left shrink-0 w-36 transition-all active:scale-97 cursor-pointer"
+              className="p-3 rounded-2xl bg-surface-1 border border-border hover:border-accent/40 text-left shrink-0 w-36 transition-all active:scale-97 cursor-pointer"
             >
               <div className="flex items-center justify-between text-xs font-bold text-text-primary truncate">
                 <span className="truncate">{pr.name}</span>
@@ -154,9 +155,9 @@ export const Clone: React.FC = () => {
       </div>
 
       {/* Step 1: Remote Repository URL */}
-      <div className="bg-surface-1 border border-border rounded-xl p-4 space-y-3">
+      <div className="bg-surface-1 border border-border rounded-2xl p-4 space-y-3">
         <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-text-tertiary">
-          <span className="w-5 h-5 rounded-full bg-accent-soft text-accent flex items-center justify-center text-[10px]">1</span>
+          <span className="w-6 h-6 rounded-full bg-accent-soft text-accent flex items-center justify-center text-xs font-bold font-mono">1</span>
           <span>Remote Source</span>
         </div>
         <div>
@@ -174,9 +175,9 @@ export const Clone: React.FC = () => {
       </div>
 
       {/* Step 2: Destination & Options */}
-      <div className="bg-surface-1 border border-border rounded-xl p-4 space-y-3">
+      <div className="bg-surface-1 border border-border rounded-2xl p-4 space-y-3">
         <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-text-tertiary">
-          <span className="w-5 h-5 rounded-full bg-accent-soft text-accent flex items-center justify-center text-[10px]">2</span>
+          <span className="w-6 h-6 rounded-full bg-accent-soft text-accent flex items-center justify-center text-xs font-bold font-mono">2</span>
           <span>Target Directory & Depth</span>
         </div>
 
@@ -203,52 +204,55 @@ export const Clone: React.FC = () => {
               onChange={(e) => setCloneDepth(e.target.value === '' ? '' : Number(e.target.value))}
               className="w-full h-11 px-3 bg-surface-2 border border-border rounded-xl text-xs text-text-primary outline-none focus:border-accent transition-colors"
             >
-              <option value={1}>Shallow (Depth 1 - Fast)</option>
+              <option value={1}>Shallow (Depth 1)</option>
               <option value={5}>Recent (Depth 5)</option>
-              <option value={""}>Full History (All commits)</option>
+              <option value={""}>Full History (All)</option>
             </select>
           </div>
         </div>
       </div>
 
       {/* Step 3: Terminal Command Preview */}
-      <div className="bg-surface-1 border border-border rounded-xl p-4 space-y-2">
+      <div className="bg-surface-1 border border-border rounded-2xl p-4 space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-text-tertiary">
-            <Terminal size={14} className="text-accent" />
+            <Terminal size={15} className="text-accent" />
             <span>Terminal Command</span>
           </div>
           <button
+            type="button"
             onClick={copyCloneCmd}
             className="flex items-center gap-1.5 text-xs text-accent font-semibold hover:underline cursor-pointer"
           >
-            {isCopied ? <Check size={13} /> : <Copy size={13} />}
+            {isCopied ? <Check size={14} /> : <Copy size={14} />}
             <span>{isCopied ? 'Copied' : 'Copy'}</span>
           </button>
         </div>
 
-        <div className="p-3 bg-surface-2 rounded-lg border border-border font-mono text-xs text-text-primary break-all">
+        <div className="p-3.5 bg-surface-2 rounded-xl border border-border font-mono text-xs text-text-primary break-all leading-relaxed">
           {generatedCommand}
         </div>
       </div>
 
-      {/* Action Buttons: Workspace Clone + Download ZIP */}
-      <div className="space-y-2 pt-1">
+      {/* Action Buttons: Workspace Clone + Download ZIP (min 48px height) */}
+      <div className="space-y-3 pt-1">
         <button
+          type="button"
           onClick={handleClone}
           disabled={!repoUrl.trim() || isCloning}
-          className="w-full min-h-[44px] h-12 rounded-xl bg-accent hover:opacity-90 disabled:opacity-40 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-sm shadow-accent/25 active:scale-98 transition-all cursor-pointer"
+          className="w-full min-h-[48px] h-12 rounded-xl bg-accent hover:opacity-90 disabled:opacity-40 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-sm shadow-accent/25 active:scale-98 transition-all cursor-pointer"
         >
-          <HardDrive size={16} />
+          <HardDrive size={17} />
           <span>{isCloning ? 'Cloning into Workspace...' : 'Initialize Local Workspace Clone'}</span>
         </button>
 
         <button
+          type="button"
           onClick={handleDownloadZip}
           disabled={!repoUrl.trim() || isDownloadingZip}
-          className="w-full min-h-[44px] h-12 rounded-xl bg-surface-1 border border-border hover:bg-surface-2 disabled:opacity-40 text-text-primary font-semibold text-xs flex items-center justify-center gap-2 active:scale-98 transition-all cursor-pointer"
+          className="w-full min-h-[48px] h-12 rounded-xl bg-surface-1 border border-border hover:bg-surface-2 disabled:opacity-40 text-text-primary font-semibold text-xs flex items-center justify-center gap-2 active:scale-98 transition-all cursor-pointer"
         >
-          <Download size={16} className="text-accent" />
+          <Download size={17} className="text-accent" />
           <span>{isDownloadingZip ? 'Preparing ZIP Archive...' : 'Download Repository as ZIP Archive'}</span>
         </button>
       </div>

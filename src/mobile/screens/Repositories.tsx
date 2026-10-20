@@ -68,21 +68,23 @@ export const Repositories: React.FC = () => {
     { id: 'name', label: 'Repository Name' },
   ] as const;
 
-  // Enforce 10 items per page standard
-  const pageSize = 10;
-  const totalItems = repoSearchScope === 'personal' ? githubRepos.length : (repoTotalPages * pageSize);
+  const [repoPageSize, setRepoPageSize] = useState<number>(10);
+  const totalItems = repoSearchScope === 'personal' ? githubRepos.length : (repoTotalPages * (repoPageSize === -1 ? 100 : repoPageSize));
   const paginatedRepos = useMemo(() => {
     if (repoSearchScope === 'personal') {
-      const start = (repoPage - 1) * pageSize;
-      return githubRepos.slice(start, start + pageSize);
+      if (repoPageSize === -1) {
+        return githubRepos;
+      }
+      const start = (repoPage - 1) * repoPageSize;
+      return githubRepos.slice(start, start + repoPageSize);
     }
     return githubRepos;
-  }, [repoSearchScope, githubRepos, repoPage]);
+  }, [repoSearchScope, githubRepos, repoPage, repoPageSize]);
 
   return (
-    <div className="flex flex-col h-full relative" ref={scrollRef}>
+    <div className="flex flex-col relative w-full" ref={scrollRef}>
       {/* 1. Sticky Controls Header */}
-      <div className="sticky top-0 z-20 bg-background border-b border-border px-4 py-3 space-y-3 shrink-0">
+      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-3 space-y-3 shrink-0">
         {/* Segmented Scope Switcher */}
         <div className="h-9 p-1 bg-surface-1 border border-border rounded-xl flex items-center gap-1 select-none">
           <button
@@ -205,15 +207,20 @@ export const Repositories: React.FC = () => {
         )}
       </div>
 
-      {/* 3. Pagination Controls (Sticky Bottom with 10 items/page standard) */}
-      <div className="sticky bottom-0 bg-surface-1 border-t border-border px-3 py-2 shrink-0 select-none shadow-md">
+      {/* 3. Pagination Controls with Page Size Selector and 8pt clearance */}
+      <div className="bg-surface-1 border-t border-border px-4 py-3 shrink-0 select-none mb-6">
         <PaginationControls
           currentPage={repoPage}
           totalItems={totalItems}
-          pageSize={10}
+          pageSize={repoPageSize}
+          pageSizeOptions={[10, 25, 50, -1]}
+          onPageSizeChange={(newSize) => {
+            setRepoPageSize(newSize);
+            setRepoPage(1);
+          }}
           onPageChange={(page) => setRepoPage(page)}
           isLoading={isFetchingRepos}
-          compact={true}
+          compact={false}
           itemName="repos"
         />
       </div>

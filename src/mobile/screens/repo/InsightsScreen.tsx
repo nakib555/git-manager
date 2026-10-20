@@ -38,7 +38,7 @@ export const InsightsScreen: React.FC = () => {
     .slice(0, 4);
 
   return (
-    <div className="px-4 py-4 space-y-6">
+    <div className="px-4 py-4 space-y-6 pb-6">
       <div>
         <h2 className="text-base font-semibold text-text-primary tracking-tight">Insights</h2>
         <p className="text-xs text-text-tertiary mt-0.5">
@@ -46,8 +46,8 @@ export const InsightsScreen: React.FC = () => {
         </p>
       </div>
 
-      {/* Commit Activity Chart - Pure Slate + Steel Blue (No purple gradients) */}
-      <div className="bg-surface-1 border border-border rounded-xl p-4">
+      {/* Commit Activity Chart */}
+      <div className="bg-surface-1 border border-border rounded-2xl p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <TrendingUp size={15} className="text-accent" />
@@ -91,7 +91,7 @@ export const InsightsScreen: React.FC = () => {
       </div>
 
       {/* Language Breakdown */}
-      <div className="bg-surface-1 border border-border rounded-xl p-4 space-y-3">
+      <div className="bg-surface-1 border border-border rounded-2xl p-4 space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Code2 size={15} className="text-accent" />

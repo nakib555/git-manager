@@ -28,10 +28,10 @@ export const CreateModals: React.FC = () => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-card rounded-xl border border-border p-6 shadow-xl"
+            className="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-card rounded-2xl border border-border p-6 shadow-2xl"
           >
         <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-2 font-semibold text-text-main text-base">
+          <div className="flex items-center gap-2.5 font-semibold text-text-main text-base">
             {activeModal === 'repo' && (
               <>
                 <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
@@ -83,9 +83,10 @@ export const CreateModals: React.FC = () => {
           </div>
           <button 
             onClick={closeModal}
-            className="text-text-muted hover:text-text-main w-8 h-8 rounded-lg flex items-center justify-center bg-hover transition-colors cursor-pointer"
+            className="text-text-muted hover:text-text-main w-9 h-9 rounded-xl flex items-center justify-center bg-hover transition-colors cursor-pointer"
+            aria-label="Close modal"
           >
-            <X size={16} />
+            <X size={17} />
           </button>
         </div>
 

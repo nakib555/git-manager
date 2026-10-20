@@ -64,7 +64,7 @@ export const BottomNav: React.FC = () => {
             <button
               key={tab.id}
               onClick={() => navigate(tab.id as any)}
-              className={`flex-1 flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all cursor-pointer ${
+              className={`flex-1 flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all cursor-pointer min-h-[48px] h-full ${
                 active 
                   ? 'font-bold' 
                   : 'text-text-tertiary hover:text-text-secondary active:scale-95'

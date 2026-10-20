@@ -11,6 +11,7 @@ export interface CommitFilter {
   until: string;
   datePreset?: DatePreset;
   page: number;
+  pageSize?: number;
 }
 
 /**
@@ -100,10 +101,12 @@ export const useCommits = (filters: CommitFilter) => {
       let url = '';
       let totalCount = 0;
 
+      const selectedPageSize = filters.pageSize === -1 ? 100 : (filters.pageSize || 10);
+
       // Helper to generate fallback result from activeCommits
       const getFallbackResult = () => {
         const filtered = filterLocalCommits(activeCommits || [], filters);
-        const pageSize = 10;
+        const pageSize = filters.pageSize === -1 ? Math.max(1, filtered.length) : (filters.pageSize || 10);
         const startIndex = ((filters.page || 1) - 1) * pageSize;
         const pageItems = filtered.slice(startIndex, startIndex + pageSize);
         return {
@@ -132,9 +135,9 @@ export const useCommits = (filters: CommitFilter) => {
             q += ` committer-date:<=${filters.until}`;
           }
           
-          url = `https://api.github.com/search/commits?q=${encodeURIComponent(q)}&per_page=10&page=${filters.page}`;
+          url = `https://api.github.com/search/commits?q=${encodeURIComponent(q)}&per_page=${selectedPageSize}&page=${filters.page}`;
         } else {
-          url = `https://api.github.com/repos/${currentRepoOwner}/${currentRepo}/commits?per_page=10&page=${filters.page}`;
+          url = `https://api.github.com/repos/${currentRepoOwner}/${currentRepo}/commits?per_page=${selectedPageSize}&page=${filters.page}`;
           if (filters.branch) {
             url += `&sha=${encodeURIComponent(filters.branch)}`;
           }
@@ -248,7 +251,7 @@ export const useCommits = (filters: CommitFilter) => {
         return {
           items,
           totalCount,
-          totalPages: Math.max(1, Math.ceil(totalCount / 10)),
+          totalPages: Math.max(1, Math.ceil(totalCount / selectedPageSize)),
           isFallback: false,
         };
       } catch (err: any) {
