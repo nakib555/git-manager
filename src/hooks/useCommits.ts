@@ -85,10 +85,10 @@ export const filterLocalCommits = (commits: any[], filters: Partial<CommitFilter
 };
 
 export const useCommits = (filters: CommitFilter) => {
-  const { currentRepo, currentRepoOwner, githubToken, activeCommits } = useAppContext();
+  const { currentRepo, currentRepoOwner, githubToken, activeCommits, lastSyncTimestamp } = useAppContext();
 
   return useQuery({
-    queryKey: ['commits', currentRepoOwner, currentRepo, filters, activeCommits?.length],
+    queryKey: ['commits', currentRepoOwner, currentRepo, filters, activeCommits?.length, lastSyncTimestamp],
     queryFn: async () => {
       const { sinceDate, untilDate } = normalizeDateRange(filters.since, filters.until);
       const headers: any = {};
@@ -232,7 +232,18 @@ export const useCommits = (filters: CommitFilter) => {
           return results;
         };
 
-        const items = await fetchWithLimit(rawItems, 5);
+        let items = await fetchWithLimit(rawItems, 5);
+
+        // Prepend any local commits from activeCommits on page 1 if not present in items
+        if ((!filters.page || filters.page === 1) && activeCommits && activeCommits.length > 0) {
+          const localOnly = activeCommits.filter(
+            (lc: any) => !items.some((it: any) => it.hash === lc.hash || it.fullHash === lc.fullHash)
+          );
+          if (localOnly.length > 0) {
+            items = [...localOnly, ...items];
+            totalCount += localOnly.length;
+          }
+        }
 
         return {
           items,
@@ -249,6 +260,7 @@ export const useCommits = (filters: CommitFilter) => {
       }
     },
     enabled: !!currentRepo,
-    staleTime: 60 * 1000,
+    staleTime: 10 * 1000,
+    refetchInterval: 15 * 1000,
   });
 };

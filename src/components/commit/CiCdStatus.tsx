@@ -564,7 +564,7 @@ export const useCiCdStatus = (hash: string) => {
   };
 
   return {
-    cicd: realState || simulatedState,
+    cicd: realState,
     isReal: !!realState,
     isPolling: isPolling && !!realState,
     triggerRerun,
@@ -575,6 +575,10 @@ export const useCiCdStatus = (hash: string) => {
 export const CiCdBadge = ({ hash, isCompact = false }: { hash: string; isCompact?: boolean }) => {
   const { cicd } = useCiCdStatus(hash);
   
+  if (!cicd || !cicd.steps || cicd.steps.length === 0) {
+    return null;
+  }
+
   const getIcon = () => {
     switch (cicd.status) {
       case 'success':
@@ -646,14 +650,28 @@ export const CiCdPipelineFlow = ({ hash }: { hash: string }) => {
   const { cicd, isReal, isPolling, triggerRerun } = useCiCdStatus(hash);
   const [expandedStep, setExpandedStep] = useState<number | null>(null);
 
-  // Deterministic values for custom widgets
-  const shortHash = hash ? hash.substring(0, 7) : 'a1b2c3d';
-  const cleanHash = hash ? hash.replace(/[^0-9a-f]/gi, '') : '123';
-  const hashSum = cleanHash.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  
-  const coveragePercent = 95 + (hashSum % 5);
-  const bundleSizeKB = 135 + (hashSum % 20);
-  const totalTests = 30 + (hashSum % 25);
+  const shortHash = hash ? hash.substring(0, 7) : 'head';
+
+  if (!isReal || !cicd || !cicd.steps || cicd.steps.length === 0) {
+    return (
+      <div className="bg-card border border-border rounded-2xl p-6 text-center space-y-3 shadow-sm">
+        <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mx-auto">
+          <Cpu size={20} />
+        </div>
+        <div>
+          <h4 className="text-xs font-bold text-text-main">No CI/CD Workflows Reported</h4>
+          <p className="text-[11px] text-text-muted mt-1 max-w-sm mx-auto leading-relaxed">
+            No GitHub Actions check-runs or CI/CD commit statuses were reported for commit <span className="font-mono text-primary font-semibold">{shortHash}</span>.
+          </p>
+        </div>
+        <div className="flex items-center justify-center gap-2 pt-1 text-[10px] text-text-muted font-medium">
+          <span className="inline-flex items-center gap-1 bg-main px-2.5 py-1 rounded-lg border border-border">
+            <Activity size={10} className="text-primary" /> Real-time Check Monitor Active
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   const getStepIcon = (status: CiCdStep['status']) => {
     switch (status) {
@@ -804,18 +822,18 @@ export const CiCdPipelineFlow = ({ hash }: { hash: string }) => {
         </div>
       </div>
 
-      {/* Modern High-Fidelity Non-Terminal Metrics Cards */}
+      {/* Authentic High-Fidelity GitHub Actions Metrics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="bg-main/30 border border-border/60 rounded-xl p-3 flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
             <ShieldCheck size={16} />
           </div>
           <div className="min-w-0">
-            <span className="block text-[8px] font-bold text-text-muted uppercase tracking-wider">Test Suite</span>
+            <span className="block text-[8px] font-bold text-text-muted uppercase tracking-wider">Workflow Suite</span>
             <span className="text-xs font-extrabold text-text-main block mt-0.5">
-              {cicd.status === 'failed' && hashSum % 3 === 1 ? 'Failed Spec' : `${totalTests}/${totalTests} Passed`}
+              {cicd.steps.filter(s => s.status === 'success').length} of {cicd.steps.length} Passed
             </span>
-            <span className="text-[8px] text-emerald-500 font-semibold">{coveragePercent}% Code Coverage</span>
+            <span className="text-[8px] text-emerald-500 font-semibold">{cicd.label} Overall</span>
           </div>
         </div>
 
@@ -824,9 +842,9 @@ export const CiCdPipelineFlow = ({ hash }: { hash: string }) => {
             <FileCode size={16} />
           </div>
           <div className="min-w-0">
-            <span className="block text-[8px] font-bold text-text-muted uppercase tracking-wider">Production Build</span>
-            <span className="text-xs font-extrabold text-text-main block mt-0.5">{isReal ? 'GitHub Runner' : 'Vite Bundle CJS'}</span>
-            <span className="text-[8px] text-text-muted font-semibold">{bundleSizeKB} kB optimized assets</span>
+            <span className="block text-[8px] font-bold text-text-muted uppercase tracking-wider">Total Duration</span>
+            <span className="text-xs font-extrabold text-text-main block mt-0.5">{cicd.duration}</span>
+            <span className="text-[8px] text-text-muted font-semibold">Execution elapsed</span>
           </div>
         </div>
 
@@ -835,9 +853,9 @@ export const CiCdPipelineFlow = ({ hash }: { hash: string }) => {
             <Server size={16} />
           </div>
           <div className="min-w-0">
-            <span className="block text-[8px] font-bold text-text-muted uppercase tracking-wider">Deploy Ingress</span>
-            <span className="text-xs font-extrabold text-text-main block mt-0.5">{isReal ? 'GitHub Production' : 'Cloud Run Container'}</span>
-            <span className="text-[8px] text-text-muted font-semibold">Region: asia-southeast1</span>
+            <span className="block text-[8px] font-bold text-text-muted uppercase tracking-wider">Check Runner</span>
+            <span className="text-xs font-extrabold text-text-main block mt-0.5">GitHub Actions Host</span>
+            <span className="text-[8px] text-text-muted font-semibold">Ref: {shortHash}</span>
           </div>
         </div>
       </div>

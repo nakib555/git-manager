@@ -1874,8 +1874,8 @@ const DesktopCommitsView: React.FC = () => {
 
   return (
     <div className="flex-1 min-h-0 flex gap-5">
-      {/* Timeline panel */}
-      <div className="w-96 bg-card border border-border rounded-2xl p-5 flex flex-col h-full shrink-0 min-h-0">
+      {/* Timeline and Git Graph panel */}
+      <div className="w-[420px] lg:w-[480px] xl:w-[540px] 2xl:w-[600px] bg-card border border-border rounded-2xl p-5 flex flex-col h-full shrink-0 min-h-0 transition-all duration-200">
         <div className="flex justify-between items-center mb-4 shrink-0">
           <span className="block text-[11px] font-bold text-text-muted uppercase tracking-wider">Commit History</span>
           <button 

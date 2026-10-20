@@ -41,14 +41,11 @@ const getLocalRepos = (): GitHubRepo[] => {
 };
 export const sanitizeGitHubUser = (user: any): GitHubUser | null => {
   if (!user) return null;
-  if (user.login === "nakib555" || user.login?.toLowerCase() === "nakib555") {
-    return {
-      ...user,
-      login: "git-manager-workstation",
-      name: user.name === "Nakib Prince" ? "Git Manager Workstation" : (user.name || "Git Manager Workstation")
-    };
-  }
-  return user;
+  return {
+    ...user,
+    login: user.login || "github-user",
+    name: user.name || user.login || "GitHub User"
+  };
 };
 export const getLocalRepoDetails = (
   repoId: string,
@@ -213,55 +210,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
     setState((prev) => ({ ...prev, githubToken: token }));
     showToast("GitHub token saved manually");
   };
-  const fetchPublicFallbackRepos = async () => {
-    try {
-      console.log("Fetching popular public repos as fallback...");
-      const reposToFetch = [
-        { owner: "facebook", repo: "react" },
-        { owner: "tailwindlabs", repo: "tailwindcss" },
-        { owner: "microsoft", repo: "vscode" }
-      ];
-      
-      const fetched = await Promise.all(
-        reposToFetch.map(async ({ owner, repo }) => {
-          try {
-            const res = await fetch(`https://api.github.com/repos/${owner}/${repo}`);
-            if (res.ok) {
-              const data = await res.json();
-              return {
-                id: data.id,
-                name: data.name,
-                private: data.private,
-                description: data.description || "No description provided.",
-                language: data.language || "TypeScript",
-                pushed_at: data.pushed_at,
-                owner: {
-                  login: data.owner?.login || owner,
-                  avatar_url: data.owner?.avatar_url
-                },
-                stargazers_count: data.stargazers_count,
-                forks_count: data.forks_count,
-                watchers_count: data.watchers_count
-              };
-            }
-          } catch (e) {
-            console.warn(`Failed to fetch public repo ${owner}/${repo}`, e);
-          }
-          return null;
-        })
-      );
-      
-      const valid = fetched.filter(Boolean) as GitHubRepo[];
-      if (valid.length > 0) {
-        setState((prev) => ({ ...prev, githubRepos: valid }));
-        for (const repo of valid) {
-          fetchRepoDetails(repo.name, repo.owner?.login || "facebook");
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching public fallback repos:", error);
-    }
-  };
+
   const fetchGitHubData = async (
     token: string, 
     isBackground = false, 
@@ -349,22 +298,42 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
           totalPages = 1;
         }
       } else {
-        // Personal Repositories: Fetch standard list of user's own repos (clean, rate-limit safe, supports private repos)
-        console.log(`Fetching user repos on page ${page}...`);
-        const reposUrl = `https://api.github.com/user/repos?sort=updated&per_page=100&affiliation=owner,collaborator,organization_member`;
-        const reposRes = await fetch(reposUrl, { headers });
-        console.log("GitHub user repos response status:", reposRes.status);
-        if (!reposRes.ok) {
-          let errorMsg = `Status ${reposRes.status}`;
-          try {
-            const errBody = await reposRes.json();
-            if (errBody.message) errorMsg = errBody.message;
-          } catch (_) {}
-          throw new Error(`Repositories: ${errorMsg}`);
+        // Personal Repositories: Fetch complete list of user's repos across pages
+        console.log(`Fetching user repos for scope "personal"...`);
+        let allUserRepos: GitHubRepo[] = [];
+        let curPage = 1;
+        let hasMore = true;
+
+        while (hasMore && curPage <= 5) {
+          const reposUrl = `https://api.github.com/user/repos?sort=updated&per_page=100&page=${curPage}&affiliation=owner,collaborator,organization_member`;
+          const reposRes = await fetch(reposUrl, { headers });
+          console.log(`GitHub user repos page ${curPage} status:`, reposRes.status);
+          if (!reposRes.ok) {
+            if (curPage === 1) {
+              let errorMsg = `Status ${reposRes.status}`;
+              try {
+                const errBody = await reposRes.json();
+                if (errBody.message) errorMsg = errBody.message;
+              } catch (_) {}
+              throw new Error(`Repositories: ${errorMsg}`);
+            }
+            break;
+          }
+          const pageRepos: GitHubRepo[] = await reposRes.json();
+          if (Array.isArray(pageRepos) && pageRepos.length > 0) {
+            allUserRepos.push(...pageRepos);
+            if (pageRepos.length < 100) {
+              hasMore = false;
+            } else {
+              curPage++;
+            }
+          } else {
+            hasMore = false;
+          }
         }
-        const allUserRepos: GitHubRepo[] = await reposRes.json();
-        reposData = Array.isArray(allUserRepos) ? allUserRepos : [];
-        totalPages = 1; // Filter and pagination handled client-side for personal repos
+
+        reposData = allUserRepos;
+        totalPages = Math.max(1, Math.ceil(reposData.length / perPage));
       }
 
       console.log(`Fetched ${reposData.length} GitHub repositories for scope "${scope}".`);
@@ -378,11 +347,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         }
       }
 
+      const calculatedTotalPages = scope === 'personal'
+        ? Math.max(1, Math.ceil(mergedRepos.length / perPage))
+        : totalPages;
+
       setState((prev) => ({
         ...prev,
         githubUser: sanitizedUser,
         githubRepos: mergedRepos,
-        repoTotalPages: totalPages,
+        repoTotalPages: calculatedTotalPages,
         isFetchingRepos: false,
       }));
     } catch (error: any) {
@@ -700,7 +673,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
     if (state.githubToken) {
       fetchGitHubData(state.githubToken, false, state.repoPage, state.repoSearchQuery);
     } else {
-      fetchPublicFallbackRepos();
+      const local = getLocalRepos();
+      setState(prev => ({
+        ...prev,
+        githubRepos: local,
+        repoTotalPages: Math.max(1, Math.ceil(local.length / (prev.repoPerPage || 10)))
+      }));
     }
   }, [state.githubToken, state.repoPage, state.repoSearchQuery, state.repoSearchScope, state.repoSortBy, state.repoSortDirection, refreshTrigger]);
   useEffect(() => {
@@ -711,12 +689,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         fetchRepoDetails(state.currentRepo, owner, false, targetBranch);
       } else {
         const matchedRepo = state.githubRepos.find(r => r.name === state.currentRepo);
-        const resolvedOwner = (matchedRepo as any)?.owner?.login || 'facebook';
-        fetchRepoDetails(state.currentRepo, resolvedOwner, false, targetBranch);
+        const resolvedOwner = (matchedRepo as any)?.owner?.login || state.currentRepoOwner || '';
+        if (resolvedOwner) {
+          fetchRepoDetails(state.currentRepo, resolvedOwner, false, targetBranch);
+        }
       }
     }
   }, [state.currentRepo, state.githubToken, state.currentRepoOwner, state.currentBranch, refreshTrigger]);
-  // Robust Real-Time Auto-Updating Synchronization Engine (Runs every 10s & on tab refocus)
+  // Robust Real-Time Auto-Updating Synchronization Engine (Runs every 15s & on tab refocus)
   useEffect(() => {
     const runAutoSync = async () => {
       const s = stateRef.current;
@@ -732,16 +712,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
               await fetchRepoDetails(s.currentRepo, owner, true, targetBranch);
             } else {
               const matchedRepo = s.githubRepos.find(r => r.name === s.currentRepo);
-              const resolvedOwner = (matchedRepo as any)?.owner?.login || 'facebook';
-              await fetchRepoDetails(s.currentRepo, resolvedOwner, true, targetBranch);
+              const resolvedOwner = (matchedRepo as any)?.owner?.login || s.currentRepoOwner || '';
+              if (resolvedOwner) {
+                await fetchRepoDetails(s.currentRepo, resolvedOwner, true, targetBranch);
+              }
             }
           }
         } else {
-          // Public exploration / local mode auto-sync
-          if (s.currentRepo) {
-            const matchedRepo = s.githubRepos.find(r => r.name === s.currentRepo);
-            const resolvedOwner = s.currentRepoOwner || (matchedRepo as any)?.owner?.login || 'facebook';
-            await fetchRepoDetails(s.currentRepo, resolvedOwner, true, s.currentBranch || undefined);
+          // Local mode auto-sync
+          if (s.currentRepo && s.currentRepoOwner) {
+            await fetchRepoDetails(s.currentRepo, s.currentRepoOwner, true, s.currentBranch || undefined);
           }
         }
         // Broadcast tick to consumers (such as Activity and Dashboard)
