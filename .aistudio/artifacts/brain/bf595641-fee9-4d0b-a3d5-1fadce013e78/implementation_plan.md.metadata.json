@@ -1,6 +1,6 @@
 {
-  "summary": "Master Engineering Plan to fix commits search & filtering and implement comprehensive date range filtering (presets: Today, 7D, 30D, Year, Custom Range) with resilient fallback for both desktop and mobile commits history.",
-  "updatedAt": "2026-10-19T16:50:55.121620886Z",
+  "summary": "Comprehensive engineering specification for a Purpose-Driven Semantic Color System: assigning intentional, domain-specific colors to features (PR statuses, Git branches, CI/CD pipelines, language tags, analytics series, and customizable workspace themes) so that elements are visually differentiated by function rather than rendered in a monotonous single color.",
+  "updatedAt": "2026-10-20T10:51:32.909007678Z",
   "requestFeedback": true,
   "userFacing": true
 }

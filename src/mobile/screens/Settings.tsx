@@ -27,30 +27,30 @@ export const Settings: React.FC = () => {
       id: 'dark',
       name: 'Dark Charcoal',
       badge: 'Default',
-      bgHex: '#0A0A0B',
-      surfaceHex: '#121214',
-      accentHex: '#3B82F6',
-      desc: 'Calibrated charcoal workstation with desaturated steel blue accent',
+      bgHex: '#111215',
+      surfaceHex: '#18191D',
+      accentHex: '#5E7896',
+      desc: 'Calibrated charcoal workstation with desaturated slate blue-gray accent',
       icon: Moon,
     },
     {
       id: 'light',
-      name: 'Warm Off-White',
+      name: 'Warm Linen',
       badge: 'Daylight',
-      bgHex: '#F8F7F4',
+      bgHex: '#F7F7F5',
       surfaceHex: '#FFFFFF',
-      accentHex: '#3B6FE0',
-      desc: 'Warm off-white engineering surface with slate borders and typography',
+      accentHex: '#3E5670',
+      desc: 'Warm off-white engineering surface with neutral borders and typography',
       icon: Sun,
     },
     {
-      id: 'fantasy',
-      name: 'Deep Indigo',
-      badge: 'Midnight',
-      bgHex: '#0F0E17',
-      surfaceHex: '#16152A',
-      accentHex: '#9B7EED',
-      desc: 'Deep indigo midnight atmosphere with soft violet accent',
+      id: 'slate',
+      name: 'Deep Slate',
+      badge: 'Graphite',
+      bgHex: '#141619',
+      surfaceHex: '#1B1E22',
+      accentHex: '#667C8F',
+      desc: 'Deep graphite workstation with calm slate accents',
       icon: Sparkles,
     },
   ] as const;
@@ -112,7 +112,7 @@ export const Settings: React.FC = () => {
             </p>
             <button
               onClick={connectGitHub}
-              className="w-full h-11 rounded-xl bg-accent hover:opacity-90 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-sm shadow-accent/25 active:scale-98 transition-all cursor-pointer"
+              className="w-full h-11 rounded-xl bg-accent hover:opacity-90 text-white font-semibold text-xs flex items-center justify-center gap-2 border border-accent/20 active:scale-98 transition-all cursor-pointer"
             >
               <Github size={16} />
               <span>Connect with GitHub</span>

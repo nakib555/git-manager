@@ -214,7 +214,7 @@ export const PRsScreen: React.FC = () => {
                     <GitPullRequest 
                       size={16} 
                       className={`shrink-0 mt-0.5 ${
-                        isMerged ? 'text-purple-500' : isClosed ? 'text-text-tertiary' : 'text-success'
+                        isMerged ? 'text-pr-merged' : isClosed ? 'text-text-tertiary' : 'text-success'
                       }`} 
                     />
                     <div className="min-w-0">
@@ -233,7 +233,7 @@ export const PRsScreen: React.FC = () => {
 
                   {/* Status tag */}
                   <span className={`text-[11px] font-semibold font-mono shrink-0 ${
-                    isMerged ? 'text-purple-400' : isClosed ? 'text-text-tertiary' : 'text-success'
+                    isMerged ? 'text-pr-merged' : isClosed ? 'text-text-tertiary' : 'text-success'
                   }`}>
                     {pr.status || (isClosed ? 'Closed' : 'Open')}
                   </span>
@@ -266,7 +266,7 @@ export const PRsScreen: React.FC = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedPRId(null)}
-              className="absolute inset-0 bg-black/70 backdrop-blur-xs"
+              className="absolute inset-0 bg-black/70"
             />
 
             <motion.div
@@ -274,7 +274,7 @@ export const PRsScreen: React.FC = () => {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-              className="relative w-full bg-surface-1 border-t border-x border-border rounded-t-[20px] pb-[calc(env(safe-area-inset-bottom,0px)+16px)] pt-3 px-4 shadow-2xl z-10 max-h-[90vh] flex flex-col overflow-hidden"
+              className="relative w-full bg-surface-1 border-t border-x border-border rounded-t-xl pb-[calc(env(safe-area-inset-bottom,0px)+16px)] pt-3 px-4 shadow-2xl z-10 max-h-[90vh] flex flex-col overflow-hidden"
             >
               {/* Grab handle */}
               <div className="w-10 h-1 bg-border rounded-full mx-auto mb-3 shrink-0" />
@@ -287,7 +287,7 @@ export const PRsScreen: React.FC = () => {
                       #{selectedPR.id || (selectedPR as any).number}
                     </span>
                     <span className={`text-[10px] font-mono font-bold uppercase tracking-wider ${
-                      selectedPR.status === 'Merged' ? 'text-purple-400' : selectedPR.status === 'Closed' ? 'text-text-tertiary' : 'text-success'
+                      selectedPR.status === 'Merged' ? 'text-pr-merged' : selectedPR.status === 'Closed' ? 'text-text-tertiary' : 'text-success'
                     }`}>
                       {selectedPR.status || 'Open'}
                     </span>
@@ -299,7 +299,7 @@ export const PRsScreen: React.FC = () => {
 
                 <button
                   onClick={() => setSelectedPRId(null)}
-                  className="w-8 h-8 flex items-center justify-center text-text-tertiary hover:text-text-primary rounded-full hover:bg-surface-2 transition-colors cursor-pointer shrink-0"
+                  className="w-8 h-8 flex items-center justify-center text-text-tertiary hover:text-text-primary rounded-md hover:bg-surface-2 transition-colors cursor-pointer shrink-0"
                 >
                   <X size={18} />
                 </button>

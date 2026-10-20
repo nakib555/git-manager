@@ -43,7 +43,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-30 w-full bg-background/95 backdrop-blur-md border-b border-border pt-[env(safe-area-inset-top,0px)] shrink-0 select-none">
+    <header className="sticky top-0 z-30 w-full bg-surface-1 border-b border-border pt-[env(safe-area-inset-top,0px)] shrink-0 select-none">
       <div className="h-14 px-4 flex items-center justify-between">
         {/* Left: Hamburger menu icon (Account / Notifications Drawer) */}
         <button
@@ -74,7 +74,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
                 {isBranchDropdownOpen && (
                   <>
                     <div 
-                      className="fixed inset-0 z-40 bg-black/40 backdrop-blur-xs" 
+                      className="fixed inset-0 z-40 bg-black/40" 
                       onClick={() => setIsBranchDropdownOpen(false)} 
                     />
                     <motion.div

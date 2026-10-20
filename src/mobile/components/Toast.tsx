@@ -45,7 +45,7 @@ export const Toast: React.FC = () => {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -12, scale: 0.95 }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
-          className={`pointer-events-auto flex items-center gap-2.5 px-4 py-2.5 rounded-xl border text-xs font-semibold text-text-primary shadow-xl backdrop-blur-md max-w-sm w-fit truncate ${getBorderColor()}`}
+          className={`pointer-events-auto flex items-center gap-2.5 px-3.5 py-2 rounded-lg border text-xs font-medium text-text-primary shadow-sm max-w-sm w-fit truncate ${getBorderColor()}`}
         >
           {getIcon()}
           <span className="truncate">{toastMessage}</span>

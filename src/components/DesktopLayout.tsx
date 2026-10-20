@@ -235,7 +235,7 @@ export const DesktopLayout: React.FC = () => {
               {!isSidebarCollapsed && (
                 <div className="flex items-center justify-between px-1 mb-2">
                   <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest">Active Repository</span>
-                  <span className="text-[10px] font-semibold text-primary px-2 py-0.5 rounded-full bg-primary/10 border border-primary/15 truncate max-w-[120px]" title={currentRepo}>
+                  <span className="text-[10px] font-semibold text-primary px-2 py-0.5 rounded-md bg-primary/10 border border-primary/15 truncate max-w-[120px]" title={currentRepo}>
                     {currentRepo}
                   </span>
                 </div>
@@ -272,7 +272,7 @@ export const DesktopLayout: React.FC = () => {
         {/* Desktop Footer Status Bar */}
         <div className={`p-4 border-t border-border bg-hover/10 flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} text-[10px] text-text-muted font-medium`}>
           <span className="flex items-center gap-1.5" title="Developer Station OK">
-            <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-success" />
             {!isSidebarCollapsed && <span>Station OK</span>}
           </span>
           {!isSidebarCollapsed && <span className="font-mono text-[9px] opacity-75">v2.4.1</span>}
@@ -282,7 +282,7 @@ export const DesktopLayout: React.FC = () => {
       {/* 2. WORKSPACE CONTAINER */}
       <main className="flex-1 flex flex-col h-full overflow-hidden bg-main min-w-0">
         {/* Header bar */}
-        <header className="h-16 px-6 lg:px-8 border-b border-border flex items-center justify-between shrink-0 bg-card/60 backdrop-blur-md z-10">
+        <header className="h-16 px-6 lg:px-8 border-b border-border flex items-center justify-between shrink-0 bg-card z-10">
           {/* Quick Command Launcher / Search */}
           <div 
             onClick={openCommandPalette}
@@ -757,12 +757,12 @@ const DesktopDashboard: React.FC<{ globalSearch: string }> = ({ globalSearch }) 
               <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
                 <defs>
                   <linearGradient id="primaryGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#388BFD" stopOpacity={0.25}/>
-                    <stop offset="95%" stopColor="#388BFD" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="var(--color-accent)" stopOpacity={0.25}/>
+                    <stop offset="95%" stopColor="var(--color-accent)" stopOpacity={0}/>
                   </linearGradient>
                   <linearGradient id="infoGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3FB950" stopOpacity={0.25}/>
-                    <stop offset="95%" stopColor="#3FB950" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="var(--color-success)" stopOpacity={0.25}/>
+                    <stop offset="95%" stopColor="var(--color-success)" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
                 {showGrid && <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.5} />}
@@ -785,18 +785,18 @@ const DesktopDashboard: React.FC<{ globalSearch: string }> = ({ globalSearch }) 
                   contentStyle={{ 
                     backgroundColor: 'var(--card)', 
                     border: '1px solid var(--border)', 
-                    borderRadius: '12px', 
+                    borderRadius: '8px', 
                     fontSize: '11px',
                     color: 'var(--text-main)',
-                    boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15)'
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
                   }}
                   itemStyle={{ color: 'var(--text-main)' }}
                 />
                 {showCommitsLine && (
-                  <Area type="monotone" dataKey="commits" name="Commits Volume" stroke="#388BFD" strokeWidth={2.5} fillOpacity={1} fill="url(#primaryGrad)" />
+                  <Area type="monotone" dataKey="commits" name="Commits Volume" stroke="var(--color-accent)" strokeWidth={2} fillOpacity={1} fill="url(#primaryGrad)" />
                 )}
                 {showPRsLine && (
-                  <Area type="monotone" dataKey="prs" name="Pull Request Activity" stroke="#3FB950" strokeWidth={2.5} fillOpacity={1} fill="url(#infoGrad)" />
+                  <Area type="monotone" dataKey="prs" name="Pull Request Activity" stroke="var(--color-success)" strokeWidth={2} fillOpacity={1} fill="url(#infoGrad)" />
                 )}
               </AreaChart>
             </ResponsiveContainer>
@@ -812,10 +812,10 @@ const DesktopDashboard: React.FC<{ globalSearch: string }> = ({ globalSearch }) 
             </button>
             <div className="flex gap-4 text-[10px] font-bold text-text-muted">
               <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-[#388BFD]" /> Commits
+                <span className="w-2 h-2 rounded-xs bg-accent" /> Commits
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-[#3FB950]" /> PR Activity
+                <span className="w-2 h-2 rounded-xs bg-success" /> PR Activity
               </span>
             </div>
           </div>
@@ -835,19 +835,19 @@ const DesktopDashboard: React.FC<{ globalSearch: string }> = ({ globalSearch }) 
                     <div className="flex flex-wrap gap-2">
                       <button 
                         onClick={() => setShowCommitsLine(!showCommitsLine)}
-                        className={`px-3 py-1.5 rounded-full border text-[11px] font-bold transition-all cursor-pointer ${showCommitsLine ? 'bg-accent-soft border-accent/40 text-accent' : 'border-border text-text-muted bg-card'}`}
+                        className={`px-3 py-1.5 rounded-md border text-[11px] font-bold transition-all cursor-pointer ${showCommitsLine ? 'bg-accent-soft border-accent/40 text-accent' : 'border-border text-text-muted bg-card'}`}
                       >
                         {showCommitsLine ? '✓ Commits Visible' : '✗ Commits Hidden'}
                       </button>
                       <button 
                         onClick={() => setShowPRsLine(!showPRsLine)}
-                        className={`px-3 py-1.5 rounded-full border text-[11px] font-bold transition-all cursor-pointer ${showPRsLine ? 'bg-success/10 border-success/40 text-success' : 'border-border text-text-muted bg-card'}`}
+                        className={`px-3 py-1.5 rounded-md border text-[11px] font-bold transition-all cursor-pointer ${showPRsLine ? 'bg-success/10 border-success/40 text-success' : 'border-border text-text-muted bg-card'}`}
                       >
                         {showPRsLine ? '✓ PRs Visible' : '✗ PRs Hidden'}
                       </button>
                       <button 
                         onClick={() => setShowGrid(!showGrid)}
-                        className={`px-3 py-1.5 rounded-full border text-[11px] font-bold transition-all cursor-pointer ${showGrid ? 'bg-primary/10 border-primary/35 text-primary' : 'border-border text-text-muted bg-card'}`}
+                        className={`px-3 py-1.5 rounded-md border text-[11px] font-bold transition-all cursor-pointer ${showGrid ? 'bg-primary/10 border-primary/35 text-primary' : 'border-border text-text-muted bg-card'}`}
                       >
                         {showGrid ? '✓ Grid Lines On' : '✗ Grid Lines Off'}
                       </button>
@@ -888,7 +888,7 @@ const DesktopDashboard: React.FC<{ globalSearch: string }> = ({ globalSearch }) 
                     </div>
                   </div>
                   
-                  <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${repo.private ? 'bg-danger/10 border-danger/20 text-danger' : 'bg-success/10 border-success/20 text-success'}`}>
+                  <span className={`text-[9px] font-bold px-2 py-0.5 rounded-md border shrink-0 ${repo.private ? 'bg-danger/10 border-danger/20 text-danger' : 'bg-success/10 border-success/20 text-success'}`}>
                     {repo.private ? 'Private' : 'Public'}
                   </span>
                 </div>
@@ -1255,7 +1255,7 @@ const DesktopRepositories: React.FC<{ globalSearch: string }> = ({ globalSearch 
                         <div>
                           <div className="flex justify-between items-start gap-2 mb-1.5">
                             <span className={`font-bold text-xs truncate ${isSelected ? 'text-primary' : 'text-text-main'}`}>{repo.name}</span>
-                            <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full border uppercase tracking-wider shrink-0 ${repo.isPrivate ? 'bg-danger/10 border-danger/20 text-danger' : 'bg-success/10 border-success/20 text-success'}`}>
+                            <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-md border uppercase tracking-wider shrink-0 ${repo.isPrivate ? 'bg-danger/10 border-danger/20 text-danger' : 'bg-success/10 border-success/20 text-success'}`}>
                               {repo.isPrivate ? 'Private' : 'Public'}
                             </span>
                           </div>
@@ -1269,7 +1269,7 @@ const DesktopRepositories: React.FC<{ globalSearch: string }> = ({ globalSearch 
                               <span className="font-semibold text-text-main">{repo.stars.toLocaleString()}</span>
                             </span>
                             <span className="flex items-center gap-1" title="Forks">
-                              <GitFork size={11} className="text-blue-500" />
+                              <GitFork size={11} className="text-text-muted" />
                               <span className="font-semibold text-text-main">{repo.forks.toLocaleString()}</span>
                             </span>
                             <span className="flex items-center gap-1" title="Watching">
@@ -1365,7 +1365,7 @@ const DesktopRepositories: React.FC<{ globalSearch: string }> = ({ globalSearch 
                             <span className="font-semibold text-text-main">{selectedRepo.stars.toLocaleString()}</span>
                           </span>
                           <span className="flex items-center gap-1" title="Forks">
-                            <GitFork size={12} className="text-blue-500" />
+                            <GitFork size={12} className="text-text-muted" />
                             <span className="font-semibold text-text-main">{selectedRepo.forks.toLocaleString()}</span>
                           </span>
                           <span className="flex items-center gap-1" title="Watching">
@@ -2168,13 +2168,13 @@ const DesktopBranchesView: React.FC = () => {
 
               <div className="flex items-center gap-2 shrink-0">
                 {isDefault && (
-                  <span className="text-[9px] uppercase tracking-wider px-2.5 py-1 rounded-full bg-info/15 text-info border border-info/30 font-extrabold shrink-0">
+                  <span className="text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-md bg-info/15 text-info border border-info/30 font-semibold shrink-0">
                     Default
                   </span>
                 )}
                 
                 {isActive && !isDefault && (
-                  <span className="text-[9px] uppercase tracking-wider px-2.5 py-1 rounded-full bg-primary/15 text-primary border border-primary/30 font-extrabold shrink-0">
+                  <span className="text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-md bg-primary/15 text-primary border border-primary/30 font-semibold shrink-0">
                     Active
                   </span>
                 )}
@@ -2206,13 +2206,13 @@ const DesktopBranchesView: React.FC = () => {
       {/* Redesigned Premium Warning Confirmation Dialog Box for Branch Deletion */}
       <AnimatePresence>
         {branchToDelete && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[250] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/60 z-[250] flex items-center justify-center p-4">
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.15, ease: "easeOut" }}
-              className="bg-card border border-border rounded-3xl w-full max-w-md overflow-hidden shadow-2xl"
+              className="bg-card border border-border rounded-xl w-full max-w-md overflow-hidden shadow-xl"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header/Warning Top Banner */}
@@ -2368,11 +2368,11 @@ const DesktopInsightsView: React.FC = () => {
               <AreaChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="insGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#388BFD" stopOpacity={0.25}/>
-                    <stop offset="95%" stopColor="#388BFD" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="var(--color-accent)" stopOpacity={0.25}/>
+                    <stop offset="95%" stopColor="var(--color-accent)" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <Area type="monotone" dataKey="uv" stroke="#388BFD" strokeWidth={2.5} fillOpacity={1} fill="url(#insGrad)" />
+                <Area type="monotone" dataKey="uv" stroke="var(--color-accent)" strokeWidth={2} fillOpacity={1} fill="url(#insGrad)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -2519,12 +2519,14 @@ const DesktopSettings: React.FC = () => {
               </div>
               <div>
                 <span className="block text-xs font-bold text-text-main">Appearance Mode</span>
-                <span className="block text-[10px] text-text-muted mt-0.5">{theme === 'dark' ? 'Dark Theme' : 'Light Theme'}</span>
+                <span className="block text-[10px] text-text-muted mt-0.5">
+                  {theme === 'dark' ? 'Dark Charcoal' : theme === 'light' ? 'Warm Linen' : 'Deep Slate'}
+                </span>
               </div>
             </div>
             
             <div className="w-12 h-6 rounded-full bg-border relative transition-colors duration-200 cursor-pointer">
-              <div className={`w-4 h-4 bg-primary rounded-full absolute top-1 transition-all duration-200 ${theme === 'dark' ? 'left-7' : 'left-1'}`} />
+              <div className={`w-4 h-4 bg-primary rounded-full absolute top-1 transition-all duration-200 ${theme === 'dark' ? 'left-7' : theme === 'slate' ? 'left-4' : 'left-1'}`} />
             </div>
           </div>
 

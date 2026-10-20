@@ -213,7 +213,7 @@ export const PRsScreen = () => {
                       >
                         <span className="flex items-center gap-1.5">
                           {tab}
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
                             isActive ? 'bg-primary/10 text-primary border border-primary/25' : 'bg-hover/50 text-text-muted border border-border/40'
                           }`}>
                             {count}
@@ -256,7 +256,7 @@ export const PRsScreen = () => {
             <div className="space-y-3">
               {filteredPRs.length === 0 ? (
                 <div className="bg-card border border-border/60 rounded-2xl p-12 text-center flex flex-col items-center justify-center">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-3">
+                  <div className="w-12 h-12 rounded-xl bg-hover border border-border text-text-muted flex items-center justify-center mb-3">
                     <GitPullRequest size={22} />
                   </div>
                   <h3 className="font-bold text-sm text-text-main">No pull requests found</h3>
@@ -272,9 +272,9 @@ export const PRsScreen = () => {
                     className="bg-card border border-border/60 rounded-2xl p-4 hover:border-primary/35 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer group shadow-sm flex items-start gap-4"
                   >
                     <div className={`w-8 h-8 rounded-lg shrink-0 flex items-center justify-center ${
-                      pr.status === 'Merged' ? 'bg-purple-500/10 text-purple-500' :
-                      pr.status === 'Closed' ? 'bg-danger/10 text-danger' :
-                      'bg-success/10 text-success'
+                      pr.status === 'Merged' ? 'bg-pr-merged/15 text-pr-merged border border-pr-merged/25' :
+                      pr.status === 'Closed' ? 'bg-danger/10 text-danger border border-danger/20' :
+                      'bg-success/10 text-success border border-success/20'
                     }`}>
                       <GitPullRequest size={16} strokeWidth={2.5} />
                     </div>
@@ -282,8 +282,8 @@ export const PRsScreen = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs font-bold text-text-muted">#{pr.id}</span>
-                        <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full border ${
-                          pr.status === 'Merged' ? 'bg-purple-500/10 border-purple-500/20 text-purple-500' :
+                        <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-md border ${
+                          pr.status === 'Merged' ? 'bg-pr-merged/15 border-pr-merged/25 text-pr-merged' :
                           pr.status === 'Closed' ? 'bg-danger/10 border-danger/20 text-danger' :
                           'bg-success/10 border-success/20 text-success'
                         }`}>
@@ -341,8 +341,8 @@ export const PRsScreen = () => {
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-text-muted">PR #{selectedPR.id}</span>
-                      <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full border ${
-                        selectedPR.status === 'Merged' ? 'bg-purple-500/10 border-purple-500/20 text-purple-500' :
+                      <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-md border ${
+                        selectedPR.status === 'Merged' ? 'bg-pr-merged/15 border-pr-merged/25 text-pr-merged' :
                         selectedPR.status === 'Closed' ? 'bg-danger/10 border-danger/20 text-danger' :
                         'bg-success/10 border-success/20 text-success'
                       }`}>
@@ -439,7 +439,7 @@ export const PRsScreen = () => {
                                 <span className="text-success">+{totalAdditions}</span> <span className="text-text-muted mx-1">/</span> <span className="text-danger">-{totalDeletions}</span>
                               </span>
                             </div>
-                            <div className="flex h-2 rounded-full overflow-hidden w-full bg-main border border-border/50">
+                            <div className="flex h-2 rounded-xs overflow-hidden w-full bg-main border border-border/50">
                                <div className="bg-success h-full" style={{ width: `${additionPercentage}%` }}></div>
                                <div className="bg-danger h-full" style={{ width: `${100 - additionPercentage}%` }}></div>
                             </div>
@@ -450,7 +450,7 @@ export const PRsScreen = () => {
                         <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
                           {selectedPR.status === 'Merged' ? (
                             <div className="text-center py-6">
-                              <div className="w-12 h-12 rounded-full bg-purple-500/10 text-purple-500 flex items-center justify-center mx-auto mb-3">
+                              <div className="w-12 h-12 rounded-xl bg-pr-merged/15 text-pr-merged flex items-center justify-center mx-auto mb-3 border border-pr-merged/25">
                                 <GitMerge size={24} />
                               </div>
                               <h3 className="text-base font-bold text-text-main mb-1">Pull Request Merged</h3>
@@ -458,7 +458,7 @@ export const PRsScreen = () => {
                             </div>
                           ) : selectedPR.status === 'Closed' ? (
                             <div className="text-center py-6">
-                              <div className="w-12 h-12 rounded-full bg-danger/10 text-danger flex items-center justify-center mx-auto mb-3">
+                              <div className="w-12 h-12 rounded-xl bg-danger/10 text-danger flex items-center justify-center mx-auto mb-3 border border-danger/20">
                                 <X size={24} />
                               </div>
                               <h3 className="text-base font-bold text-text-main mb-1">PR Closed</h3>

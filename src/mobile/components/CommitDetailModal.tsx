@@ -134,7 +134,7 @@ export const CommitDetailModal: React.FC<CommitDetailModalProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="absolute inset-0 bg-black/75 backdrop-blur-xs"
+          className="absolute inset-0 bg-black/75"
         />
 
         <motion.div
@@ -142,7 +142,7 @@ export const CommitDetailModal: React.FC<CommitDetailModalProps> = ({
           animate={{ y: 0 }}
           exit={{ y: '100%' }}
           transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-          className="relative w-full bg-surface-1 border-t border-x border-border rounded-t-[20px] pb-[calc(env(safe-area-inset-bottom,0px)+12px)] pt-3 px-4 shadow-2xl z-10 h-[90vh] max-h-[92vh] flex flex-col overflow-hidden"
+          className="relative w-full bg-surface-1 border-t border-x border-border rounded-t-xl pb-[calc(env(safe-area-inset-bottom,0px)+12px)] pt-3 px-4 shadow-2xl z-10 h-[90vh] max-h-[92vh] flex flex-col overflow-hidden"
         >
           {/* Top Drag Handle (Master Prompt Spatial System: 20px top radius, 8pt grid) */}
           <div className="w-10 h-1 bg-border rounded-full mx-auto mb-2 shrink-0" />

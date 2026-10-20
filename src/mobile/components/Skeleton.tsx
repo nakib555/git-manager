@@ -20,7 +20,7 @@ export const RepoCardSkeleton: React.FC = () => {
     <div className="bg-surface-1 border border-border rounded-xl p-4 space-y-3 ghost-shimmer">
       <div className="flex items-center justify-between">
         <Skeleton className="h-4 w-1/3" />
-        <Skeleton className="h-5 w-14 rounded-full" />
+        <Skeleton className="h-5 w-14 rounded-md" />
       </div>
       <Skeleton className="h-3.5 w-4/5" />
       <div className="flex items-center justify-between pt-2 border-t border-border">

@@ -29,7 +29,7 @@ export const ActionSheet: React.FC<ActionSheetProps> = ({ isOpen, onClose }) => 
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/60 backdrop-blur-xs"
+            className="absolute inset-0 bg-black/60"
           />
 
           {/* Sheet Body */}
@@ -38,7 +38,7 @@ export const ActionSheet: React.FC<ActionSheetProps> = ({ isOpen, onClose }) => 
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-            className="relative w-full bg-surface-1 border-t border-x border-border rounded-t-[20px] pb-[calc(env(safe-area-inset-bottom,0px)+16px)] pt-3 px-5 shadow-2xl z-10 max-h-[85vh] overflow-y-auto no-scrollbar"
+            className="relative w-full bg-surface-1 border-t border-x border-border rounded-t-xl pb-[calc(env(safe-area-inset-bottom,0px)+16px)] pt-3 px-5 shadow-2xl z-10 max-h-[85vh] overflow-y-auto no-scrollbar"
           >
             {/* Grab handle */}
             <div className="w-10 h-1 bg-border rounded-full mx-auto mb-4" />
@@ -47,7 +47,7 @@ export const ActionSheet: React.FC<ActionSheetProps> = ({ isOpen, onClose }) => 
               <h3 className="text-sm font-semibold text-text-primary">Quick Actions</h3>
               <button
                 onClick={onClose}
-                className="w-7 h-7 flex items-center justify-center text-text-tertiary hover:text-text-primary rounded-full hover:bg-surface-2 transition-colors cursor-pointer"
+                className="w-7 h-7 flex items-center justify-center text-text-tertiary hover:text-text-primary rounded-md hover:bg-surface-2 transition-colors cursor-pointer"
               >
                 <X size={16} />
               </button>

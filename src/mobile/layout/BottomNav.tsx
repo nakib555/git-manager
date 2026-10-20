@@ -19,7 +19,7 @@ export const BottomNav: React.FC = () => {
   return (
     <nav 
       aria-label="Bottom Navigation"
-      className="fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur-lg border-t border-border pb-[env(safe-area-inset-bottom,0px)] select-none"
+      className="fixed bottom-0 left-0 right-0 z-30 bg-surface-1 border-t border-border pb-[env(safe-area-inset-bottom,0px)] select-none"
     >
       <div className="h-14 w-full flex items-center justify-around px-3 sm:px-6">
         {tabs.map((tab) => {
@@ -38,7 +38,7 @@ export const BottomNav: React.FC = () => {
               aria-current={active ? 'page' : undefined}
             >
               <div
-                className={`w-11 h-7 flex items-center justify-center rounded-full transition-all duration-200 ${
+                className={`w-10 h-7 flex items-center justify-center rounded-md transition-all duration-200 ${
                   active ? 'bg-accent-soft' : 'bg-transparent'
                 }`}
               >

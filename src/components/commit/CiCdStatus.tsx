@@ -590,8 +590,8 @@ export const CiCdBadge = ({ hash, isCompact = false }: { hash: string; isCompact
 
   if (isCompact) {
     return (
-      <div className={`inline-flex items-center gap-1.5 text-[9px] font-bold px-2 py-0.5 rounded-full border ${cicd.color} transition-all select-none`}>
-        <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse shrink-0" />
+      <div className={`inline-flex items-center gap-1.5 text-[9px] font-semibold px-2 py-0.5 rounded-md border ${cicd.color} transition-all select-none`}>
+        <span className="w-1.5 h-1.5 rounded-full bg-current shrink-0" />
         <span>{cicd.label}</span>
       </div>
     );
@@ -703,16 +703,16 @@ export const CiCdPipelineFlow = ({ hash }: { hash: string }) => {
             <Cpu size={16} className="text-primary" />
             <span className="text-xs font-bold text-text-main tracking-widest uppercase">Pipeline Workflow</span>
             {isPolling && (
-              <span className="inline-flex items-center gap-1 text-[8px] bg-sky-500/15 text-sky-500 font-bold px-2 py-0.5 rounded-full border border-sky-500/20 animate-pulse">
+              <span className="inline-flex items-center gap-1 text-[8px] bg-accent-soft text-accent font-semibold px-2 py-0.5 rounded-md border border-accent/20">
                 <Activity size={8} /> Live Poll 1s
               </span>
             )}
             {isReal ? (
-              <span className="inline-flex items-center gap-1 text-[8px] bg-emerald-500/15 text-emerald-500 font-bold px-2 py-0.5 rounded-full border border-emerald-500/20">
+              <span className="inline-flex items-center gap-1 text-[8px] bg-success/15 text-success font-semibold px-2 py-0.5 rounded-md border border-success/20">
                 Real GitHub Checks
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 text-[8px] bg-amber-500/15 text-amber-500 font-bold px-2 py-0.5 rounded-full border border-amber-500/20">
+              <span className="inline-flex items-center gap-1 text-[8px] bg-warning/15 text-warning font-semibold px-2 py-0.5 rounded-md border border-warning/20">
                 Sandbox Simulator Run
               </span>
             )}
@@ -820,7 +820,7 @@ export const CiCdPipelineFlow = ({ hash }: { hash: string }) => {
         </div>
 
         <div className="bg-main/30 border border-border/60 rounded-xl p-3 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-accent-soft text-accent flex items-center justify-center shrink-0">
             <FileCode size={16} />
           </div>
           <div className="min-w-0">
@@ -924,22 +924,22 @@ export const CiCdPipelineFlow = ({ hash }: { hash: string }) => {
                             <div key={lIdx} className="flex items-start gap-2 text-[10px] leading-relaxed animate-fade-down" style={{ animationDelay: `${lIdx * 40}ms` }}>
                               {/* Sleek icon indicator matching types */}
                               {parsed.type === 'success' && (
-                                <span className="w-4 h-4 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-500 flex items-center justify-center shrink-0 mt-0.5">
+                                <span className="w-4 h-4 rounded-md bg-success/15 border border-success/30 text-success flex items-center justify-center shrink-0 mt-0.5">
                                   <Check size={9} className="stroke-[3]" />
                                 </span>
                               )}
                               {parsed.type === 'error' && (
-                                <span className="w-4 h-4 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-500 flex items-center justify-center shrink-0 mt-0.5">
+                                <span className="w-4 h-4 rounded-md bg-danger/15 border border-danger/30 text-danger flex items-center justify-center shrink-0 mt-0.5">
                                   <X size={9} className="stroke-[3]" />
                                 </span>
                               )}
                               {parsed.type === 'running' && (
-                                <span className="w-4 h-4 rounded-full bg-sky-500/15 border border-sky-500/30 text-sky-500 flex items-center justify-center shrink-0 mt-0.5">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-ping" />
+                                <span className="w-4 h-4 rounded-md bg-accent-soft border border-accent/30 text-accent flex items-center justify-center shrink-0 mt-0.5">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-accent" />
                                 </span>
                               )}
                               {parsed.type === 'info' && (
-                                <span className="w-4 h-4 rounded-full bg-neutral-500/10 border border-border text-text-muted flex items-center justify-center shrink-0 mt-0.5">
+                                <span className="w-4 h-4 rounded-md bg-surface-2 border border-border text-text-muted flex items-center justify-center shrink-0 mt-0.5">
                                   <Clock size={9} />
                                 </span>
                               )}

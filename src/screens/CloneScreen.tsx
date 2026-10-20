@@ -1192,7 +1192,7 @@ export default function App() {
                         </>
                       ) : (
                         <>
-                          <span className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-ping" />
+                          <span className="w-1.5 h-1.5 bg-warning rounded-full" />
                           <span>Pending...</span>
                         </>
                       )}
@@ -1216,7 +1216,7 @@ export default function App() {
 
                 {/* REAL-TIME TERMINAL MESSAGE */}
                 <div className="font-mono text-[10.5px] text-left text-neutral-400 bg-neutral-900 border border-neutral-800 rounded-xl p-3.5 space-y-1 overflow-hidden shadow-inner leading-relaxed select-text">
-                  <div className="text-indigo-400 font-bold">$ git checkout-index -a -f</div>
+                  <div className="text-accent font-bold">$ git checkout-index -a -f</div>
                   <div className="text-neutral-200 truncate">{currentProgressActivity}</div>
                 </div>
 
@@ -1242,8 +1242,8 @@ export default function App() {
                 className="bg-card border border-border p-8 rounded-2xl text-center space-y-6"
               >
                 {/* SUCCESS BADGE */}
-                <div className="mx-auto w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center shadow-inner animate-bounce">
-                  <Check size={32} strokeWidth={3} />
+                <div className="mx-auto w-12 h-12 bg-success/10 text-success rounded-xl flex items-center justify-center border border-success/20">
+                  <Check size={24} strokeWidth={2.5} />
                 </div>
 
                 <div className="space-y-2">
@@ -1303,13 +1303,13 @@ export default function App() {
       {/* DETAILED README MODAL SLIDER */}
       <AnimatePresence>
         {isReadmeOpen && (
-          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40">
             <motion.div
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-              className="bg-card w-full max-w-lg rounded-t-3xl border-t border-border shadow-2xl p-6 space-y-4 max-h-[85vh] flex flex-col"
+              className="bg-card w-full max-w-lg rounded-t-xl border-t border-border shadow-2xl p-6 space-y-4 max-h-[85vh] flex flex-col"
             >
               <div className="flex items-center justify-between border-b border-border pb-3">
                 <div className="flex items-center gap-2">
@@ -1318,7 +1318,7 @@ export default function App() {
                 </div>
                 <button 
                   onClick={() => setIsReadmeOpen(false)}
-                  className="p-1 hover:bg-hover rounded-full text-text-muted hover:text-text-main transition-colors cursor-pointer"
+                  className="p-1 hover:bg-hover rounded-md text-text-muted hover:text-text-main transition-colors cursor-pointer"
                 >
                   <X size={18} />
                 </button>
@@ -1362,7 +1362,7 @@ export default function App() {
       {/* LOCAL DEVICE DOWNLOAD PLACE PICKER MODAL */}
       <AnimatePresence>
         {isPlaceModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -1377,7 +1377,7 @@ export default function App() {
                 </div>
                 <button 
                   onClick={() => setIsPlaceModalOpen(false)}
-                  className="p-1 hover:bg-hover rounded-full text-text-muted hover:text-text-main transition-colors cursor-pointer"
+                  className="p-1 hover:bg-hover rounded-md text-text-muted hover:text-text-main transition-colors cursor-pointer"
                 >
                   <X size={18} />
                 </button>
@@ -1490,17 +1490,17 @@ export default function App() {
       {/* QR CODE MODAL */}
       <AnimatePresence>
         {isQrModalOpen && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              className="bg-card w-full max-w-sm rounded-2xl border border-border shadow-2xl p-6 flex flex-col gap-6 text-center relative overflow-hidden"
+              className="bg-card w-full max-w-sm rounded-xl border border-border shadow-2xl p-6 flex flex-col gap-6 text-center relative overflow-hidden"
             >
               <button 
                 onClick={() => setIsQrModalOpen(false)}
-                className="absolute right-4 top-4 p-1.5 hover:bg-hover rounded-full text-text-muted hover:text-text-main transition-colors cursor-pointer z-10"
+                className="absolute right-4 top-4 p-1.5 hover:bg-hover rounded-md text-text-muted hover:text-text-main transition-colors cursor-pointer z-10"
               >
                 <X size={16} />
               </button>

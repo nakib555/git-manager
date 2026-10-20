@@ -20,7 +20,7 @@ export const CreateModals: React.FC = () => {
           className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6"
         >
           <div 
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/60"
             onClick={closeModal}
           />
           <motion.div 
@@ -28,7 +28,7 @@ export const CreateModals: React.FC = () => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-card rounded-2xl border border-border p-6 shadow-2xl"
+            className="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-card rounded-xl border border-border p-6 shadow-xl"
           >
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-2 font-semibold text-text-main text-base">
@@ -58,7 +58,7 @@ export const CreateModals: React.FC = () => {
             )}
             {activeModal === 'commit' && (
               <>
-                <div className="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-500 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-accent-soft text-accent flex items-center justify-center">
                   <GitCommit size={18} />
                 </div>
                 <span>Commit Changes</span>
@@ -415,7 +415,7 @@ const CommitForm: React.FC<{ onSubmit: (data: any) => void }> = ({ onSubmit }) =
       <button 
         type="submit" 
         disabled={!msg.trim()}
-        className="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold text-sm py-3 rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
+        className="w-full bg-accent hover:opacity-90 text-white font-medium text-xs py-2.5 rounded-lg border border-accent/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-2 cursor-pointer"
       >
         <Check size={16} strokeWidth={3} /> {isRealGitHub ? 'Push Real Commit to GitHub' : 'Commit to branch'}
       </button>

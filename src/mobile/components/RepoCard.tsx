@@ -26,7 +26,7 @@ const getLanguageColor = (lang?: string | null): string => {
     case 'css':
       return '#563D7C';
     default:
-      return '#3B82F6';
+      return '#5E7896';
   }
 };
 

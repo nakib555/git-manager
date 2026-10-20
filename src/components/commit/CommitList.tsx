@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { useCommits, CommitFilter } from '../../hooks/useCommits';
+import { useCommits, CommitFilter, DatePreset } from '../../hooks/useCommits';
 import { CommitItem } from './CommitItem';
-import { Search, Loader2, RefreshCw, X, Filter, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { Search, Loader2, RefreshCw, X, Filter, ChevronLeft, ChevronRight, Calendar, Check, RotateCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import emptyStateImage from '../../assets/images/empty_commits_state_1784913881320.jpg';
@@ -13,7 +13,15 @@ export const CommitList = ({
   selectedCommitId,
   parentRef 
 }: any) => {
-  const [filters, setFilters] = useState<CommitFilter>({ query: '', branch: '', author: '', since: '', until: '', page: 1 });
+  const [filters, setFilters] = useState<CommitFilter>({ 
+    query: '', 
+    branch: '', 
+    author: '', 
+    since: '', 
+    until: '', 
+    datePreset: 'all',
+    page: 1 
+  });
   const [searchInput, setSearchInput] = useState('');
   const [authorInput, setAuthorInput] = useState('');
   const [branchInput, setBranchInput] = useState('');
@@ -23,7 +31,7 @@ export const CommitList = ({
   useEffect(() => {
     const handler = setTimeout(() => {
       setFilters(prev => ({ ...prev, query: searchInput, author: authorInput, branch: branchInput, page: 1 }));
-    }, 500);
+    }, 400);
     return () => clearTimeout(handler);
   }, [searchInput, authorInput, branchInput]);
 
@@ -62,6 +70,57 @@ export const CommitList = ({
     }
   };
 
+  const handleApplyPreset = (preset: DatePreset) => {
+    const now = new Date();
+    const toYMD = (d: Date) => {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+    const todayStr = toYMD(now);
+
+    if (preset === 'today') {
+      setFilters(prev => ({ ...prev, since: todayStr, until: todayStr, datePreset: 'today', page: 1 }));
+    } else if (preset === '7d') {
+      const past = new Date(now);
+      past.setDate(past.getDate() - 7);
+      setFilters(prev => ({ ...prev, since: toYMD(past), until: todayStr, datePreset: '7d', page: 1 }));
+    } else if (preset === '30d') {
+      const past = new Date(now);
+      past.setDate(past.getDate() - 30);
+      setFilters(prev => ({ ...prev, since: toYMD(past), until: todayStr, datePreset: '30d', page: 1 }));
+    } else if (preset === 'year') {
+      const yearStart = `${now.getFullYear()}-01-01`;
+      setFilters(prev => ({ ...prev, since: yearStart, until: todayStr, datePreset: 'year', page: 1 }));
+    } else if (preset === 'all') {
+      setFilters(prev => ({ ...prev, since: '', until: '', datePreset: 'all', page: 1 }));
+    } else {
+      setFilters(prev => ({ ...prev, datePreset: 'custom' }));
+    }
+  };
+
+  const handleClearAllFilters = () => {
+    setSearchInput('');
+    setAuthorInput('');
+    setBranchInput('');
+    setFilters({
+      query: '',
+      author: '',
+      branch: '',
+      since: '',
+      until: '',
+      datePreset: 'all',
+      page: 1,
+    });
+  };
+
+  const activeFilterCount = 
+    (filters.query ? 1 : 0) + 
+    (filters.author ? 1 : 0) + 
+    (filters.branch ? 1 : 0) + 
+    ((filters.since || filters.until) ? 1 : 0);
+
   return (
     <div className={`flex flex-col ${parentRef ? '' : 'h-full overflow-hidden'}`}>
       {/* Search and Filters */}
@@ -81,7 +140,8 @@ export const CommitList = ({
             {searchInput && (
               <button 
                 onClick={() => setSearchInput('')}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-text-muted hover:text-text-main"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-text-muted hover:text-text-main cursor-pointer"
+                title="Clear search"
               >
                 <X size={14} />
               </button>
@@ -89,10 +149,43 @@ export const CommitList = ({
           </div>
           <button 
             onClick={() => setShowFilters(!showFilters)}
-            className={`px-3 py-2 border rounded-xl flex items-center justify-center transition-colors ${showFilters || authorInput || branchInput || filters.since || filters.until ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-card border-border text-text-muted hover:text-text-main'}`}
+            className={`px-3 py-2 border rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+              showFilters || activeFilterCount > 0 
+                ? 'bg-primary/10 border-primary/40 text-primary' 
+                : 'bg-card border-border text-text-muted hover:text-text-main'
+            }`}
+            title="Toggle filters"
           >
-            <Filter size={16} />
+            <Filter size={15} />
+            {activeFilterCount > 0 && (
+              <span className="min-w-[16px] h-4 px-1 rounded-md bg-primary text-white text-[10px] font-semibold flex items-center justify-center">
+                {activeFilterCount}
+              </span>
+            )}
           </button>
+        </div>
+
+        {/* Status header with total counts */}
+        <div className="flex items-center justify-between px-1 text-[11px] text-text-muted">
+          <span>
+            {isLoading ? (
+              'Loading commits...'
+            ) : (
+              <>
+                <span className="font-semibold text-text-main">{data?.totalCount ?? commits.length}</span> commits found
+                {activeFilterCount > 0 && <span className="text-primary ml-1 font-medium">(filtered)</span>}
+              </>
+            )}
+          </span>
+          {activeFilterCount > 0 && (
+            <button
+              onClick={handleClearAllFilters}
+              className="text-primary hover:underline text-[11px] font-medium flex items-center gap-1 cursor-pointer"
+            >
+              <RotateCcw size={11} />
+              <span>Reset</span>
+            </button>
+          )}
         </div>
 
         <AnimatePresence>
@@ -101,64 +194,102 @@ export const CommitList = ({
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="flex flex-col gap-2 overflow-hidden"
+              className="flex flex-col gap-2.5 overflow-hidden p-3 bg-secondary/20 rounded-xl border border-border/80"
             >
-              <div className="grid grid-cols-2 gap-2">
+              {/* Date Filter Presets */}
+              <div className="space-y-1.5">
+                <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider block">
+                  Date Range Filter
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { id: 'all', label: 'All Time' },
+                    { id: 'today', label: 'Today' },
+                    { id: '7d', label: 'Last 7 Days' },
+                    { id: '30d', label: 'Last 30 Days' },
+                    { id: 'year', label: 'This Year' },
+                    { id: 'custom', label: 'Custom' },
+                  ].map((p) => {
+                    const isSelected = filters.datePreset === p.id || (p.id === 'all' && !filters.since && !filters.until && !filters.datePreset);
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => handleApplyPreset(p.id as DatePreset)}
+                        className={`text-[11px] px-2.5 py-1 rounded-lg border font-medium transition-colors cursor-pointer ${
+                          isSelected
+                            ? 'bg-primary text-white border-primary shadow-xs'
+                            : 'bg-card border-border text-text-muted hover:text-text-main hover:border-text-muted/40'
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Author & Branch Inputs */}
+              <div className="grid grid-cols-2 gap-2 pt-1">
                 <input
                   type="text"
                   className="w-full bg-card border border-border text-text-main text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 placeholder:text-text-muted/60"
-                  placeholder="Filter by Author..."
+                  placeholder="Author (e.g. alex)"
                   value={authorInput}
                   onChange={(e) => setAuthorInput(e.target.value)}
                 />
                 <input
                   type="text"
                   className="w-full bg-card border border-border text-text-main text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 placeholder:text-text-muted/60"
-                  placeholder="Filter by Branch..."
+                  placeholder="Branch (e.g. main)"
                   value={branchInput}
                   onChange={(e) => setBranchInput(e.target.value)}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-2 items-start">
+
+              {/* Custom Date Pickers */}
+              <div className="grid grid-cols-2 gap-2 items-start pt-1">
                 <div className="flex flex-col gap-1">
+                  <span className="text-[10px] text-text-muted pl-1">Since (From)</span>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
                        <Calendar size={12} className="text-text-muted" />
                     </div>
                     <input
                       type="date"
-                      className="w-full bg-card border border-border text-text-main text-xs rounded-xl pl-8 pr-3 py-2 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 text-text-muted"
+                      className="w-full bg-card border border-border text-text-main text-xs rounded-xl pl-8 pr-2 py-1.5 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50"
                       value={filters.since}
-                      onChange={(e) => setFilters(prev => ({ ...prev, since: e.target.value, page: 1 }))}
+                      onChange={(e) => setFilters(prev => ({ ...prev, since: e.target.value, datePreset: 'custom', page: 1 }))}
                     />
                   </div>
-                  <span className="text-[10px] text-text-muted/80 pl-2">Show commits from this date</span>
                 </div>
                 <div className="flex flex-col gap-1">
+                  <span className="text-[10px] text-text-muted pl-1">Until (To)</span>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
                        <Calendar size={12} className="text-text-muted" />
                     </div>
                     <input
                       type="date"
-                      className="w-full bg-card border border-border text-text-main text-xs rounded-xl pl-8 pr-3 py-2 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 text-text-muted"
+                      className="w-full bg-card border border-border text-text-main text-xs rounded-xl pl-8 pr-2 py-1.5 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50"
                       value={filters.until}
-                      onChange={(e) => setFilters(prev => ({ ...prev, until: e.target.value, page: 1 }))}
+                      onChange={(e) => setFilters(prev => ({ ...prev, until: e.target.value, datePreset: 'custom', page: 1 }))}
                     />
                   </div>
-                  <span className="text-[10px] text-text-muted/80 pl-2">Show commits up to this date</span>
                 </div>
               </div>
-              <div className="flex justify-end">
+
+              <div className="flex items-center justify-between pt-1 border-t border-border/50">
+                 <span className="text-[10px] text-text-muted">
+                   {filters.since || filters.until 
+                     ? `Filter: ${filters.since || 'Start'} → ${filters.until || 'Now'}`
+                     : 'Showing commits for all dates'}
+                 </span>
                  <button 
-                   onClick={() => {
-                     setAuthorInput('');
-                     setBranchInput('');
-                     setFilters(prev => ({ ...prev, author: '', branch: '', since: '', until: '', page: 1 }));
-                   }}
-                   className="text-[11px] text-text-muted hover:text-text-main"
+                   onClick={handleClearAllFilters}
+                   className="text-[11px] text-text-muted hover:text-danger transition-colors cursor-pointer"
                  >
-                   Clear Filters
+                   Clear All Filters
                  </button>
               </div>
             </motion.div>
@@ -190,12 +321,12 @@ export const CommitList = ({
           </div>
         ) : isError ? (
           <div className="flex flex-col items-center justify-center h-full text-center p-4">
-            <div className="w-12 h-12 rounded-full bg-danger/10 text-danger flex items-center justify-center mb-3">
+            <div className="w-12 h-12 rounded-xl bg-danger/10 text-danger flex items-center justify-center mb-3 border border-danger/20">
               <RefreshCw size={24} />
             </div>
-            <p className="text-sm font-bold text-text-main mb-1">Failed to load commits</p>
+            <p className="text-sm font-semibold text-text-main mb-1">Failed to load commits</p>
             <p className="text-xs text-text-muted mb-4 max-w-[250px]">There was an error fetching the commit history. Please try again.</p>
-            <button onClick={() => refetch()} className="bg-primary hover:bg-primary-hover text-white text-xs font-bold px-4 py-2 rounded-xl transition-all">
+            <button onClick={() => refetch()} className="bg-primary hover:bg-primary-hover text-white text-xs font-semibold px-4 py-2 rounded-lg transition-all cursor-pointer">
               Retry
             </button>
           </div>

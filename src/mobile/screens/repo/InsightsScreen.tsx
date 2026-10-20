@@ -63,8 +63,8 @@ export const InsightsScreen: React.FC = () => {
             <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
               <defs>
                 <linearGradient id="mobileVelocity" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.25} />
-                  <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.0} />
+                  <stop offset="5%" stopColor="var(--color-accent)" stopOpacity={0.25} />
+                  <stop offset="95%" stopColor="var(--color-accent)" stopOpacity={0.0} />
                 </linearGradient>
               </defs>
               <XAxis dataKey="name" stroke="var(--color-text-tertiary)" fontSize={10} tickLine={false} />
@@ -73,7 +73,7 @@ export const InsightsScreen: React.FC = () => {
                 contentStyle={{
                   backgroundColor: 'var(--color-surface-1)',
                   border: '1px solid var(--color-border)',
-                  borderRadius: '10px',
+                  borderRadius: '8px',
                   fontSize: '11px',
                   color: 'var(--color-text-primary)',
                 }}
@@ -81,7 +81,7 @@ export const InsightsScreen: React.FC = () => {
               <Area
                 type="monotone"
                 dataKey="commits"
-                stroke="#3B82F6"
+                stroke="var(--color-accent)"
                 strokeWidth={2}
                 fill="url(#mobileVelocity)"
               />
@@ -103,9 +103,9 @@ export const InsightsScreen: React.FC = () => {
         </div>
 
         {/* Progress bar */}
-        <div className="h-2 w-full bg-surface-2 rounded-full overflow-hidden flex">
+        <div className="h-2 w-full bg-surface-2 rounded-xs overflow-hidden flex">
           {sortedLangs.map(([lang, count], idx) => {
-            const colors = ['#3B82F6', '#3FB950', '#D29922', '#71717A'];
+            const colors = ['#5E7896', '#3E7E55', '#9C7436', '#686973'];
             const pct = Math.round((count / totalFiles) * 100);
             return (
               <div
@@ -124,13 +124,13 @@ export const InsightsScreen: React.FC = () => {
         {/* Legend with tabular numbers */}
         <div className="grid grid-cols-2 gap-2 pt-1">
           {sortedLangs.map(([lang, count], idx) => {
-            const colors = ['#3B82F6', '#3FB950', '#D29922', '#71717A'];
+            const colors = ['#5E7896', '#3E7E55', '#9C7436', '#686973'];
             const pct = Math.round((count / totalFiles) * 100);
             return (
               <div key={lang} className="flex items-center justify-between text-xs font-mono tabular-nums">
                 <div className="flex items-center gap-1.5 min-w-0">
                   <span
-                    className="w-2 h-2 rounded-full shrink-0"
+                    className="w-2 h-2 rounded-xs shrink-0"
                     style={{ backgroundColor: colors[idx % colors.length] }}
                   />
                   <span className="text-text-secondary truncate">{lang}</span>

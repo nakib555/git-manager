@@ -440,7 +440,7 @@ export const CloneModal = () => {
           </div>
 
           <div className="px-4">
-             <div className="flex h-2 rounded-full overflow-hidden w-full bg-main border border-border/50 mb-2">
+             <div className="flex h-2 rounded-xs overflow-hidden w-full bg-main border border-border/50 mb-2">
                  <motion.div 
                     initial={{ width: 0 }}
                     animate={{ width: `${progress}%` }}
@@ -452,7 +452,7 @@ export const CloneModal = () => {
 
           <button 
             onClick={closeModal}
-            className="text-xs font-bold text-danger hover:text-rose-600 transition-colors cursor-pointer"
+            className="text-xs font-medium text-danger hover:opacity-80 transition-opacity cursor-pointer"
           >
             Cancel
           </button>
@@ -461,11 +461,11 @@ export const CloneModal = () => {
 
       {step === 'success' && (
         <div className="py-6 space-y-6 animate-fade-in text-center">
-          <div className="w-16 h-16 rounded-full bg-success/10 text-success flex items-center justify-center mx-auto">
-             <Check size={32} strokeWidth={3} />
+          <div className="w-12 h-12 rounded-xl bg-success/10 text-success flex items-center justify-center mx-auto border border-success/20">
+             <Check size={24} strokeWidth={2.5} />
           </div>
           <div>
-             <h3 className="text-lg font-bold text-text-main mb-1">Repository Cloned!</h3>
+             <h3 className="text-base font-semibold text-text-main mb-1">Repository Cloned!</h3>
              <p className="text-xs text-text-muted">Successfully cloned to <code className="font-mono text-[10px] bg-main px-1 py-0.5 rounded border border-border">{dest}</code></p>
           </div>
 

@@ -210,7 +210,7 @@ export const FilesScreen: React.FC = () => {
   return (
     <div className="flex flex-col h-full relative">
       {/* 1. Header Toolbar */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md border-b border-border px-4 py-2.5 space-y-2 shrink-0">
+      <div className="sticky top-0 z-10 bg-background border-b border-border px-4 py-2.5 space-y-2 shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5 text-xs text-text-tertiary font-mono truncate">
             <Home size={13} className="text-text-tertiary shrink-0" />
@@ -263,7 +263,7 @@ export const FilesScreen: React.FC = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedFileForModal(null)}
-              className="absolute inset-0 bg-black/70 backdrop-blur-xs"
+              className="absolute inset-0 bg-black/70"
             />
 
             <motion.div
@@ -271,7 +271,7 @@ export const FilesScreen: React.FC = () => {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-              className={`relative w-full bg-surface-1 border-t border-x border-border rounded-t-[20px] pb-[calc(env(safe-area-inset-bottom,0px)+12px)] pt-3 px-4 shadow-2xl z-10 flex flex-col transition-all duration-200 ${
+              className={`relative w-full bg-surface-1 border-t border-x border-border rounded-t-xl pb-[calc(env(safe-area-inset-bottom,0px)+12px)] pt-3 px-4 shadow-2xl z-10 flex flex-col transition-all duration-200 ${
                 isFullscreen ? 'h-[96vh]' : 'max-h-[88vh] h-[85vh]'
               }`}
             >

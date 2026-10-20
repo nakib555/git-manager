@@ -75,7 +75,7 @@ const defaultState: AppState = {
   toastMessage: null,
   toastType: 'info',
   isSearchFocused: false,
-  theme: (localStorage.getItem("theme") as "dark" | "light" | "fantasy") || "dark",
+  theme: ((localStorage.getItem("theme") as "dark" | "light" | "slate" | "fantasy") === "fantasy" ? "slate" : (localStorage.getItem("theme") as "dark" | "light" | "slate") || "dark"),
   githubToken: localStorage.getItem("githubToken") || null,
   githubUser: localStorage.getItem("githubUser") ? sanitizeGitHubUser(JSON.parse(localStorage.getItem("githubUser")!)) : null,
   githubRepos: getLocalRepos(),
@@ -123,7 +123,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
   // Apply theme to document root and data-theme
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', state.theme);
-    if (state.theme === "dark") {
+    if (state.theme === "dark" || state.theme === "slate" || state.theme === "fantasy") {
       document.documentElement.classList.add("dark-theme");
       document.body.classList.add("dark-theme");
     } else {
@@ -132,16 +132,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
     }
   }, [state.theme]);
 
-  const setTheme = (newTheme: 'dark' | 'light' | 'fantasy') => {
-    localStorage.setItem("theme", newTheme);
-    setState((prev) => ({ ...prev, theme: newTheme }));
+  const setTheme = (newTheme: 'dark' | 'light' | 'slate' | 'fantasy') => {
+    const resolvedTheme = newTheme === 'fantasy' ? 'slate' : newTheme;
+    localStorage.setItem("theme", resolvedTheme);
+    setState((prev) => ({ ...prev, theme: resolvedTheme }));
   };
 
   const toggleTheme = () => {
     setState((prev) => {
-      const cycle: Record<'dark' | 'light' | 'fantasy', 'dark' | 'light' | 'fantasy'> = {
+      const cycle: Record<'dark' | 'light' | 'slate' | 'fantasy', 'dark' | 'light' | 'slate'> = {
         dark: 'light',
-        light: 'fantasy',
+        light: 'slate',
+        slate: 'dark',
         fantasy: 'dark',
       };
       const newTheme = cycle[prev.theme] || 'dark';

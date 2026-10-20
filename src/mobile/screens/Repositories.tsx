@@ -70,7 +70,7 @@ export const Repositories: React.FC = () => {
   return (
     <div className="flex flex-col h-full relative" ref={scrollRef}>
       {/* 1. Sticky Controls Header */}
-      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border px-4 py-3 space-y-3 shrink-0">
+      <div className="sticky top-0 z-20 bg-background border-b border-border px-4 py-3 space-y-3 shrink-0">
         {/* Segmented Scope Switcher */}
         <div className="h-9 p-1 bg-surface-1 border border-border rounded-xl flex items-center gap-1 select-none">
           <button
@@ -195,7 +195,7 @@ export const Repositories: React.FC = () => {
 
       {/* 3. Pagination Controls (Sticky Bottom if multi-page) */}
       {repoTotalPages > 1 && (
-        <div className="sticky bottom-0 bg-background/95 backdrop-blur-md border-t border-border px-4 py-2 flex items-center justify-between shrink-0 select-none">
+        <div className="sticky bottom-0 bg-surface-1 border-t border-border px-4 py-2 flex items-center justify-between shrink-0 select-none">
           <span className="text-xs text-text-tertiary font-mono">
             Page <span className="font-bold text-text-primary">{repoPage}</span> of {repoTotalPages}
           </span>
@@ -228,7 +228,7 @@ export const Repositories: React.FC = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsSortSheetOpen(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-xs"
+              className="absolute inset-0 bg-black/60"
             />
 
             <motion.div
@@ -236,7 +236,7 @@ export const Repositories: React.FC = () => {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-              className="relative w-full bg-surface-1 border-t border-x border-border rounded-t-[20px] pb-[calc(env(safe-area-inset-bottom,0px)+16px)] pt-3 px-5 shadow-2xl z-10"
+              className="relative w-full bg-surface-1 border-t border-x border-border rounded-t-xl pb-[calc(env(safe-area-inset-bottom,0px)+16px)] pt-3 px-5 shadow-2xl z-10"
             >
               <div className="w-10 h-1 bg-border rounded-full mx-auto mb-4" />
 
