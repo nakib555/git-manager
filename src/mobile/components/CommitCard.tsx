@@ -35,7 +35,7 @@ export const CommitCard: React.FC<CommitCardProps> = ({
           onClick?.();
         }
       }}
-      className="group relative flex items-start gap-3 p-4 bg-surface-1 border border-border hover:border-accent/40 hover:bg-surface-2 rounded-2xl transition-all cursor-pointer select-none min-h-[64px]"
+      className="group relative flex items-start gap-3 p-4 bg-surface-1 border border-border hover:border-accent/40 hover:bg-surface-2 rounded-xl transition-all cursor-pointer select-none min-h-[64px]"
     >
       {/* Author avatar or commit glyph (32px = 4x8pt) */}
       <div className="relative shrink-0 mt-0.5">

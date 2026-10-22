@@ -286,15 +286,15 @@ export const CommitDetailModal: React.FC<CommitDetailModalProps> = ({
                         <div className="rounded-xl border border-border bg-background overflow-hidden">
                           <div className="max-h-[48vh] overflow-x-auto overflow-y-auto font-mono text-[11px] leading-relaxed p-2 select-text">
                             {activeDiff.patch ? (
-                              <pre className="text-text-primary whitespace-pre-wrap font-mono m-0">
+                              <pre className="text-text-primary whitespace-pre font-mono text-[11px] leading-5 m-0 inline-block min-w-full">
                                 {activeDiff.patch.split('\n').map((line, idx) => {
-                                  let lineClass = 'text-text-tertiary';
+                                  let lineClass = 'text-text-secondary px-2 py-0.5 block font-mono';
                                   if (line.startsWith('+') && !line.startsWith('+++')) {
-                                    lineClass = 'bg-success/15 text-success font-medium px-1 rounded-xs block';
+                                    lineClass = 'bg-[rgba(63,185,80,0.14)] text-[#3FB950] font-mono font-medium border-l-2 border-[#3FB950] px-2 py-0.5 block';
                                   } else if (line.startsWith('-') && !line.startsWith('---')) {
-                                    lineClass = 'bg-danger/15 text-danger font-medium px-1 rounded-xs block';
+                                    lineClass = 'bg-[rgba(248,81,73,0.14)] text-[#F85149] font-mono font-medium border-l-2 border-[#F85149] px-2 py-0.5 block';
                                   } else if (line.startsWith('@@')) {
-                                    lineClass = 'bg-accent/10 text-accent font-bold px-1 rounded-xs block';
+                                    lineClass = 'bg-[rgba(56,139,253,0.08)] text-[#388BFD] font-mono font-semibold px-2 py-0.5 block border-l-2 border-[#388BFD]/40';
                                   }
                                   return (
                                     <span key={idx} className={lineClass}>

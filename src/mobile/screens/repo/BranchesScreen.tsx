@@ -73,7 +73,7 @@ export const BranchesScreen: React.FC = () => {
           }}
         />
       ) : (
-        <div className="bg-surface-1 border border-border rounded-2xl overflow-hidden divide-y divide-border">
+        <div className="bg-surface-1 border border-border rounded-xl overflow-hidden divide-y divide-border">
           {activeBranches.map((branch) => {
             const isActive = branch.name === currentBranch;
             return (
@@ -110,7 +110,7 @@ export const BranchesScreen: React.FC = () => {
                       handleSwitch(branch.name);
                     }}
                     disabled={isSwitching}
-                    className="text-xs text-text-secondary hover:text-text-primary font-medium px-3 py-1.5 rounded-lg bg-surface-2 hover:bg-surface-3 border border-border transition-colors cursor-pointer disabled:opacity-50"
+                    className="min-h-[36px] text-xs text-text-secondary hover:text-text-primary font-medium px-3 py-1.5 rounded-lg bg-surface-2 hover:bg-surface-3 border border-border transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center"
                   >
                     Checkout
                   </button>

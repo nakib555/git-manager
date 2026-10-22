@@ -78,7 +78,7 @@ export const RepoCard: React.FC<RepoCardProps> = ({
           onClick();
         }
       }}
-      className={`w-full rounded-2xl p-4 transition-all duration-150 cursor-pointer border select-none min-h-[56px] ${
+      className={`w-full rounded-xl p-4 transition-all duration-150 cursor-pointer border select-none min-h-[56px] ${
         isActive
           ? 'bg-surface-2 border-accent shadow-xs'
           : 'bg-surface-1 border-border hover:border-accent/40 hover:bg-surface-2 active:scale-99'

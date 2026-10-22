@@ -245,7 +245,7 @@ export const PRsScreen: React.FC = () => {
               <div
                 key={prNum}
                 onClick={() => setSelectedPRId(prNum)}
-                className="bg-surface-1 border border-border hover:border-accent/40 rounded-2xl p-4 space-y-2.5 transition-all cursor-pointer active:scale-99 shadow-xs min-h-[56px]"
+                className="bg-surface-1 border border-border hover:border-accent/40 rounded-xl p-4 space-y-2.5 transition-all cursor-pointer active:scale-99 shadow-xs min-h-[56px]"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-start gap-2.5 min-w-0 pr-2">

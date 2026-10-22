@@ -40,15 +40,15 @@ export const GitGraph: React.FC<GitGraphProps> = ({
   const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
 
-  // Compute graph geometry
+  // Compute graph geometry responsive to mobile and desktop
   const layout = useMemo(() => {
     return computeGitGraphLayout(commits, {
-      nodeSpacingY: 62,
-      laneSpacingX: 36,
-      paddingLeft: 48,
-      paddingTop: 40,
+      nodeSpacingY: isDesktop ? 62 : 52,
+      laneSpacingX: isDesktop ? 36 : 24,
+      paddingLeft: isDesktop ? 48 : 24,
+      paddingTop: isDesktop ? 40 : 28,
     });
-  }, [commits]);
+  }, [commits, isDesktop]);
 
   const zoomBehaviorRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null);
 
@@ -215,7 +215,7 @@ export const GitGraph: React.FC<GitGraphProps> = ({
             <g id="graph-content-group">
               {/* Background Lane Guide Rails */}
               {Array.from({ length: layout.lanesCount }).map((_, laneIdx) => {
-                const laneX = 48 + laneIdx * 36;
+                const laneX = (isDesktop ? 48 : 24) + laneIdx * (isDesktop ? 36 : 24);
                 const laneColor = BRANCH_LANE_COLORS[laneIdx % BRANCH_LANE_COLORS.length];
                 return (
                   <line
@@ -328,7 +328,7 @@ export const GitGraph: React.FC<GitGraphProps> = ({
                     )}
 
                     {/* Commit Row Meta: SHA + Message + Author */}
-                    <g transform={`translate(${Math.max(28, (layout.lanesCount - node.lane) * 36 + 10)}, 4)`}>
+                    <g transform={`translate(${Math.max(20, (layout.lanesCount - node.lane) * (isDesktop ? 36 : 24) + 8)}, 4)`}>
                       {/* Short SHA Badge */}
                       <rect
                         x="0"
