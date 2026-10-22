@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Git Manager - Mobile Experience</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: '#2563eb',
+            'clone-amber': '#d97706',
+            'surface-0': '#f8fafc',
+            'surface-1': '#ffffff',
+            'surface-2': '#f1f5f9',
+            'border-subtle': '#e2e8f0',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Smooth Transitions & Custom Scrollbars */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    .sheet-transition {
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+    }
+
+    @keyframes headPulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.5); }
+      70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(22, 163, 74, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(22, 163, 74, 0); }
+    }
+    .head-node-glow {
+      animation: headPulse 2s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 font-sans text-slate-800 antialiased min-h-screen flex justify-center selection:bg-blue-100">
+
+  <!-- Mobile Shell Mockup Container -->
+  <div class="relative w-full max-w-[440px] bg-white min-h-screen shadow-2xl flex flex-col overflow-hidden pb-16">
+    
+    <!-- Top System Status Bar -->
+    <header class="px-5 pt-2 pb-1 flex items-center justify-between text-xs font-semibold text-slate-700 bg-white select-none">
+      <span id="current-time">1:36</span>
+      <div class="flex items-center gap-1.5 text-slate-600">
+        <span class="text-[10px] text-slate-500 font-mono">5.08 KB/s</span>
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/></svg>
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M2 20h20L22 4z"/></svg>
+        <div class="flex items-center gap-0.5">
+          <span class="text-[10px]">36%</span>
+          <div class="w-5 h-2.5 border border-slate-700 rounded-sm p-[1px] flex items-center">
+            <div class="h-full w-[36%] bg-slate-700 rounded-xs"></div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- App Top Bar (Dynamic per Active Screen) -->
+    <div class="px-4 py-2.5 flex items-center justify-between border-b border-slate-100 bg-white">
+      <button class="p-2 -ml-1 text-slate-700 hover:bg-slate-100 rounded-lg active:scale-95 transition">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+
+      <!-- Center Title / Controls -->
+      <div id="topbar-center" class="flex items-center">
+        <!-- Will be replaced dynamically by JS -->
+      </div>
+
+      <!-- Right Action Icons -->
+      <div class="flex items-center gap-2">
+        <button class="p-2 text-slate-700 hover:bg-slate-100 rounded-lg active:scale-95 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        </button>
+        <button class="w-9 h-9 bg-slate-800 hover:bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-xs active:scale-95 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- SCREEN 1: REPOS & COMMITS VIEW -->
+    <!-- ============================================================== -->
+    <section id="screen-repos" class="flex-1 flex flex-col overflow-hidden">
+      <!-- Repository Sub-Tabs Horizontal Bar -->
+      <div class="flex items-center gap-2 px-4 py-2 border-b border-slate-100 overflow-x-auto no-scrollbar bg-white">
+        <button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition shrink-0">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span>Files</span>
+        </button>
+        <button class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-blue-600 bg-blue-50/90 border border-blue-200/80 shrink-0 shadow-xs">
+          <svg class="w-3.5 h-3.5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><line x1="3" y1="12" x2="9" y2="12"/><line x1="15" y1="12" x2="21" y2="12"/></svg>
+          <span>Commits</span>
+        </button>
+        <button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition shrink-0">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="18" cy="9" r="3"/><path d="M6 9v6M9 6h6a3 3 0 0 1 3 3"/></svg>
+          <span>Branches</span>
+        </button>
+        <button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition shrink-0">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 9v12M18 9v3a6 6 0 0 1-6 6H6"/></svg>
+          <span>PRs</span>
+        </button>
+      </div>
+
+      <!-- Main Commits Body -->
+      <main class="flex-1 overflow-y-auto px-4 py-4 space-y-3.5">
+        <div class="flex items-start justify-between">
+          <div>
+            <h1 class="text-xl font-bold tracking-tight text-slate-900">Commits</h1>
+            <p class="text-xs text-slate-500 mt-0.5">History of <span class="font-medium text-slate-700">git-manager</span> on current branch</p>
+          </div>
+
+          <div class="flex items-center gap-1.5">
+            <div class="flex bg-slate-100 p-0.5 rounded-xl border border-slate-200/80">
+              <button id="toggle-list-btn" onclick="setViewMode('list')" class="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-800 text-white shadow-xs transition-all">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                <span>List</span>
+              </button>
+              <button id="toggle-graph-btn" onclick="setViewMode('graph')" class="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg text-slate-600 hover:text-slate-900 transition-all">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="12" r="3"/><circle cx="6" cy="18" r="3"/><path d="M6 9v6M9 6h4a5 5 0 0 1 5 5"/></svg>
+                <span>Graph</span>
+              </button>
+            </div>
+            <button class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-900 text-white flex items-center justify-center shadow-xs active:scale-95 transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Search & Filter Controls -->
+        <div class="flex items-center gap-2">
+          <div class="relative flex-1">
+            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input 
+              type="text" 
+              id="search-input" 
+              placeholder="Search commits by message, SHA..." 
+              oninput="handleSearch(this.value)"
+              class="w-full pl-9 pr-3 py-2 text-xs font-medium bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder-slate-400 text-slate-800"
+            />
+          </div>
+          <button 
+            onclick="toggleFilterPanel()" 
+            class="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 active:scale-95 transition shadow-xs"
+          >
+            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+            <span>Filter</span>
+          </button>
+        </div>
+
+        <!-- Filter Drawer Panel -->
+        <div id="filter-panel" class="hidden bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3.5 transition-all">
+          <div>
+            <span class="text-[11px] font-bold text-slate-400 tracking-wider">DATE RANGE FILTER</span>
+            <div class="flex flex-wrap gap-1.5 mt-2">
+              <button class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-white">All Time</button>
+              <button class="px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 hover:bg-slate-200">Today</button>
+              <button class="px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 hover:bg-slate-200">Last 7 Days</button>
+              <button class="px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 hover:bg-slate-200">Last 30 Days</button>
+            </div>
+          </div>
+          <div class="flex items-center justify-between pt-1 border-t border-slate-100 text-xs">
+            <span class="text-slate-400 font-medium">No active filters</span>
+            <button onclick="clearFilters()" class="font-semibold text-slate-800 hover:text-blue-600 transition">Clear All</button>
+          </div>
+        </div>
+
+        <div class="text-xs text-slate-500">
+          Showing <span id="commit-count" class="font-bold text-slate-800">95</span> of 95 commits
+        </div>
+
+        <!-- Commits List Container -->
+        <div id="commits-list-view" class="space-y-2.5 pb-6"></div>
+
+        <!-- Git Graph Container -->
+        <div id="commits-graph-view" class="hidden bg-white border border-slate-200 rounded-2xl p-4 shadow-sm pb-8">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+            <div class="flex items-center gap-3 text-xs font-semibold">
+              <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span><span class="text-slate-700">Main</span></div>
+              <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span><span class="text-slate-700">Feature</span></div>
+              <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span><span class="text-slate-700">Merge</span></div>
+              <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full ring-2 ring-emerald-500 ring-offset-1 bg-emerald-500"></span><span class="text-slate-700">HEAD</span></div>
+            </div>
+            
+            <div class="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+              <button onclick="zoomGraph(1.15)" class="p-1 hover:bg-white rounded text-slate-600"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
+              <button onclick="zoomGraph(0.85)" class="p-1 hover:bg-white rounded text-slate-600"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
+              <button onclick="resetZoomGraph()" class="p-1 hover:bg-white rounded text-slate-600"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>
+            </div>
+          </div>
+
+          <div id="graph-container" class="overflow-x-auto overflow-y-visible no-scrollbar py-2">
+            <svg id="git-graph-svg" class="w-full transition-transform duration-200 origin-top-left" height="600" viewBox="0 0 380 600"></svg>
+          </div>
+        </div>
+      </main>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- SCREEN 2: CLONE REPOSITORY VIEW -->
+    <!-- ============================================================== -->
+    <section id="screen-clone" class="hidden flex-1 overflow-y-auto px-4 py-3.5 space-y-4">
+      
+      <!-- Top Title block -->
+      <div>
+        <h1 class="text-xl font-bold tracking-tight text-slate-900">Clone Repository</h1>
+        <p class="text-xs text-slate-500 mt-0.5">Download remote repositories into your local workspace.</p>
+      </div>
+
+      <!-- Quick Pick Carousel -->
+      <div>
+        <div class="flex items-center gap-1.5 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2.5">
+          <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+          <span class="text-[11px]">Your Repositories Quick-Pick</span>
+        </div>
+
+        <div class="flex items-center gap-2.5 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1">
+          <!-- Card 1: git-manager -->
+          <div onclick="selectQuickPick('git-manager', 'https://github.com/nakib555/git-manager.git')" class="min-w-[160px] p-3.5 bg-white border border-slate-200/90 rounded-2xl shadow-xs hover:border-amber-400/80 active:scale-95 transition cursor-pointer select-none">
+            <h4 class="text-xs font-bold text-slate-900">git-manager</h4>
+            <div class="flex items-center justify-between text-[11px] text-slate-500 mt-2">
+              <span>nakib555</span>
+              <span class="font-medium text-slate-600">TypeScript</span>
+            </div>
+          </div>
+
+          <!-- Card 2: Excel- -->
+          <div onclick="selectQuickPick('Excel-grid', 'https://github.com/nakib555/Excel-grid.git')" class="min-w-[160px] p-3.5 bg-white border border-slate-200/90 rounded-2xl shadow-xs hover:border-amber-400/80 active:scale-95 transition cursor-pointer select-none">
+            <h4 class="text-xs font-bold text-slate-900">Excel-</h4>
+            <div class="flex items-center justify-between text-[11px] text-slate-500 mt-2">
+              <span>nakib555</span>
+              <span class="font-medium text-slate-600">TypeScript</span>
+            </div>
+          </div>
+
+          <!-- Card 3: Hyper-Term -->
+          <div onclick="selectQuickPick('hyper-term', 'https://github.com/nakib555/hyper-term.git')" class="min-w-[160px] p-3.5 bg-white border border-slate-200/90 rounded-2xl shadow-xs hover:border-amber-400/80 active:scale-95 transition cursor-pointer select-none">
+            <h4 class="text-xs font-bold text-slate-900 truncate">hyper-core</h4>
+            <div class="flex items-center justify-between text-[11px] text-slate-500 mt-2">
+              <span>nakib555</span>
+              <span class="font-medium text-slate-600">Rust</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 1: REMOTE SOURCE -->
+      <div class="bg-white border border-slate-200/90 rounded-3xl p-4 shadow-xs space-y-3">
+        <div class="flex items-center gap-2">
+          <span class="w-5 h-5 rounded-full bg-slate-100 border border-slate-300 text-slate-700 flex items-center justify-center text-[10px] font-bold">1</span>
+          <span class="text-xs font-bold tracking-wider text-slate-500 uppercase">Remote Source</span>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5">Git HTTPS / SSH URL</label>
+          <div class="relative">
+            <input 
+              type="text" 
+              id="clone-url-input"
+              value="https://github.com/owner/repository.git"
+              oninput="handleCloneInputsChanged()"
+              class="w-full px-3.5 py-3 text-xs font-mono bg-slate-100/70 border border-transparent focus:border-slate-300 focus:bg-white rounded-2xl text-slate-800 focus:outline-none transition"
+              placeholder="https://github.com/owner/repo.git"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 2: TARGET DIRECTORY & DEPTH -->
+      <div class="bg-white border border-slate-200/90 rounded-3xl p-4 shadow-xs space-y-3">
+        <div class="flex items-center gap-2">
+          <span class="w-5 h-5 rounded-full bg-slate-100 border border-slate-300 text-slate-700 flex items-center justify-center text-[10px] font-bold">2</span>
+          <span class="text-xs font-bold tracking-wider text-slate-500 uppercase">Target Directory &amp; Depth</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <!-- Folder Name -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Folder Name</label>
+            <input 
+              type="text" 
+              id="clone-folder-input"
+              value="my-project"
+              oninput="handleCloneInputsChanged()"
+              class="w-full px-3.5 py-3 text-xs font-medium bg-slate-100/70 border border-transparent focus:border-slate-300 focus:bg-white rounded-2xl text-slate-800 focus:outline-none transition"
+              placeholder="folder-name"
+            />
+          </div>
+
+          <!-- Clone Depth Dropdown -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Clone Depth</label>
+            <div class="relative">
+              <select 
+                id="clone-depth-select"
+                onchange="handleCloneInputsChanged()"
+                class="w-full appearance-none px-3.5 py-3 text-xs font-medium bg-slate-100/70 border border-transparent focus:border-slate-300 focus:bg-white rounded-2xl text-slate-800 focus:outline-none transition pr-7 cursor-pointer"
+              >
+                <option value="1" selected>Shallow (Depth 1)</option>
+                <option value="5">Depth 5</option>
+                <option value="10">Depth 10</option>
+                <option value="full">Full History</option>
+              </select>
+              <svg class="w-4 h-4 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 3: TERMINAL COMMAND PREVIEW -->
+      <div class="bg-white border border-slate-200/90 rounded-3xl p-4 shadow-xs space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-1.5 text-xs font-bold text-slate-500 tracking-wider">
+            <span class="font-mono text-slate-700 font-bold">&gt;_</span>
+            <span class="uppercase">Terminal Command</span>
+          </div>
+
+          <button onclick="copyTerminalCommand()" class="flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 active:scale-95 transition">
+            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+            <span>Copy</span>
+          </button>
+        </div>
+
+        <!-- Terminal Command Box -->
+        <div class="bg-slate-100/70 rounded-2xl p-3.5 font-mono text-xs text-slate-800 break-all leading-relaxed select-all">
+          <span id="terminal-command-text">git clone --depth 1 https://github.com/owner/repository.git my-project</span>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="space-y-2.5 pt-1 pb-4">
+        <!-- Initialize Workspace Clone Button -->
+        <button 
+          onclick="runCloneSimulation()" 
+          class="w-full py-3.5 bg-slate-800 hover:bg-slate-900 text-white rounded-2xl font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition active:scale-[0.99]"
+        >
+          <svg class="w-4 h-4 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          <span>Initialize Local Workspace Clone</span>
+        </button>
+
+        <!-- Download ZIP Button -->
+        <button 
+          onclick="downloadZipSim()" 
+          class="w-full py-3.5 bg-white border border-slate-200/90 hover:bg-slate-50 text-slate-700 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition active:scale-[0.99] shadow-xs"
+        >
+          <svg class="w-4 h-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Download Repository as ZIP Archive</span>
+        </button>
+      </div>
+
+    </section>
+
+    <!-- Bottom Navigation Bar (5 Items) -->
+    <nav class="absolute bottom-0 inset-x-0 bg-white border-t border-slate-200 px-3 py-1.5 flex items-center justify-around z-20 select-none">
+      <!-- Home -->
+      <button onclick="showToast('Home Dashboard')" class="flex flex-col items-center gap-0.5 text-slate-400 hover:text-slate-700 transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span class="text-[10px] font-medium">Home</span>
+      </button>
+
+      <!-- Repos (Active / Blue) -->
+      <button id="nav-btn-repos" onclick="navigateScreen('repos')" class="flex flex-col items-center gap-0.5 text-blue-600 transition">
+        <div class="relative">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          <span id="repo-nav-dot" class="w-1.5 h-1.5 bg-blue-600 rounded-full absolute -top-1 -right-1"></span>
+        </div>
+        <span class="text-[10px] font-bold">Repos</span>
+      </button>
+
+      <!-- Clone (Active / Amber) -->
+      <button id="nav-btn-clone" onclick="navigateScreen('clone')" class="flex flex-col items-center gap-0.5 text-slate-400 hover:text-amber-600 transition">
+        <div class="relative">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span id="clone-nav-dot" class="hidden w-1.5 h-1.5 bg-amber-600 rounded-full absolute -top-1 -right-1"></span>
+        </div>
+        <span class="text-[10px] font-medium">Clone</span>
+      </button>
+
+      <!-- Activity -->
+      <button onclick="showToast('Activity Log')" class="flex flex-col items-center gap-0.5 text-slate-400 hover:text-slate-700 transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span class="text-[10px] font-medium">Activity</span>
+      </button>
+
+      <!-- Settings -->
+      <button onclick="showToast('App Settings')" class="flex flex-col items-center gap-0.5 text-slate-400 hover:text-slate-700 transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="text-[10px] font-medium">Settings</span>
+      </button>
+    </nav>
+
+    <!-- BACKDROP & MODALS -->
+    <div id="modal-backdrop" onclick="closeAllModals()" class="hidden fixed inset-0 bg-black/40 backdrop-blur-[1px] z-30 transition-opacity"></div>
+
+    <!-- COMMIT DETAIL BOTTOM SHEET MODAL -->
+    <div id="commit-modal" class="fixed inset-x-0 bottom-0 z-40 max-w-[440px] mx-auto bg-white rounded-t-3xl shadow-2xl transform translate-y-full sheet-transition max-h-[90vh] flex flex-col">
+      <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mt-2.5 mb-1 cursor-grab"></div>
+
+      <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><line x1="3" y1="12" x2="9" y2="12"/><line x1="15" y1="12" x2="21" y2="12"/></svg>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="text-sm font-bold text-slate-900">Commit Detail</h2>
+              <span id="modal-short-sha" class="font-mono text-[11px] font-semibold px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded-md">81fcda9</span>
+            </div>
+            <div class="text-[11px] text-slate-500">
+              <span id="modal-author-time">nakib555 · 7m ago</span>
+            </div>
+          </div>
+        </div>
+
+        <button onclick="closeAllModals()" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <!-- Segmented Tabs -->
+      <div class="px-4 py-2 border-b border-slate-100 bg-slate-50/70">
+        <div class="flex bg-slate-200/80 p-0.5 rounded-xl text-xs font-semibold">
+          <button id="tab-btn-diffs" onclick="switchModalTab('diffs')" class="flex-1 py-1.5 flex items-center justify-center gap-1.5 rounded-lg text-slate-600">
+            <span>Diffs (11)</span>
+          </button>
+          <button id="tab-btn-overview" onclick="switchModalTab('overview')" class="flex-1 py-1.5 flex items-center justify-center gap-1.5 rounded-lg bg-white text-slate-900 shadow-xs">
+            <span>Overview</span>
+          </button>
+          <button id="tab-btn-cicd" onclick="switchModalTab('cicd')" class="flex-1 py-1.5 flex items-center justify-center gap-1.5 rounded-lg text-slate-600">
+            <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+            <span>CI/CD (1)</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
+        <div id="modal-tab-overview" class="space-y-4">
+          <div class="border border-slate-200 rounded-2xl p-3.5 bg-slate-50/50 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold text-slate-400 tracking-wider">MESSAGE</span>
+              <button onclick="copyToClipboard(currentCommit.fullSha)" class="text-[11px] font-medium text-slate-500 hover:text-slate-800">Copy</button>
+            </div>
+            <p class="font-bold text-slate-900 font-mono text-xs" id="modal-msg-title">refactor: optimize GitGraph for mobile and update UI</p>
+          </div>
+
+          <div class="border border-slate-200 rounded-2xl p-3.5 bg-white space-y-2.5 text-xs">
+            <div class="flex items-center justify-between py-1 border-b border-slate-100">
+              <span class="text-slate-400 font-medium">Author</span>
+              <span class="font-semibold text-slate-800" id="modal-author-name">nakib555</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-100">
+              <span class="text-slate-400 font-medium">Committed Date</span>
+              <span class="font-mono text-slate-700" id="modal-date-text">23/10/2026, 01:16:23</span>
+            </div>
+            <div class="flex items-center justify-between py-1">
+              <span class="text-slate-400 font-medium">Full SHA</span>
+              <span class="font-mono text-[11px] text-slate-600 truncate max-w-[190px]" id="modal-full-sha-text">81fcda957d5b45b6f1d...</span>
+            </div>
+          </div>
+        </div>
+
+        <div id="modal-tab-diffs" class="hidden space-y-3">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-bold text-slate-400 text-[11px]">CHANGED FILES</span>
+            <div class="font-mono font-bold"><span class="text-emerald-600">+7576</span> / <span class="text-rose-600">-18</span></div>
+          </div>
+          <div class="space-y-1.5" id="diff-file-list"></div>
+        </div>
+
+        <div id="modal-tab-cicd" class="hidden space-y-3.5">
+          <div class="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 font-semibold text-xs flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
+            <span>Workers Builds: git-manager completed (failure)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="p-3.5 border-t border-slate-100 bg-white flex items-center gap-2">
+        <button onclick="copyToClipboard(currentCommit.fullSha)" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold rounded-xl text-xs">Copy SHA</button>
+        <button onclick="branchHere()" class="flex-[1.5] py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl text-xs">Branch Here</button>
+      </div>
+    </div>
+
+    <!-- TERMINAL PROGRESS SIMULATION MODAL -->
+    <div id="terminal-sim-modal" class="fixed inset-x-4 top-1/2 -translate-y-1/2 z-50 max-w-[390px] mx-auto bg-slate-950 text-emerald-400 rounded-2xl shadow-2xl p-4 font-mono text-[11px] leading-relaxed hidden border border-slate-800">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2 text-slate-400">
+        <span class="flex items-center gap-1.5">
+          <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+          <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+          <span class="text-[10px] ml-1">workspace terminal</span>
+        </span>
+        <button onclick="closeAllModals()" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+      <div id="term-output" class="space-y-1 max-h-48 overflow-y-auto"></div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-slate-900/90 text-white text-xs font-semibold px-4 py-2 rounded-full shadow-lg backdrop-blur-sm transition-all duration-300">
+      Copied to clipboard!
+    </div>
+
+  </div>
+
+  <!-- APPLICATION CONTROLLER SCRIPT -->
+  <script>
+    // --- STATE & DATA ---
+    let currentScreen = 'repos'; // 'repos' | 'clone'
+
+    const COMMITS_DATA = [
+      {
+        id: 1,
+        shortSha: '81fcda9',
+        fullSha: '81fcda957d5b45b6f1d313e9b0a27f6789b91c01',
+        message: 'refactor: optimize GitGraph for mobile and...',
+        fullMessage: 'refactor: optimize GitGraph for mobile and update UI',
+        author: 'nakib555',
+        timeAgo: '3m ago',
+        date: '23/10/2026, 01:16:23',
+        parentSha: '85ca3a8',
+        isHead: true,
+        branch: 'main'
+      },
+      {
+        id: 2,
+        shortSha: '85ca3a8',
+        fullSha: '85ca3a8f6d7e2b109c43d8a7f1e4b3c21890de55',
+        message: 'refactor: remove grid overlay and simplify rep...',
+        fullMessage: 'refactor: remove grid overlay and simplify repository cards',
+        author: 'nakib555',
+        timeAgo: '5h ago',
+        date: '22/10/2026, 20:14:10',
+        parentSha: 'ec5a40c',
+        isHead: false,
+        branch: 'main'
+      },
+      {
+        id: 3,
+        shortSha: 'ec5a40c',
+        fullSha: 'ec5a40c98f7e61a09d123456789abcdef0123456',
+        message: 'feat: add grid overlay and improve UI/UX - Impleme...',
+        fullMessage: 'feat: add grid overlay and improve UI/UX - Implementation Complete',
+        author: 'nakib555',
+        timeAgo: '2d ago',
+        date: '21/10/2026, 14:22:00',
+        parentSha: '089f7fc',
+        isHead: false,
+        branch: 'main'
+      },
+      {
+        id: 4,
+        shortSha: '089f7fc',
+        fullSha: '089f7fc24b8901adff9876543210fedcba987654',
+        message: 'feat: integrate Gemini API configuration Load...',
+        fullMessage: 'feat: integrate Gemini API configuration Loader and key validator',
+        author: 'nakib555',
+        timeAgo: '2d ago',
+        date: '21/10/2026, 11:05:40',
+        parentSha: '287d40d',
+        isHead: false,
+        branch: 'main'
+      },
+      {
+        id: 5,
+        shortSha: '287d40d',
+        fullSha: '287d40df32890a98c76543210abcdef012345678',
+        message: 'feat: update desktop layout footer with shortc...',
+        fullMessage: 'feat: update desktop layout footer with shortcuts modal and tips',
+        author: 'nakib555',
+        timeAgo: '2d ago',
+        date: '21/10/2026, 09:30:15',
+        parentSha: '6638bf1',
+        isHead: false,
+        branch: 'main'
+      }
+    ];
+
+    const CHANGED_FILES_DATA = [
+      { type: 'ADD', path: '.aistudio/artifacts/brain/9268af4...', add: '+35', del: '-0' },
+      { type: 'ADD', path: 'bun.lock', add: '+1187', del: '-0' },
+      { type: 'MOD', path: 'src/components/commit/GitGraph.tsx', add: '+8', del: '-8' },
+      { type: 'MOD', path: 'src/mobile/components/CommitCard.tsx', add: '+1', del: '-1' }
+    ];
+
+    let currentCommit = COMMITS_DATA[0];
+    let graphScale = 1;
+
+    // --- SCREEN NAVIGATION ---
+    function navigateScreen(target) {
+      currentScreen = target;
+      const screenRepos = document.getElementById('screen-repos');
+      const screenClone = document.getElementById('screen-clone');
+      const navRepos = document.getElementById('nav-btn-repos');
+      const navClone = document.getElementById('nav-btn-clone');
+      const repoDot = document.getElementById('repo-nav-dot');
+      const cloneDot = document.getElementById('clone-nav-dot');
+      const topbarCenter = document.getElementById('topbar-center');
+
+      if (target === 'repos') {
+        screenRepos.classList.remove('hidden');
+        screenClone.classList.add('hidden');
+
+        // Nav bar active styling
+        navRepos.className = 'flex flex-col items-center gap-0.5 text-blue-600 transition';
+        navClone.className = 'flex flex-col items-center gap-0.5 text-slate-400 hover:text-slate-700 transition';
+        repoDot.classList.remove('hidden');
+        cloneDot.classList.add('hidden');
+
+        // Repos Header
+        topbarCenter.innerHTML = `
+          <button onclick="toggleBranchModal()" class="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-full text-xs font-semibold text-slate-800 shadow-xs hover:bg-slate-50 transition">
+            <svg class="w-3.5 h-3.5 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="6" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="18" cy="9" r="3"/><path d="M6 9v6M9 6h6a3 3 0 0 1 3 3"/></svg>
+            <span id="current-branch-label">main</span>
+            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+        `;
+      } else if (target === 'clone') {
+        screenRepos.classList.add('hidden');
+        screenClone.classList.remove('hidden');
+
+        // Nav bar active styling (Amber color to match screenshot)
+        navRepos.className = 'flex flex-col items-center gap-0.5 text-slate-400 hover:text-slate-700 transition';
+        navClone.className = 'flex flex-col items-center gap-0.5 text-amber-600 font-bold transition';
+        repoDot.classList.add('hidden');
+        cloneDot.classList.remove('hidden');
+
+        // Clone Header with Title + Green Indicator Dot
+        topbarCenter.innerHTML = `
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-bold text-slate-900">Clone Repository</span>
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+          </div>
+        `;
+        handleCloneInputsChanged();
+      }
+    }
+
+    // --- CLONE FORM & LOGIC ---
+    function handleCloneInputsChanged() {
+      const url = document.getElementById('clone-url-input').value.trim() || 'https://github.com/owner/repository.git';
+      const folder = document.getElementById('clone-folder-input').value.trim() || 'my-project';
+      const depth = document.getElementById('clone-depth-select').value;
+
+      let cmd = 'git clone';
+      if (depth !== 'full') {
+        cmd += ` --depth ${depth}`;
+      }
+      cmd += ` ${url} ${folder}`;
+
+      document.getElementById('terminal-command-text').innerText = cmd;
+    }
+
+    function selectQuickPick(repoName, url) {
+      document.getElementById('clone-url-input').value = url;
+      document.getElementById('clone-folder-input').value = repoName;
+      handleCloneInputsChanged();
+      showToast(`Selected repository: ${repoName}`);
+    }
+
+    function copyTerminalCommand() {
+      const cmd = document.getElementById('terminal-command-text').innerText;
+      copyToClipboard(cmd, 'Terminal command copied!');
+    }
+
+    function runCloneSimulation() {
+      const termModal = document.getElementById('terminal-sim-modal');
+      const backdrop = document.getElementById('modal-backdrop');
+      const termOutput = document.getElementById('term-output');
+      const folder = document.getElementById('clone-folder-input').value || 'project';
+
+      termOutput.innerHTML = '';
+      termModal.classList.remove('hidden');
+      backdrop.classList.remove('hidden');
+
+      const logs = [
+        `$ ${document.getElementById('terminal-command-text').innerText}`,
+        `Cloning into '${folder}'...`,
+        `remote: Enumerating objects: 412, done.`,
+        `remote: Counting objects: 100% (412/412), done.`,
+        `remote: Compressing objects: 100% (210/210), done.`,
+        `Receiving objects: 100% (412/412), 2.34 MiB | 5.12 MiB/s, done.`,
+        `Resolving deltas: 100% (164/164), done.`,
+        `✔ Workspace synchronized successfully.`
+      ];
+
+      logs.forEach((log, index) => {
+        setTimeout(() => {
+          const line = document.createElement('div');
+          line.className = index === logs.length - 1 ? 'text-emerald-400 font-bold mt-1' : 'text-slate-300';
+          line.innerText = log;
+          termOutput.appendChild(line);
+          termOutput.scrollTop = termOutput.scrollHeight;
+        }, index * 300);
+      });
+    }
+
+    function downloadZipSim() {
+      showToast('Preparing ZIP archive download...');
+      setTimeout(() => {
+        showToast('Download started: archive.zip');
+      }, 1200);
+    }
+
+    // --- REPOS & COMMITS LIST RENDERING ---
+    function renderCommitsList(commitsToRender = COMMITS_DATA) {
+      const container = document.getElementById('commits-list-view');
+      document.getElementById('commit-count').innerText = commitsToRender.length;
+
+      container.innerHTML = commitsToRender.map(commit => `
+        <div onclick="openCommitModal('${commit.shortSha}')" class="group relative flex items-center justify-between p-3.5 bg-white border border-slate-200/90 hover:border-blue-400/50 hover:bg-slate-50/50 rounded-2xl transition-all cursor-pointer shadow-xs select-none active:scale-[0.99]">
+          <div class="flex items-start gap-3 min-w-0 pr-2">
+            <div class="relative mt-0.5 shrink-0">
+              <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><line x1="3" y1="12" x2="9" y2="12"/><line x1="15" y1="12" x2="21" y2="12"/></svg>
+              </div>
+              ${commit.isHead ? `<span class="absolute -top-0.5 -left-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white ring-1 ring-emerald-300"></span>` : ''}
+            </div>
+
+            <div class="min-w-0">
+              <h3 class="text-xs font-bold text-slate-900 leading-snug truncate group-hover:text-blue-600 transition">
+                ${commit.message}
+              </h3>
+              <div class="flex items-center gap-1.5 text-[11px] text-slate-500 mt-1">
+                <span class="font-medium text-slate-700">${commit.author}</span>
+                <span>&bull;</span>
+                <span>${commit.timeAgo}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 shrink-0">
+            <button onclick="event.stopPropagation(); copyToClipboard('${commit.shortSha}', 'Copied ${commit.shortSha}!')" class="flex items-center gap-1 font-mono text-[11px] font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-lg border border-slate-200 transition">
+              <span>${commit.shortSha}</span>
+              <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+            </button>
+            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // --- GIT GRAPH SVG ---
+    function renderGitGraph() {
+      const svg = document.getElementById('git-graph-svg');
+      const startX = 40;
+      const stepY = 56;
+      let svgHtml = `<line x1="${startX}" y1="20" x2="${startX}" y2="${COMMITS_DATA.length * stepY + 20}" stroke="#10b981" stroke-width="2.5" stroke-linecap="round"/>`;
+
+      COMMITS_DATA.forEach((commit, i) => {
+        const y = 35 + i * stepY;
+        const x = startX;
+
+        if (commit.isHead) {
+          svgHtml += `
+            <g class="cursor-pointer" onclick="openCommitModal('${commit.shortSha}')">
+              <circle cx="${x}" cy="${y}" r="11" fill="#10b981" fill-opacity="0.25" class="animate-ping origin-center" />
+              <circle cx="${x}" cy="${y}" r="8" fill="#ffffff" stroke="#10b981" stroke-width="3.5" />
+              <circle cx="${x}" cy="${y}" r="3.5" fill="#10b981" />
+            </g>`;
+        } else {
+          svgHtml += `
+            <g class="cursor-pointer" onclick="openCommitModal('${commit.shortSha}')">
+              <circle cx="${x}" cy="${y}" r="5.5" fill="#10b981" stroke="#ffffff" stroke-width="2" />
+            </g>`;
+        }
+
+        svgHtml += `
+          <g class="cursor-pointer" onclick="openCommitModal('${commit.shortSha}')">
+            <rect x="${x + 24}" y="${y - 13}" width="65" height="24" rx="7" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1" />
+            <text x="${x + 32}" y="${y + 3}" font-family="JetBrains Mono" font-size="11" font-weight="600" fill="#10b981">${commit.shortSha}</text>
+            <text x="${x + 98}" y="${y + 3}" font-family="Plus Jakarta Sans" font-size="12" font-weight="600" fill="#334155">${commit.message.substring(0, 24)}...</text>
+          </g>`;
+      });
+      svg.innerHTML = svgHtml;
+    }
+
+    function setViewMode(mode) {
+      const listBtn = document.getElementById('toggle-list-btn');
+      const graphBtn = document.getElementById('toggle-graph-btn');
+      const listView = document.getElementById('commits-list-view');
+      const graphView = document.getElementById('commits-graph-view');
+
+      if (mode === 'list') {
+        listBtn.className = "flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-800 text-white shadow-xs transition-all";
+        graphBtn.className = "flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg text-slate-600 hover:text-slate-900 transition-all";
+        listView.classList.remove('hidden');
+        graphView.classList.add('hidden');
+      } else {
+        graphBtn.className = "flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-800 text-white shadow-xs transition-all";
+        listBtn.className = "flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg text-slate-600 hover:text-slate-900 transition-all";
+        listView.classList.add('hidden');
+        graphView.classList.remove('hidden');
+        renderGitGraph();
+      }
+    }
+
+    function zoomGraph(factor) {
+      graphScale = Math.max(0.6, Math.min(2.0, graphScale * factor));
+      document.getElementById('git-graph-svg').style.transform = `scale(${graphScale})`;
+    }
+
+    function resetZoomGraph() {
+      graphScale = 1;
+      document.getElementById('git-graph-svg').style.transform = `scale(1)`;
+    }
+
+    function toggleFilterPanel() {
+      document.getElementById('filter-panel').classList.toggle('hidden');
+    }
+
+    function clearFilters() {
+      document.getElementById('search-input').value = '';
+      renderCommitsList(COMMITS_DATA);
+      toggleFilterPanel();
+      showToast('Filters cleared');
+    }
+
+    function handleSearch(query) {
+      const q = query.trim().toLowerCase();
+      if (!q) {
+        renderCommitsList(COMMITS_DATA);
+        return;
+      }
+      const filtered = COMMITS_DATA.filter(c => 
+        c.message.toLowerCase().includes(q) || 
+        c.shortSha.toLowerCase().includes(q) || 
+        c.author.toLowerCase().includes(q)
+      );
+      renderCommitsList(filtered);
+    }
+
+    // --- COMMIT DETAIL MODAL ---
+    function openCommitModal(shortSha) {
+      const commit = COMMITS_DATA.find(c => c.shortSha === shortSha) || COMMITS_DATA[0];
+      currentCommit = commit;
+
+      document.getElementById('modal-short-sha').innerText = commit.shortSha;
+      document.getElementById('modal-author-time').innerText = `${commit.author} · ${commit.timeAgo}`;
+      document.getElementById('modal-msg-title').innerText = commit.fullMessage;
+      document.getElementById('modal-author-name').innerText = commit.author;
+      document.getElementById('modal-date-text').innerText = commit.date;
+      document.getElementById('modal-full-sha-text').innerText = commit.fullSha;
+
+      document.getElementById('diff-file-list').innerHTML = CHANGED_FILES_DATA.map(f => `
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100 text-xs font-mono">
+          <div class="flex items-center gap-2 truncate">
+            <span class="px-1 py-0.5 rounded text-[10px] font-bold ${f.type === 'ADD' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}">${f.type}</span>
+            <span class="text-slate-700 truncate">${f.path}</span>
+          </div>
+          <span class="text-emerald-600 font-semibold shrink-0 ml-2">${f.add}</span>
+        </div>
+      `).join('');
+
+      document.getElementById('modal-backdrop').classList.remove('hidden');
+      document.getElementById('commit-modal').classList.remove('translate-y-full');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeAllModals() {
+      document.getElementById('commit-modal').classList.add('translate-y-full');
+      document.getElementById('terminal-sim-modal').classList.add('hidden');
+      setTimeout(() => {
+        document.getElementById('modal-backdrop').classList.add('hidden');
+        document.body.style.overflow = '';
+      }, 200);
+    }
+
+    function switchModalTab(tab) {
+      ['diffs', 'overview', 'cicd'].forEach(t => {
+        const btn = document.getElementById(`tab-btn-${t}`);
+        const view = document.getElementById(`modal-tab-${t}`);
+        if (t === tab) {
+          btn.className = "flex-1 py-1.5 flex items-center justify-center gap-1.5 rounded-lg bg-white text-slate-900 shadow-xs font-semibold";
+          view.classList.remove('hidden');
+        } else {
+          btn.className = "flex-1 py-1.5 flex items-center justify-center gap-1.5 rounded-lg text-slate-600 font-medium";
+          view.classList.add('hidden');
+        }
+      });
+    }
+
+    function copyToClipboard(text, message = 'Copied to clipboard!') {
+      if (navigator.clipboard) navigator.clipboard.writeText(text);
+      showToast(message);
+    }
+
+    function showToast(text) {
+      const toast = document.getElementById('toast');
+      toast.innerText = text;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 2000);
+    }
+
+    function updateClock() {
+      const now = new Date();
+      let hours = now.getHours();
+      let minutes = now.getMinutes();
+      document.getElementById('current-time').innerText = `${hours}:${minutes < 10 ? '0' + minutes : minutes}`;
+    }
+
+    // --- INITIALIZE ON MOUNT ---
+    window.addEventListener('DOMContentLoaded', () => {
+      renderCommitsList();
+      navigateScreen('repos'); // Default to repos screen
+      updateClock();
+      setInterval(updateClock, 30000);
+    });
+  </script>
+</body>
+</html>

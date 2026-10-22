@@ -44,12 +44,12 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-30 w-full bg-surface-1 border-b border-border pt-[env(safe-area-inset-top,0px)] shrink-0 select-none">
-      <div className="h-14 px-4 flex items-center justify-between">
+    <header className="sticky top-0 z-30 w-full bg-surface-1/90 backdrop-blur-md border-b border-border pt-[env(safe-area-inset-top,0px)] shrink-0 select-none">
+      <div className="h-14 px-3 flex items-center justify-between">
         {/* Left: Hamburger menu icon (Account / Notifications Drawer) */}
         <button
           onClick={onOpenDrawer}
-          className="w-12 h-12 -ml-2 flex items-center justify-center rounded-xl text-text-secondary hover:text-text-primary hover:bg-surface-2 active:scale-95 transition-all cursor-pointer"
+          className="w-10 h-10 flex items-center justify-center rounded-xl text-text-secondary hover:text-text-primary hover:bg-surface-2 active:scale-95 transition-all cursor-pointer"
           aria-label="Open Navigation Drawer"
         >
           <Menu size={20} strokeWidth={2.2} />
@@ -61,7 +61,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
             <div className="relative">
               <button
                 onClick={() => setIsBranchDropdownOpen(!isBranchDropdownOpen)}
-                className="h-9 px-3 max-w-[200px] sm:max-w-xs bg-surface-1 border border-border hover:border-accent/40 rounded-xl flex items-center gap-1.5 text-xs font-semibold text-text-primary transition-all cursor-pointer shadow-sm active:scale-98"
+                className="h-8 px-3 max-w-[200px] sm:max-w-xs bg-surface-2 border border-border-accent hover:border-accent/60 rounded-full flex items-center gap-1.5 text-xs font-semibold text-text-primary transition-all cursor-pointer shadow-sm active:scale-95"
                 aria-expanded={isBranchDropdownOpen}
                 aria-label="Select branch"
               >
@@ -78,7 +78,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
                 {isBranchDropdownOpen && (
                   <>
                     <div 
-                      className="fixed inset-0 z-40 bg-black/40" 
+                      className="fixed inset-0 z-40 bg-black/50 backdrop-blur-[2px]" 
                       onClick={() => setIsBranchDropdownOpen(false)} 
                     />
                     <motion.div
@@ -86,7 +86,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -4, scale: 0.98 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute left-1/2 -translate-x-1/2 top-11 z-50 w-64 bg-surface-1 border border-border rounded-xl shadow-2xl p-1.5 max-h-60 overflow-y-auto no-scrollbar"
+                      className="absolute left-1/2 -translate-x-1/2 top-10 z-50 w-64 bg-surface-1 border border-border-accent rounded-xl shadow-2xl p-1.5 max-h-60 overflow-y-auto no-scrollbar"
                     >
                       <div className="px-2.5 py-1.5 text-[10px] font-bold text-text-tertiary uppercase tracking-wider">
                         Branches ({activeBranches.length})
@@ -118,7 +118,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
             </div>
           ) : (
             <div className="flex items-center justify-center gap-1.5 min-w-0">
-              <h1 className="text-base font-semibold text-text-primary tracking-tight truncate text-center">
+              <h1 className="text-sm font-bold text-text-primary tracking-tight truncate text-center">
                 {getScreenTitle()}
               </h1>
               {isAutoSyncing && (
@@ -132,20 +132,20 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
         </div>
 
         {/* Right: Search icon + Plus (+) Action Sheet trigger */}
-        <div className="flex items-center gap-1 -mr-2">
+        <div className="flex items-center gap-1.5">
           <button
             onClick={openCommandPalette}
-            className="w-12 h-12 flex items-center justify-center rounded-xl text-text-secondary hover:text-text-primary hover:bg-surface-2 active:scale-95 transition-all cursor-pointer"
+            className="w-10 h-10 flex items-center justify-center rounded-xl text-text-secondary hover:text-text-primary hover:bg-surface-2 active:scale-95 transition-all cursor-pointer"
             aria-label="Search Workspace (Cmd+K)"
           >
-            <Search size={19} strokeWidth={2.2} />
+            <Search size={18} strokeWidth={2.2} />
           </button>
           <button
             onClick={onOpenActionSheet}
-            className="w-12 h-12 flex items-center justify-center rounded-xl text-white bg-accent hover:opacity-90 shadow-sm shadow-accent/25 active:scale-95 transition-all cursor-pointer"
+            className="w-9 h-9 flex items-center justify-center rounded-xl text-white bg-gradient-to-tr from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer"
             aria-label="Create New Action"
           >
-            <Plus size={20} strokeWidth={2.5} />
+            <Plus size={18} strokeWidth={2.5} />
           </button>
         </div>
       </div>

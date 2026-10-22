@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Git Manager Pro &mdash; 8-Point Spatial System</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Fonts: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          spacing: {
+            '1': '4px',
+            '2': '8px',
+            '3': '12px',
+            '4': '16px',
+            '5': '20px',
+            '6': '24px',
+            '8': '32px',
+            '10': '40px',
+            '11': '44px', // 44px strict touch target
+            '12': '48px',
+            '14': '56px', // 56px standard navigation rhythm
+            '16': '64px',
+          },
+          borderRadius: {
+            'md': '6px',
+            'lg': '8px',
+            'xl': '12px',
+            '2xl': '16px',
+            '3xl': '24px',
+          },
+          colors: {
+            canvas: '#0B0F19',
+            surface: {
+              1: '#131B2E',
+              2: '#1C263E',
+              3: '#263454',
+            },
+            border: {
+              subtle: '#212E4A',
+              accent: '#31446E',
+            },
+            git: {
+              add: '#3FB950',
+              del: '#F85149',
+              mod: '#388BFD',
+              branch: '#58A6FF',
+              merge: '#A371F7',
+              warn: '#D29922',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Strict 8pt grid background subtle overlay indicator */
+    .grid-8pt-pattern {
+      background-size: 8px 8px;
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    }
+    
+    /* Hardware accelerated spring slide */
+    .sheet-spring {
+      transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.25, 1), opacity 0.25s ease;
+    }
+    
+    /* Custom thin scrollbar */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #263454; border-radius: 4px; }
+
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.6; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.08); }
+    }
+    .head-glow {
+      animation: pulseGlow 2.5s infinite ease-in-out;
+    }
+  </style>
+</head>
+
+<body class="bg-[#05070D] font-sans text-slate-100 antialiased min-h-screen flex justify-center items-center p-0 sm:p-4 select-none">
+
+  <!-- Mobile Device Shell (Viewport standard: 412px x 892px) -->
+  <div class="relative w-full max-w-[420px] h-screen sm:h-[880px] bg-canvas border border-border-subtle sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden grid-8pt-pattern">
+    
+    <!-- 1. System Status Bar (24px) -->
+    <div class="px-5 pt-3 pb-1 flex items-center justify-between text-xs font-mono font-semibold text-slate-400">
+      <span id="realtime-clock" class="text-slate-200">01:24</span>
+      <div class="flex items-center gap-2">
+        <span class="text-[10px] text-git-branch font-bold">5G</span>
+        <svg class="w-3.5 h-3.5 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/></svg>
+        <div class="w-5 h-2.5 border border-slate-500 rounded-sm p-[1px] flex items-center">
+          <div class="h-full w-[85%] bg-git-add rounded-xs"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Header Bar (56px = h-14) -->
+    <header class="h-14 px-4 flex items-center justify-between border-b border-border-subtle bg-surface-1/90 backdrop-blur-md z-10">
+      <button class="w-10 h-10 -ml-1 flex items-center justify-center rounded-xl text-slate-300 hover:bg-surface-2 active:scale-95 transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+      </button>
+
+      <!-- Active Branch Chip with color halo -->
+      <button onclick="promptSwitchBranch()" class="h-8 px-3 rounded-full bg-surface-2 border border-border-accent hover:border-git-branch/60 flex items-center gap-2 text-xs font-semibold text-slate-200 shadow-sm active:scale-95 transition">
+        <span class="w-2 h-2 rounded-full bg-git-branch ring-2 ring-git-branch/30"></span>
+        <span class="font-mono" id="app-branch-name">main</span>
+        <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+
+      <!-- Header actions: Search & New Commit -->
+      <div class="flex items-center gap-2">
+        <button onclick="document.getElementById('commit-search-input').focus()" class="w-9 h-9 flex items-center justify-center rounded-xl text-slate-300 hover:bg-surface-2 active:scale-95 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        </button>
+        <button class="w-9 h-9 flex items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/20 active:scale-95 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- 3. Purpose-Driven Repository Sub-Tabs (44px = h-11) -->
+    <div class="h-11 px-4 flex items-center gap-2 border-b border-border-subtle bg-surface-1/50 overflow-x-auto no-scrollbar">
+      <button class="h-8 px-3 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-surface-2/60 flex items-center gap-1.5 transition shrink-0">
+        <svg class="w-3.5 h-3.5 text-[#388BFD]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span>Files</span>
+      </button>
+      <!-- Active Tab: Commits -->
+      <button class="h-8 px-3.5 rounded-lg text-xs font-bold text-[#58A6FF] bg-[#58A6FF]/15 border border-[#58A6FF]/30 flex items-center gap-1.5 shadow-sm shrink-0">
+        <svg class="w-3.5 h-3.5 text-[#58A6FF]" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><line x1="3" y1="12" x2="9" y2="12"/><line x1="15" y1="12" x2="21" y2="12"/></svg>
+        <span>Commits</span>
+        <span class="w-1.5 h-1.5 rounded-full bg-[#58A6FF]"></span>
+      </button>
+      <button class="h-8 px-3 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-surface-2/60 flex items-center gap-1.5 transition shrink-0">
+        <svg class="w-3.5 h-3.5 text-[#1F6FEB]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="6" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="18" cy="9" r="3"/><path d="M6 9v6M9 6h6a3 3 0 0 1 3 3"/></svg>
+        <span>Branches</span>
+      </button>
+      <button class="h-8 px-3 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-surface-2/60 flex items-center gap-1.5 transition shrink-0">
+        <svg class="w-3.5 h-3.5 text-[#A371F7]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 9v12M18 9v3a6 6 0 0 1-6 6H6"/></svg>
+        <span>PRs</span>
+      </button>
+      <button class="h-8 px-3 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-surface-2/60 flex items-center gap-1.5 transition shrink-0">
+        <svg class="w-3.5 h-3.5 text-[#E3B341]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <span>Insights</span>
+      </button>
+    </div>
+
+    <!-- 4. Main Scrollable Container (Screen gutter: p-4 = 16px) -->
+    <main class="flex-1 overflow-y-auto p-4 space-y-4 pb-20">
+      
+      <!-- Section Title & List/Graph Switcher -->
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-lg font-bold text-slate-100 tracking-tight">Git History</h1>
+            <span class="text-[10px] font-mono font-bold text-git-add bg-git-add/10 border border-git-add/30 px-2 py-0.5 rounded-full">v2.4.0</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-0.5 font-mono">git-manager &middot; 95 commits</p>
+        </div>
+
+        <!-- 8-pt Pill Toggle -->
+        <div class="h-9 p-1 bg-surface-1 border border-border-subtle rounded-xl flex items-center gap-1">
+          <button id="view-list-btn" onclick="setAppView('list')" class="h-7 px-3 rounded-lg text-xs font-bold bg-surface-3 text-white shadow-sm flex items-center gap-1.5 transition">
+            <svg class="w-3.5 h-3.5 text-git-branch" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            <span>List</span>
+          </button>
+          <button id="view-graph-btn" onclick="setAppView('graph')" class="h-7 px-3 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="12" r="3"/><circle cx="6" cy="18" r="3"/><path d="M6 9v6M9 6h4a5 5 0 0 1 5 5"/></svg>
+            <span>Graph</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Search & Filter Row (Gap: 8px = gap-2) -->
+      <div class="flex items-center gap-2">
+        <div class="relative flex-1">
+          <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input 
+            type="text" 
+            id="commit-search-input"
+            oninput="handleCommitSearch(this.value)"
+            placeholder="Search commits by message, SHA..." 
+            class="w-full h-10 pl-9 pr-3 rounded-xl bg-surface-1 border border-border-subtle focus:border-git-branch text-xs font-medium text-slate-200 placeholder-slate-500 focus:outline-none transition shadow-inner"
+          />
+        </div>
+        <button onclick="toggleFilterDrawer()" class="h-10 px-3.5 rounded-xl bg-surface-1 border border-border-subtle hover:border-border-accent flex items-center gap-2 text-xs font-semibold text-slate-300 hover:text-white transition active:scale-95 shadow-sm">
+          <svg class="w-3.5 h-3.5 text-git-branch" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+          <span>Filter</span>
+        </button>
+      </div>
+
+      <!-- Quick Filter Pills -->
+      <div id="filter-drawer" class="hidden p-3 bg-surface-1 border border-border-subtle rounded-2xl space-y-3">
+        <div class="flex items-center justify-between text-[11px] font-bold text-slate-400">
+          <span>DATE FILTER</span>
+          <button onclick="resetFilters()" class="text-git-branch hover:underline">Clear all</button>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button class="h-7 px-3 rounded-md text-xs font-semibold bg-git-branch text-white">All Time</button>
+          <button class="h-7 px-3 rounded-md text-xs font-medium bg-surface-2 text-slate-300 hover:bg-surface-3">Past 24h</button>
+          <button class="h-7 px-3 rounded-md text-xs font-medium bg-surface-2 text-slate-300 hover:bg-surface-3">Last 7 Days</button>
+          <button class="h-7 px-3 rounded-md text-xs font-medium bg-surface-2 text-slate-300 hover:bg-surface-3">Sprint v2</button>
+        </div>
+      </div>
+
+      <!-- VIEW A: COMMIT CARDS LIST -->
+      <div id="commits-list-container" class="space-y-3">
+        <!-- Rendered Dynamically -->
+      </div>
+
+      <!-- VIEW B: INTERACTIVE D3-STYLE SVG GIT GRAPH -->
+      <div id="commits-graph-container" class="hidden p-4 bg-surface-1 border border-border-subtle rounded-2xl">
+        <div class="flex items-center justify-between pb-3 border-b border-border-subtle mb-3">
+          <div class="flex items-center gap-3 text-xs font-mono font-semibold">
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-git-add"></span>main</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-git-branch"></span>feat</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-git-merge"></span>merge</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <button onclick="zoomSvg(1.2)" class="p-1 rounded-md bg-surface-2 hover:bg-surface-3 text-slate-300 text-xs font-mono px-2">+</button>
+            <button onclick="zoomSvg(0.8)" class="p-1 rounded-md bg-surface-2 hover:bg-surface-3 text-slate-300 text-xs font-mono px-2">-</button>
+            <button onclick="resetSvgZoom()" class="p-1 rounded-md bg-surface-2 hover:bg-surface-3 text-slate-300 text-xs font-mono px-2">Reset</button>
+          </div>
+        </div>
+        <div class="overflow-x-auto no-scrollbar">
+          <svg id="svg-git-tree" class="w-full origin-top-left transition-transform duration-200" height="580" viewBox="0 0 360 580"></svg>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- 5. Purpose-Driven Bottom Navigation Bar (56px = h-14) -->
+    <nav class="h-14 px-2 absolute bottom-0 inset-x-0 bg-surface-1/95 backdrop-blur-md border-t border-border-subtle flex items-center justify-around z-20">
+      <button class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-200 transition">
+        <svg class="w-4 h-4 text-[#388BFD]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span class="text-[10px] font-semibold">Home</span>
+      </button>
+
+      <!-- Active: Repos -->
+      <button class="flex flex-col items-center gap-1 text-[#58A6FF]">
+        <div class="relative">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          <span class="w-1.5 h-1.5 rounded-full bg-[#58A6FF] absolute -top-1 -right-1.5 shadow-sm shadow-blue-500"></span>
+        </div>
+        <span class="text-[10px] font-bold">Repos</span>
+      </button>
+
+      <button class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-200 transition">
+        <svg class="w-4 h-4 text-[#D29922]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span class="text-[10px] font-semibold">Clone</span>
+      </button>
+
+      <button class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-200 transition">
+        <svg class="w-4 h-4 text-[#3FB950]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span class="text-[10px] font-semibold">Activity</span>
+      </button>
+
+      <button class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-200 transition">
+        <svg class="w-4 h-4 text-[#8B949E]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="text-[10px] font-semibold">Settings</span>
+      </button>
+    </nav>
+
+    <!-- ============================================================== -->
+    <!-- 6. ULTRA-PROFESSIONAL COMMIT DETAIL BOTTOM SHEET               -->
+    <!-- Strict 8-Point Spatial Foundation + Vibrant Engineering Layout  -->
+    <!-- ============================================================== -->
+    <div id="detail-backdrop" onclick="closeCommitDetails()" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xs z-40 transition-opacity"></div>
+
+    <div id="commit-details-sheet" class="fixed inset-x-0 bottom-0 z-50 max-w-[420px] mx-auto bg-surface-1 border-t border-border-accent rounded-t-3xl shadow-2xl transform translate-y-full sheet-spring flex flex-col max-h-[92vh] overflow-hidden">
+      
+      <!-- Drag Grip (8pt rhythm) -->
+      <div class="pt-2 pb-1 flex justify-center">
+        <div class="w-12 h-1 bg-border-accent rounded-full"></div>
+      </div>
+
+      <!-- Sheet Header: Title, Verified Pill, Close -->
+      <div class="px-4 py-2 border-b border-border-subtle flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-git-branch/20 border border-git-branch/40 flex items-center justify-center text-git-branch">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><line x1="3" y1="12" x2="9" y2="12"/><line x1="15" y1="12" x2="21" y2="12"/></svg>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="text-sm font-bold text-white tracking-tight">Commit Details</h2>
+              <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold bg-git-add/15 text-git-add border border-git-add/30">
+                <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                VERIFIED
+              </span>
+            </div>
+            <div class="flex items-center gap-1.5 text-[11px] text-slate-400 font-mono">
+              <span id="sheet-author">nakib555</span>
+              <span>&bull;</span>
+              <span id="sheet-time" class="text-slate-300 font-sans">3m ago</span>
+            </div>
+          </div>
+        </div>
+
+        <button onclick="closeCommitDetails()" class="w-8 h-8 rounded-full bg-surface-2 hover:bg-surface-3 flex items-center justify-center text-slate-400 hover:text-white transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <!-- Quantitative Visual Churn Bar (8-point rhythm) -->
+      <div class="px-4 py-3 bg-surface-2/40 border-b border-border-subtle">
+        <div class="flex items-center justify-between text-xs font-mono mb-1.5">
+          <div class="flex items-center gap-2 font-bold">
+            <span class="text-git-add flex items-center gap-1"><span class="w-2 h-2 rounded-xs bg-git-add"></span>+7,576</span>
+            <span class="text-git-del flex items-center gap-1"><span class="w-2 h-2 rounded-xs bg-git-del"></span>-18</span>
+          </div>
+          <span class="text-[11px] text-slate-400 font-sans font-medium">11 Changed Files</span>
+        </div>
+        <!-- Proportional delta progress bar -->
+        <div class="w-full h-1.5 bg-surface-3 rounded-full overflow-hidden flex">
+          <div class="h-full bg-git-add rounded-l-full" style="width: 97%;"></div>
+          <div class="h-full bg-git-del rounded-r-full" style="width: 3%;"></div>
+        </div>
+      </div>
+
+      <!-- Segmented Tab Bar (44px touch height) -->
+      <div class="px-4 py-2 bg-surface-1 border-b border-border-subtle">
+        <div class="grid grid-cols-3 gap-1 p-1 bg-surface-2 rounded-xl text-xs font-semibold">
+          <button id="detail-tab-btn-overview" onclick="switchDetailTab('overview')" class="h-8 rounded-lg bg-surface-3 text-white shadow-sm flex items-center justify-center gap-1.5 transition">
+            <svg class="w-3.5 h-3.5 text-git-branch" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><line x1="3" y1="12" x2="9" y2="12"/><line x1="15" y1="12" x2="21" y2="12"/></svg>
+            <span>Overview</span>
+          </button>
+          <button id="detail-tab-btn-diffs" onclick="switchDetailTab('diffs')" class="h-8 rounded-lg text-slate-400 hover:text-white flex items-center justify-center gap-1.5 transition">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+            <span>Diffs (11)</span>
+          </button>
+          <button id="detail-tab-btn-cicd" onclick="switchDetailTab('cicd')" class="h-8 rounded-lg text-slate-400 hover:text-white flex items-center justify-center gap-1.5 transition">
+            <span class="w-2 h-2 rounded-full bg-git-del animate-ping"></span>
+            <span>CI/CD (1)</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Detail Body Tabs -->
+      <div class="flex-1 overflow-y-auto p-4 space-y-4">
+        
+        <!-- === TAB 1: OVERVIEW & LINEAGE === -->
+        <div id="detail-pane-overview" class="space-y-4">
+          
+          <!-- Full Commit Message Card -->
+          <div class="p-3.5 rounded-2xl bg-surface-2 border border-border-accent/60 space-y-2">
+            <div class="flex items-center justify-between text-[10px] font-mono font-bold tracking-wider text-slate-400">
+              <span>COMMIT MESSAGE</span>
+              <button onclick="copyToClipboard(currentSelectedCommit.fullMessage, 'Message copied')" class="text-git-branch hover:underline">Copy</button>
+            </div>
+            <h3 id="sheet-msg-title" class="text-xs font-bold text-slate-100 font-mono leading-snug">
+              refactor: optimize GitGraph for mobile and update UI
+            </h3>
+            <div id="sheet-msg-bullets" class="text-[11px] text-slate-300 font-sans space-y-1.5 pt-1 border-t border-border-subtle/80">
+              <p>&bull; Update GitGraph layout to be responsive for mobile screens</p>
+              <p>&bull; Improve CommitDetailModal diff viewer styles for better readability</p>
+              <p>&bull; Refine CommitCard styling to strict 8-point spatial rhythm</p>
+              <p>&bull; Cleanup unnecessary dependencies in lockfiles</p>
+            </div>
+          </div>
+
+          <!-- Visual Lineage Tree Card -->
+          <div class="p-3.5 rounded-2xl bg-surface-2/60 border border-border-subtle space-y-2.5">
+            <span class="text-[10px] font-mono font-bold tracking-wider text-slate-400">BRANCH LINEAGE &amp; ANCESTRY</span>
+            
+            <div class="relative pl-6 space-y-3 font-mono text-xs">
+              <div class="absolute left-2.5 top-2 bottom-2 w-0.5 bg-gradient-to-b from-git-branch to-git-add"></div>
+
+              <!-- Parent Node -->
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-surface-1 border-2 border-git-branch shrink-0 -ml-[19px]"></span>
+                  <span class="text-slate-400 text-[11px]">Parent:</span>
+                  <span class="text-git-branch font-bold" id="sheet-parent-sha">85ca3a8</span>
+                </div>
+                <span class="text-[10px] text-slate-500 font-sans">1 commit behind</span>
+              </div>
+
+              <!-- Current Node (Selected) -->
+              <div class="flex items-center justify-between p-2 rounded-xl bg-surface-1 border border-border-accent">
+                <div class="flex items-center gap-2">
+                  <span class="w-3.5 h-3.5 rounded-full bg-git-add ring-4 ring-git-add/20 shrink-0 -ml-[23px]"></span>
+                  <span class="text-white font-bold" id="sheet-current-sha">81fcda9</span>
+                  <span class="px-1.5 py-0.2 rounded text-[9px] font-sans font-bold bg-git-add text-black">HEAD</span>
+                </div>
+                <button onclick="copyToClipboard(currentSelectedCommit.fullSha, 'Full SHA Copied')" class="text-[10px] text-slate-400 hover:text-white">Copy Full</button>
+              </div>
+
+              <!-- Child / Branch point -->
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-slate-500 shrink-0 -ml-[18px]"></span>
+                <span class="text-slate-400 text-[11px]">Target Branch:</span>
+                <span class="text-slate-200 font-bold">refs/heads/main</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Metadata Grid -->
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div class="p-3 rounded-xl bg-surface-2/40 border border-border-subtle">
+              <span class="text-[10px] font-mono text-slate-400 block mb-1">COMMITTED AT</span>
+              <span class="text-slate-200 font-semibold font-mono text-[11px]" id="sheet-date">23/10/2026 01:16</span>
+            </div>
+            <div class="p-3 rounded-xl bg-surface-2/40 border border-border-subtle">
+              <span class="text-[10px] font-mono text-slate-400 block mb-1">GPG KEY ID</span>
+              <span class="text-git-add font-semibold font-mono text-[11px]">4A91B872 (RSA-4096)</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- === TAB 2: INTERACTIVE SYNTAX DIFFS === -->
+        <div id="detail-pane-diffs" class="hidden space-y-3">
+          
+          <!-- File Switcher Horizontal Pill Scroller -->
+          <div class="space-y-1.5">
+            <span class="text-[10px] font-mono font-bold text-slate-400 tracking-wider">CHANGED FILES (11)</span>
+            <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1" id="diff-chips-row">
+              <!-- Dynamically populated chips -->
+            </div>
+          </div>
+
+          <!-- Syntax-Colored Unified Diff Block -->
+          <div class="rounded-2xl border border-border-accent bg-[#070A11] overflow-hidden shadow-lg">
+            <!-- Diff Header Bar -->
+            <div class="px-3.5 py-2.5 bg-surface-2 border-b border-border-subtle flex items-center justify-between">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-git-branch/20 text-git-branch border border-git-branch/30">MOD</span>
+                <span id="active-diff-filename" class="text-xs font-mono text-slate-200 truncate font-semibold">src/components/commit/GitGraph.tsx</span>
+              </div>
+              <span class="text-[10px] font-mono font-bold text-slate-400 bg-surface-1 px-2 py-0.5 rounded-md">UNIFIED</span>
+            </div>
+
+            <!-- Code Lines with Line Numbers -->
+            <div class="p-2 overflow-x-auto font-mono text-[11px] leading-relaxed select-text" id="diff-code-body">
+              <!-- Filled via JS with line-by-line colored diff -->
+            </div>
+          </div>
+        </div>
+
+        <!-- === TAB 3: CI/CD PIPELINE STATUS === -->
+        <div id="detail-pane-cicd" class="hidden space-y-3.5">
+          
+          <!-- Failed Alert Banner -->
+          <div class="p-3.5 rounded-2xl bg-git-del/10 border border-git-del/30 flex items-start gap-3">
+            <div class="w-8 h-8 rounded-xl bg-git-del/20 text-git-del flex items-center justify-center shrink-0 mt-0.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            </div>
+            <div>
+              <h4 class="text-xs font-bold text-git-del">Workflow Failure on Job #412</h4>
+              <p class="text-[11px] text-slate-300 mt-0.5">Workers Builds: git-manager failed during bundle compilation.</p>
+            </div>
+          </div>
+
+          <!-- Multi-Step Pipeline Visualizer -->
+          <div class="p-3.5 rounded-2xl bg-surface-2 border border-border-subtle space-y-3">
+            <div class="flex items-center justify-between text-xs font-bold">
+              <span>Pipeline Stages</span>
+              <span class="text-slate-400 font-mono text-[11px]">Total: 42s</span>
+            </div>
+
+            <!-- Stage Steps (8-pt gap) -->
+            <div class="space-y-2">
+              <div class="flex items-center justify-between p-2 rounded-xl bg-surface-1 text-xs">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-5 h-5 rounded-full bg-git-add/20 text-git-add flex items-center justify-center text-[10px] font-bold">✓</span>
+                  <span class="font-medium text-slate-200">1. TypeScript Lint &amp; Typecheck</span>
+                </div>
+                <span class="font-mono text-slate-400 text-[10px]">11s</span>
+              </div>
+
+              <div class="flex items-center justify-between p-2 rounded-xl bg-surface-1 text-xs">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-5 h-5 rounded-full bg-git-add/20 text-git-add flex items-center justify-center text-[10px] font-bold">✓</span>
+                  <span class="font-medium text-slate-200">2. Vitest Unit Suite (48 passed)</span>
+                </div>
+                <span class="font-mono text-slate-400 text-[10px]">18s</span>
+              </div>
+
+              <div class="flex items-center justify-between p-2 rounded-xl bg-git-del/10 border border-git-del/30 text-xs">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-5 h-5 rounded-full bg-git-del text-white flex items-center justify-center text-[10px] font-bold">✕</span>
+                  <span class="font-bold text-git-del">3. Cloudflare Worker Deploy</span>
+                </div>
+                <span class="font-mono text-git-del text-[10px] font-bold">Failed at 13s</span>
+              </div>
+            </div>
+
+            <button onclick="alert('Viewing Cloudflare Worker Build Error:\nError TS2322: Type { minH: string } is not assignable to IntrinsicAttributes & CommitCardProps')" class="w-full h-9 rounded-xl bg-surface-3 hover:bg-border-accent text-xs font-semibold text-slate-200 flex items-center justify-center gap-2 transition active:scale-98">
+              <svg class="w-3.5 h-3.5 text-git-branch" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              <span>Inspect Cloudflare Error Log</span>
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Sheet Footer Action Bar (56px = h-14 strict rhythm) -->
+      <div class="h-14 px-4 border-t border-border-subtle bg-surface-1 flex items-center gap-2">
+        <button onclick="copyToClipboard(currentSelectedCommit.shortSha, 'Copied ' + currentSelectedCommit.shortSha)" class="h-10 px-3.5 rounded-xl bg-surface-2 hover:bg-surface-3 text-slate-200 font-mono text-xs font-semibold flex items-center gap-1.5 transition active:scale-95">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+          <span id="sheet-btn-sha">81fcda9</span>
+        </button>
+
+        <button onclick="branchFromCurrent()" class="flex-1 h-10 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 transition active:scale-95">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="6" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="18" cy="9" r="3"/><path d="M6 9v6M9 6h6a3 3 0 0 1 3 3"/></svg>
+          <span>Branch From Here</span>
+        </button>
+
+        <button onclick="cherryPickCommit()" title="Cherry Pick" class="w-10 h-10 rounded-xl bg-surface-2 hover:bg-surface-3 text-slate-300 flex items-center justify-center transition active:scale-95">
+          <svg class="w-4 h-4 text-git-warn" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/><path d="M7 7h.01"/></svg>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Notification Toast (8-pt anchored) -->
+    <div id="app-toast" class="hidden fixed bottom-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full bg-slate-900 border border-border-accent text-white text-xs font-mono font-semibold shadow-2xl flex items-center gap-2 pointer-events-none transition-all">
+      <span class="w-2 h-2 rounded-full bg-git-add"></span>
+      <span id="toast-text">Success</span>
+    </div>
+
+  </div>
+
+  <!-- ================= JAVASCRIPT ================= -->
+  <script>
+    // Authentic commit payload matching screenshot references
+    const COMMITS_DATASET = [
+      {
+        shortSha: '81fcda9',
+        fullSha: '81fcda957d5b45b6f1d313e9b0a27f6789b91c01',
+        message: 'refactor: optimize GitGraph for mobile and...',
+        fullMessage: 'refactor: optimize GitGraph for mobile and update UI',
+        author: 'nakib555',
+        timeAgo: '3m ago',
+        date: '23/10/2026, 01:16:23',
+        parentSha: '85ca3a8',
+        isHead: true,
+        branch: 'main',
+        color: '#3FB950',
+        bullets: [
+          'Update GitGraph layout to be responsive for mobile screens',
+          'Improve CommitDetailModal diff viewer styles for better readability',
+          'Refine CommitCard styling to strict 8-point spatial rhythm',
+          'Cleanup unnecessary dependencies in lockfiles'
+        ]
+      },
+      {
+        shortSha: '85ca3a8',
+        fullSha: '85ca3a8f6d7e2b109c43d8a7f1e4b3c21890de55',
+        message: 'refactor: remove grid overlay and simplify rep...',
+        fullMessage: 'refactor: remove grid overlay and simplify repository cards',
+        author: 'nakib555',
+        timeAgo: '5h ago',
+        date: '22/10/2026, 20:14:10',
+        parentSha: 'ec5a40c',
+        isHead: false,
+        branch: 'main',
+        color: '#3FB950',
+        bullets: [
+          'Strip out fixed raster grid assets',
+          'Optimize re-renders on low powered mobile viewports'
+        ]
+      },
+      {
+        shortSha: 'ec5a40c',
+        fullSha: 'ec5a40c98f7e61a09d123456789abcdef0123456',
+        message: 'feat: add grid overlay and improve UI/UX - Impleme...',
+        fullMessage: 'feat: add grid overlay and improve UI/UX - Implementation Complete',
+        author: 'nakib555',
+        timeAgo: '2d ago',
+        date: '21/10/2026, 14:22:00',
+        parentSha: '089f7fc',
+        isHead: false,
+        branch: 'main',
+        color: '#3FB950',
+        bullets: [
+          'Strict 8-Point Spatial Rhythm: (0, 4, 8, 12, 16, 24, 32, 40, 48, 56, 64px)',
+          'Standardize 44px min touch target controls'
+        ]
+      },
+      {
+        shortSha: '089f7fc',
+        fullSha: '089f7fc24b8901adff9876543210fedcba987654',
+        message: 'feat: integrate Gemini API configuration Load...',
+        fullMessage: 'feat: integrate Gemini API configuration Loader and key validator',
+        author: 'nakib555',
+        timeAgo: '2d ago',
+        date: '21/10/2026, 11:05:40',
+        parentSha: '287d40d',
+        isHead: false,
+        branch: 'feature',
+        color: '#58A6FF',
+        bullets: [
+          'Add intelligent fallback when API quotas are exceeded',
+          'Secure token storage in local storage'
+        ]
+      },
+      {
+        shortSha: '287d40d',
+        fullSha: '287d40df32890a98c76543210abcdef012345678',
+        message: 'feat: update desktop layout footer with shortc...',
+        fullMessage: 'feat: update desktop layout footer with shortcuts modal and tips',
+        author: 'nakib555',
+        timeAgo: '2d ago',
+        date: '21/10/2026, 09:30:15',
+        parentSha: '6638bf1',
+        isHead: false,
+        branch: 'main',
+        color: '#3FB950',
+        bullets: [
+          'Desktop keyboard navigation bindings',
+          'Persistent footer status indicator'
+        ]
+      },
+      {
+        shortSha: '6638bf1',
+        fullSha: '6638bf190a876b5c4d3e2f10987654321fedcba9',
+        message: 'feat(ui): refactor repos...',
+        fullMessage: 'feat(ui): refactor repository screen cards and list layout',
+        author: 'nakib555',
+        timeAgo: '3d ago',
+        date: '20/10/2026, 18:45:00',
+        parentSha: 'de429b7',
+        isHead: false,
+        branch: 'merge',
+        color: '#A371F7',
+        bullets: [
+          'Add language color distribution spectrum',
+          'Harmonize card borders'
+        ]
+      }
+    ];
+
+    const DIFF_MOCK_FILES = [
+      {
+        file: 'src/components/commit/GitGraph.tsx',
+        type: 'MOD',
+        add: 8,
+        del: 8,
+        hunks: [
+          { type: 'info', text: '@@ -35,7 +35,7 @@ export const GitGraph: React.FC = () => {' },
+          { type: 'context', text: '  const nodeSpacingY = 52;' },
+          { type: 'del', text: '-  const laneSpacingX = 28; // legacy padding' },
+          { type: 'add', text: '+  const laneSpacingX = 24; // strict 8-point rhythm (3x8)' },
+          { type: 'context', text: '  const paddingLeft = 24;' },
+          { type: 'del', text: '-  const strokeWidth = 3;' },
+          { type: 'add', text: '+  const strokeWidth = 2.5; // clean curved branch graph lines' }
+        ]
+      },
+      {
+        file: 'src/mobile/components/CommitCard.tsx',
+        type: 'MOD',
+        add: 1,
+        del: 1,
+        hunks: [
+          { type: 'info', text: '@@ -12,4 +12,4 @@' },
+          { type: 'del', text: '- className="min-h-[64px] rounded-2xl"' },
+          { type: 'add', text: '+ className="min-h-[56px] rounded-xl hover:border-git-branch"' }
+        ]
+      },
+      {
+        file: 'bun.lock',
+        type: 'ADD',
+        add: 1187,
+        del: 0,
+        hunks: [
+          { type: 'info', text: '@@ -0,0 +1,1187 @@' },
+          { type: 'add', text: '+ "lockfileVersion": 1,' },
+          { type: 'add', text: '+ "name": "git-manager",' },
+          { type: 'add', text: '+ "@google/genai": "^2.4.0"' }
+        ]
+      }
+    ];
+
+    let currentSelectedCommit = COMMITS_DATASET[0];
+    let activeDiffIndex = 0;
+    let svgScale = 1;
+
+    // --- RENDER COMMIT LIST CARDS ---
+    function renderCommitCards(list = COMMITS_DATASET) {
+      const container = document.getElementById('commits-list-container');
+      if (list.length === 0) {
+        container.innerHTML = `<div class="p-8 text-center text-slate-500 font-mono text-xs">No commits found matching query</div>`;
+        return;
+      }
+
+      container.innerHTML = list.map(c => `
+        <div 
+          onclick="openCommitDetails('${c.shortSha}')"
+          class="group relative p-3.5 rounded-2xl bg-surface-1 border border-border-subtle hover:border-git-branch/60 hover:bg-surface-2/60 transition-all cursor-pointer shadow-sm active:scale-[0.99] flex items-center justify-between"
+        >
+          <div class="flex items-start gap-3 min-w-0 pr-2">
+            <!-- Node Glyph / HEAD halo -->
+            <div class="relative mt-0.5 shrink-0">
+              <div class="w-8 h-8 rounded-xl bg-surface-2 border border-border-accent flex items-center justify-center text-slate-300 group-hover:text-git-branch group-hover:border-git-branch/40 transition">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><line x1="3" y1="12" x2="9" y2="12"/><line x1="15" y1="12" x2="21" y2="12"/></svg>
+              </div>
+              ${c.isHead ? `<span class="absolute -top-1 -left-1 w-3 h-3 rounded-full bg-git-add ring-2 ring-canvas head-glow"></span>` : ''}
+            </div>
+
+            <!-- Title & Metadata -->
+            <div class="min-w-0">
+              <h3 class="text-xs font-bold text-slate-100 truncate group-hover:text-git-branch transition font-sans">
+                ${c.message}
+              </h3>
+              <div class="flex items-center gap-2 text-[11px] font-mono text-slate-400 mt-1">
+                <span class="text-slate-300 font-semibold">${c.author}</span>
+                <span>&bull;</span>
+                <span class="text-slate-400 font-sans">${c.timeAgo}</span>
+                ${c.branch === 'feature' ? `<span class="px-1.5 py-0.2 rounded text-[9px] bg-blue-500/20 text-blue-400 font-bold">feat</span>` : ''}
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Action: SHA Pill -->
+          <div class="flex items-center gap-2 shrink-0">
+            <span class="px-2 py-1 rounded-lg bg-surface-2 border border-border-accent font-mono text-[11px] font-semibold text-git-branch">
+              ${c.shortSha}
+            </span>
+            <svg class="w-4 h-4 text-slate-500 group-hover:text-slate-200 group-hover:translate-x-0.5 transition" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // --- RENDER INTERACTIVE SVG GIT GRAPH ---
+    function renderSvgGraph() {
+      const svg = document.getElementById('svg-git-tree');
+      const startX = 36;
+      const stepY = 56;
+      let html = '';
+
+      // Main line
+      html += `<line x1="${startX}" y1="20" x2="${startX}" y2="${COMMITS_DATASET.length * stepY + 30}" stroke="#3FB950" stroke-width="2.5" stroke-linecap="round"/>`;
+
+      COMMITS_DATASET.forEach((c, i) => {
+        const y = 36 + i * stepY;
+        const x = startX;
+
+        // Curved branch out for feature commits
+        if (c.branch === 'feature') {
+          html += `<path d="M ${x} ${y - 28} C ${x + 24} ${y - 14}, ${x + 24} ${y + 14}, ${x} ${y + 28}" fill="none" stroke="#58A6FF" stroke-width="2" />`;
+        }
+
+        // Commit Node
+        if (c.isHead) {
+          html += `
+            <g class="cursor-pointer" onclick="openCommitDetails('${c.shortSha}')">
+              <circle cx="${x}" cy="${y}" r="12" fill="#3FB950" fill-opacity="0.2" class="animate-ping origin-center"/>
+              <circle cx="${x}" cy="${y}" r="8" fill="#131B2E" stroke="#3FB950" stroke-width="3"/>
+              <circle cx="${x}" cy="${y}" r="3" fill="#3FB950"/>
+            </g>
+          `;
+        } else {
+          html += `
+            <g class="cursor-pointer" onclick="openCommitDetails('${c.shortSha}')">
+              <circle cx="${x}" cy="${y}" r="5" fill="${c.color}" stroke="#131B2E" stroke-width="2"/>
+            </g>
+          `;
+        }
+
+        // Card tag
+        html += `
+          <g class="cursor-pointer" onclick="openCommitDetails('${c.shortSha}')">
+            <rect x="${x + 20}" y="${y - 14}" width="60" height="24" rx="6" fill="#1C263E" stroke="#31446E" stroke-width="1"/>
+            <text x="${x + 28}" y="${y + 2}" font-family="JetBrains Mono" font-size="10" font-weight="700" fill="#3FB950">${c.shortSha}</text>
+            <text x="${x + 88}" y="${y + 2}" font-family="Plus Jakarta Sans" font-size="11" font-weight="600" fill="#E2E8F0">${c.message.substring(0, 22)}...</text>
+          </g>
+        `;
+      });
+
+      svg.innerHTML = html;
+    }
+
+    // --- VIEW SWITCHER (LIST / GRAPH) ---
+    function setAppView(view) {
+      const listBtn = document.getElementById('view-list-btn');
+      const graphBtn = document.getElementById('view-graph-btn');
+      const listContainer = document.getElementById('commits-list-container');
+      const graphContainer = document.getElementById('commits-graph-container');
+
+      if (view === 'list') {
+        listBtn.className = "h-7 px-3 rounded-lg text-xs font-bold bg-surface-3 text-white shadow-sm flex items-center gap-1.5 transition";
+        graphBtn.className = "h-7 px-3 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition";
+        listContainer.classList.remove('hidden');
+        graphContainer.classList.add('hidden');
+      } else {
+        graphBtn.className = "h-7 px-3 rounded-lg text-xs font-bold bg-surface-3 text-white shadow-sm flex items-center gap-1.5 transition";
+        listBtn.className = "h-7 px-3 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition";
+        listContainer.classList.add('hidden');
+        graphContainer.classList.remove('hidden');
+        renderSvgGraph();
+      }
+    }
+
+    // --- OPEN / CLOSE COMMIT DETAILS SHEET ---
+    function openCommitDetails(sha) {
+      const commit = COMMITS_DATASET.find(c => c.shortSha === sha) || COMMITS_DATASET[0];
+      currentSelectedCommit = commit;
+
+      // Populate text
+      document.getElementById('sheet-author').innerText = commit.author;
+      document.getElementById('sheet-time').innerText = commit.timeAgo;
+      document.getElementById('sheet-msg-title').innerText = commit.fullMessage;
+      document.getElementById('sheet-parent-sha').innerText = commit.parentSha;
+      document.getElementById('sheet-current-sha').innerText = commit.shortSha;
+      document.getElementById('sheet-btn-sha').innerText = commit.shortSha;
+      document.getElementById('sheet-date').innerText = commit.date;
+
+      // Bullets
+      const bulletBox = document.getElementById('sheet-msg-bullets');
+      bulletBox.innerHTML = commit.bullets.map(b => `<p>&bull; ${b}</p>`).join('');
+
+      // Build file diff chips
+      renderDiffChips();
+      loadDiffFile(0);
+
+      // Slide In
+      document.getElementById('detail-backdrop').classList.remove('hidden');
+      document.getElementById('commit-details-sheet').classList.remove('translate-y-full');
+    }
+
+    function closeCommitDetails() {
+      document.getElementById('commit-details-sheet').classList.add('translate-y-full');
+      setTimeout(() => {
+        document.getElementById('detail-backdrop').classList.add('hidden');
+      }, 250);
+    }
+
+    // --- TAB SWITCHER IN SHEET ---
+    function switchDetailTab(tab) {
+      ['overview', 'diffs', 'cicd'].forEach(t => {
+        const btn = document.getElementById(`detail-tab-btn-${t}`);
+        const pane = document.getElementById(`detail-pane-${t}`);
+        if (t === tab) {
+          btn.className = "h-8 rounded-lg bg-surface-3 text-white shadow-sm flex items-center justify-center gap-1.5 font-bold transition";
+          pane.classList.remove('hidden');
+        } else {
+          btn.className = "h-8 rounded-lg text-slate-400 hover:text-white flex items-center justify-center gap-1.5 transition";
+          pane.classList.add('hidden');
+        }
+      });
+    }
+
+    // --- DIFF VIEWER ENGINE ---
+    function renderDiffChips() {
+      const row = document.getElementById('diff-chips-row');
+      row.innerHTML = DIFF_MOCK_FILES.map((f, idx) => `
+        <button 
+          onclick="loadDiffFile(${idx})"
+          class="h-7 px-2.5 rounded-lg text-xs font-mono font-medium shrink-0 flex items-center gap-1.5 border transition ${idx === activeDiffIndex ? 'bg-git-branch text-white border-git-branch' : 'bg-surface-2 text-slate-300 border-border-subtle hover:bg-surface-3'}"
+        >
+          <span class="text-[10px] font-bold ${f.type === 'ADD' ? 'text-git-add' : 'text-git-branch'}">${f.type}</span>
+          <span>${f.file.split('/').pop()}</span>
+        </button>
+      `).join('');
+    }
+
+    function loadDiffFile(index) {
+      activeDiffIndex = index;
+      renderDiffChips();
+      const fileData = DIFF_MOCK_FILES[index];
+      document.getElementById('active-diff-filename').innerText = fileData.file;
+
+      const codeBox = document.getElementById('diff-code-body');
+      codeBox.innerHTML = fileData.hunks.map(h => {
+        if (h.type === 'info') {
+          return `<div class="text-git-branch py-0.5 bg-git-branch/10 px-1 rounded my-1 font-bold">${escapeHtml(h.text)}</div>`;
+        } else if (h.type === 'del') {
+          return `<div class="bg-git-del/15 text-red-300 px-1 py-0.5 rounded flex gap-1"><span class="text-git-del select-none">-</span><span>${escapeHtml(h.text.substring(1))}</span></div>`;
+        } else if (h.type === 'add') {
+          return `<div class="bg-git-add/15 text-green-300 px-1 py-0.5 rounded flex gap-1"><span class="text-git-add select-none">+</span><span>${escapeHtml(h.text.substring(1))}</span></div>`;
+        } else {
+          return `<div class="text-slate-400 px-1 py-0.2 pl-3">${escapeHtml(h.text)}</div>`;
+        }
+      }).join('');
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    // --- ACTIONS & TOAST ---
+    function copyToClipboard(text, msg) {
+      if (navigator.clipboard) navigator.clipboard.writeText(text);
+      showToast(msg || 'Copied to clipboard');
+    }
+
+    function showToast(text) {
+      const toast = document.getElementById('app-toast');
+      document.getElementById('toast-text').innerText = text;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 2200);
+    }
+
+    function branchFromCurrent() {
+      const name = prompt('Create and checkout new branch:', `feat/${currentSelectedCommit.shortSha}-patch`);
+      if (name) {
+        document.getElementById('app-branch-name').innerText = name;
+        showToast(`Branch ${name} checked out`);
+        closeCommitDetails();
+      }
+    }
+
+    function cherryPickCommit() {
+      showToast(`Cherry-picked commit ${currentSelectedCommit.shortSha}`);
+    }
+
+    function promptSwitchBranch() {
+      const b = prompt('Switch Branch to (e.g. main, develop, fix/modal):', 'main');
+      if (b) {
+        document.getElementById('app-branch-name').innerText = b;
+        showToast(`Switched to ${b}`);
+      }
+    }
+
+    function handleCommitSearch(query) {
+      const q = query.toLowerCase().trim();
+      if (!q) {
+        renderCommitCards(COMMITS_DATASET);
+        return;
+      }
+      const filtered = COMMITS_DATASET.filter(c => 
+        c.message.toLowerCase().includes(q) || 
+        c.shortSha.toLowerCase().includes(q) || 
+        c.author.toLowerCase().includes(q)
+      );
+      renderCommitCards(filtered);
+    }
+
+    function toggleFilterDrawer() {
+      document.getElementById('filter-drawer').classList.toggle('hidden');
+    }
+
+    function resetFilters() {
+      document.getElementById('commit-search-input').value = '';
+      renderCommitCards(COMMITS_DATASET);
+      toggleFilterDrawer();
+      showToast('Filters reset');
+    }
+
+    function zoomSvg(f) {
+      svgScale = Math.max(0.6, Math.min(2.0, svgScale * f));
+      document.getElementById('svg-git-tree').style.transform = `scale(${svgScale})`;
+    }
+
+    function resetSvgZoom() {
+      svgScale = 1;
+      document.getElementById('svg-git-tree').style.transform = `scale(1)`;
+    }
+
+    // Clock
+    function updateRealtimeClock() {
+      const d = new Date();
+      let h = d.getHours();
+      let m = d.getMinutes();
+      document.getElementById('realtime-clock').innerText = `${h < 10 ? '0' + h : h}:${m < 10 ? '0' + m : m}`;
+    }
+
+    // Init
+    window.addEventListener('DOMContentLoaded', () => {
+      renderCommitCards();
+      updateRealtimeClock();
+      setInterval(updateRealtimeClock, 30000);
+    });
+  </script>
+</body>
+</html>

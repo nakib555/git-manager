@@ -2,16 +2,16 @@ import React, { useState } from 'react';
 import { useAppContext } from '../../AppContext';
 import { 
   Download, Copy, Check, Terminal, HardDrive, 
-  FolderGit2
+  FolderGit2, ChevronDown, CheckCircle2, AlertCircle
 } from 'lucide-react';
 import { InlineErrorCard } from '../components/InlineErrorCard';
 
 export const Clone: React.FC = () => {
   const { githubToken, githubRepos, githubUser, showToast, cloneRepository, navigate } = useAppContext();
 
-  const [repoUrl, setRepoUrl] = useState('');
-  const [destName, setDestName] = useState('');
-  const [cloneDepth, setCloneDepth] = useState<number | ''>(1);
+  const [repoUrl, setRepoUrl] = useState('https://github.com/owner/repository.git');
+  const [destName, setDestName] = useState('my-project');
+  const [cloneDepth, setCloneDepth] = useState<number | 'full'>(1);
   const [isCloning, setIsCloning] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [isDownloadingZip, setIsDownloadingZip] = useState(false);
@@ -22,7 +22,7 @@ export const Clone: React.FC = () => {
     setRepoUrl(url);
     const parts = url.trim().replace(/\.git$/, '').split('/');
     const lastPart = parts[parts.length - 1];
-    if (lastPart && !destName) {
+    if (lastPart && (!destName || destName === 'my-project')) {
       setDestName(lastPart);
     }
   };
@@ -31,7 +31,7 @@ export const Clone: React.FC = () => {
     const fullUrl = `https://github.com/${owner}/${name}.git`;
     setRepoUrl(fullUrl);
     setDestName(name);
-    showToast(`Loaded ${owner}/${name}`, 'info');
+    showToast(`Selected repository: ${name}`, 'info');
   };
 
   const getOwnerAndRepo = () => {
@@ -47,18 +47,19 @@ export const Clone: React.FC = () => {
     return null;
   };
 
-  const generatedCommand = `git clone ${cloneDepth ? `--depth ${cloneDepth} ` : ''}${repoUrl || 'https://github.com/owner/repository.git'} ${destName || 'my-project'}`;
+  // Generate dynamic terminal command
+  const generatedCommand = `git clone${cloneDepth !== 'full' ? ` --depth ${cloneDepth}` : ''} ${repoUrl || 'https://github.com/owner/repository.git'} ${destName || 'my-project'}`;
 
   const copyCloneCmd = () => {
     navigator.clipboard.writeText(generatedCommand);
     setIsCopied(true);
-    showToast('Clone command copied to clipboard!', 'success');
+    showToast('Terminal command copied!', 'success');
     setTimeout(() => setIsCopied(false), 2000);
   };
 
   const handleClone = async () => {
-    if (!repoUrl.trim()) {
-      showToast('Please enter a Git repository URL', 'warning');
+    if (!repoUrl.trim() || repoUrl === 'https://github.com/owner/repository.git') {
+      showToast('Please enter a valid Git repository URL', 'warning');
       return;
     }
     setIsCloning(true);
@@ -84,8 +85,8 @@ export const Clone: React.FC = () => {
 
   const handleDownloadZip = async () => {
     const parsed = getOwnerAndRepo();
-    if (!parsed) {
-      showToast('Please enter a valid GitHub repository URL', 'warning');
+    if (!parsed || repoUrl.includes('owner/repository')) {
+      showToast('Please enter an authentic GitHub repository URL', 'warning');
       return;
     }
     setIsDownloadingZip(true);
@@ -119,123 +120,179 @@ export const Clone: React.FC = () => {
   };
 
   return (
-    <div className="px-4 py-4 space-y-6 pb-6">
-      {/* Title Header */}
+    <div className="px-4 py-3.5 space-y-4 pb-12">
+      {/* 1. Title Block */}
       <div>
-        <h2 className="text-lg font-semibold text-text-primary tracking-tight">Clone Repository</h2>
+        <h1 className="text-xl font-bold tracking-tight text-text-primary">Clone Repository</h1>
         <p className="text-xs text-text-tertiary mt-0.5">
           Download remote repositories into your local workspace.
         </p>
       </div>
 
-      {/* Synchronized Repos Quick Pick (Only when authenticated with real repos) */}
-      {githubRepos.length > 0 && (
-        <div className="space-y-2">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary flex items-center gap-1.5">
-            <FolderGit2 size={13} className="text-accent" />
-            <span>Your Repositories Quick-Pick</span>
-          </span>
-          <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1">
-            {githubRepos.slice(0, 8).map((repo) => {
-              const ownerLogin = (repo as any).owner?.login || githubUser?.login || '';
-              return (
-                <button
-                  key={repo.name}
-                  type="button"
-                  onClick={() => selectUserRepo(ownerLogin, repo.name)}
-                  className="p-3 rounded-xl bg-surface-1 border border-border hover:border-accent/40 text-left shrink-0 w-40 transition-all active:scale-97 cursor-pointer"
-                >
-                  <div className="flex items-center justify-between text-xs font-bold text-text-primary truncate">
-                    <span className="truncate">{repo.name}</span>
-                  </div>
-                  <div className="flex items-center justify-between mt-1 text-[10px] text-text-tertiary">
-                    <span className="truncate">{ownerLogin}</span>
-                    {repo.language && <span className="font-mono">{repo.language}</span>}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+      {/* 2. Quick Pick Carousel */}
+      <div>
+        <div className="flex items-center gap-1.5 text-xs font-bold text-text-tertiary uppercase tracking-wider mb-2.5">
+          <FolderGit2 size={13} className="text-accent" />
+          <span className="text-[11px]">Your Repositories Quick-Pick</span>
         </div>
-      )}
 
-      {/* Step 1: Remote Repository URL */}
-      <div className="bg-surface-1 border border-border rounded-xl p-4 space-y-4">
-        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-text-tertiary">
-          <span className="w-6 h-6 rounded-full bg-accent-soft text-accent flex items-center justify-center text-xs font-bold font-mono">1</span>
-          <span>Remote Source</span>
+        <div className="flex items-center gap-2.5 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1">
+          {githubRepos && githubRepos.length > 0 ? (
+            githubRepos.slice(0, 6).map(repo => {
+              const ownerLogin = (repo as any).owner?.login || githubUser?.login || 'user';
+              const lang = repo.language || 'Code';
+              return (
+                <div
+                  key={repo.name}
+                  onClick={() => selectUserRepo(ownerLogin, repo.name)}
+                  className="min-w-[160px] p-3.5 bg-surface-1 border border-border/90 rounded-2xl shadow-xs hover:border-amber-400/80 active:scale-95 transition cursor-pointer select-none"
+                >
+                  <h4 className="text-xs font-bold text-text-primary truncate">{repo.name}</h4>
+                  <div className="flex items-center justify-between text-[11px] text-text-tertiary mt-2">
+                    <span className="truncate max-w-[85px]">{ownerLogin}</span>
+                    <span className="font-medium text-text-secondary">{lang}</span>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <>
+              {/* Default Mock Quick Picks matching design attachments */}
+              <div 
+                onClick={() => selectUserRepo('nakib555', 'git-manager')}
+                className="min-w-[160px] p-3.5 bg-surface-1 border border-border/90 rounded-2xl shadow-xs hover:border-amber-400/80 active:scale-95 transition cursor-pointer select-none"
+              >
+                <h4 className="text-xs font-bold text-text-primary truncate">git-manager</h4>
+                <div className="flex items-center justify-between text-[11px] text-text-tertiary mt-2">
+                  <span>nakib555</span>
+                  <span className="font-medium text-text-secondary">TypeScript</span>
+                </div>
+              </div>
+
+              <div 
+                onClick={() => selectUserRepo('nakib555', 'Excel-grid')}
+                className="min-w-[160px] p-3.5 bg-surface-1 border border-border/90 rounded-2xl shadow-xs hover:border-amber-400/80 active:scale-95 transition cursor-pointer select-none"
+              >
+                <h4 className="text-xs font-bold text-text-primary truncate">Excel-grid</h4>
+                <div className="flex items-center justify-between text-[11px] text-text-tertiary mt-2">
+                  <span>nakib555</span>
+                  <span className="font-medium text-text-secondary">TypeScript</span>
+                </div>
+              </div>
+
+              <div 
+                onClick={() => selectUserRepo('nakib555', 'hyper-term')}
+                className="min-w-[160px] p-3.5 bg-surface-1 border border-border/90 rounded-2xl shadow-xs hover:border-amber-400/80 active:scale-95 transition cursor-pointer select-none"
+              >
+                <h4 className="text-xs font-bold text-text-primary truncate">hyper-term</h4>
+                <div className="flex items-center justify-between text-[11px] text-text-tertiary mt-2">
+                  <span>nakib555</span>
+                  <span className="font-medium text-text-secondary">Rust</span>
+                </div>
+              </div>
+            </>
+          )}
         </div>
+      </div>
+
+      {/* CARD 1: REMOTE SOURCE */}
+      <div className="bg-surface-1 border border-border/90 rounded-3xl p-4 shadow-xs space-y-3">
+        <div className="flex items-center gap-2">
+          <span className="w-5 h-5 rounded-full bg-surface-2 border border-border text-text-primary flex items-center justify-center text-[10px] font-bold font-mono">
+            1
+          </span>
+          <span className="text-xs font-bold tracking-wider text-text-tertiary uppercase">
+            Remote Source
+          </span>
+        </div>
+
         <div>
-          <label className="block text-xs font-medium text-text-secondary mb-1.5">
+          <label className="block text-xs font-bold text-text-secondary mb-1.5">
             Git HTTPS / SSH URL
           </label>
           <input
-            type="url"
-            placeholder="https://github.com/owner/repository.git"
+            type="text"
             value={repoUrl}
             onChange={(e) => handleUrlChange(e.target.value)}
-            className="w-full h-12 px-4 bg-surface-2 border border-border rounded-xl text-xs text-text-primary placeholder:text-text-tertiary outline-none focus:border-accent font-mono transition-colors"
+            className="w-full px-3.5 py-3 text-xs font-mono bg-surface-2 border border-border/70 focus:border-accent focus:bg-surface-1 rounded-2xl text-text-primary focus:outline-none transition"
+            placeholder="https://github.com/owner/repository.git"
           />
         </div>
       </div>
 
-      {/* Step 2: Destination & Options */}
-      <div className="bg-surface-1 border border-border rounded-xl p-4 space-y-4">
-        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-text-tertiary">
-          <span className="w-6 h-6 rounded-full bg-accent-soft text-accent flex items-center justify-center text-xs font-bold font-mono">2</span>
-          <span>Target Directory & Depth</span>
+      {/* CARD 2: TARGET DIRECTORY & DEPTH */}
+      <div className="bg-surface-1 border border-border/90 rounded-3xl p-4 shadow-xs space-y-3">
+        <div className="flex items-center gap-2">
+          <span className="w-5 h-5 rounded-full bg-surface-2 border border-border text-text-primary flex items-center justify-center text-[10px] font-bold font-mono">
+            2
+          </span>
+          <span className="text-xs font-bold tracking-wider text-text-tertiary uppercase">
+            Target Directory &amp; Depth
+          </span>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-2.5">
+          {/* Folder Name */}
           <div>
-            <label className="block text-xs font-medium text-text-secondary mb-1.5">
+            <label className="block text-xs font-semibold text-text-secondary mb-1.5">
               Folder Name
             </label>
             <input
               type="text"
-              placeholder="my-project"
               value={destName}
               onChange={(e) => setDestName(e.target.value)}
-              className="w-full h-12 px-4 bg-surface-2 border border-border rounded-xl text-xs text-text-primary placeholder:text-text-tertiary outline-none focus:border-accent transition-colors"
+              className="w-full px-3.5 py-3 text-xs font-medium bg-surface-2 border border-border/70 focus:border-accent focus:bg-surface-1 rounded-2xl text-text-primary focus:outline-none transition"
+              placeholder="folder-name"
             />
           </div>
 
+          {/* Clone Depth Dropdown */}
           <div>
-            <label className="block text-xs font-medium text-text-secondary mb-1.5">
+            <label className="block text-xs font-semibold text-text-secondary mb-1.5">
               Clone Depth
             </label>
-            <select
-              value={cloneDepth}
-              onChange={(e) => setCloneDepth(e.target.value === '' ? '' : Number(e.target.value))}
-              className="w-full h-12 px-3 bg-surface-2 border border-border rounded-xl text-xs text-text-primary outline-none focus:border-accent transition-colors cursor-pointer"
-            >
-              <option value={1}>Shallow (Depth 1)</option>
-              <option value={5}>Recent (Depth 5)</option>
-              <option value={""}>Full History (All)</option>
-            </select>
+            <div className="relative">
+              <select
+                value={cloneDepth}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setCloneDepth(val === 'full' ? 'full' : Number(val));
+                }}
+                className="w-full appearance-none px-3.5 py-3 text-xs font-medium bg-surface-2 border border-border/70 focus:border-accent focus:bg-surface-1 rounded-2xl text-text-primary focus:outline-none transition pr-7 cursor-pointer"
+              >
+                <option value="1">Shallow (Depth 1)</option>
+                <option value="5">Depth 5</option>
+                <option value="10">Depth 10</option>
+                <option value="full">Full History</option>
+              </select>
+              <ChevronDown size={14} className="text-text-tertiary absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Step 3: Terminal Command Preview */}
-      <div className="bg-surface-1 border border-border rounded-xl p-4 space-y-3">
+      {/* CARD 3: TERMINAL COMMAND PREVIEW */}
+      <div className="bg-surface-1 border border-border/90 rounded-3xl p-4 shadow-xs space-y-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-text-tertiary">
-            <Terminal size={15} className="text-accent" />
-            <span>Terminal Command</span>
+          <div className="flex items-center gap-1.5 text-xs font-bold text-text-tertiary tracking-wider">
+            <span className="font-mono text-text-primary font-bold">&gt;_</span>
+            <span className="uppercase">Terminal Command</span>
           </div>
+
           <button
             type="button"
             onClick={copyCloneCmd}
-            className="flex items-center gap-1.5 text-xs text-accent font-semibold hover:underline cursor-pointer min-h-[44px] px-2 -mr-2"
+            className="flex items-center gap-1.5 text-xs font-semibold text-accent hover:underline active:scale-95 transition cursor-pointer"
           >
-            {isCopied ? <Check size={14} /> : <Copy size={14} />}
+            {isCopied ? <Check size={13} /> : <Copy size={13} />}
             <span>{isCopied ? 'Copied' : 'Copy'}</span>
           </button>
         </div>
 
-        <div className="p-4 bg-surface-2 rounded-xl border border-border font-mono text-xs text-text-primary break-all leading-relaxed">
-          {generatedCommand}
+        {/* Terminal Command Box */}
+        <div className="bg-surface-2 rounded-2xl p-3.5 font-mono text-xs text-text-primary break-all leading-relaxed select-all">
+          <span className="text-text-tertiary select-none mr-1.5">$</span>
+          <span>{generatedCommand}</span>
         </div>
       </div>
 
@@ -248,30 +305,38 @@ export const Clone: React.FC = () => {
         />
       )}
 
-      {/* Action Buttons: Workspace Clone + Download ZIP (min 48px height) */}
-      <div className="space-y-3 pt-1">
+      {/* Action Buttons */}
+      <div className="space-y-2.5 pt-1 pb-4">
+        {/* Initialize Workspace Clone Button */}
         <button
           type="button"
           onClick={handleClone}
-          disabled={!repoUrl.trim() || isCloning}
-          className="w-full min-h-[48px] h-12 rounded-xl bg-accent hover:opacity-90 disabled:opacity-40 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-sm shadow-accent/25 active:scale-98 transition-all cursor-pointer"
+          disabled={isCloning}
+          className="w-full py-3.5 bg-text-primary hover:opacity-90 text-background rounded-2xl font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition active:scale-[0.99] cursor-pointer disabled:opacity-50"
         >
-          <HardDrive size={17} />
-          <span>{isCloning ? 'Cloning into Workspace...' : 'Initialize Local Workspace Clone'}</span>
+          {isCloning ? (
+            <span className="w-4 h-4 rounded-full border-2 border-background border-t-transparent animate-spin" />
+          ) : (
+            <HardDrive size={15} />
+          )}
+          <span>{isCloning ? 'Cloning Repository...' : 'Initialize Local Workspace Clone'}</span>
         </button>
 
+        {/* Download ZIP Button */}
         <button
           type="button"
           onClick={handleDownloadZip}
-          disabled={!repoUrl.trim() || isDownloadingZip}
-          className="w-full min-h-[48px] h-12 rounded-xl bg-surface-1 border border-border hover:bg-surface-2 disabled:opacity-40 text-text-primary font-semibold text-xs flex items-center justify-center gap-2 active:scale-98 transition-all cursor-pointer"
+          disabled={isDownloadingZip}
+          className="w-full py-3.5 bg-surface-1 border border-border/90 hover:bg-surface-2 text-text-primary rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition active:scale-[0.99] shadow-xs cursor-pointer disabled:opacity-50"
         >
-          <Download size={17} className="text-accent" />
-          <span>{isDownloadingZip ? 'Preparing ZIP Archive...' : 'Download Repository as ZIP Archive'}</span>
+          {isDownloadingZip ? (
+            <span className="w-4 h-4 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+          ) : (
+            <Download size={15} className="text-text-tertiary" />
+          )}
+          <span>{isDownloadingZip ? 'Preparing ZIP...' : 'Download Repository as ZIP Archive'}</span>
         </button>
       </div>
     </div>
   );
 };
-
-export const MobileClone = Clone;

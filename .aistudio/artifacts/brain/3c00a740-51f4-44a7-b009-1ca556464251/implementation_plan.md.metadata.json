@@ -1,0 +1,6 @@
+{
+  "summary":  "Comprehensive Staff Engineering Architecture Specification for extending the Git Manager Pro 8-Point Spatial System across the entire application:\n- Unifies design tokens, canvas (#0B0F19), surfaces (#131B2E, #1C263E, #263454), borders (#212E4A, #31446E), and Git semantic colors (add #3FB950, del #F85149, mod #388BFD, branch #58A6FF, merge #A371F7, warn #D29922) across both Desktop and Mobile.\n- Standardizes typography on Plus Jakarta Sans and JetBrains Mono with strict tabular figures.\n- Propagates the 8-point spatial foundation (4px, 8px, 12px, 16px, 20px, 24px, 32px, 40px, 44px, 48px, 56px) across DesktopLayout, MobileShell, CommitDetailModal, and Repositories.\n- Implements the complete verified commit inspection bottom sheet (lineage tree, quantitative churn bar, interactive hunks, and CI/CD stages).",
+  "updatedAt":  "2026-10-22T20:10:40.845960109Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}
