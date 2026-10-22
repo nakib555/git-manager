@@ -68,8 +68,12 @@ export async function fetchFileContentSafe({
   branch?: string | null;
   token?: string | null;
 }): Promise<string> {
-  const resolvedOwner = owner || 'nakib555';
+  const resolvedOwner = owner || '';
   const resolvedBranch = branch || 'main';
+
+  if (!resolvedOwner || !repoName) {
+    return `// Repository or owner not specified.`;
+  }
 
   // 1. If token is present, try authenticated GitHub contents API
   if (token) {
@@ -160,7 +164,21 @@ export async function fetchCommitDetailsSafe({
   token?: string | null;
   fallbackCommit?: any;
 }): Promise<DetailedCommitInfo> {
-  const resolvedOwner = owner || 'nakib555';
+  const resolvedOwner = owner || '';
+  if (!resolvedOwner || !repoName) {
+    return {
+      hash: fallbackCommit?.hash || commitSha.substring(0, 7),
+      fullHash: fallbackCommit?.fullHash || commitSha,
+      msg: fallbackCommit?.msg || 'Commit update',
+      author: fallbackCommit?.author || 'Developer',
+      authorAvatar: fallbackCommit?.avatarUrl,
+      date: fallbackCommit?.date || fallbackCommit?.timestamp || new Date().toISOString(),
+      verified: false,
+      stats: { total: 0, additions: 0, deletions: 0 },
+      files: [],
+      checkRuns: [],
+    };
+  }
   const headers: Record<string, string> = {
     Accept: 'application/vnd.github.v3+json',
   };

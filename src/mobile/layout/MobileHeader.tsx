@@ -49,7 +49,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
         {/* Left: Hamburger menu icon (Account / Notifications Drawer) */}
         <button
           onClick={onOpenDrawer}
-          className="w-11 h-11 -ml-1.5 flex items-center justify-center rounded-xl text-text-secondary hover:text-text-primary hover:bg-surface-2 active:scale-95 transition-all cursor-pointer"
+          className="w-12 h-12 -ml-2 flex items-center justify-center rounded-xl text-text-secondary hover:text-text-primary hover:bg-surface-2 active:scale-95 transition-all cursor-pointer"
           aria-label="Open Navigation Drawer"
         >
           <Menu size={20} strokeWidth={2.2} />
@@ -132,17 +132,17 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
         </div>
 
         {/* Right: Search icon + Plus (+) Action Sheet trigger */}
-        <div className="flex items-center gap-1 -mr-1.5">
+        <div className="flex items-center gap-1 -mr-2">
           <button
             onClick={openCommandPalette}
-            className="w-11 h-11 flex items-center justify-center rounded-xl text-text-secondary hover:text-text-primary hover:bg-surface-2 active:scale-95 transition-all cursor-pointer"
+            className="w-12 h-12 flex items-center justify-center rounded-xl text-text-secondary hover:text-text-primary hover:bg-surface-2 active:scale-95 transition-all cursor-pointer"
             aria-label="Search Workspace (Cmd+K)"
           >
             <Search size={19} strokeWidth={2.2} />
           </button>
           <button
             onClick={onOpenActionSheet}
-            className="w-11 h-11 flex items-center justify-center rounded-xl text-white bg-accent hover:opacity-90 shadow-sm shadow-accent/25 active:scale-95 transition-all cursor-pointer"
+            className="w-12 h-12 flex items-center justify-center rounded-xl text-white bg-accent hover:opacity-90 shadow-sm shadow-accent/25 active:scale-95 transition-all cursor-pointer"
             aria-label="Create New Action"
           >
             <Plus size={20} strokeWidth={2.5} />

@@ -2,9 +2,11 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useAppContext } from '../../AppContext';
 import { RepoCard } from '../components/RepoCard';
 import { PaginationControls } from '../../components/common/PaginationControls';
+import { EmptyState } from '../components/EmptyState';
+import { InlineErrorCard } from '../components/InlineErrorCard';
 import { 
   Search, SlidersHorizontal, X, ChevronLeft, ChevronRight, 
-  Check, FolderGit2, Loader2 
+  Check, FolderGit2, Loader2, Download, FolderPlus, Globe 
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { RepoSortBy } from '../../types';
@@ -28,7 +30,15 @@ export const Repositories: React.FC = () => {
     repoTypeFilter,
     setRepoTypeFilter,
     isFetchingRepos,
+    connectGitHub,
+    openModal,
+    navigate,
+    refreshData,
+    githubToken,
+    showToast,
   } = useAppContext();
+
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   const [localSearch, setLocalSearch] = useState(repoSearchQuery);
   const [isSortSheetOpen, setIsSortSheetOpen] = useState(false);
@@ -175,26 +185,74 @@ export const Repositories: React.FC = () => {
 
       {/* 2. Repositories List */}
       <div className="p-4 space-y-3 flex-1 min-h-0">
-        {githubRepos.length === 0 ? (
-          <div className="bg-surface-1 border border-border rounded-xl p-10 text-center flex flex-col items-center justify-center space-y-3">
-            <div className="w-12 h-12 rounded-xl bg-surface-2 border border-border flex items-center justify-center text-text-tertiary">
-              <FolderGit2 size={24} />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-text-primary">No repositories found</h3>
-              <p className="text-xs text-text-tertiary mt-1">
-                {localSearch ? 'Try a different search term or clear the filter.' : 'No repositories synchronized with your profile yet.'}
-              </p>
-            </div>
-            {localSearch && (
-              <button
-                onClick={() => setLocalSearch('')}
-                className="h-8 px-3 rounded-lg bg-surface-2 border border-border text-xs font-semibold text-text-primary hover:bg-hover transition-colors"
-              >
-                Clear Search
-              </button>
-            )}
-          </div>
+        {syncError ? (
+          <InlineErrorCard
+            title="Repository Sync Failed"
+            message="Unable to fetch repositories from GitHub. Please verify your connection or token."
+            error={syncError}
+            onRetry={async () => {
+              setSyncError(null);
+              try {
+                await refreshData();
+                showToast('Repositories refreshed successfully', 'success');
+              } catch (err: any) {
+                setSyncError(err.message || 'Failed to refresh repositories');
+                showToast('Failed to refresh repositories', 'error');
+              }
+            }}
+            secondaryAction={{
+              label: 'Open Clone Screen',
+              onClick: () => navigate('clone'),
+            }}
+          />
+        ) : githubRepos.length === 0 ? (
+          localSearch.trim() ? (
+            <EmptyState
+              icon={Search}
+              title={`No repositories match "${localSearch}"`}
+              description="Check spelling, adjust your search filter, or explore the Global GitHub scope."
+              primaryAction={{
+                label: 'Clear Search Filter',
+                onClick: () => setLocalSearch(''),
+              }}
+              secondaryAction={
+                repoSearchScope === 'personal'
+                  ? {
+                      label: 'Search Global GitHub',
+                      icon: Globe,
+                      onClick: () => {
+                        setRepoSearchScope('global');
+                        setRepoPage(1);
+                      },
+                    }
+                  : undefined
+              }
+            />
+          ) : (
+            <EmptyState
+              icon={FolderGit2}
+              title="No repositories connected"
+              description="Connect your GitHub account to access all your repositories, or clone an external repository into your local workspace."
+              primaryAction={
+                githubToken
+                  ? {
+                      label: 'Create New Repository',
+                      icon: FolderPlus,
+                      onClick: () => openModal('repo'),
+                    }
+                  : {
+                      label: 'Connect GitHub Account',
+                      icon: FolderGit2,
+                      onClick: connectGitHub,
+                    }
+              }
+              secondaryAction={{
+                label: 'Clone Repository',
+                icon: Download,
+                onClick: () => navigate('clone'),
+              }}
+            />
+          )
         ) : (
           paginatedRepos.map((repo) => (
             <RepoCard

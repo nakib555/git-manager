@@ -5,6 +5,8 @@ import { CommitDetailModal } from '../../components/CommitDetailModal';
 import { filterLocalCommits, DatePreset } from '../../../hooks/useCommits';
 import { GitGraph } from '../../../components/commit/GitGraph';
 import { PaginationControls } from '../../../components/common/PaginationControls';
+import { EmptyState } from '../../components/EmptyState';
+import { InlineErrorCard } from '../../components/InlineErrorCard';
 import { 
   GitCommit, Search, X, Filter, Calendar, User, 
   RotateCcw, Plus, ChevronDown, ChevronUp, GitGraph as GitGraphIcon, List
@@ -359,25 +361,33 @@ export const CommitsScreen: React.FC = () => {
           />
         </div>
       ) : filteredCommits.length === 0 ? (
-        <div className="bg-surface-1 border border-border rounded-xl p-8 text-center flex flex-col items-center justify-center">
-          <GitCommit size={32} className="text-text-tertiary mb-2 opacity-50" />
-          <span className="text-sm font-semibold text-text-primary mb-1">
-            {activeCommits.length === 0 ? 'No commits on branch' : 'No matching commits'}
-          </span>
-          <span className="text-xs text-text-tertiary max-w-[260px] leading-relaxed mb-3">
-            {activeCommits.length === 0
-              ? 'Create a commit to start building project history.'
-              : 'Try adjusting your search query, author name, or date range filter.'}
-          </span>
-          {activeFilterCount > 0 && (
-            <button
-              onClick={handleClearAllFilters}
-              className="px-3 py-1.5 bg-accent-soft border border-accent/30 text-accent text-xs font-semibold rounded-lg hover:bg-accent hover:text-white transition-colors cursor-pointer"
-            >
-              Reset Filters
-            </button>
-          )}
-        </div>
+        activeCommits.length === 0 ? (
+          <EmptyState
+            icon={GitCommit}
+            title="No commits on this branch"
+            description="Start building history by staging and creating your first commit on this branch."
+            primaryAction={{
+              label: 'Create First Commit',
+              icon: Plus,
+              onClick: () => openModal('commit'),
+            }}
+            secondaryAction={{
+              label: 'Switch Branch',
+              icon: RotateCcw,
+              onClick: () => openModal('branch'),
+            }}
+          />
+        ) : (
+          <EmptyState
+            icon={Search}
+            title="No matching commits found"
+            description="No commits match the selected search query, author name, or date range filter."
+            primaryAction={{
+              label: 'Reset All Filters',
+              onClick: handleClearAllFilters,
+            }}
+          />
+        )
       ) : (
         <div className="space-y-3">
           <div className="space-y-2.5">

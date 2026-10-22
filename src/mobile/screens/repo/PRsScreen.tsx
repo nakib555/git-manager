@@ -8,6 +8,8 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { formatRelativeTime } from '../../utils/formatters';
 import { DiffViewer } from '../../../components/commit/DiffViewer';
+import { EmptyState } from '../../components/EmptyState';
+import { InlineErrorCard } from '../../components/InlineErrorCard';
 
 interface PRCommit {
   hash: string;
@@ -46,12 +48,14 @@ export const PRsScreen: React.FC = () => {
   const [prCommits, setPrCommits] = useState<PRCommit[]>([]);
   const [prFiles, setPrFiles] = useState<PRFile[]>([]);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const [prDetailError, setPrDetailError] = useState<string | null>(null);
 
   const selectedPR = activePRs.find(p => (p.id === selectedPRId || (p as any).number === selectedPRId));
 
-  useEffect(() => {
+  const loadPRDetails = () => {
     if (selectedPR && githubToken && currentRepoOwner && currentRepo) {
       setIsLoadingDetails(true);
+      setPrDetailError(null);
       setActiveTab('overview');
       const headers = {
         Authorization: githubToken.startsWith('gh') ? `Bearer ${githubToken}` : `token ${githubToken}`,
@@ -61,9 +65,10 @@ export const PRsScreen: React.FC = () => {
       const prNumber = selectedPR.id || (selectedPR as any).number;
 
       // 1. Fetch commits for PR
-      fetch(`https://api.github.com/repos/${currentRepoOwner}/${currentRepo}/pulls/${prNumber}/commits`, { headers })
-        .then(res => res.json())
-        .then(data => {
+      const commitsPromise = fetch(`https://api.github.com/repos/${currentRepoOwner}/${currentRepo}/pulls/${prNumber}/commits`, { headers })
+        .then(async res => {
+          if (!res.ok) throw new Error(`Commits status ${res.status}`);
+          const data = await res.json();
           if (Array.isArray(data)) {
             setPrCommits(data.map((c: any) => ({
               hash: c.sha.substring(0, 7),
@@ -72,13 +77,13 @@ export const PRsScreen: React.FC = () => {
               time: formatTime(c.commit.author?.date || c.commit.committer?.date),
             })));
           }
-        })
-        .catch(console.error);
+        });
 
       // 2. Fetch files changed
-      fetch(`https://api.github.com/repos/${currentRepoOwner}/${currentRepo}/pulls/${prNumber}/files`, { headers })
-        .then(res => res.json())
-        .then(data => {
+      const filesPromise = fetch(`https://api.github.com/repos/${currentRepoOwner}/${currentRepo}/pulls/${prNumber}/files`, { headers })
+        .then(async res => {
+          if (!res.ok) throw new Error(`Files status ${res.status}`);
+          const data = await res.json();
           if (Array.isArray(data)) {
             setPrFiles(data.map((f: any) => ({
               filename: f.filename,
@@ -87,13 +92,24 @@ export const PRsScreen: React.FC = () => {
               patch: f.patch || '',
             })));
           }
+        });
+
+      Promise.all([commitsPromise, filesPromise])
+        .catch(err => {
+          const errMsg = err.message || 'Failed to load PR details from GitHub API';
+          setPrDetailError(errMsg);
+          showToast('Failed to load PR details', 'error');
         })
-        .catch(console.error)
         .finally(() => setIsLoadingDetails(false));
     } else {
       setPrCommits([]);
       setPrFiles([]);
+      setPrDetailError(null);
     }
+  };
+
+  useEffect(() => {
+    loadPRDetails();
   }, [selectedPRId, selectedPR, githubToken, currentRepoOwner, currentRepo]);
 
   const handleMergePR = async () => {
@@ -192,15 +208,33 @@ export const PRsScreen: React.FC = () => {
 
       {/* 3. PR List */}
       {filteredPRs.length === 0 ? (
-        <div className="bg-surface-1 border border-border rounded-2xl p-8 text-center flex flex-col items-center justify-center">
-          <GitPullRequest size={32} className="text-text-tertiary mb-2 opacity-50" />
-          <span className="text-sm font-semibold text-text-primary mb-1">
-            No {filterStatus} pull requests
-          </span>
-          <span className="text-xs text-text-tertiary">
-            Open a pull request to initiate branch review and merging.
-          </span>
-        </div>
+        activePRs.length === 0 ? (
+          <EmptyState
+            icon={GitPullRequest}
+            title="No pull requests found"
+            description={`No pull requests have been opened in ${currentRepo || 'this repository'} yet.`}
+            primaryAction={{
+              label: 'Open Pull Request',
+              icon: Plus,
+              onClick: () => openModal('pr'),
+            }}
+          />
+        ) : (
+          <EmptyState
+            icon={GitPullRequest}
+            title={`No ${filterStatus} pull requests`}
+            description={`There are no pull requests matching the "${filterStatus}" status filter.`}
+            primaryAction={{
+              label: 'Show All Pull Requests',
+              onClick: () => setFilterStatus('all'),
+            }}
+            secondaryAction={{
+              label: 'New Pull Request',
+              icon: Plus,
+              onClick: () => openModal('pr'),
+            }}
+          />
+        )
       ) : (
         <div className="space-y-3">
           {filteredPRs.map((pr) => {
@@ -235,13 +269,13 @@ export const PRsScreen: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Status tag */}
-                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border font-mono shrink-0 ${
+                  {/* Status indicator (Zero-pill unboxed typography) */}
+                  <span className={`text-[11px] font-semibold font-mono shrink-0 ${
                     isMerged 
-                      ? 'bg-[#A371F7]/10 text-[#A371F7] border-[#A371F7]/30' 
+                      ? 'text-[#A371F7]' 
                       : isClosed 
-                      ? 'bg-[#F85149]/10 text-[#F85149] border-[#F85149]/30' 
-                      : 'bg-[#3FB950]/10 text-[#3FB950] border-[#3FB950]/30'
+                      ? 'text-[#F85149]' 
+                      : 'text-[#3FB950]'
                   }`}>
                     {pr.status || (isClosed ? 'Closed' : 'Open')}
                   </span>
@@ -438,7 +472,14 @@ export const PRsScreen: React.FC = () => {
 
                 {activeTab === 'commits' && (
                   <div className="space-y-2">
-                    {prCommits.length === 0 ? (
+                    {prDetailError ? (
+                      <InlineErrorCard
+                        title="Failed to Load PR Commits"
+                        message={prDetailError}
+                        onRetry={loadPRDetails}
+                        compact
+                      />
+                    ) : prCommits.length === 0 ? (
                       <div className="p-6 text-center text-xs text-text-tertiary bg-surface-2 rounded-xl">
                         {isLoadingDetails ? 'Loading pull request commits...' : 'No commits listed for this pull request.'}
                       </div>
@@ -466,7 +507,14 @@ export const PRsScreen: React.FC = () => {
 
                 {activeTab === 'files' && (
                   <div className="space-y-3">
-                    {prFiles.length === 0 ? (
+                    {prDetailError ? (
+                      <InlineErrorCard
+                        title="Failed to Load PR File Changes"
+                        message={prDetailError}
+                        onRetry={loadPRDetails}
+                        compact
+                      />
+                    ) : prFiles.length === 0 ? (
                       <div className="p-6 text-center text-xs text-text-tertiary bg-surface-2 rounded-xl">
                         {isLoadingDetails ? 'Loading changed files...' : 'No file changes detected in this pull request.'}
                       </div>

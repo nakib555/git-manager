@@ -176,9 +176,28 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
         {/* Results List */}
         <div className="max-h-[384px] overflow-y-auto p-2 no-scrollbar">
           {items.length === 0 ? (
-            <div className="py-12 text-center text-text-muted text-xs">
-              <FolderGit2 size={24} className="mx-auto mb-2 opacity-50" />
-              <span>No matching repositories or commands found for "{query}"</span>
+            <div className="py-10 px-4 text-center flex flex-col items-center justify-center space-y-3">
+              <div className="w-10 h-10 rounded-xl bg-hover border border-border flex items-center justify-center text-text-muted">
+                <FolderGit2 size={20} />
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-text-main">
+                  No matches found for "{query}"
+                </p>
+                <p className="text-[11px] text-text-muted max-w-xs">
+                  Check for typos or clear your search to explore all repositories and system commands.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery('');
+                  inputRef.current?.focus();
+                }}
+                className="h-8 px-3 rounded-lg bg-primary text-white text-xs font-medium hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-xs"
+              >
+                Clear Search Query
+              </button>
             </div>
           ) : (
             <div className="space-y-1">

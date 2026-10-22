@@ -10,6 +10,8 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { fetchCommitDetailsSafe, DetailedCommitInfo, ChangedFileDiff, CheckRunItem } from '../utils/gitApi';
 import { formatRelativeTime } from '../utils/formatters';
+import { EmptyState } from './EmptyState';
+import { InlineErrorCard } from './InlineErrorCard';
 
 export interface CommitDetailModalProps {
   commit: any | null;
@@ -39,6 +41,7 @@ export const CommitDetailModal: React.FC<CommitDetailModalProps> = ({
   const [isBranchInputOpen, setIsBranchInputOpen] = useState(false);
   const [newBranchName, setNewBranchName] = useState('');
   const [isReloadingChecks, setIsReloadingChecks] = useState(false);
+  const [checkRunsError, setCheckRunsError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!commit) {
@@ -53,7 +56,7 @@ export const CommitDetailModal: React.FC<CommitDetailModalProps> = ({
         const details = await fetchCommitDetailsSafe({
           commitSha: commit.fullHash || commit.hash,
           repoName: currentRepo || 'repository',
-          owner: currentRepoOwner || githubUser?.login || 'nakib555',
+          owner: currentRepoOwner || githubUser?.login || '',
           token: githubToken,
           fallbackCommit: commit,
         });
@@ -104,18 +107,21 @@ export const CommitDetailModal: React.FC<CommitDetailModalProps> = ({
 
   const handleReloadChecks = async () => {
     setIsReloadingChecks(true);
+    setCheckRunsError(null);
     try {
       const details = await fetchCommitDetailsSafe({
         commitSha: commit.fullHash || commit.hash,
         repoName: currentRepo || 'repository',
-        owner: currentRepoOwner || githubUser?.login || 'nakib555',
+        owner: currentRepoOwner || githubUser?.login || '',
         token: githubToken,
         fallbackCommit: commit,
       });
       setCommitDetail(details);
       showToast('Refreshed check runs from GitHub API', 'info');
-    } catch (_) {
-      showToast('Failed to refresh check runs', 'error');
+    } catch (err: any) {
+      const msg = err.message || 'Failed to refresh check runs from GitHub API';
+      setCheckRunsError(msg);
+      showToast(msg, 'error');
     } finally {
       setIsReloadingChecks(false);
     }
@@ -308,10 +314,12 @@ export const CommitDetailModal: React.FC<CommitDetailModalProps> = ({
                     )}
                   </>
                 ) : (
-                  <div className="p-8 text-center text-xs text-text-tertiary bg-background border border-border rounded-xl">
-                    <p className="font-semibold text-text-secondary mb-1">No file diffs recorded for this commit</p>
-                    <p>Initial commit or changeset metadata was not returned by GitHub REST API.</p>
-                  </div>
+                  <EmptyState
+                    icon={FileDiff}
+                    title="No file diffs recorded"
+                    description="Initial commit or changeset diffs were not returned by GitHub REST API for this commit SHA."
+                    compact
+                  />
                 )}
               </div>
             ) : activeTab === 'details' ? (
@@ -403,7 +411,14 @@ export const CommitDetailModal: React.FC<CommitDetailModalProps> = ({
                   </button>
                 </div>
 
-                {checkRuns.length > 0 ? (
+                {checkRunsError ? (
+                  <InlineErrorCard
+                    title="CI/CD Status Failed"
+                    message={checkRunsError}
+                    onRetry={handleReloadChecks}
+                    compact
+                  />
+                ) : checkRuns.length > 0 ? (
                   <div className="space-y-2">
                     {checkRuns.map((cr) => (
                       <div key={cr.id} className="p-3 rounded-xl bg-background border border-border flex items-center justify-between text-xs">
@@ -444,12 +459,17 @@ export const CommitDetailModal: React.FC<CommitDetailModalProps> = ({
                     ))}
                   </div>
                 ) : (
-                  <div className="p-6 text-center text-xs text-text-tertiary bg-background border border-border rounded-xl">
-                    <p className="font-semibold text-text-secondary mb-1">No automated check runs recorded</p>
-                    <p className="leading-relaxed">
-                      GitHub Actions workflows trigger on push when `.github/workflows` configurations are active in the repository.
-                    </p>
-                  </div>
+                  <EmptyState
+                    icon={ShieldCheck}
+                    title="No automated check runs recorded"
+                    description="GitHub Actions workflows trigger on push when .github/workflows configurations are active in this repository."
+                    primaryAction={{
+                      label: 'Refresh Checks',
+                      icon: RefreshCw,
+                      onClick: handleReloadChecks,
+                    }}
+                    compact
+                  />
                 )}
               </div>
             )}

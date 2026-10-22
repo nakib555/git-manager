@@ -41,128 +41,23 @@ export interface CiCdState {
 }
 
 // ---------------------------------------------------------
-// Deterministic fallback simulated statuses
+// Authentic CI/CD Status: Returns empty state when real GitHub check-runs are absent
 // ---------------------------------------------------------
-export const getCiCdStatus = (hash: string): CiCdState => {
-  if (!hash) {
-    return {
-      status: 'success',
-      label: 'Passed',
-      color: 'text-emerald-500 dark:text-emerald-400 border-emerald-500/20 bg-emerald-500/10',
-      badgeBg: 'bg-emerald-500/10',
-      duration: '1m 24s',
-      steps: []
-    };
-  }
-  
-  const cleanHash = hash.replace(/[^0-9a-f]/gi, '') || 'abc';
-  const sum = cleanHash.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  
-  // Deterministic status selection: 70% success, 15% failed, 15% running
-  const index = sum % 100;
-  let status: 'success' | 'failed' | 'running' = 'success';
-  if (index < 12) {
-    status = 'failed';
-  } else if (index < 24) {
-    status = 'running';
-  }
-
-  const durationSec = 45 + (sum % 115);
-  const durationStr = `${Math.floor(durationSec / 60)}m ${durationSec % 60}s`;
-
-  if (status === 'success') {
-    return {
-      status: 'success',
-      label: 'Passed',
-      color: 'text-[#3FB950] border-[#3FB950]/20 bg-[#3FB950]/10',
-      badgeBg: 'bg-[#3FB950]/10',
-      duration: durationStr,
-      steps: [
-        { name: 'lint-and-format', status: 'success', duration: '12s', log: '✔ ESLint checks passed successfully\n✔ Prettier formatting verified\n✔ No unused imports or variables found' },
-        { name: 'unit-tests', status: 'success', duration: '28s', log: '✔ Running Jest/Vitest suite...\n✔ test: "Commit List should render with proper styling" [PASS]\n✔ test: "DiffViewer displays syntactical highlighting" [PASS]\n✔ 42 tests passed, 0 failed' },
-        { name: 'production-build', status: 'success', duration: '34s', log: '✔ Vite production build created\n✔ TSX bundling completed\n✔ Assets optimized (dist/ generated: 142.4 kB gzip)' },
-        { name: 'cloud-deploy', status: 'success', duration: `${durationSec - 74}s`, log: '✔ Connecting to container ingress portal...\n✔ Deployed successfully to Cloud Run instance\n✔ Service URL: https://ais-pre-azzk4cifz4c5f6qxuplgpd-41816522833.asia-southeast1.run.app' }
-      ]
-    };
-  } else if (status === 'running') {
-    const activeStepIdx = sum % 3; // 0, 1, or 2
-    return {
-      status: 'running',
-      label: 'Running',
-      color: 'text-[#D29922] border-[#D29922]/20 bg-[#D29922]/10',
-      badgeBg: 'bg-[#D29922]/10',
-      duration: 'Running...',
-      steps: [
-        { 
-          name: 'lint-and-format', 
-          status: activeStepIdx === 0 ? 'running' : 'success', 
-          duration: activeStepIdx === 0 ? 'running...' : '12s', 
-          log: activeStepIdx === 0 ? 'ℹ Running ESLint diagnostics...\n➡ Checking AppContext imports...' : '✔ ESLint checks passed' 
-        },
-        { 
-          name: 'unit-tests', 
-          status: activeStepIdx > 1 ? 'success' : (activeStepIdx === 1 ? 'running' : 'pending'), 
-          duration: activeStepIdx === 1 ? 'running...' : (activeStepIdx > 1 ? '30s' : 'pending'), 
-          log: activeStepIdx === 1 
-            ? 'ℹ Spawning Vitest runtime...\n➡ Running unit-tests suite (12/42)...' 
-            : (activeStepIdx > 1 ? '✔ All unit tests passed' : 'Waiting for preceding steps...') 
-        },
-        { 
-          name: 'production-build', 
-          status: activeStepIdx === 2 ? 'running' : 'pending', 
-          duration: activeStepIdx === 2 ? 'running...' : 'pending', 
-          log: activeStepIdx === 2 ? 'ℹ Running rollup bundle optimization...' : 'Waiting for preceding steps...' 
-        },
-        { name: 'cloud-deploy', status: 'pending', duration: 'pending', log: 'Waiting for build completion...' }
-      ]
-    };
-  } else {
-    const failStepIdx = sum % 3; // 0, 1, or 2
-    return {
-      status: 'failed',
-      label: 'Failed',
-      color: 'text-[#F85149] border-[#F85149]/20 bg-[#F85149]/10',
-      badgeBg: 'bg-[#F85149]/10',
-      duration: `${failStepIdx * 25 + 15}s`,
-      steps: [
-        { 
-          name: 'lint-and-format', 
-          status: failStepIdx === 0 ? 'failed' : 'success', 
-          duration: failStepIdx === 0 ? '8s' : '12s', 
-          log: failStepIdx === 0 
-            ? '❌ ESLint failed:\n  /src/App.tsx: 24:10  error  "theme" is defined but never used  @typescript-eslint/no-unused-vars\n\nnpm ERR! code ELIFECYCLE' 
-            : '✔ ESLint checks passed' 
-        },
-        { 
-          name: 'unit-tests', 
-          status: failStepIdx === 1 ? 'failed' : (failStepIdx > 1 ? 'success' : 'pending'), 
-          duration: failStepIdx === 1 ? '18s' : (failStepIdx > 1 ? '24s' : 'pending'), 
-          log: failStepIdx === 1 
-            ? '❌ 1 test failed:\n  ● Commit Inspector > should render diff file highlight\n  Expected "Passed" but received "Failed"\n\n  at /src/tests/CommitInspector.test.tsx:42:15' 
-            : (failStepIdx > 1 ? '✔ All unit tests passed' : 'Pipeline stopped due to preceding failures') 
-        },
-        { 
-          name: 'production-build', 
-          status: failStepIdx === 2 ? 'failed' : 'pending', 
-          duration: failStepIdx === 2 ? '30s' : 'pending', 
-          log: failStepIdx === 2 
-            ? '❌ Build error:\n  vite: not found\n  npm ERR! code ELIFECYCLE\n  npm ERR! errno 127' 
-            : 'Pipeline stopped due to preceding failures' 
-        },
-        { name: 'cloud-deploy', status: 'pending', duration: 'pending', log: 'Pipeline stopped due to preceding failures' }
-      ]
-    };
-  }
+export const getCiCdStatus = (_hash: string): CiCdState => {
+  return {
+    status: 'pending',
+    label: 'No Checks',
+    color: 'text-text-muted/60 border-border bg-surface-2',
+    badgeBg: 'bg-surface-2',
+    duration: '0s',
+    steps: []
+  };
 };
 
-// ---------------------------------------------------------
-// Global Simulator Store for sandbox demonstration
-// ---------------------------------------------------------
 type Listener = () => void;
 class CiCdLiveStore {
   private listeners = new Set<Listener>();
   private states: Record<string, CiCdState> = {};
-  private timerIntervals: Record<string, any> = {};
 
   subscribe(listener: Listener) {
     this.listeners.add(listener);
@@ -177,149 +72,11 @@ class CiCdLiveStore {
 
   getState(hash: string): CiCdState {
     if (!hash) return getCiCdStatus(hash);
-
-    if (this.states[hash]) {
-      return this.states[hash];
-    }
-
-    const base = getCiCdStatus(hash);
-    if (base.status === 'running') {
-      this.startSimulation(hash, base);
-    } else {
-      this.states[hash] = base;
-    }
-
-    return this.states[hash];
+    return this.states[hash] || getCiCdStatus(hash);
   }
 
-  rerunPipeline(hash: string) {
-    const base = getCiCdStatus(hash);
-    const initialRunningState: CiCdState = {
-      ...base,
-      status: 'running',
-      label: 'Running',
-      color: 'text-sky-500 dark:text-sky-400 border-sky-500/20 bg-sky-500/10 dark:bg-sky-500/5',
-      badgeBg: 'bg-sky-500/10 dark:bg-sky-500/5',
-      duration: '0s',
-      steps: base.steps.map(s => ({
-        ...s,
-        status: 'pending',
-        duration: 'pending',
-        log: 'Waiting to start...'
-      }))
-    };
-    this.startSimulation(hash, initialRunningState);
-  }
-
-  private startSimulation(hash: string, baseState: CiCdState) {
-    if (this.timerIntervals[hash]) {
-      clearInterval(this.timerIntervals[hash]);
-    }
-
-    const state: CiCdState = JSON.parse(JSON.stringify(baseState));
-    this.states[hash] = state;
-
-    let seconds = 0;
-    let currentStepIdx = 0;
-
-    // Set first step to running
-    if (state.steps.length > 0) {
-      state.steps = state.steps.map((s, idx) => {
-        if (idx === 0) {
-          return {
-            ...s,
-            status: 'running',
-            duration: 'running...',
-            log: 'ℹ Initializing build runner...\n➡ Loading workspace assets and configurations...\n➡ Pre-checking compiler dependency resolution...'
-          };
-        }
-        return {
-          ...s,
-          status: 'pending',
-          duration: 'pending',
-          log: 'Waiting for preceding steps...'
-        };
-      });
-    }
-
-    const stepLogs: Record<string, string[]> = {
-      'lint-and-format': [
-        '✔ ESLint configuration verified successfully.',
-        'ℹ Auditing source files for layout & formatting constraints...',
-        '✔ Prettier auto-formatting rules verified.',
-        '✔ Production linter checks passed (0 errors, 0 warnings).'
-      ],
-      'unit-tests': [
-        '✔ Initializing test environment hooks...',
-        'ℹ Running Jest / Vitest spec suites (12 tests discovered)...',
-        '✔ test: "Commit Inspector loads modal panels correctly" [PASS]',
-        '✔ test: "DiffViewer code syntax highlight parser is valid" [PASS]',
-        '✔ Vitest checks passed with absolutely 0 failed assertions.'
-      ],
-      'production-build': [
-        '✔ Vite compiler pipeline initialization started.',
-        'ℹ Compiling TypeScript application files to dist/ folder...',
-        '✔ Bundle optimization complete: applet bundle generated securely.',
-        '✔ Build assets cached: 145.2 kB verified successfully.'
-      ],
-      'cloud-deploy': [
-        '✔ Creating secure production gateway connection...',
-        'ℹ Authorizing artifact registry image push triggers...',
-        '✔ Deploying to live server workspace successfully!',
-        '✔ Production Environment URL: https://ais-pre-azzk4cifz4c5f6qxuplgpd-41816522833.asia-southeast1.run.app'
-      ]
-    };
-
-    const intervalId = setInterval(() => {
-      seconds++;
-      state.duration = `${seconds}s`;
-
-      const currentStep = state.steps[currentStepIdx];
-      if (currentStep) {
-        const logs = stepLogs[currentStep.name] || [];
-        const logLinesToShow = Math.min(logs.length, Math.floor(seconds / 2) + 1);
-        const activeLogs = logs.slice(0, logLinesToShow).join('\n');
-        
-        currentStep.log = `ℹ [Executing CI/CD Pipeline] Running timer: ${seconds}s...\n` + activeLogs;
-        currentStep.duration = `${seconds % 8}s`;
-
-        // Every 8 seconds progress to the next step
-        if (seconds > 0 && seconds % 8 === 0) {
-          currentStep.status = 'success';
-          currentStep.duration = '8s';
-          currentStep.log = `✔ [Finished] Step completed in 8s\n` + logs.join('\n');
-
-          currentStepIdx++;
-          if (currentStepIdx < state.steps.length) {
-            const nextStep = state.steps[currentStepIdx];
-            nextStep.status = 'running';
-            nextStep.duration = 'running...';
-            nextStep.log = `ℹ Spawning next process queue: ${nextStep.name}...`;
-          } else {
-            // All steps complete!
-            state.status = 'success';
-            state.label = 'Passed';
-            state.color = 'text-emerald-500 dark:text-emerald-400 border-emerald-500/20 bg-emerald-500/10 dark:bg-emerald-500/5';
-            state.badgeBg = 'bg-emerald-500/10 dark:bg-emerald-500/5';
-            state.duration = `${seconds}s`;
-            clearInterval(intervalId);
-          }
-        }
-      } else {
-        // Fallback safety if steps are empty
-        state.status = 'success';
-        state.label = 'Passed';
-        state.color = 'text-emerald-500 dark:text-emerald-400 border-emerald-500/20 bg-emerald-500/10 dark:bg-emerald-500/5';
-        state.badgeBg = 'bg-emerald-500/10 dark:bg-emerald-500/5';
-        state.duration = `${seconds}s`;
-        clearInterval(intervalId);
-      }
-
-      this.states[hash] = { ...state };
-      this.notify();
-    }, 1000);
-
-    this.timerIntervals[hash] = intervalId;
+  rerunPipeline(_hash: string) {
+    // No-op for authentic GitHub check-runs without synthetic timers
   }
 }
 

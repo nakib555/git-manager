@@ -11,7 +11,7 @@ import {
   Search, Lock, Globe, Square, FolderGit2, Folder, GitBranch, 
   GitPullRequest, GitCommit, Check, Key, ExternalLink, ShieldAlert, 
   User, Moon, Sun, ChevronRight, ChevronLeft, Github, Cloud, KeySquare, Bell, 
-  Sliders, ArrowLeft, MoreVertical, Activity, Grid, Home, Eye, 
+  Sliders, ArrowLeft, MoreVertical, Activity, Home, Eye, 
   EyeOff, RefreshCw, ChevronDown, BookOpen, Clock, FileText, 
   FileCode, Terminal, HelpCircle, Edit2, Trash2, Undo, Tag, RotateCcw,
   AlertCircle, HardDrive, X, Star, GitFork, AlertTriangle, Loader2,
@@ -2568,18 +2568,18 @@ const DesktopInsightsView: React.FC = () => {
   return (
     <div className="space-y-6 flex-1 overflow-y-auto pr-1 no-scrollbar pb-8">
       {/* 3 Metric Card Grid */}
-      <div className="grid grid-cols-3 gap-5">
-        <div className="bg-card rounded-2xl p-5 border border-border flex flex-col justify-between">
+      <div className="grid grid-cols-3 gap-6">
+        <div className="bg-card rounded-2xl p-6 border border-border flex flex-col justify-between">
           <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider mb-2">Total Commits Logged</span>
-          <span className="text-2xl font-extrabold text-text-main">{commitCount}</span>
+          <span className="text-2xl font-extrabold text-text-main font-mono tabular-nums">{commitCount}</span>
         </div>
-        <div className="bg-card rounded-2xl p-5 border border-border flex flex-col justify-between">
+        <div className="bg-card rounded-2xl p-6 border border-border flex flex-col justify-between">
           <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider mb-2">Contributors</span>
-          <span className="text-2xl font-extrabold text-warning">{contributorsCount}</span>
+          <span className="text-2xl font-extrabold text-warning font-mono tabular-nums">{contributorsCount}</span>
         </div>
-        <div className="bg-card rounded-2xl p-5 border border-border flex flex-col justify-between">
+        <div className="bg-card rounded-2xl p-6 border border-border flex flex-col justify-between">
           <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider mb-2">PRs Closed/Merged</span>
-          <span className="text-2xl font-extrabold text-primary">{mergedCount}</span>
+          <span className="text-2xl font-extrabold text-primary font-mono tabular-nums">{mergedCount}</span>
         </div>
       </div>
 

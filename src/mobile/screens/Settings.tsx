@@ -2,7 +2,7 @@ import React from 'react';
 import { useAppContext } from '../../AppContext';
 import { 
   Github, Moon, Sun, Sparkles, 
-  Trash2, Check, Grid
+  Trash2, Check
 } from 'lucide-react';
 
 export const Settings: React.FC = () => {
@@ -12,9 +12,7 @@ export const Settings: React.FC = () => {
     disconnectGitHub, 
     theme, 
     setTheme, 
-    showToast,
-    showGridOverlay,
-    toggleGridOverlay
+    showToast
   } = useAppContext();
 
   const handleClearCache = () => {
@@ -177,52 +175,7 @@ export const Settings: React.FC = () => {
         </div>
       </div>
 
-      {/* 3. Developer & Layout Inspection: 8-Point Grid Overlay */}
-      <div className="bg-surface-1 border border-border rounded-2xl p-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold uppercase tracking-wider text-text-tertiary">
-            Layout Engineering
-          </span>
-          <span className="text-[10px] font-mono text-accent font-semibold px-2 py-0.5 rounded-md bg-accent-soft border border-accent/20">
-            8pt System
-          </span>
-        </div>
-
-        <div className="flex items-center justify-between gap-3 pt-1">
-          <div className="flex items-start gap-3 min-w-0 pr-2">
-            <div className="w-10 h-10 rounded-xl bg-accent-soft text-accent border border-accent/20 flex items-center justify-center shrink-0 mt-0.5">
-              <Grid size={18} />
-            </div>
-            <div>
-              <span className="text-xs font-semibold text-text-primary block">
-                Visual 8-Point Grid Overlay
-              </span>
-              <p className="text-[11px] text-text-tertiary leading-relaxed mt-0.5">
-                Displays real-time 8px grid divisions, 16px/48px touch targets, and 80px bottom safe zone indicators across the UI.
-              </p>
-            </div>
-          </div>
-
-          {/* Toggle Switch */}
-          <button
-            type="button"
-            role="switch"
-            aria-checked={showGridOverlay}
-            onClick={toggleGridOverlay}
-            className={`w-12 h-7 rounded-full p-1 transition-colors cursor-pointer shrink-0 relative ${
-              showGridOverlay ? 'bg-accent' : 'bg-surface-3 border border-border'
-            }`}
-          >
-            <div
-              className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200 ${
-                showGridOverlay ? 'translate-x-5' : 'translate-x-0'
-              }`}
-            />
-          </button>
-        </div>
-      </div>
-
-      {/* 4. Cache & Storage Management */}
+      {/* 3. Cache & Storage Management */}
       <div className="bg-surface-1 border border-border rounded-2xl p-4 space-y-3">
         <span className="text-xs font-bold uppercase tracking-wider text-text-tertiary block">
           Cache & Storage

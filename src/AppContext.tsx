@@ -101,7 +101,6 @@ const defaultState: AppState = {
   isCommandPaletteOpen: false,
   lastSyncTimestamp: Date.now(),
   isAutoSyncing: false,
-  showGridOverlay: localStorage.getItem("showGridOverlay") === "true",
 };
 const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: ReactNode }> = ({
@@ -155,13 +154,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
   const openCommandPalette = () => setState(prev => ({ ...prev, isCommandPaletteOpen: true }));
   const closeCommandPalette = () => setState(prev => ({ ...prev, isCommandPaletteOpen: false }));
   const toggleCommandPalette = () => setState(prev => ({ ...prev, isCommandPaletteOpen: !prev.isCommandPaletteOpen }));
-  const toggleGridOverlay = () => {
-    setState((prev) => {
-      const nextVal = !prev.showGridOverlay;
-      localStorage.setItem("showGridOverlay", String(nextVal));
-      return { ...prev, showGridOverlay: nextVal };
-    });
-  };
 
   // Global shortcut listener for Cmd+K and Ctrl+K
   useEffect(() => {
@@ -1686,7 +1678,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         openCommandPalette,
         closeCommandPalette,
         toggleCommandPalette,
-        toggleGridOverlay,
       }}
     >
       {children}

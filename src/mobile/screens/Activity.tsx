@@ -5,10 +5,12 @@ import { CommitDetailModal } from '../components/CommitDetailModal';
 import { PaginationControls } from '../../components/common/PaginationControls';
 import { 
   GitCommit, Activity as ActivityIcon, GitPullRequest, 
-  Star, GitBranch, ArrowUpRight, RefreshCw, Clock, User
+  Star, GitBranch, ArrowUpRight, RefreshCw, Clock, User, Github
 } from 'lucide-react';
 import { fetchTimelineEvents, TimelineEventItem } from '../utils/gitApi';
 import { formatRelativeTime } from '../utils/formatters';
+import { EmptyState } from '../components/EmptyState';
+import { InlineErrorCard } from '../components/InlineErrorCard';
 
 export const Activity: React.FC = () => {
   const { 
@@ -19,11 +21,13 @@ export const Activity: React.FC = () => {
     githubToken, 
     githubUser,
     openRepo,
+    connectGitHub,
   } = useAppContext();
 
   const [selectedCommit, setSelectedCommit] = useState<any | null>(null);
   const [events, setEvents] = useState<TimelineEventItem[]>([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(false);
+  const [timelineError, setTimelineError] = useState<string | null>(null);
   const [activeFeedTab, setActiveFeedTab] = useState<'events' | 'commits'>('events');
   const [eventFilter, setEventFilter] = useState<'all' | 'push' | 'pr' | 'star'>('all');
 
@@ -35,6 +39,7 @@ export const Activity: React.FC = () => {
     if (!isBackground && events.length === 0) {
       setIsLoadingEvents(true);
     }
+    setTimelineError(null);
     try {
       const data = await fetchTimelineEvents({
         username: githubUser?.login,
@@ -43,8 +48,13 @@ export const Activity: React.FC = () => {
         token: githubToken,
       });
       setEvents(data);
-    } catch (e) {
+    } catch (e: any) {
       console.warn('Could not load events timeline:', e);
+      const msg = e.message || 'Failed to stream live events from GitHub API';
+      setTimelineError(msg);
+      if (!isBackground) {
+        showToast(msg, 'error');
+      }
     } finally {
       setIsLoadingEvents(false);
     }
@@ -152,21 +162,52 @@ export const Activity: React.FC = () => {
             ))}
           </div>
 
-          {isLoadingEvents && events.length === 0 ? (
+          {timelineError ? (
+            <InlineErrorCard
+              title="Timeline Feed Failed"
+              message={timelineError}
+              onRetry={() => loadTimeline(false)}
+            />
+          ) : isLoadingEvents && events.length === 0 ? (
             <div className="py-12 flex flex-col items-center justify-center gap-2 text-xs text-text-tertiary">
               <span className="w-6 h-6 rounded-full border-2 border-accent border-t-transparent animate-spin" />
               <span>Fetching live GitHub event stream...</span>
             </div>
           ) : filteredEvents.length === 0 ? (
-            <div className="bg-surface-1 border border-border rounded-2xl p-8 text-center flex flex-col items-center justify-center">
-              <ActivityIcon size={32} className="text-text-tertiary mb-2 opacity-50" />
-              <span className="text-sm font-semibold text-text-primary mb-1">No timeline events found</span>
-              <span className="text-xs text-text-tertiary max-w-[260px] leading-relaxed">
-                {githubToken 
-                  ? 'Recent pushes, pull requests, and releases will appear in real time.' 
-                  : 'Connect GitHub in Settings to stream your personal organization timeline.'}
-              </span>
-            </div>
+            !githubToken ? (
+              <EmptyState
+                icon={ActivityIcon}
+                title="GitHub not connected"
+                description="Connect your GitHub account to stream live pushes, pull requests, and repository releases."
+                primaryAction={{
+                  label: 'Connect GitHub Account',
+                  icon: Github,
+                  onClick: connectGitHub,
+                }}
+              />
+            ) : (
+              <EmptyState
+                icon={ActivityIcon}
+                title="No timeline events found"
+                description={
+                  eventFilter === 'all'
+                    ? 'Recent pushes, pull requests, and releases will appear in real time.'
+                    : `No events of type "${eventFilter}" detected in recent timeline activity.`
+                }
+                primaryAction={
+                  eventFilter !== 'all'
+                    ? {
+                        label: 'Show All Events',
+                        onClick: () => setEventFilter('all'),
+                      }
+                    : {
+                        label: 'Refresh Timeline',
+                        icon: RefreshCw,
+                        onClick: () => loadTimeline(false),
+                      }
+                }
+              />
+            )
           ) : (
             <div className="space-y-3 pb-6">
               {filteredEvents.map((ev) => {

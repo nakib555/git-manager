@@ -88,7 +88,6 @@ export interface AppState {
   isCommandPaletteOpen: boolean;
   lastSyncTimestamp: number;
   isAutoSyncing: boolean;
-  showGridOverlay: boolean;
 }
 
 export type AppContextType = AppState & {
@@ -138,6 +137,5 @@ export type AppContextType = AppState & {
   openCommandPalette: () => void;
   closeCommandPalette: () => void;
   toggleCommandPalette: () => void;
-  toggleGridOverlay: () => void;
 };
 

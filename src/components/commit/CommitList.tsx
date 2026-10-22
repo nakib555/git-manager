@@ -6,11 +6,13 @@ import { GitGraph } from './GitGraph';
 import { PaginationControls } from '../common/PaginationControls';
 import { 
   Search, Loader2, RefreshCw, X, Filter, ChevronLeft, ChevronRight, 
-  Calendar, Check, RotateCcw, GitGraph as GitGraphIcon, List, Columns 
+  Calendar, Check, RotateCcw, GitGraph as GitGraphIcon, List, Columns,
+  GitCommit 
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import emptyStateImage from '../../assets/images/empty_commits_state_1784913881320.jpg';
+import { EmptyState } from '../../mobile/components/EmptyState';
+import { InlineErrorCard } from '../../mobile/components/InlineErrorCard';
 
 export const CommitList = ({ 
   isDesktop, 
@@ -377,27 +379,30 @@ export const CommitList = ({
             ))}
           </div>
         ) : isError ? (
-          <div className="flex flex-col items-center justify-center h-full text-center p-4">
-            <div className="w-12 h-12 rounded-xl bg-danger/10 text-danger flex items-center justify-center mb-3 border border-danger/20">
-              <RefreshCw size={24} />
-            </div>
-            <p className="text-sm font-semibold text-text-main mb-1">Failed to load commits</p>
-            <p className="text-xs text-text-muted mb-4 max-w-[250px]">There was an error fetching the commit history. Please try again.</p>
-            <button onClick={() => refetch()} className="bg-primary hover:bg-primary-hover text-white text-xs font-semibold px-4 py-2 rounded-lg transition-all cursor-pointer">
-              Retry
-            </button>
+          <div className="flex flex-col items-center justify-center h-full p-6">
+            <InlineErrorCard
+              title="Unable to load commits"
+              message="Failed to fetch commit history from GitHub. Check your connection or repository permissions."
+              onRetry={() => {
+                refetch();
+              }}
+              className="max-w-md w-full"
+            />
           </div>
         ) : commits.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 px-4 animate-fade-in h-full">
-            <img src={emptyStateImage} alt="Empty repository" className="w-40 h-40 mb-6 rounded-2xl shadow-sm opacity-90 object-cover pointer-events-none" />
-            <div className="text-sm font-bold text-text-main mb-2">
-              {filters.query || filters.author || filters.branch || filters.since || filters.until ? 'No matching commits' : 'It is quiet here...'}
-            </div>
-            <div className="text-center text-text-muted text-xs leading-relaxed max-w-[250px]">
-              {filters.query || filters.author || filters.branch || filters.since || filters.until 
-                ? 'Try adjusting your search terms or filters.'
-                : 'This repository has no commits yet. Make your first staging commit to start tracking changes!'}
-            </div>
+          <div className="flex flex-col items-center justify-center p-6 h-full">
+            <EmptyState
+              icon={GitCommit}
+              title={filters.query || filters.author || filters.branch || filters.since || filters.until ? 'No matching commits' : 'No Commits Found'}
+              description={filters.query || filters.author || filters.branch || filters.since || filters.until 
+                ? 'Try adjusting your search query, branch filter, or date range.'
+                : 'This repository has no commits recorded yet. Create or push your first commit to see the log.'}
+              action={filters.query || filters.author || filters.branch || filters.since || filters.until ? {
+                label: 'Clear Filters',
+                onClick: handleClearAllFilters
+              } : undefined}
+              className="max-w-md w-full"
+            />
           </div>
         ) : viewMode === 'graph' ? (
           <div className="flex-1 w-full h-full min-h-[350px]">

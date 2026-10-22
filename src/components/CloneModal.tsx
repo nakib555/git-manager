@@ -80,20 +80,14 @@ export const CloneModal = () => {
       }
 
       if (owner && repo) {
-        // Otherwise generate beautiful consistent metadata based on names
-        const hash = (owner + repo).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-        const starsVal = ((hash % 80) + 5).toFixed(1) + 'k';
-        const forksVal = ((hash % 20) + 1).toFixed(1) + 'k';
-        const sizeVal = ((hash % 380) + 20) + ' MB';
-        
         return {
           name: repo,
           owner: owner,
-          description: `Custom Git repository from ${owner}/${repo}`,
-          stars: starsVal,
-          forks: forksVal,
-          size: sizeVal,
-          lang: repo.endsWith('js') ? 'JavaScript' : 'TypeScript'
+          description: `Git repository ${owner}/${repo}`,
+          stars: undefined,
+          forks: undefined,
+          size: undefined,
+          lang: undefined
         };
       }
     } catch (_) {}
@@ -389,26 +383,28 @@ export const CloneModal = () => {
                 <p className="text-[11px] text-text-muted mt-0.5 line-clamp-1">{displayRepoInfo.description}</p>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 border-t border-border pt-2 text-center">
-                <div className="space-y-0.5">
-                  <span className="text-[9px] text-text-muted block">Stars</span>
-                  <div className="flex items-center justify-center gap-1 font-bold text-xs text-text-main">
-                    <Star size={11} className="text-amber-400 fill-amber-400" />
-                    <span>{displayRepoInfo.stars}</span>
+              {displayRepoInfo.stars && (
+                <div className="grid grid-cols-3 gap-2 border-t border-border pt-2 text-center">
+                  <div className="space-y-0.5">
+                    <span className="text-[9px] text-text-muted block">Stars</span>
+                    <div className="flex items-center justify-center gap-1 font-bold text-xs text-text-main">
+                      <Star size={11} className="text-amber-400 fill-amber-400" />
+                      <span>{displayRepoInfo.stars}</span>
+                    </div>
+                  </div>
+                  <div className="space-y-0.5">
+                    <span className="text-[9px] text-text-muted block">Forks</span>
+                    <div className="flex items-center justify-center gap-1 font-bold text-xs text-text-main">
+                      <GitFork size={11} className="text-primary" />
+                      <span>{displayRepoInfo.forks}</span>
+                    </div>
+                  </div>
+                  <div className="space-y-0.5">
+                    <span className="text-[9px] text-text-muted block">Approx. Size</span>
+                    <div className="font-bold text-xs text-text-main">{displayRepoInfo.size}</div>
                   </div>
                 </div>
-                <div className="space-y-0.5">
-                  <span className="text-[9px] text-text-muted block">Forks</span>
-                  <div className="flex items-center justify-center gap-1 font-bold text-xs text-text-main">
-                    <GitFork size={11} className="text-primary" />
-                    <span>{displayRepoInfo.forks}</span>
-                  </div>
-                </div>
-                <div className="space-y-0.5">
-                  <span className="text-[9px] text-text-muted block">Approx. Size</span>
-                  <div className="font-bold text-xs text-text-main">{displayRepoInfo.size}</div>
-                </div>
-              </div>
+              )}
             </div>
           )}
 

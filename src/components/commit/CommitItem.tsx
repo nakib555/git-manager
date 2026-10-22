@@ -31,13 +31,13 @@ export const CommitItem = memo(({ commit, isSelected, isLatest, onSelect, onActi
 
         {isDesktop ? (
           <>
-            <div className="flex justify-between items-center gap-2 mb-1.5">
-              <span className="font-mono text-[10px] font-bold bg-card border border-border px-1.5 py-0.5 rounded text-primary">
+            <div className="flex justify-between items-center gap-2 mb-1.5 text-xs">
+              <span className="font-mono text-[11px] font-bold text-primary tabular-nums">
                 {commit.hash}
               </span>
               {isLatest && (
-                <span className="text-[8px] uppercase tracking-wider bg-primary/10 border border-primary/25 px-1.5 py-0.5 rounded font-extrabold text-primary">
-                  LATEST
+                <span className="text-[10px] font-mono font-semibold text-emerald-400 uppercase tracking-wider">
+                  latest
                 </span>
               )}
             </div>
@@ -47,19 +47,19 @@ export const CommitItem = memo(({ commit, isSelected, isLatest, onSelect, onActi
             </div>
             <div className="flex justify-between text-[9px] text-text-muted mt-2">
               <span className="font-semibold">{commit.author}</span>
-              <span>{commit.time}</span>
+              <span className="font-mono tabular-nums">{commit.time}</span>
             </div>
           </>
         ) : (
           <>
             <div className="flex-1">
-              <div className="flex items-center gap-1.5 mb-1">
-                <div className="font-mono font-bold inline-flex items-center px-2 py-0.5 bg-card border border-border rounded-lg text-xs text-primary">
+              <div className="flex items-center gap-2 mb-1 text-xs">
+                <span className="font-mono font-bold text-primary tabular-nums">
                   {commit.hash}
-                </div>
+                </span>
                 {isLatest && (
-                  <span className="text-[9px] uppercase font-extrabold bg-primary/10 border border-primary/20 text-primary px-1.5 py-0.5 rounded">
-                    Latest
+                  <span className="text-[10px] font-mono font-semibold text-emerald-400 uppercase tracking-wider">
+                    latest
                   </span>
                 )}
               </div>
@@ -79,9 +79,9 @@ export const CommitItem = memo(({ commit, isSelected, isLatest, onSelect, onActi
                     )}
                   </div>
                   <span className="text-[10px] font-bold text-text-main/80 truncate max-w-[100px]">{commit.author}</span>
-                  <span className="text-[10px] text-text-muted">{commit.time}</span>
+                  <span className="text-[10px] text-text-muted font-mono tabular-nums">{commit.time}</span>
                 </div>
-                <div className="flex items-center gap-2 text-[10px] font-mono">
+                <div className="flex items-center gap-2 text-[10px] font-mono tabular-nums">
                   <span className="text-success font-bold">{commit.add}</span>
                   <span className="text-danger font-bold">{commit.del}</span>
                 </div>

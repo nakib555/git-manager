@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { useAppContext } from '../../AppContext';
 import { 
   Download, Copy, Check, Terminal, HardDrive, 
-  Sparkles 
+  FolderGit2
 } from 'lucide-react';
+import { InlineErrorCard } from '../components/InlineErrorCard';
 
 export const Clone: React.FC = () => {
-  const { githubToken, showToast, cloneRepository, navigate } = useAppContext();
+  const { githubToken, githubRepos, githubUser, showToast, cloneRepository, navigate } = useAppContext();
 
   const [repoUrl, setRepoUrl] = useState('');
   const [destName, setDestName] = useState('');
@@ -14,14 +15,7 @@ export const Clone: React.FC = () => {
   const [isCloning, setIsCloning] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [isDownloadingZip, setIsDownloadingZip] = useState(false);
-
-  const popularRepos = [
-    { name: 'react', owner: 'facebook', desc: 'The library for web and native UIs', stars: '224k' },
-    { name: 'tailwindcss', owner: 'tailwindlabs', desc: 'A utility-first CSS framework', stars: '81k' },
-    { name: 'vscode', owner: 'microsoft', desc: 'Visual Studio Code', stars: '162k' },
-    { name: 'next.js', owner: 'vercel', desc: 'The React Framework for Web', stars: '122k' },
-    { name: 'bun', owner: 'oven-sh', desc: 'Fast JavaScript runtime and toolchain', stars: '71k' },
-  ];
+  const [cloneError, setCloneError] = useState<string | null>(null);
 
   // Auto-fill destination folder name when URL changes
   const handleUrlChange = (url: string) => {
@@ -33,7 +27,7 @@ export const Clone: React.FC = () => {
     }
   };
 
-  const selectPopularRepo = (owner: string, name: string) => {
+  const selectUserRepo = (owner: string, name: string) => {
     const fullUrl = `https://github.com/${owner}/${name}.git`;
     setRepoUrl(fullUrl);
     setDestName(name);
@@ -68,6 +62,7 @@ export const Clone: React.FC = () => {
       return;
     }
     setIsCloning(true);
+    setCloneError(null);
     try {
       const name = destName || repoUrl.split('/').pop()?.replace('.git', '') || 'cloned-repo';
       await cloneRepository({
@@ -79,7 +74,9 @@ export const Clone: React.FC = () => {
       });
       navigate('repos');
     } catch (err: any) {
-      showToast(`Clone error: ${err.message || err}`, 'error');
+      const msg = err.message || 'Clone failed';
+      setCloneError(msg);
+      showToast(`Clone error: ${msg}`, 'error');
     } finally {
       setIsCloning(false);
     }
@@ -92,6 +89,7 @@ export const Clone: React.FC = () => {
       return;
     }
     setIsDownloadingZip(true);
+    setCloneError(null);
     try {
       const tokenParam = githubToken ? `&token=${encodeURIComponent(githubToken)}` : '';
       const downloadUrl = `/api/github/download?owner=${encodeURIComponent(parsed.owner)}&repo=${encodeURIComponent(parsed.repo)}&ref=main${tokenParam}`;
@@ -112,7 +110,9 @@ export const Clone: React.FC = () => {
 
       showToast(`Repository ${parsed.repo}.zip downloaded!`, 'success');
     } catch (err: any) {
-      showToast(`ZIP Download error: ${err.message || err}`, 'error');
+      const msg = err.message || 'ZIP download failed';
+      setCloneError(msg);
+      showToast(`ZIP Download error: ${msg}`, 'error');
     } finally {
       setIsDownloadingZip(false);
     }
@@ -128,34 +128,39 @@ export const Clone: React.FC = () => {
         </p>
       </div>
 
-      {/* Popular Open Source Repos Quick Pick */}
-      <div className="space-y-2">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary flex items-center gap-1.5">
-          <Sparkles size={13} className="text-accent" />
-          <span>Popular Repositories Quick-Pick</span>
-        </span>
-        <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1">
-          {popularRepos.map((pr) => (
-            <button
-              key={pr.name}
-              type="button"
-              onClick={() => selectPopularRepo(pr.owner, pr.name)}
-              className="p-3 rounded-2xl bg-surface-1 border border-border hover:border-accent/40 text-left shrink-0 w-36 transition-all active:scale-97 cursor-pointer"
-            >
-              <div className="flex items-center justify-between text-xs font-bold text-text-primary truncate">
-                <span className="truncate">{pr.name}</span>
-                <span className="text-[10px] text-amber-500 font-mono font-normal">★{pr.stars}</span>
-              </div>
-              <span className="text-[10px] text-text-tertiary block truncate mt-0.5">
-                {pr.owner}
-              </span>
-            </button>
-          ))}
+      {/* Synchronized Repos Quick Pick (Only when authenticated with real repos) */}
+      {githubRepos.length > 0 && (
+        <div className="space-y-2">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary flex items-center gap-1.5">
+            <FolderGit2 size={13} className="text-accent" />
+            <span>Your Repositories Quick-Pick</span>
+          </span>
+          <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1">
+            {githubRepos.slice(0, 8).map((repo) => {
+              const ownerLogin = (repo as any).owner?.login || githubUser?.login || '';
+              return (
+                <button
+                  key={repo.name}
+                  type="button"
+                  onClick={() => selectUserRepo(ownerLogin, repo.name)}
+                  className="p-3 rounded-2xl bg-surface-1 border border-border hover:border-accent/40 text-left shrink-0 w-40 transition-all active:scale-97 cursor-pointer"
+                >
+                  <div className="flex items-center justify-between text-xs font-bold text-text-primary truncate">
+                    <span className="truncate">{repo.name}</span>
+                  </div>
+                  <div className="flex items-center justify-between mt-1 text-[10px] text-text-tertiary">
+                    <span className="truncate">{ownerLogin}</span>
+                    {repo.language && <span className="font-mono">{repo.language}</span>}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Step 1: Remote Repository URL */}
-      <div className="bg-surface-1 border border-border rounded-2xl p-4 space-y-3">
+      <div className="bg-surface-1 border border-border rounded-2xl p-4 space-y-4">
         <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-text-tertiary">
           <span className="w-6 h-6 rounded-full bg-accent-soft text-accent flex items-center justify-center text-xs font-bold font-mono">1</span>
           <span>Remote Source</span>
@@ -166,22 +171,22 @@ export const Clone: React.FC = () => {
           </label>
           <input
             type="url"
-            placeholder="https://github.com/facebook/react.git"
+            placeholder="https://github.com/owner/repository.git"
             value={repoUrl}
             onChange={(e) => handleUrlChange(e.target.value)}
-            className="w-full h-11 px-3.5 bg-surface-2 border border-border rounded-xl text-xs text-text-primary placeholder:text-text-tertiary outline-none focus:border-accent font-mono transition-colors"
+            className="w-full h-12 px-4 bg-surface-2 border border-border rounded-xl text-xs text-text-primary placeholder:text-text-tertiary outline-none focus:border-accent font-mono transition-colors"
           />
         </div>
       </div>
 
       {/* Step 2: Destination & Options */}
-      <div className="bg-surface-1 border border-border rounded-2xl p-4 space-y-3">
+      <div className="bg-surface-1 border border-border rounded-2xl p-4 space-y-4">
         <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-text-tertiary">
           <span className="w-6 h-6 rounded-full bg-accent-soft text-accent flex items-center justify-center text-xs font-bold font-mono">2</span>
           <span>Target Directory & Depth</span>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-medium text-text-secondary mb-1.5">
               Folder Name
@@ -191,7 +196,7 @@ export const Clone: React.FC = () => {
               placeholder="my-project"
               value={destName}
               onChange={(e) => setDestName(e.target.value)}
-              className="w-full h-11 px-3.5 bg-surface-2 border border-border rounded-xl text-xs text-text-primary placeholder:text-text-tertiary outline-none focus:border-accent transition-colors"
+              className="w-full h-12 px-4 bg-surface-2 border border-border rounded-xl text-xs text-text-primary placeholder:text-text-tertiary outline-none focus:border-accent transition-colors"
             />
           </div>
 
@@ -202,7 +207,7 @@ export const Clone: React.FC = () => {
             <select
               value={cloneDepth}
               onChange={(e) => setCloneDepth(e.target.value === '' ? '' : Number(e.target.value))}
-              className="w-full h-11 px-3 bg-surface-2 border border-border rounded-xl text-xs text-text-primary outline-none focus:border-accent transition-colors"
+              className="w-full h-12 px-3 bg-surface-2 border border-border rounded-xl text-xs text-text-primary outline-none focus:border-accent transition-colors cursor-pointer"
             >
               <option value={1}>Shallow (Depth 1)</option>
               <option value={5}>Recent (Depth 5)</option>
@@ -213,7 +218,7 @@ export const Clone: React.FC = () => {
       </div>
 
       {/* Step 3: Terminal Command Preview */}
-      <div className="bg-surface-1 border border-border rounded-2xl p-4 space-y-2">
+      <div className="bg-surface-1 border border-border rounded-2xl p-4 space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-text-tertiary">
             <Terminal size={15} className="text-accent" />
@@ -222,17 +227,26 @@ export const Clone: React.FC = () => {
           <button
             type="button"
             onClick={copyCloneCmd}
-            className="flex items-center gap-1.5 text-xs text-accent font-semibold hover:underline cursor-pointer"
+            className="flex items-center gap-1.5 text-xs text-accent font-semibold hover:underline cursor-pointer min-h-[44px] px-2 -mr-2"
           >
             {isCopied ? <Check size={14} /> : <Copy size={14} />}
             <span>{isCopied ? 'Copied' : 'Copy'}</span>
           </button>
         </div>
 
-        <div className="p-3.5 bg-surface-2 rounded-xl border border-border font-mono text-xs text-text-primary break-all leading-relaxed">
+        <div className="p-4 bg-surface-2 rounded-xl border border-border font-mono text-xs text-text-primary break-all leading-relaxed">
           {generatedCommand}
         </div>
       </div>
+
+      {cloneError && (
+        <InlineErrorCard
+          title="Clone Operation Failed"
+          message={cloneError}
+          onRetry={handleClone}
+          compact
+        />
+      )}
 
       {/* Action Buttons: Workspace Clone + Download ZIP (min 48px height) */}
       <div className="space-y-3 pt-1">

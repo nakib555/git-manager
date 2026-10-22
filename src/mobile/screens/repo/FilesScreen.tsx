@@ -3,7 +3,8 @@ import { useAppContext } from '../../../AppContext';
 import { 
   Folder, FileText, ChevronRight, ChevronDown, Copy, 
   Check, Search, X, Home, Maximize2, Minimize2, 
-  Download, FileCode, Clock, Info, ArrowUpRight
+  Download, FileCode, Clock, Info, ArrowUpRight,
+  FolderTree, RefreshCw, GitBranch, History
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -11,6 +12,8 @@ import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { buildFastFileTree, TreeNode } from '../../utils/treeBuilder';
 import { formatBytes, formatRelativeTime } from '../../utils/formatters';
 import { fetchFileContentSafe } from '../../utils/gitApi';
+import { EmptyState } from '../../components/EmptyState';
+import { InlineErrorCard } from '../../components/InlineErrorCard';
 
 const getCodeLanguage = (filename: string): string => {
   const ext = filename.split('.').pop()?.toLowerCase();
@@ -55,13 +58,16 @@ export const FilesScreen: React.FC = () => {
     currentBranch,
     githubToken,
     githubUser,
-    activeCommits,
-    showToast 
+    activeCommits, 
+    showToast,
+    openModal,
+    refreshData
   } = useAppContext();
 
   const [activeFilePath, setActiveFilePath] = useState<string | null>(null);
   const [activeFileContent, setActiveFileContent] = useState<string>('');
   const [activeFileLoading, setActiveFileLoading] = useState<boolean>(false);
+  const [fileContentError, setFileContentError] = useState<string | null>(null);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['src', 'components']));
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFileForModal, setSelectedFileForModal] = useState<string | null>(null);
@@ -93,6 +99,7 @@ export const FilesScreen: React.FC = () => {
     setSelectedFileForModal(filePath);
     setContentTab('code');
     setInCodeSearch('');
+    setFileContentError(null);
 
     if (!currentRepo || !filePath) return;
 
@@ -101,13 +108,16 @@ export const FilesScreen: React.FC = () => {
       const content = await fetchFileContentSafe({
         filePath,
         repoName: currentRepo,
-        owner: currentRepoOwner || (githubUser?.login || 'nakib555'),
+        owner: currentRepoOwner || githubUser?.login || '',
         branch: currentBranch || 'main',
         token: githubToken,
       });
       setActiveFileContent(content);
     } catch (err: any) {
-      setActiveFileContent(`// Error loading file: ${err.message || err}`);
+      const errMsg = err.message || 'Failed to stream file content';
+      setFileContentError(errMsg);
+      setActiveFileContent('');
+      showToast(`Error loading file: ${errMsg}`, 'error');
     } finally {
       setActiveFileLoading(false);
     }
@@ -246,9 +256,21 @@ export const FilesScreen: React.FC = () => {
       {/* 2. File Tree Container */}
       <div className="divide-y divide-border/20 py-2">
         {activeFiles.length === 0 ? (
-          <div className="p-8 text-center text-xs text-text-tertiary">
-            Loading file tree structure...
-          </div>
+          <EmptyState
+            icon={FolderTree}
+            title="No files in repository"
+            description={`No files or directories were found on branch "${currentBranch || 'main'}".`}
+            primaryAction={{
+              label: 'Switch Branch',
+              icon: GitBranch,
+              onClick: () => openModal('branch'),
+            }}
+            secondaryAction={{
+              label: 'Refresh Repository',
+              icon: RefreshCw,
+              onClick: () => refreshData(),
+            }}
+          />
         ) : (
           fileTree.map(node => renderNode(node, 0))
         )}
@@ -396,7 +418,15 @@ export const FilesScreen: React.FC = () => {
                     <span>Streaming file contents from repository...</span>
                   </div>
                 ) : contentTab === 'code' ? (
-                  activeFileContent ? (
+                  fileContentError ? (
+                    <div className="p-6">
+                      <InlineErrorCard
+                        title="Failed to Load File"
+                        message={fileContentError}
+                        onRetry={() => activeFilePath && loadFileContent(activeFilePath)}
+                      />
+                    </div>
+                  ) : activeFileContent ? (
                     <SyntaxHighlighter
                       language={getCodeLanguage(selectedFileForModal)}
                       style={vscDarkPlus}
@@ -413,8 +443,13 @@ export const FilesScreen: React.FC = () => {
                       {activeFileContent}
                     </SyntaxHighlighter>
                   ) : (
-                    <div className="p-8 text-center text-xs text-text-tertiary">
-                      Empty file or binary content.
+                    <div className="p-8">
+                      <EmptyState
+                        icon={FileText}
+                        title="Empty file content"
+                        description="This file contains no text lines or represents binary content."
+                        compact
+                      />
                     </div>
                   )
                 ) : contentTab === 'history' ? (
@@ -422,27 +457,36 @@ export const FilesScreen: React.FC = () => {
                     <span className="text-xs font-semibold text-text-tertiary uppercase tracking-wider block">
                       Recent Commits Touching This File
                     </span>
-                    <div className="divide-y divide-border border border-border rounded-xl bg-surface-1 overflow-hidden">
-                      {fileHistory.map((c, i) => (
-                        <div key={`${c.hash}-${i}`} className="p-3 hover:bg-surface-2 transition-colors flex items-center justify-between gap-3">
-                          <div className="min-w-0">
-                            <span className="text-xs font-semibold text-text-primary line-clamp-1">
-                              {c.msg}
-                            </span>
-                            <div className="flex items-center gap-2 mt-1 text-[10px] text-text-tertiary font-mono">
-                              <span className="text-accent font-semibold tabular-nums">{c.hash.substring(0, 7)}</span>
-                              <span aria-hidden="true">·</span>
-                              <span>{c.author}</span>
-                              <span aria-hidden="true">·</span>
-                              <span className="tabular-nums">{formatRelativeTime(c.date || c.timestamp)}</span>
+                    {fileHistory.length === 0 ? (
+                      <EmptyState
+                        icon={History}
+                        title="No commit history for file"
+                        description="No separate commits have touched this specific file path on the active branch."
+                        compact
+                      />
+                    ) : (
+                      <div className="divide-y divide-border border border-border rounded-xl bg-surface-1 overflow-hidden">
+                        {fileHistory.map((c, i) => (
+                          <div key={`${c.hash}-${i}`} className="p-3 hover:bg-surface-2 transition-colors flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                              <span className="text-xs font-semibold text-text-primary line-clamp-1">
+                                {c.msg}
+                              </span>
+                              <div className="flex items-center gap-2 mt-1 text-[10px] text-text-tertiary font-mono">
+                                <span className="text-accent font-semibold tabular-nums">{c.hash.substring(0, 7)}</span>
+                                <span aria-hidden="true">·</span>
+                                <span>{c.author}</span>
+                                <span aria-hidden="true">·</span>
+                                <span className="tabular-nums">{formatRelativeTime(c.date || c.timestamp)}</span>
+                              </div>
                             </div>
+                            <span className="text-xs font-mono text-success">
+                              {c.add || '+12'}
+                            </span>
                           </div>
-                          <span className="text-xs font-mono text-success">
-                            {c.add || '+12'}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="p-5 space-y-4 font-sans text-xs">

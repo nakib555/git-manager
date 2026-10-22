@@ -80,15 +80,6 @@ export const CloneScreen = () => {
   // Interval reference for cancelling
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Curated list of popular open-source repositories (helpful when not connected to GitHub)
-  const popularRepos = [
-    { name: 'react', owner: 'facebook', description: 'The library for web and native user interfaces.', stars: '224k', forks: '46k', size: '348 MB', lang: 'JavaScript' },
-    { name: 'tailwindcss', owner: 'tailwindlabs', description: 'A utility-first CSS framework for rapid UI development.', stars: '81.2k', forks: '4.1k', size: '42 MB', lang: 'TypeScript' },
-    { name: 'vscode', owner: 'microsoft', description: 'Visual Studio Code.', stars: '162k', forks: '28k', size: '512 MB', lang: 'TypeScript' },
-    { name: 'next.js', owner: 'vercel', description: 'The React Framework.', stars: '122k', forks: '26k', size: '185 MB', lang: 'JavaScript' },
-    { name: 'bun', owner: 'oven-sh', description: 'Incredibly fast JavaScript runtime, bundler, test runner, and package manager.', stars: '71k', forks: '2.5k', size: '92 MB', lang: 'Zig' }
-  ];
-
   // Try parsing repo info from entered URL
   const getParsedRepoInfo = () => {
     if (!url) return null;
@@ -120,24 +111,14 @@ export const CloneScreen = () => {
       }
 
       if (owner && repo) {
-        // Find if we have custom info for it in popular list
-        const match = popularRepos.find(r => r.name.toLowerCase() === repo.toLowerCase() && r.owner.toLowerCase() === owner.toLowerCase());
-        if (match) return match;
-
-        // Otherwise generate beautiful consistent metadata based on names
-        const hash = (owner + repo).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-        const starsVal = ((hash % 80) + 5).toFixed(1) + 'k';
-        const forksVal = ((hash % 20) + 1).toFixed(1) + 'k';
-        const sizeVal = ((hash % 380) + 20) + ' MB';
-        
         return {
           name: repo,
           owner: owner,
-          description: `Custom Git repository from ${owner}/${repo}`,
-          stars: starsVal,
-          forks: forksVal,
-          size: sizeVal,
-          lang: repo.endsWith('js') ? 'JavaScript' : 'TypeScript'
+          description: `Git repository from ${owner}/${repo}`,
+          stars: undefined,
+          forks: undefined,
+          size: undefined,
+          lang: undefined
         };
       }
     } catch (_) {}
@@ -824,29 +805,9 @@ export default function App() {
                                 </button>
                               ))
                             ) : (
-                              // Curated list fallback if no user repos found/connected
-                              <div className="space-y-2">
-                                <div className="text-[10px] font-bold text-text-muted uppercase tracking-wider px-2 pt-1">Popular Suggestions</div>
-                                {popularRepos.filter(p => p.name.includes(searchQuery.toLowerCase())).map((r, idx) => (
-                                  <button
-                                    key={idx}
-                                    type="button"
-                                    onClick={() => prefillRepo(r.owner, r.name)}
-                                    className="w-full text-left p-2 hover:bg-main rounded-lg border border-transparent hover:border-border transition-all flex items-center justify-between text-xs cursor-pointer group text-text-main"
-                                  >
-                                    <div className="flex items-center gap-2">
-                                      <Compass size={14} className="text-primary" />
-                                      <div>
-                                        <div className="font-bold text-text-main group-hover:text-primary transition-colors">{r.owner}/{r.name}</div>
-                                        <div className="text-[10px] text-text-muted line-clamp-1">{r.description}</div>
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center gap-1 text-[10px] text-text-muted">
-                                      <Star size={10} className="text-amber-400 fill-amber-400" />
-                                      <span>{r.stars}</span>
-                                    </div>
-                                  </button>
-                                ))}
+                              <div className="p-3 text-center text-xs text-text-muted space-y-1">
+                                <p className="font-semibold text-text-main">No synchronized repositories found</p>
+                                <p className="text-[11px]">Enter an HTTPS or SSH repository URL directly in the input field below to clone.</p>
                               </div>
                             )}
                           </div>

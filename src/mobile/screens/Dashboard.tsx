@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { formatRelativeTime } from '../utils/formatters';
 import { CommitDetailModal } from '../components/CommitDetailModal';
+import { EmptyState } from '../components/EmptyState';
 
 export const Dashboard: React.FC = () => {
   const [selectedCommit, setSelectedCommit] = useState<any | null>(null);
@@ -16,7 +17,8 @@ export const Dashboard: React.FC = () => {
     openRepo, 
     openModal, 
     navigate,
-    connectGitHub 
+    connectGitHub,
+    githubToken,
   } = useAppContext();
 
   const totalStars = githubRepos.reduce((acc, r) => acc + (r.stargazers_count || 0), 0);
@@ -115,8 +117,8 @@ export const Dashboard: React.FC = () => {
         </button>
       </div>
 
-      {/* 4. Active Repository Banner (if any) */}
-      {githubRepos.length > 0 && (
+      {/* 4. Active Repository Banner or Onboarding Empty State */}
+      {githubRepos.length > 0 ? (
         <div className="bg-surface-1 border border-border rounded-2xl p-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">
@@ -147,6 +149,30 @@ export const Dashboard: React.FC = () => {
             )}
           </div>
         </div>
+      ) : (
+        <EmptyState
+          icon={FolderGit2}
+          title="No repositories connected"
+          description="Connect your GitHub account or clone a repository to get started with mobile version control."
+          primaryAction={
+            githubToken
+              ? {
+                  label: 'Create Repository',
+                  icon: Plus,
+                  onClick: () => openModal('repo'),
+                }
+              : {
+                  label: 'Connect GitHub',
+                  icon: Github,
+                  onClick: connectGitHub,
+                }
+          }
+          secondaryAction={{
+            label: 'Clone Existing Repo',
+            icon: Download,
+            onClick: () => navigate('clone'),
+          }}
+        />
       )}
 
       {/* 5. Recent Commits Section */}
@@ -166,10 +192,22 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {activeCommits.length === 0 ? (
-          <div className="bg-surface-1 border border-border rounded-2xl p-6 text-center">
-            <GitCommit size={24} className="mx-auto text-text-tertiary mb-2 opacity-60" />
-            <p className="text-xs text-text-tertiary">No recent commits recorded yet</p>
-          </div>
+          <EmptyState
+            icon={GitCommit}
+            title="No commit history on branch"
+            description="Create a commit or stage changes to record project history on this branch."
+            primaryAction={{
+              label: 'Commit Changes',
+              icon: GitCommit,
+              onClick: () => openModal('commit'),
+            }}
+            secondaryAction={{
+              label: 'Browse Repositories',
+              icon: FolderGit2,
+              onClick: () => navigate('repos'),
+            }}
+            compact
+          />
         ) : (
           <div className="bg-surface-1 border border-border rounded-2xl divide-y divide-border overflow-hidden">
             {activeCommits.slice(0, 4).map((commit, idx) => (

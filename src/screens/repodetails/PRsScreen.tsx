@@ -213,10 +213,8 @@ export const PRsScreen = () => {
                       >
                         <span className="flex items-center gap-1.5">
                           {tab}
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            isActive ? 'bg-primary/10 text-primary border border-primary/25' : 'bg-hover/50 text-text-muted border border-border/40'
-                          }`}>
-                            {count}
+                          <span className="text-[11px] font-mono tabular-nums opacity-75">
+                            ({count})
                           </span>
                         </span>
                         {isActive && (
@@ -280,12 +278,13 @@ export const PRsScreen = () => {
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-bold text-text-muted">#{pr.id}</span>
-                        <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-md border ${
-                          pr.status === 'Merged' ? 'bg-[#A371F7]/10 border-[#A371F7]/30 text-[#A371F7]' :
-                          pr.status === 'Closed' ? 'bg-danger/10 border-danger/30 text-danger' :
-                          'bg-success/10 border-success/30 text-success'
+                      <div className="flex items-center gap-1.5 mb-1 text-xs">
+                        <span className="font-bold text-text-muted font-mono tabular-nums">#{pr.id}</span>
+                        <span aria-hidden="true" className="text-text-muted opacity-50">·</span>
+                        <span className={`font-semibold font-mono ${
+                          pr.status === 'Merged' ? 'text-[#A371F7]' :
+                          pr.status === 'Closed' ? 'text-danger' :
+                          'text-success'
                         }`}>
                           {pr.status}
                         </span>

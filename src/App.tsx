@@ -7,7 +7,6 @@ import { useIsDesktop } from './hooks/useIsDesktop';
 import { DesktopLayout } from './components/DesktopLayout';
 import { CommandPalette } from './components/CommandPalette';
 import { MobileShell } from './mobile/layout/MobileShell';
-import { GridOverlay } from './components/common/GridOverlay';
 
 const queryClient = new QueryClient();
 
@@ -24,7 +23,6 @@ const MainApp = () => {
       )}
       <CommandPalette isOpen={isCommandPaletteOpen} onClose={closeCommandPalette} />
       <CreateModals />
-      <GridOverlay />
     </div>
   );
 };
