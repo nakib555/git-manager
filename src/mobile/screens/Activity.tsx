@@ -209,7 +209,7 @@ export const Activity: React.FC = () => {
               />
             )
           ) : (
-            <div className="space-y-3 pb-6">
+            <div className="bg-surface-1 border border-border rounded-xl divide-y divide-border/60 overflow-hidden shadow-xs mb-6">
               {filteredEvents.map((ev) => {
                 const isPush = ev.type === 'PushEvent';
                 const isPR = ev.type === 'PullRequestEvent';
@@ -219,7 +219,7 @@ export const Activity: React.FC = () => {
                 return (
                   <div
                     key={ev.id}
-                    className="p-4 rounded-2xl bg-surface-1 border border-border space-y-2.5 hover:border-accent/40 transition-colors"
+                    className="p-4 space-y-2.5 hover:bg-surface-2/40 transition-colors select-none"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 min-w-0 pr-2">
@@ -227,14 +227,14 @@ export const Activity: React.FC = () => {
                           <img
                             src={ev.actor.avatarUrl}
                             alt=""
-                            className="w-6 h-6 rounded-full border border-border shrink-0 object-cover"
+                            className="w-6 h-6 rounded-full border border-border/80 shrink-0 object-cover"
                           />
                         ) : (
                           <div className="w-6 h-6 rounded-full bg-surface-2 flex items-center justify-center text-text-tertiary shrink-0">
                             <User size={13} />
                           </div>
                         )}
-                        <span className="text-xs font-semibold text-text-primary truncate">
+                        <span className="text-[13px] font-semibold text-text-primary truncate">
                           {ev.actor.login}
                         </span>
                         <span className="text-xs text-text-tertiary shrink-0">
@@ -255,7 +255,7 @@ export const Activity: React.FC = () => {
                         const repoOwner = parts[0];
                         openRepo(repoName, repoOwner);
                       }}
-                      className="group flex items-center justify-between min-h-[44px] p-2.5 rounded-xl bg-background border border-border cursor-pointer hover:border-accent transition-colors"
+                      className="group flex items-center justify-between min-h-[40px] px-3 py-1.5 rounded-lg bg-surface-2/50 border border-border/60 cursor-pointer hover:border-accent transition-colors"
                     >
                       <div className="flex items-center gap-2 min-w-0 pr-2">
                         {isPush ? (

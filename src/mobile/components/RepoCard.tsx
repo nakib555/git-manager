@@ -78,21 +78,21 @@ export const RepoCard: React.FC<RepoCardProps> = ({
           onClick();
         }
       }}
-      className={`w-full rounded-xl p-4 transition-all duration-150 cursor-pointer border select-none min-h-[56px] ${
+      className={`w-full p-4 transition-colors duration-150 cursor-pointer select-none min-h-[56px] ${
         isActive
-          ? 'bg-surface-2 border-accent shadow-xs'
-          : 'bg-surface-1 border-border hover:border-accent/40 hover:bg-surface-2 active:scale-99'
+          ? 'bg-accent/10 border-l-2 border-accent'
+          : 'hover:bg-surface-2/60 active:bg-surface-2'
       }`}
     >
-      {/* Top row: Name & Privacy status (Clean unboxed text, zero-pill discipline) */}
-      <div className="flex items-start justify-between gap-2 mb-1.5">
+      {/* Top row: Name & Privacy status (Clean unboxed typography) */}
+      <div className="flex items-start justify-between gap-2 mb-1">
         <div className="flex items-center gap-1.5 min-w-0">
-          <span className="font-semibold text-sm text-text-primary truncate tracking-tight">
+          <span className="font-semibold text-[13px] leading-5 text-text-primary truncate tracking-tight">
             {displayName}
           </span>
         </div>
 
-        <div className="flex items-center gap-1 shrink-0 text-text-tertiary text-xs">
+        <div className="flex items-center gap-1 shrink-0 text-text-tertiary">
           {repo.private ? (
             <span className="flex items-center gap-1 text-[11px] font-medium text-text-tertiary">
               <Lock size={11} /> Private
@@ -107,28 +107,28 @@ export const RepoCard: React.FC<RepoCardProps> = ({
 
       {/* Description */}
       {repo.description ? (
-        <p className="text-xs text-text-secondary line-clamp-2 leading-relaxed mb-3">
+        <p className="text-xs text-text-secondary line-clamp-2 leading-relaxed mb-2.5">
           {repo.description}
         </p>
       ) : (
-        <p className="text-xs text-text-tertiary italic mb-3">
+        <p className="text-xs text-text-tertiary italic mb-2.5">
           No description provided.
         </p>
       )}
 
       {/* Bottom metadata row (Unboxed text with tabular-nums) */}
-      <div className="flex items-center justify-between text-xs text-text-tertiary font-mono pt-2.5 border-t border-border">
+      <div className="flex items-center justify-between text-xs text-text-tertiary font-mono pt-2 border-t border-border/40">
         {/* Language */}
         <div className="flex items-center gap-1.5 min-w-0">
           <span
             className="w-2.5 h-2.5 rounded-full shrink-0"
             style={{ backgroundColor: getLanguageColor(repo.language) }}
           />
-          <span className="truncate max-w-[90px] text-text-secondary">{repo.language || 'Markdown'}</span>
+          <span className="truncate max-w-[100px] text-text-secondary text-[11px]">{repo.language || 'Markdown'}</span>
         </div>
 
         {/* Stars, Forks & Updated with Tabular Numbers */}
-        <div className="flex items-center gap-3 shrink-0 tabular-nums">
+        <div className="flex items-center gap-3 shrink-0 tabular-nums text-[11px]">
           <span className="flex items-center gap-1 text-text-secondary">
             <Star size={12} className="text-warning shrink-0" />
             <span>{repo.stargazers_count || 0}</span>

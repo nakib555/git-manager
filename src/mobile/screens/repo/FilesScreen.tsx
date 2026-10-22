@@ -176,10 +176,10 @@ export const FilesScreen: React.FC = () => {
         <div
           onClick={() => (isFolder ? toggleFolder(node.path) : loadFileContent(node.path))}
           style={{ paddingLeft: `${Math.max(16, depth * 16 + 16)}px` }}
-          className={`h-10 pr-4 flex items-center justify-between text-xs transition-colors cursor-pointer border-l-2 ${
+          className={`min-h-[44px] h-11 pr-4 flex items-center justify-between text-[13px] transition-colors cursor-pointer border-l-2 ${
             isSelected && !isFolder
-              ? 'bg-accent-soft text-accent border-accent font-semibold'
-              : 'border-transparent text-text-secondary hover:text-text-primary hover:bg-surface-2'
+              ? 'bg-accent/10 text-accent border-accent font-semibold'
+              : 'border-transparent text-text-secondary hover:text-text-primary hover:bg-surface-2/60'
           }`}
         >
           <div className="flex items-center gap-2.5 min-w-0">
@@ -254,7 +254,7 @@ export const FilesScreen: React.FC = () => {
       </div>
 
       {/* 2. File Tree Container */}
-      <div className="divide-y divide-border/20 py-2">
+      <div className="p-4">
         {activeFiles.length === 0 ? (
           <EmptyState
             icon={FolderTree}
@@ -272,7 +272,9 @@ export const FilesScreen: React.FC = () => {
             }}
           />
         ) : (
-          fileTree.map(node => renderNode(node, 0))
+          <div className="bg-surface-1 border border-border rounded-xl divide-y divide-border/60 overflow-hidden shadow-xs">
+            {fileTree.map(node => renderNode(node, 0))}
+          </div>
         )}
       </div>
 

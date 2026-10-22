@@ -236,7 +236,7 @@ export const PRsScreen: React.FC = () => {
           />
         )
       ) : (
-        <div className="space-y-3">
+        <div className="bg-surface-1 border border-border rounded-xl divide-y divide-border/60 overflow-hidden shadow-xs">
           {filteredPRs.map((pr) => {
             const prNum = pr.id || (pr as any).number;
             const isMerged = pr.status === 'Merged';
@@ -245,7 +245,7 @@ export const PRsScreen: React.FC = () => {
               <div
                 key={prNum}
                 onClick={() => setSelectedPRId(prNum)}
-                className="bg-surface-1 border border-border hover:border-accent/40 rounded-xl p-4 space-y-2.5 transition-all cursor-pointer active:scale-99 shadow-xs min-h-[56px]"
+                className="p-4 space-y-2 hover:bg-surface-2/60 transition-colors cursor-pointer select-none min-h-[56px]"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-start gap-2.5 min-w-0 pr-2">
@@ -256,14 +256,14 @@ export const PRsScreen: React.FC = () => {
                       }`} 
                     />
                     <div className="min-w-0">
-                      <h3 className="text-xs font-semibold text-text-primary truncate">
+                      <h3 className="text-[13px] font-semibold text-text-primary leading-5 truncate">
                         {pr.title}
                       </h3>
                       <div className="flex items-center gap-2 mt-1 text-[11px] text-text-tertiary font-mono">
                         <span className="text-accent font-semibold tabular-nums">#{prNum}</span>
-                        <span aria-hidden="true">·</span>
+                        <span aria-hidden="true" className="opacity-50">·</span>
                         <span className="truncate max-w-[130px]">by {pr.author}</span>
-                        <span aria-hidden="true">·</span>
+                        <span aria-hidden="true" className="opacity-50">·</span>
                         <span className="tabular-nums">{pr.time || formatRelativeTime(pr.created_at || '')}</span>
                       </div>
                     </div>
@@ -282,14 +282,14 @@ export const PRsScreen: React.FC = () => {
                 </div>
 
                 {/* Branch route indicator */}
-                <div className="flex items-center justify-between text-[11px] font-mono text-text-tertiary pt-2 border-t border-border">
+                <div className="flex items-center justify-between text-[11px] font-mono text-text-tertiary pt-1.5">
                   <div className="flex items-center gap-1.5 truncate pr-2">
                     <span className="text-accent font-medium truncate max-w-[110px]">{pr.source || 'feature'}</span>
-                    <ArrowRight size={12} className="shrink-0 opacity-60" />
+                    <ArrowRight size={11} className="shrink-0 opacity-60" />
                     <span className="text-text-secondary font-medium truncate max-w-[110px]">{pr.target || 'main'}</span>
                   </div>
                   <div className="flex items-center gap-1 shrink-0 tabular-nums text-text-tertiary">
-                    <MessageSquare size={13} />
+                    <MessageSquare size={12} />
                     <span>{pr.comments || 0}</span>
                   </div>
                 </div>

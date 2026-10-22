@@ -65,9 +65,9 @@ export const Settings: React.FC = () => {
       </div>
 
       {/* 1. GitHub Connection & Profile Status */}
-      <div className="bg-surface-1 border border-border rounded-2xl p-4 space-y-4">
+      <div className="bg-surface-1 border border-border rounded-xl p-4 space-y-4 shadow-2xs">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-bold uppercase tracking-wider text-text-tertiary">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
             GitHub Connection
           </span>
           <span className={`text-[11px] font-mono font-semibold ${
@@ -124,11 +124,11 @@ export const Settings: React.FC = () => {
 
       {/* 2. Appearance & Theme Selection */}
       <div className="space-y-3">
-        <span className="text-xs font-bold uppercase tracking-wider text-text-tertiary block px-1">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary block px-1">
           Appearance Theme
         </span>
 
-        <div className="space-y-3">
+        <div className="bg-surface-1 border border-border rounded-xl divide-y divide-border/60 overflow-hidden shadow-xs">
           {themes.map((t) => {
             const isSelected = theme === t.id;
             const Icon = t.icon;
@@ -136,29 +136,29 @@ export const Settings: React.FC = () => {
               <div
                 key={t.id}
                 onClick={() => setTheme(t.id as any)}
-                className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between min-h-[64px] ${
+                className={`p-4 transition-colors cursor-pointer flex items-center justify-between min-h-[56px] select-none ${
                   isSelected 
-                    ? 'bg-surface-2 border-accent shadow-xs' 
-                    : 'bg-surface-1 border-border hover:bg-surface-2'
+                    ? 'bg-accent/10 border-l-2 border-accent' 
+                    : 'hover:bg-surface-2/60'
                 }`}
               >
                 <div className="flex items-center gap-3.5 min-w-0">
                   <div 
-                    className="w-10 h-10 rounded-xl border border-border flex items-center justify-center shrink-0"
+                    className="w-9 h-9 rounded-lg border border-border flex items-center justify-center shrink-0"
                     style={{ backgroundColor: t.surfaceHex }}
                   >
-                    <Icon size={19} style={{ color: t.accentHex }} />
+                    <Icon size={18} style={{ color: t.accentHex }} />
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className={`text-xs ${isSelected ? 'font-bold text-text-primary' : 'font-medium text-text-secondary'}`}>
+                      <span className={`text-[13px] ${isSelected ? 'font-bold text-text-primary' : 'font-medium text-text-secondary'}`}>
                         {t.name}
                       </span>
                       <span className="text-[10px] text-text-tertiary font-mono">
                         · {t.badge}
                       </span>
                     </div>
-                    <p className="text-[11px] text-text-tertiary truncate mt-0.5">
+                    <p className="text-xs text-text-tertiary truncate mt-0.5">
                       {t.desc}
                     </p>
                   </div>
@@ -176,8 +176,8 @@ export const Settings: React.FC = () => {
       </div>
 
       {/* 3. Cache & Storage Management */}
-      <div className="bg-surface-1 border border-border rounded-2xl p-4 space-y-3">
-        <span className="text-xs font-bold uppercase tracking-wider text-text-tertiary block">
+      <div className="bg-surface-1 border border-border rounded-xl p-4 space-y-3 shadow-2xs">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary block">
           Cache & Storage
         </span>
         <p className="text-xs text-text-secondary leading-relaxed">

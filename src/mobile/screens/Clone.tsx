@@ -143,7 +143,7 @@ export const Clone: React.FC = () => {
                   key={repo.name}
                   type="button"
                   onClick={() => selectUserRepo(ownerLogin, repo.name)}
-                  className="p-3 rounded-2xl bg-surface-1 border border-border hover:border-accent/40 text-left shrink-0 w-40 transition-all active:scale-97 cursor-pointer"
+                  className="p-3 rounded-xl bg-surface-1 border border-border hover:border-accent/40 text-left shrink-0 w-40 transition-all active:scale-97 cursor-pointer"
                 >
                   <div className="flex items-center justify-between text-xs font-bold text-text-primary truncate">
                     <span className="truncate">{repo.name}</span>
@@ -160,7 +160,7 @@ export const Clone: React.FC = () => {
       )}
 
       {/* Step 1: Remote Repository URL */}
-      <div className="bg-surface-1 border border-border rounded-2xl p-4 space-y-4">
+      <div className="bg-surface-1 border border-border rounded-xl p-4 space-y-4">
         <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-text-tertiary">
           <span className="w-6 h-6 rounded-full bg-accent-soft text-accent flex items-center justify-center text-xs font-bold font-mono">1</span>
           <span>Remote Source</span>
@@ -180,7 +180,7 @@ export const Clone: React.FC = () => {
       </div>
 
       {/* Step 2: Destination & Options */}
-      <div className="bg-surface-1 border border-border rounded-2xl p-4 space-y-4">
+      <div className="bg-surface-1 border border-border rounded-xl p-4 space-y-4">
         <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-text-tertiary">
           <span className="w-6 h-6 rounded-full bg-accent-soft text-accent flex items-center justify-center text-xs font-bold font-mono">2</span>
           <span>Target Directory & Depth</span>
@@ -218,7 +218,7 @@ export const Clone: React.FC = () => {
       </div>
 
       {/* Step 3: Terminal Command Preview */}
-      <div className="bg-surface-1 border border-border rounded-2xl p-4 space-y-3">
+      <div className="bg-surface-1 border border-border rounded-xl p-4 space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-text-tertiary">
             <Terminal size={15} className="text-accent" />

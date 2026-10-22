@@ -390,7 +390,7 @@ export const CommitsScreen: React.FC = () => {
         )
       ) : (
         <div className="space-y-3">
-          <div className="space-y-2.5">
+          <div className="bg-surface-1 border border-border rounded-xl divide-y divide-border/60 overflow-hidden shadow-xs">
             {paginatedCommits.map((commit, idx) => (
               <CommitCard
                 key={`${commit.hash}-${idx}`}

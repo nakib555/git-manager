@@ -254,14 +254,16 @@ export const Repositories: React.FC = () => {
             />
           )
         ) : (
-          paginatedRepos.map((repo) => (
-            <RepoCard
-              key={repo.name}
-              repo={repo}
-              isActive={currentRepo === repo.name}
-              onClick={() => openRepo(repo.name, (repo as any).owner?.login)}
-            />
-          ))
+          <div className="bg-surface-1 border border-border rounded-xl divide-y divide-border/60 overflow-hidden shadow-xs">
+            {paginatedRepos.map((repo) => (
+              <RepoCard
+                key={repo.name}
+                repo={repo}
+                isActive={currentRepo === repo.name}
+                onClick={() => openRepo(repo.name, (repo as any).owner?.login)}
+              />
+            ))}
+          </div>
         )}
       </div>
 
