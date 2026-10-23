@@ -10,46 +10,11 @@ export const RepoTabs: React.FC = () => {
   const isRepoScreen = ['files', 'commits', 'branches', 'prs', 'insights'].includes(currentScreen);
 
   const tabs = [
-    { 
-      id: 'files', 
-      label: 'Files', 
-      icon: Files,
-      color: '#388BFD',
-      bgTint: 'rgba(56, 139, 253, 0.14)',
-      border: 'rgba(56, 139, 253, 0.35)',
-    },
-    { 
-      id: 'commits', 
-      label: 'Commits', 
-      icon: GitCommit,
-      color: '#58A6FF',
-      bgTint: 'rgba(88, 166, 255, 0.14)',
-      border: 'rgba(88, 166, 255, 0.35)',
-    },
-    { 
-      id: 'branches', 
-      label: 'Branches', 
-      icon: GitBranch,
-      color: '#1F6FEB',
-      bgTint: 'rgba(31, 111, 235, 0.14)',
-      border: 'rgba(31, 111, 235, 0.35)',
-    },
-    { 
-      id: 'prs', 
-      label: 'PRs', 
-      icon: GitPullRequest,
-      color: '#A371F7',
-      bgTint: 'rgba(163, 113, 247, 0.14)',
-      border: 'rgba(163, 113, 247, 0.35)',
-    },
-    { 
-      id: 'insights', 
-      label: 'Insights', 
-      icon: BarChart2,
-      color: '#E3B341',
-      bgTint: 'rgba(227, 179, 65, 0.14)',
-      border: 'rgba(227, 179, 65, 0.35)',
-    },
+    { id: 'files', label: 'Files', icon: Files },
+    { id: 'commits', label: 'Commits', icon: GitCommit },
+    { id: 'branches', label: 'Branches', icon: GitBranch },
+    { id: 'prs', label: 'PRs', icon: GitPullRequest },
+    { id: 'insights', label: 'Insights', icon: BarChart2 },
   ] as const;
 
   // Auto-center the active sub-tab with smooth physics
@@ -75,7 +40,7 @@ export const RepoTabs: React.FC = () => {
     <nav
       ref={containerRef}
       aria-label="Repository Sub-navigation"
-      className="shrink-0 h-11 px-4 flex items-center gap-2 overflow-x-auto bg-background border-b border-border no-scrollbar select-none z-20"
+      className="shrink-0 h-11 px-3 flex items-center gap-1.5 overflow-x-auto bg-surface-1/60 backdrop-blur-xs border-b border-border no-scrollbar select-none z-20"
     >
       {tabs.map((tab) => {
         const isActive = currentScreen === tab.id;
@@ -85,19 +50,13 @@ export const RepoTabs: React.FC = () => {
             key={tab.id}
             ref={isActive ? activeTabRef : null}
             onClick={() => navigate(tab.id as any)}
-            className={`h-8 px-3.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-150 cursor-pointer flex items-center gap-1.5 shrink-0 ${
+            className={`h-8 px-3 rounded-xl text-xs whitespace-nowrap transition-all duration-150 cursor-pointer flex items-center gap-1.5 shrink-0 ${
               isActive
-                ? 'font-bold shadow-xs'
-                : 'bg-surface-1 text-text-secondary hover:text-text-primary border border-border active:scale-96'
+                ? 'bg-text-primary text-background font-bold shadow-xs'
+                : 'bg-surface-2/60 text-text-secondary hover:text-text-primary border border-border/80 hover:bg-surface-2 font-medium active:scale-95'
             }`}
-            style={{
-              backgroundColor: isActive ? tab.bgTint : undefined,
-              color: isActive ? tab.color : undefined,
-              borderColor: isActive ? tab.border : undefined,
-              borderWidth: isActive ? '1px' : undefined,
-            }}
           >
-            <Icon size={13} strokeWidth={isActive ? 2.5 : 2} className="shrink-0" />
+            <Icon size={13} strokeWidth={isActive ? 2.4 : 1.9} className="shrink-0" />
             <span>{tab.label}</span>
           </button>
         );

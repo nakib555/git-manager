@@ -2,21 +2,17 @@ import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../../../AppContext';
 import { CommitCard } from '../../components/CommitCard';
 import { CommitDetailModal } from '../../components/CommitDetailModal';
-import { filterLocalCommits, DatePreset } from '../../../hooks/useCommits';
-import { GitGraph } from '../../../components/commit/GitGraph';
+import { filterLocalCommits } from '../../../hooks/useCommits';
 import { PaginationControls } from '../../../components/common/PaginationControls';
 import { EmptyState } from '../../components/EmptyState';
 import { 
-  GitCommit, Search, X, Filter, Calendar, User, 
-  RotateCcw, Plus, GitGraph as GitGraphIcon, List,
-  CheckCircle2, XCircle, ZoomIn, ZoomOut, RotateCcw as ResetIcon
+  GitCommit, Search, X, Filter, Plus
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export const CommitsScreen: React.FC = () => {
   const { activeCommits, showToast, currentRepo, openModal, githubUser } = useAppContext();
   const [selectedCommit, setSelectedCommit] = useState<any | null>(null);
-  const [viewMode, setViewMode] = useState<'list' | 'graph'>('list');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState<number>(10);
 
@@ -43,8 +39,7 @@ export const CommitsScreen: React.FC = () => {
   const [draftSinceDate, setDraftSinceDate] = useState('');
   const [draftUntilDate, setDraftUntilDate] = useState('');
 
-  // Graph Zoom State
-  const [graphZoom, setGraphZoom] = useState(1);
+
 
   const handleCopyHash = (hash: string) => {
     navigator.clipboard.writeText(hash);
@@ -265,44 +260,15 @@ export const CommitsScreen: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-1.5">
-          {/* List vs Graph Segmented Toggle */}
-          <div className="flex bg-surface-1 p-0.5 rounded-xl border border-border shadow-2xs">
-            <button
-              type="button"
-              onClick={() => setViewMode('list')}
-              className={`flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                viewMode === 'list'
-                  ? 'bg-text-primary text-background shadow-xs font-bold'
-                  : 'text-text-tertiary hover:text-text-primary'
-              }`}
-            >
-              <List size={13} strokeWidth={2.2} />
-              <span>List</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('graph')}
-              className={`flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg transition-all cursor-pointer ${
-                viewMode === 'graph'
-                  ? 'bg-text-primary text-background shadow-xs font-bold'
-                  : 'text-text-tertiary hover:text-text-primary'
-              }`}
-            >
-              <GitGraphIcon size={13} strokeWidth={2.2} />
-              <span>Graph</span>
-            </button>
-          </div>
-
-          {/* New Commit Action */}
-          <button
-            onClick={() => openModal('commit')}
-            className="w-8 h-8 rounded-xl bg-text-primary hover:opacity-90 text-background flex items-center justify-center shadow-xs active:scale-95 transition cursor-pointer"
-            title="Create New Commit"
-          >
-            <Plus size={15} strokeWidth={2.5} />
-          </button>
-        </div>
+        {/* New Commit Action */}
+        <button
+          onClick={() => openModal('commit')}
+          className="h-9 px-3 rounded-xl bg-text-primary hover:opacity-90 text-background flex items-center gap-1.5 shadow-xs active:scale-95 transition cursor-pointer font-semibold text-xs"
+          title="Create New Commit"
+        >
+          <Plus size={15} strokeWidth={2.5} />
+          <span>New Commit</span>
+        </button>
       </div>
 
       {/* 2. Search Input */}
@@ -470,55 +436,8 @@ export const CommitsScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* 5. Viewport: List View OR Interactive SVG Git Graph */}
-      {viewMode === 'graph' ? (
-        <div className="bg-surface-1 border border-border rounded-2xl p-4 shadow-sm pb-6">
-          <div className="flex items-center justify-between pb-3 border-b border-border mb-3">
-            <div className="flex items-center gap-3 text-xs font-semibold">
-              <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span><span className="text-text-primary">Main</span></div>
-              <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span><span className="text-text-primary">Feature</span></div>
-              <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-purple-500"></span><span className="text-text-primary">Merge</span></div>
-              <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full ring-2 ring-emerald-500 ring-offset-1 bg-emerald-500"></span><span className="text-text-primary">HEAD</span></div>
-            </div>
-
-            <div className="flex items-center gap-1 bg-surface-2 p-0.5 rounded-lg border border-border">
-              <button
-                type="button"
-                onClick={() => setGraphZoom(prev => Math.min(2.0, prev * 1.15))}
-                className="p-1 hover:bg-surface-3 rounded text-text-secondary cursor-pointer"
-                title="Zoom in"
-              >
-                <ZoomIn size={13} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setGraphZoom(prev => Math.max(0.6, prev * 0.85))}
-                className="p-1 hover:bg-surface-3 rounded text-text-secondary cursor-pointer"
-                title="Zoom out"
-              >
-                <ZoomOut size={13} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setGraphZoom(1)}
-                className="p-1 hover:bg-surface-3 rounded text-text-secondary cursor-pointer"
-                title="Reset zoom"
-              >
-                <ResetIcon size={13} />
-              </button>
-            </div>
-          </div>
-
-          <div className="h-[480px] w-full overflow-hidden transition-transform duration-200" style={{ transform: `scale(${graphZoom})`, transformOrigin: 'top left' }}>
-            <GitGraph
-              commits={filteredCommits.length > 0 ? filteredCommits : activeCommits}
-              selectedCommitId={selectedCommit?.hash}
-              onSelectCommit={(c) => setSelectedCommit(c)}
-              isDesktop={false}
-            />
-          </div>
-        </div>
-      ) : filteredCommits.length === 0 ? (
+      {/* 5. Linear Commit Timeline */}
+      {filteredCommits.length === 0 ? (
         activeCommits.length === 0 ? (
           <EmptyState
             icon={GitCommit}

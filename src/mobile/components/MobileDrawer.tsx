@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useAppContext } from '../../AppContext';
 import { 
   User, Github, Bell, CheckCircle2, 
-  ExternalLink, LogOut, X, Shield, Star, FolderGit2
+  ExternalLink, LogOut, X, Shield, Star, FolderGit2, FolderPlus
 } from 'lucide-react';
 
 interface MobileDrawerProps {
@@ -124,33 +124,59 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
             </div>
           </div>
 
-          {/* System Navigation & Status */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-2 no-scrollbar">
+          {/* Quick Navigation Links */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-1.5 no-scrollbar">
             <div className="px-2 pt-1 pb-1 text-[10px] font-bold text-text-tertiary uppercase tracking-wider">
-              System Status
+              Navigation
             </div>
 
-            <div className="flex items-center justify-between px-4 py-3 min-h-[44px] rounded-xl text-xs text-text-secondary bg-surface-2/50 border border-border/60">
+            <button
+              onClick={() => {
+                navigate('repos');
+                onClose();
+              }}
+              className="w-full flex items-center justify-between px-3.5 py-3 min-h-[44px] rounded-xl text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-surface-2 transition-colors cursor-pointer"
+            >
               <span className="flex items-center gap-2.5">
-                <CheckCircle2 size={15} className="text-success" />
-                API Health
+                <FolderGit2 size={16} className="text-accent" />
+                Repositories
               </span>
-              <span className="text-xs font-mono text-success font-semibold">Operational</span>
-            </div>
+              <span className="text-[11px] font-mono text-text-tertiary tabular-nums">
+                {githubRepos.length}
+              </span>
+            </button>
 
-            <div className="flex items-center justify-between px-4 py-3 min-h-[44px] rounded-xl text-xs text-text-secondary bg-surface-2/50 border border-border/60">
+            <button
+              onClick={() => {
+                navigate('activity');
+                onClose();
+              }}
+              className="w-full flex items-center justify-between px-3.5 py-3 min-h-[44px] rounded-xl text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-surface-2 transition-colors cursor-pointer"
+            >
               <span className="flex items-center gap-2.5">
-                <Shield size={15} className="text-accent" />
-                Auth Engine
+                <Star size={16} className="text-text-tertiary" />
+                Activity Feed
               </span>
-              <span className="text-xs font-mono text-text-primary font-semibold">Client-side</span>
-            </div>
+            </button>
+
+            <button
+              onClick={() => {
+                navigate('clone');
+                onClose();
+              }}
+              className="w-full flex items-center justify-between px-3.5 py-3 min-h-[44px] rounded-xl text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-surface-2 transition-colors cursor-pointer"
+            >
+              <span className="flex items-center gap-2.5">
+                <FolderPlus size={16} className="text-text-tertiary" />
+                Clone Repository
+              </span>
+            </button>
           </div>
 
           {/* Footer */}
           <div className="p-3 border-t border-border text-center">
             <span className="text-[10px] text-text-tertiary font-mono">
-              Git Manager Mobile v2.0 • 8pt Grid
+              Git Manager Mobile
             </span>
           </div>
         </motion.div>

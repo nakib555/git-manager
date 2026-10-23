@@ -92,12 +92,12 @@ export const CommitDetailModal: React.FC<CommitDetailModalProps> = ({
   const parsedTitle = rawMsgLines[0] || 'Commit changes';
   const customBulletLines = rawMsgLines.slice(1).map((l: string) => l.replace(/^[-*•]\s*/, ''));
 
-  // Default rich bullets matching example 17 when message has no body
+  // Default rich bullets when message has no body
   const fallbackBulletPoints = [
-    'Update GitGraph layout to be responsive for mobile screens',
+    'Streamline mobile commit timeline and card ergonomics',
     'Improve CommitDetailModal diff viewer styles for better readability',
-    'Refine CommitCard styling',
-    'Cleanup unnecessary dependencies in lockfiles'
+    'Refine CommitCard styling with fast SHA copy',
+    'Cleanup unnecessary clutter and optimize performance'
   ];
   const bulletPoints = customBulletLines.length > 0 ? customBulletLines : fallbackBulletPoints;
 

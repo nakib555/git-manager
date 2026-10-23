@@ -96,16 +96,16 @@ export const Repositories: React.FC = () => {
       {/* 1. Sticky Controls Header */}
       <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-3 space-y-3 shrink-0">
         {/* Segmented Scope Switcher */}
-        <div className="h-9 p-1 bg-surface-1 border border-border rounded-xl flex items-center gap-1 select-none">
+        <div className="h-9 p-0.5 bg-surface-1 border border-border rounded-xl flex items-center gap-1 select-none">
           <button
             onClick={() => {
               setRepoSearchScope('personal');
               setRepoPage(1);
             }}
-            className={`flex-1 h-full rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+            className={`flex-1 h-full rounded-lg text-xs transition-all cursor-pointer ${
               repoSearchScope === 'personal'
-                ? 'bg-accent text-white shadow-sm font-bold'
-                : 'text-text-secondary hover:text-text-primary'
+                ? 'bg-text-primary text-background shadow-xs font-bold'
+                : 'text-text-secondary hover:text-text-primary font-medium'
             }`}
           >
             Personal Repos
@@ -115,10 +115,10 @@ export const Repositories: React.FC = () => {
               setRepoSearchScope('global');
               setRepoPage(1);
             }}
-            className={`flex-1 h-full rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+            className={`flex-1 h-full rounded-lg text-xs transition-all cursor-pointer ${
               repoSearchScope === 'global'
-                ? 'bg-accent text-white shadow-sm font-bold'
-                : 'text-text-secondary hover:text-text-primary'
+                ? 'bg-text-primary text-background shadow-xs font-bold'
+                : 'text-text-secondary hover:text-text-primary font-medium'
             }`}
           >
             Global GitHub
@@ -170,10 +170,10 @@ export const Repositories: React.FC = () => {
                   setRepoTypeFilter(chip.id as any);
                   setRepoPage(1);
                 }}
-                className={`h-7 px-3 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                className={`h-7 px-3 rounded-lg text-xs whitespace-nowrap transition-all cursor-pointer ${
                   isActive
-                    ? 'bg-accent text-white font-bold'
-                    : 'bg-surface-1 text-text-secondary hover:text-text-primary border border-border'
+                    ? 'bg-text-primary text-background font-bold shadow-2xs'
+                    : 'bg-surface-1 text-text-secondary hover:text-text-primary border border-border/80 font-medium'
                 }`}
               >
                 {chip.label}

@@ -87,7 +87,7 @@ export const RepoCard: React.FC<RepoCardProps> = ({
       {/* Top row: Folder Glyph, Name/Desc & Privacy Badge */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3 min-w-0">
-          <div className="w-9 h-9 rounded-xl bg-surface-2 border border-border-accent flex items-center justify-center text-accent shrink-0 mt-0.5 group-hover:border-accent/40 transition-colors">
+          <div className="w-9 h-9 rounded-xl bg-surface-2 border border-border flex items-center justify-center text-text-primary shrink-0 mt-0.5 group-hover:border-text-primary/30 transition-colors">
             <FolderGit2 size={16} />
           </div>
 
@@ -113,17 +113,12 @@ export const RepoCard: React.FC<RepoCardProps> = ({
           </div>
         </div>
 
-        {/* Right: Privacy Badge & Chevron */}
+        {/* Right: Clean Unboxed Privacy Metadata & Chevron */}
         <div className="flex items-center gap-2 shrink-0">
-          {repo.private ? (
-            <span className="flex items-center gap-1 text-[10px] font-mono font-bold text-text-tertiary px-2 py-0.5 rounded-full bg-surface-2 border border-border">
-              <Lock size={10} /> Private
-            </span>
-          ) : (
-            <span className="flex items-center gap-1 text-[10px] font-mono font-bold text-emerald-400 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-              <Globe size={10} /> Public
-            </span>
-          )}
+          <span className="flex items-center gap-1 text-[11px] font-mono text-text-tertiary">
+            {repo.private ? <Lock size={11} /> : <Globe size={11} />}
+            <span>{repo.private ? 'Private' : 'Public'}</span>
+          </span>
           <ChevronRight size={15} className="text-text-tertiary group-hover:text-text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
         </div>
       </div>

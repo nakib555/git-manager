@@ -91,12 +91,12 @@ export const CommitCard: React.FC<CommitCardProps> = ({
             e.stopPropagation();
             onCopyHash?.();
           }}
-          className="flex items-center gap-1 font-mono text-[11px] font-semibold text-text-primary bg-surface-2 hover:bg-surface-3 px-2 py-1 rounded-lg border border-border/90 transition-all active:scale-95 cursor-pointer shadow-2xs"
+          className="flex items-center gap-1.5 font-mono text-[11px] font-semibold text-text-primary bg-surface-2 hover:bg-surface-3 px-2.5 py-1.5 rounded-lg border border-border/90 transition-all active:scale-95 cursor-pointer shadow-2xs min-h-[32px]"
           title="Copy SHA"
           aria-label={`Copy SHA ${shortSha}`}
         >
           <span>{shortSha}</span>
-          <Copy size={11} className="text-text-tertiary group-hover:text-text-primary transition-colors" />
+          <Copy size={12} className="text-text-tertiary group-hover:text-text-primary transition-colors" />
         </button>
 
         <ChevronRight size={15} className="text-text-tertiary group-hover:text-text-secondary group-hover:translate-x-0.5 transition-all" />

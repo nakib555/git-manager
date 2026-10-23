@@ -207,8 +207,8 @@ export const PRsScreen: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-base font-bold text-text-primary tracking-tight">Pull Requests</h2>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-surface-2 border border-border-accent text-text-secondary">
-              {activePRs.length}
+            <span className="text-xs font-mono text-text-tertiary">
+              ({activePRs.length})
             </span>
           </div>
           <p className="text-xs text-text-tertiary mt-0.5">
@@ -218,36 +218,32 @@ export const PRsScreen: React.FC = () => {
         <button
           type="button"
           onClick={() => openModal('pr')}
-          className="h-9 px-3.5 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer"
+          className="h-9 px-3.5 rounded-xl bg-text-primary text-background hover:opacity-90 text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer shadow-xs"
         >
           <Plus size={15} strokeWidth={2.5} />
           <span>New PR</span>
         </button>
       </div>
 
-      {/* 2. Quick-Filter Carousel (8-point spatial rhythm) */}
+      {/* 2. Quick-Filter Carousel */}
       <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
         {[
-          { id: 'open', label: 'Open', count: activePRs.filter(p => p.status !== 'Merged' && p.status !== 'Closed' && !p.closed).length, color: '#3FB950' },
-          { id: 'merged', label: 'Merged', count: activePRs.filter(p => p.status === 'Merged').length, color: '#A371F7' },
-          { id: 'closed', label: 'Closed', count: activePRs.filter(p => p.status === 'Closed' || p.closed).length, color: '#F85149' },
-          { id: 'all', label: 'All PRs', count: activePRs.length, color: '#58A6FF' },
+          { id: 'open', label: 'Open', count: activePRs.filter(p => p.status !== 'Merged' && p.status !== 'Closed' && !p.closed).length },
+          { id: 'merged', label: 'Merged', count: activePRs.filter(p => p.status === 'Merged').length },
+          { id: 'closed', label: 'Closed', count: activePRs.filter(p => p.status === 'Closed' || p.closed).length },
+          { id: 'all', label: 'All PRs', count: activePRs.length },
         ].map(item => {
           const isActive = filterStatus === item.id;
           return (
             <button
               key={item.id}
               onClick={() => setFilterStatus(item.id as any)}
-              className={`h-8 px-3 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shrink-0 border ${
+              className={`h-8 px-3 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shrink-0 border ${
                 isActive
-                  ? 'bg-surface-2 text-text-primary border-accent/60 shadow-xs'
+                  ? 'bg-text-primary text-background border-text-primary shadow-xs font-bold'
                   : 'bg-surface-1 text-text-tertiary border-border hover:border-border-accent hover:text-text-secondary'
               }`}
             >
-              <span 
-                className="w-1.5 h-1.5 rounded-full" 
-                style={{ backgroundColor: item.color }} 
-              />
               <span>{item.label}</span>
               <span className="font-mono text-[10px] opacity-75 tabular-nums">
                 ({item.count})
@@ -322,12 +318,8 @@ export const PRsScreen: React.FC = () => {
 
                   {/* Status Tag */}
                   <span 
-                    className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider shrink-0 border"
-                    style={{ 
-                      color: statusColor, 
-                      backgroundColor: `${statusColor}14`,
-                      borderColor: `${statusColor}35`
-                    }}
+                    className="text-[11px] font-mono font-semibold uppercase tracking-wider shrink-0"
+                    style={{ color: statusColor }}
                   >
                     {isMerged ? 'Merged' : isClosed ? 'Closed' : 'Open'}
                   </span>
@@ -383,21 +375,22 @@ export const PRsScreen: React.FC = () => {
               <div className="px-4 py-3 border-b border-border-accent/80 shrink-0">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-accent/15 text-accent border border-accent/30">
+                    <div className="flex items-center gap-2 mb-1 text-xs font-mono">
+                      <span className="font-semibold text-accent">
                         #{selectedPR.id || (selectedPR as any).number}
                       </span>
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider border ${
-                        selectedPR.status === 'Merged'
-                          ? 'bg-[#A371F7]/15 text-[#A371F7] border-[#A371F7]/30'
-                          : selectedPR.status === 'Closed'
-                          ? 'bg-[#F85149]/15 text-[#F85149] border-[#F85149]/30'
-                          : 'bg-[#3FB950]/15 text-[#3FB950] border-[#3FB950]/30'
-                      }`}>
+                      <span>·</span>
+                      <span 
+                        className="font-bold uppercase tracking-wider"
+                        style={{
+                          color: selectedPR.status === 'Merged' ? '#A371F7' : selectedPR.status === 'Closed' ? '#F85149' : '#3FB950'
+                        }}
+                      >
                         {selectedPR.status || 'Open'}
                       </span>
-                      <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                        <ShieldCheck size={11} /> Verified
+                      <span>·</span>
+                      <span className="flex items-center gap-1 text-emerald-400">
+                        <ShieldCheck size={12} /> verified
                       </span>
                     </div>
                     <h3 className="text-sm font-bold text-text-primary leading-snug line-clamp-2">
@@ -635,7 +628,7 @@ export const PRsScreen: React.FC = () => {
                     <button
                       onClick={handleMergePR}
                       disabled={isMerging}
-                      className="flex-1 h-11 px-4 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-emerald-500/20 transition-all cursor-pointer active:scale-95"
+                      className="flex-1 h-11 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer active:scale-95"
                     >
                       <GitMerge size={15} />
                       <span>{isMerging ? 'Merging...' : 'Confirm and Merge PR'}</span>

@@ -81,7 +81,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
             <button
               type="button"
               onClick={resolvedPrimary.onClick}
-              className="w-full min-h-[48px] h-12 px-4 rounded-xl bg-accent text-white text-xs font-semibold hover:opacity-90 active:scale-98 transition-all cursor-pointer shadow-sm shadow-accent/20 flex items-center justify-center gap-2"
+              className="w-full min-h-[48px] h-12 px-4 rounded-xl bg-text-primary text-background text-xs font-bold hover:opacity-90 active:scale-98 transition-all cursor-pointer shadow-xs flex items-center justify-center gap-2"
             >
               {resolvedPrimary.icon && React.createElement(resolvedPrimary.icon, { size: 16 })}
               <span>{resolvedPrimary.label}</span>

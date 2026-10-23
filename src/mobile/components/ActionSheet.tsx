@@ -60,7 +60,7 @@ export const ActionSheet: React.FC<ActionSheetProps> = ({ isOpen, onClose }) => 
                 onClick={() => handleAction(() => openModal('repo'))}
                 className="w-full min-h-[48px] h-12 px-3 rounded-xl flex items-center gap-4 hover:bg-surface-2 transition-colors text-left text-xs font-semibold text-text-primary cursor-pointer active:scale-98"
               >
-                <div className="w-8 h-8 rounded-lg bg-[#388BFD]/14 text-[#388BFD] flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 rounded-lg bg-surface-2 border border-border text-text-primary flex items-center justify-center shrink-0">
                   <FolderPlus size={17} />
                 </div>
                 <div>
@@ -73,7 +73,7 @@ export const ActionSheet: React.FC<ActionSheetProps> = ({ isOpen, onClose }) => 
                 onClick={() => handleAction(() => navigate('clone'))}
                 className="w-full min-h-[48px] h-12 px-3 rounded-xl flex items-center gap-4 hover:bg-surface-2 transition-colors text-left text-xs font-semibold text-text-primary cursor-pointer active:scale-98"
               >
-                <div className="w-8 h-8 rounded-lg bg-[#D29922]/14 text-[#D29922] flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 rounded-lg bg-surface-2 border border-border text-text-primary flex items-center justify-center shrink-0">
                   <Download size={17} />
                 </div>
                 <div>
@@ -95,7 +95,7 @@ export const ActionSheet: React.FC<ActionSheetProps> = ({ isOpen, onClose }) => 
                     onClick={() => handleAction(() => openModal('commit'))}
                     className="w-full min-h-[48px] h-12 px-3 rounded-xl flex items-center gap-4 hover:bg-surface-2 transition-colors text-left text-xs font-semibold text-text-primary cursor-pointer active:scale-98"
                   >
-                    <div className="w-8 h-8 rounded-lg bg-[#58A6FF]/14 text-[#58A6FF] flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-surface-2 border border-border text-accent flex items-center justify-center shrink-0">
                       <GitCommit size={17} />
                     </div>
                     <div>
@@ -108,7 +108,7 @@ export const ActionSheet: React.FC<ActionSheetProps> = ({ isOpen, onClose }) => 
                     onClick={() => handleAction(() => openModal('branch'))}
                     className="w-full min-h-[48px] h-12 px-3 rounded-xl flex items-center gap-4 hover:bg-surface-2 transition-colors text-left text-xs font-semibold text-text-primary cursor-pointer active:scale-98"
                   >
-                    <div className="w-8 h-8 rounded-lg bg-[#1F6FEB]/14 text-[#1F6FEB] flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-surface-2 border border-border text-accent flex items-center justify-center shrink-0">
                       <GitBranchPlus size={17} />
                     </div>
                     <div>
@@ -121,7 +121,7 @@ export const ActionSheet: React.FC<ActionSheetProps> = ({ isOpen, onClose }) => 
                     onClick={() => handleAction(() => openModal('pr'))}
                     className="w-full min-h-[48px] h-12 px-3 rounded-xl flex items-center gap-4 hover:bg-surface-2 transition-colors text-left text-xs font-semibold text-text-primary cursor-pointer active:scale-98"
                   >
-                    <div className="w-8 h-8 rounded-lg bg-[#3FB950]/14 text-[#3FB950] flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-surface-2 border border-border text-emerald-400 flex items-center justify-center shrink-0">
                       <GitPullRequest size={17} />
                     </div>
                     <div>

@@ -48,7 +48,7 @@ export const Dashboard: React.FC = () => {
   return (
     <div className="px-4 py-4 space-y-5 pb-8 select-none">
       {/* 1. Profile & Welcome Header Card */}
-      <div className="bg-surface-1 border border-border rounded-2xl p-4 shadow-sm">
+      <div className="bg-surface-1 border border-border rounded-2xl p-4 shadow-xs">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="relative">
@@ -56,23 +56,20 @@ export const Dashboard: React.FC = () => {
                 <img 
                   src={githubUser.avatar_url} 
                   alt={githubUser.login} 
-                  className="w-12 h-12 rounded-full border-2 border-border-accent object-cover"
+                  className="w-11 h-11 rounded-full border border-border object-cover"
                 />
               ) : (
-                <div className="w-12 h-12 rounded-full bg-surface-2 border border-border-accent flex items-center justify-center text-text-tertiary">
-                  <Github size={22} />
+                <div className="w-11 h-11 rounded-full bg-surface-2 border border-border flex items-center justify-center text-text-tertiary">
+                  <Github size={20} />
                 </div>
               )}
-              <span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-surface-1 ring-2 ring-emerald-500/20" />
             </div>
 
             <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="text-[11px] font-semibold text-text-tertiary uppercase tracking-wider">
-                  Workspace
-                </span>
-                <span className="w-1 h-1 rounded-full bg-text-tertiary" />
-                <span className="text-[11px] font-mono text-emerald-400 font-medium">Online</span>
+              <div className="flex items-center gap-1.5 text-[11px] text-text-tertiary font-medium">
+                <span>Workspace</span>
+                <span aria-hidden="true">&bull;</span>
+                <span className="font-mono text-text-secondary">Ready</span>
               </div>
               <h2 className="text-base font-bold text-text-primary tracking-tight truncate">
                 {githubUser?.name || githubUser?.login || 'Developer'}
@@ -84,25 +81,25 @@ export const Dashboard: React.FC = () => {
             <button
               type="button"
               onClick={connectGitHub}
-              className="h-9 px-3.5 rounded-xl bg-accent hover:opacity-90 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm shadow-accent/25 active:scale-95 transition-all cursor-pointer"
+              className="h-9 px-3.5 rounded-xl bg-accent hover:opacity-90 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer"
             >
               <Github size={14} />
               <span>Connect</span>
             </button>
           ) : (
-            <div className="px-2.5 py-1 rounded-full bg-surface-2 border border-border-accent text-[11px] font-mono text-text-secondary">
+            <div className="text-xs font-mono text-text-secondary">
               @{githubUser.login}
             </div>
           )}
         </div>
       </div>
 
-      {/* 2. Balanced 4-Metric Strip (8-point spatial rhythm) */}
+      {/* 2. Cohesive 4-Metric Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-        <div className="bg-surface-1 border border-border hover:border-border-accent rounded-xl p-3.5 flex flex-col justify-between min-h-[92px] transition-all">
+        <div className="bg-surface-1 border border-border rounded-xl p-3.5 flex flex-col justify-between min-h-[88px] transition-all">
           <div className="flex items-center justify-between text-text-tertiary">
             <span className="text-[10px] font-bold uppercase tracking-wider">Repositories</span>
-            <FolderGit2 size={14} className="text-[#388BFD]" />
+            <FolderGit2 size={14} className="text-text-secondary" />
           </div>
           <span className="text-2xl font-bold font-mono tabular-nums text-text-primary my-0.5">
             {githubRepos.length}
@@ -110,10 +107,10 @@ export const Dashboard: React.FC = () => {
           <span className="text-[10px] text-text-tertiary font-medium">Active sources</span>
         </div>
 
-        <div className="bg-surface-1 border border-border hover:border-border-accent rounded-xl p-3.5 flex flex-col justify-between min-h-[92px] transition-all">
+        <div className="bg-surface-1 border border-border rounded-xl p-3.5 flex flex-col justify-between min-h-[88px] transition-all">
           <div className="flex items-center justify-between text-text-tertiary">
             <span className="text-[10px] font-bold uppercase tracking-wider">Stargazers</span>
-            <Star size={14} className="text-[#D29922]" />
+            <Star size={14} className="text-text-secondary" />
           </div>
           <span className="text-2xl font-bold font-mono tabular-nums text-text-primary my-0.5">
             {totalStars}
@@ -121,10 +118,10 @@ export const Dashboard: React.FC = () => {
           <span className="text-[10px] text-text-tertiary font-medium">Across all repos</span>
         </div>
 
-        <div className="bg-surface-1 border border-border hover:border-border-accent rounded-xl p-3.5 flex flex-col justify-between min-h-[92px] transition-all">
+        <div className="bg-surface-1 border border-border rounded-xl p-3.5 flex flex-col justify-between min-h-[88px] transition-all">
           <div className="flex items-center justify-between text-text-tertiary">
             <span className="text-[10px] font-bold uppercase tracking-wider">Forks</span>
-            <Layers size={14} className="text-[#A371F7]" />
+            <Layers size={14} className="text-text-secondary" />
           </div>
           <span className="text-2xl font-bold font-mono tabular-nums text-text-primary my-0.5">
             {totalForks}
@@ -132,10 +129,10 @@ export const Dashboard: React.FC = () => {
           <span className="text-[10px] text-text-tertiary font-medium">Community copies</span>
         </div>
 
-        <div className="bg-surface-1 border border-border hover:border-border-accent rounded-xl p-3.5 flex flex-col justify-between min-h-[92px] transition-all">
+        <div className="bg-surface-1 border border-border rounded-xl p-3.5 flex flex-col justify-between min-h-[88px] transition-all">
           <div className="flex items-center justify-between text-text-tertiary">
             <span className="text-[10px] font-bold uppercase tracking-wider">Commits</span>
-            <GitCommit size={14} className="text-[#3FB950]" />
+            <GitCommit size={14} className="text-text-secondary" />
           </div>
           <span className="text-2xl font-bold font-mono tabular-nums text-text-primary my-0.5">
             {activeCommits.length}
@@ -144,16 +141,16 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* 3. 7-Day Commit Velocity Chart Card */}
-      <div className="bg-surface-1 border border-border rounded-xl p-4 shadow-sm">
+      {/* 3. 7-Day Commit Velocity Card */}
+      <div className="bg-surface-1 border border-border rounded-xl p-4 shadow-xs">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <TrendingUp size={15} className="text-[#388BFD]" />
+            <TrendingUp size={15} className="text-accent" />
             <h3 className="text-xs font-bold uppercase tracking-wider text-text-secondary">
               7-Day Commit Velocity
             </h3>
           </div>
-          <span className="text-[11px] font-mono text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+          <span className="text-[11px] font-mono text-emerald-500 font-semibold">
             +18% this week
           </span>
         </div>
@@ -171,15 +168,15 @@ export const Dashboard: React.FC = () => {
                   </span>
                   <div className="w-full max-w-[28px] bg-surface-2 rounded-t-md overflow-hidden flex items-end h-full">
                     <div 
-                      className={`w-full rounded-t-md transition-all duration-500 ${
+                      className={`w-full rounded-t-md transition-all duration-300 ${
                         isToday 
-                          ? 'bg-gradient-to-t from-blue-600 to-indigo-500 shadow-sm shadow-blue-500/30' 
-                          : 'bg-accent/40 group-hover:bg-accent/70'
+                          ? 'bg-text-primary' 
+                          : 'bg-surface-3 group-hover:bg-accent/60'
                       }`}
                       style={{ height: `${heightPct}%` }}
                     />
                   </div>
-                  <span className={`text-[10px] font-mono ${isToday ? 'font-bold text-accent' : 'text-text-tertiary'}`}>
+                  <span className={`text-[10px] font-mono ${isToday ? 'font-bold text-text-primary' : 'text-text-tertiary'}`}>
                     {item.day}
                   </span>
                 </div>
@@ -194,7 +191,7 @@ export const Dashboard: React.FC = () => {
         <button
           type="button"
           onClick={() => openModal('repo')}
-          className="h-12 px-4 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer"
+          className="h-12 px-4 rounded-xl bg-text-primary hover:opacity-90 text-background font-bold text-xs flex items-center justify-center gap-2 shadow-xs active:scale-95 transition-all cursor-pointer"
         >
           <Plus size={16} strokeWidth={2.4} />
           <span>New Repository</span>
@@ -203,9 +200,9 @@ export const Dashboard: React.FC = () => {
         <button
           type="button"
           onClick={() => navigate('clone')}
-          className="h-12 px-4 rounded-xl bg-surface-2 border border-border-accent hover:border-accent/40 text-text-primary font-semibold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer shadow-sm"
+          className="h-12 px-4 rounded-xl bg-surface-2 border border-border hover:bg-surface-3 text-text-primary font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer shadow-xs"
         >
-          <Download size={16} strokeWidth={2.4} className="text-warning" />
+          <Download size={16} strokeWidth={2.4} className="text-text-secondary" />
           <span>Clone Repo</span>
         </button>
       </div>
@@ -301,26 +298,26 @@ export const Dashboard: React.FC = () => {
               <div 
                 key={`${commit.hash}-${idx}`} 
                 onClick={() => setSelectedCommit(commit)}
-                className="bg-surface-1 border border-border hover:border-border-accent rounded-xl p-3.5 flex items-center justify-between gap-3 cursor-pointer select-none transition-all active:scale-98 shadow-xs"
+                className="bg-surface-1 border border-border hover:border-text-primary/30 rounded-xl p-3.5 flex items-center justify-between gap-3 cursor-pointer select-none transition-all active:scale-98 shadow-xs"
               >
                 <div className="flex items-start gap-3 min-w-0">
-                  <div className="w-8 h-8 rounded-lg bg-surface-2 border border-border-accent flex items-center justify-center text-text-secondary shrink-0 mt-0.5">
-                    <GitCommit size={15} className="text-emerald-400" />
+                  <div className="w-8 h-8 rounded-lg bg-surface-2 border border-border flex items-center justify-center text-text-secondary shrink-0 mt-0.5">
+                    <GitCommit size={15} />
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs font-semibold text-text-primary leading-snug truncate">
                       {commit.msg}
                     </p>
                     <div className="flex items-center gap-2 mt-1 text-[11px] text-text-tertiary font-mono">
-                      <span className="text-accent font-semibold tabular-nums">{commit.hash.substring(0, 7)}</span>
-                      <span aria-hidden="true">·</span>
+                      <span className="text-text-secondary font-semibold tabular-nums">{commit.hash.substring(0, 7)}</span>
+                      <span aria-hidden="true">&bull;</span>
                       <span className="tabular-nums">{formatRelativeTime(commit.date || commit.timestamp)}</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-surface-2 border border-border text-text-secondary">
+                  <span className="text-[11px] font-mono text-text-tertiary">
                     {commit.author.split(' ')[0]}
                   </span>
                   <ChevronRight size={14} className="text-text-tertiary" />

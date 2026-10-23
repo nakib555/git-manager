@@ -117,7 +117,7 @@ export const Activity: React.FC = () => {
           onClick={() => setActiveFeedTab('events')}
           className={`flex-1 h-full rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
             activeFeedTab === 'events'
-              ? 'bg-accent text-white shadow-xs font-bold'
+              ? 'bg-text-primary text-background shadow-xs font-bold'
               : 'text-text-secondary hover:text-text-primary'
           }`}
         >
@@ -129,7 +129,7 @@ export const Activity: React.FC = () => {
           onClick={() => setActiveFeedTab('commits')}
           className={`flex-1 h-full rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
             activeFeedTab === 'commits'
-              ? 'bg-accent text-white shadow-xs font-bold'
+              ? 'bg-text-primary text-background shadow-xs font-bold'
               : 'text-text-secondary hover:text-text-primary'
           }`}
         >
@@ -140,7 +140,7 @@ export const Activity: React.FC = () => {
 
       {activeFeedTab === 'events' ? (
         <div className="space-y-3">
-          {/* Sub-filter chips for events (32px height = 4x8pt) */}
+          {/* Sub-filter chips for events */}
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar select-none py-0.5">
             {[
               { id: 'all', label: 'All Events' },
@@ -151,9 +151,9 @@ export const Activity: React.FC = () => {
               <button
                 key={f.id}
                 onClick={() => setEventFilter(f.id as any)}
-                className={`h-8 px-3 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                className={`h-8 px-3 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer border ${
                   eventFilter === f.id
-                    ? 'bg-accent-soft text-accent border border-accent/25 font-bold'
+                    ? 'bg-text-primary text-background border-text-primary font-bold shadow-xs'
                     : 'bg-surface-1 border border-border text-text-tertiary hover:text-text-secondary'
                 }`}
               >
@@ -240,14 +240,10 @@ export const Activity: React.FC = () => {
                           {ev.actor.login}
                         </span>
                         <span 
-                          className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider shrink-0 border"
-                          style={{
-                            color: entityColor,
-                            backgroundColor: `${entityColor}14`,
-                            borderColor: `${entityColor}30`,
-                          }}
+                          className="text-[11px] font-mono font-semibold uppercase tracking-wider shrink-0"
+                          style={{ color: entityColor }}
                         >
-                          {isPush ? 'Push' : isPR ? 'PR' : isWatch ? 'Star' : 'Branch'}
+                          · {isPush ? 'Push' : isPR ? 'PR' : isWatch ? 'Star' : 'Branch'}
                         </span>
                       </div>
 

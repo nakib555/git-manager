@@ -74,8 +74,8 @@ export const BranchesScreen: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-base font-bold text-text-primary tracking-tight">Branches</h2>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-surface-2 border border-border-accent text-text-secondary">
-              {activeBranches.length}
+            <span className="text-xs font-mono text-text-tertiary">
+              ({activeBranches.length})
             </span>
           </div>
           <p className="text-xs text-text-tertiary mt-0.5">
@@ -85,7 +85,7 @@ export const BranchesScreen: React.FC = () => {
         <button
           type="button"
           onClick={() => openModal('branch')}
-          className="h-9 px-3.5 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer"
+          className="h-9 px-3.5 rounded-xl bg-text-primary text-background hover:opacity-90 text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer shadow-xs"
         >
           <Plus size={15} strokeWidth={2.5} />
           <span>New Branch</span>
@@ -156,14 +156,14 @@ export const BranchesScreen: React.FC = () => {
                         </span>
 
                         {isActive && (
-                          <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shrink-0">
+                          <span className="text-[10px] font-mono font-bold text-emerald-400 shrink-0">
                             HEAD
                           </span>
                         )}
 
                         {isDefault && (
-                          <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-surface-2 text-text-tertiary border border-border shrink-0">
-                            Default
+                          <span className="text-[10px] font-mono text-text-tertiary shrink-0">
+                            default
                           </span>
                         )}
                       </div>
@@ -230,18 +230,18 @@ export const BranchesScreen: React.FC = () => {
               <div className="px-4 py-3 border-b border-border-accent/80 shrink-0">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#58A6FF]/15 text-[#58A6FF] border border-[#58A6FF]/30">
+                    <div className="flex items-center gap-2 mb-1 text-xs font-mono">
+                      <span className="text-text-tertiary uppercase tracking-wider font-semibold">
                         Branch
                       </span>
                       {selectedBranch === currentBranch && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                          Active HEAD
+                        <span className="text-emerald-400 font-bold">
+                          · Active HEAD
                         </span>
                       )}
                       {(selectedBranch === 'main' || selectedBranch === 'master') && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-surface-2 text-text-tertiary border border-border">
-                          Default
+                        <span className="text-text-tertiary">
+                          · Default
                         </span>
                       )}
                     </div>
@@ -406,7 +406,7 @@ export const BranchesScreen: React.FC = () => {
                         setSelectedBranch(null);
                         openModal('pr');
                       }}
-                      className="w-full h-11 px-4 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer"
+                      className="w-full h-11 px-4 rounded-xl bg-text-primary text-background hover:opacity-90 font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer shadow-xs"
                     >
                       <GitPullRequest size={15} />
                       <span>Create Pull Request from {selectedBranch}</span>
@@ -421,7 +421,7 @@ export const BranchesScreen: React.FC = () => {
                   <button
                     onClick={() => handleSwitch(selectedBranch)}
                     disabled={isSwitching}
-                    className="flex-1 h-11 px-4 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-blue-500/20 transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+                    className="flex-1 h-11 px-4 rounded-xl bg-text-primary text-background hover:opacity-90 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 disabled:opacity-50 shadow-xs"
                   >
                     <Check size={15} />
                     <span>{isSwitching ? 'Checking out...' : `Switch to ${selectedBranch}`}</span>

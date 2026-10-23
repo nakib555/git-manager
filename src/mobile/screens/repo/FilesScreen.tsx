@@ -227,7 +227,7 @@ export const FilesScreen: React.FC = () => {
             <span>/</span>
             <span className="text-text-primary font-bold truncate">{currentRepo}</span>
           </div>
-          <span className="text-[11px] font-mono text-accent font-bold bg-accent/15 px-2.5 py-0.5 rounded-full border border-accent/30 tabular-nums">
+          <span className="text-[11px] font-mono text-text-tertiary tabular-nums">
             {activeFiles.length} files
           </span>
         </div>
