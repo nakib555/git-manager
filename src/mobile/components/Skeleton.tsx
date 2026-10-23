@@ -17,7 +17,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({ className = 'h-4 w-full', st
 
 export const RepoCardSkeleton: React.FC = () => {
   return (
-    <div className="bg-surface-1 border border-border rounded-xl p-4 space-y-3 ghost-shimmer">
+    <div className="bg-surface-1 border border-border/80 rounded-2xl p-4 space-y-3 ghost-shimmer shadow-xs">
       <div className="flex items-center justify-between">
         <Skeleton className="h-4 w-1/3" />
         <Skeleton className="h-5 w-14 rounded-full" />

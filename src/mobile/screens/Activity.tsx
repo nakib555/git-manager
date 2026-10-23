@@ -209,17 +209,19 @@ export const Activity: React.FC = () => {
               />
             )
           ) : (
-            <div className="bg-surface-1 border border-border rounded-xl divide-y divide-border/60 overflow-hidden shadow-xs mb-6">
+            <div className="space-y-2.5 mb-6">
               {filteredEvents.map((ev) => {
                 const isPush = ev.type === 'PushEvent';
                 const isPR = ev.type === 'PullRequestEvent';
                 const isWatch = ev.type === 'WatchEvent';
                 const commitsList = ev.payload?.commits || [];
 
+                const entityColor = isPush ? '#388BFD' : isPR ? '#A371F7' : isWatch ? '#D29922' : '#3FB950';
+
                 return (
                   <div
                     key={ev.id}
-                    className="p-4 space-y-2.5 hover:bg-surface-2/40 transition-colors select-none"
+                    className="bg-surface-1 border border-border hover:border-border-accent rounded-xl p-3.5 space-y-2.5 select-none shadow-xs transition-all"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 min-w-0 pr-2">
@@ -227,18 +229,25 @@ export const Activity: React.FC = () => {
                           <img
                             src={ev.actor.avatarUrl}
                             alt=""
-                            className="w-6 h-6 rounded-full border border-border/80 shrink-0 object-cover"
+                            className="w-6 h-6 rounded-full border border-border-accent shrink-0 object-cover"
                           />
                         ) : (
                           <div className="w-6 h-6 rounded-full bg-surface-2 flex items-center justify-center text-text-tertiary shrink-0">
                             <User size={13} />
                           </div>
                         )}
-                        <span className="text-[13px] font-semibold text-text-primary truncate">
+                        <span className="text-xs font-bold text-text-primary truncate">
                           {ev.actor.login}
                         </span>
-                        <span className="text-xs text-text-tertiary shrink-0">
-                          {isPush ? 'pushed to' : isPR ? `${ev.payload?.action || 'updated'} PR on` : isWatch ? 'starred' : 'updated'}
+                        <span 
+                          className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider shrink-0 border"
+                          style={{
+                            color: entityColor,
+                            backgroundColor: `${entityColor}14`,
+                            borderColor: `${entityColor}30`,
+                          }}
+                        >
+                          {isPush ? 'Push' : isPR ? 'PR' : isWatch ? 'Star' : 'Branch'}
                         </span>
                       </div>
 
@@ -247,7 +256,7 @@ export const Activity: React.FC = () => {
                       </span>
                     </div>
 
-                    {/* Repository Anchor (44px min height touch target) */}
+                    {/* Repository Anchor */}
                     <div
                       onClick={() => {
                         const parts = ev.repo.name.split('/');
@@ -255,17 +264,17 @@ export const Activity: React.FC = () => {
                         const repoOwner = parts[0];
                         openRepo(repoName, repoOwner);
                       }}
-                      className="group flex items-center justify-between min-h-[40px] px-3 py-1.5 rounded-lg bg-surface-2/50 border border-border/60 cursor-pointer hover:border-accent transition-colors"
+                      className="group flex items-center justify-between min-h-[38px] px-3 py-1.5 rounded-lg bg-surface-2 border border-border-accent/60 cursor-pointer hover:border-accent transition-colors"
                     >
                       <div className="flex items-center gap-2 min-w-0 pr-2">
                         {isPush ? (
-                          <GitCommit size={15} className="text-accent shrink-0" />
+                          <GitCommit size={14} className="text-[#388BFD] shrink-0" />
                         ) : isPR ? (
-                          <GitPullRequest size={15} className="text-warning shrink-0" />
+                          <GitPullRequest size={14} className="text-[#A371F7] shrink-0" />
                         ) : isWatch ? (
-                          <Star size={15} className="text-warning shrink-0" />
+                          <Star size={14} className="text-[#D29922] shrink-0" />
                         ) : (
-                          <GitBranch size={15} className="text-success shrink-0" />
+                          <GitBranch size={14} className="text-[#3FB950] shrink-0" />
                         )}
                         <span className="font-mono text-xs font-semibold text-text-primary truncate group-hover:text-accent transition-colors">
                           {ev.repo.name}
@@ -276,14 +285,14 @@ export const Activity: React.FC = () => {
 
                     {/* Commits detail summary if a push event */}
                     {isPush && commitsList.length > 0 && (
-                      <div className="pl-2 border-l-2 border-border/70 space-y-1.5 pt-0.5">
+                      <div className="pl-2 border-l-2 border-accent/40 space-y-1.5 pt-0.5">
                         {commitsList.slice(0, 2).map((c: any) => (
                           <div
                             key={c.sha}
                             onClick={() => setSelectedCommit({ hash: c.sha.substring(0, 7), fullHash: c.sha, msg: c.message, author: ev.actor.login, date: ev.createdAt })}
-                            className="text-xs font-mono text-text-secondary hover:text-accent truncate cursor-pointer flex items-center gap-1.5 py-0.5"
+                            className="text-xs font-mono text-text-secondary hover:text-accent truncate cursor-pointer flex items-center gap-1.5 py-0.5 active:scale-98 transition-transform"
                           >
-                            <span className="text-[11px] text-accent font-bold tabular-nums shrink-0">
+                            <span className="text-[10px] text-accent font-bold tabular-nums shrink-0 px-1.5 py-0.5 rounded bg-surface-2 border border-border">
                               {c.sha.substring(0, 7)}
                             </span>
                             <span className="truncate">{c.message}</span>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star, GitFork, Lock, Globe, Clock } from 'lucide-react';
+import { Star, GitFork, Lock, Globe, Clock, ChevronRight, FolderGit2 } from 'lucide-react';
 import { GitHubRepo } from '../../types';
 import { formatRelativeTime } from '../utils/formatters';
 
@@ -78,70 +78,84 @@ export const RepoCard: React.FC<RepoCardProps> = ({
           onClick();
         }
       }}
-      className={`w-full p-4 transition-colors duration-150 cursor-pointer select-none min-h-[56px] ${
+      className={`group relative w-full p-4 rounded-2xl bg-surface-1 border transition-all duration-150 cursor-pointer select-none active:scale-[0.99] shadow-xs flex flex-col justify-between gap-3 ${
         isActive
-          ? 'bg-accent/10 border-l-2 border-accent'
-          : 'hover:bg-surface-2/60 active:bg-surface-2'
+          ? 'border-accent/70 ring-2 ring-accent/30 bg-surface-1 shadow-sm'
+          : 'border-border/80 hover:border-accent/50 hover:bg-surface-2/40'
       }`}
     >
-      {/* Top row: Name & Privacy status (Clean unboxed typography) */}
-      <div className="flex items-start justify-between gap-2 mb-1">
-        <div className="flex items-center gap-1.5 min-w-0">
-          <span className="font-semibold text-[13px] leading-5 text-text-primary truncate tracking-tight">
-            {displayName}
-          </span>
+      {/* Top row: Folder Glyph, Name/Desc & Privacy Badge */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-3 min-w-0">
+          <div className="w-9 h-9 rounded-xl bg-surface-2 border border-border-accent flex items-center justify-center text-accent shrink-0 mt-0.5 group-hover:border-accent/40 transition-colors">
+            <FolderGit2 size={16} />
+          </div>
+
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-xs text-text-primary truncate tracking-tight group-hover:text-accent transition-colors font-sans">
+                {displayName}
+              </h3>
+              {isActive && (
+                <span className="w-1.5 h-1.5 rounded-full bg-accent ring-2 ring-accent/30 shrink-0" title="Active Repo" />
+              )}
+            </div>
+
+            {repo.description ? (
+              <p className="text-[11px] text-text-secondary line-clamp-2 leading-relaxed mt-1 font-sans">
+                {repo.description}
+              </p>
+            ) : (
+              <p className="text-[11px] text-text-tertiary italic mt-1 font-sans">
+                No description provided.
+              </p>
+            )}
+          </div>
         </div>
 
-        <div className="flex items-center gap-1 shrink-0 text-text-tertiary">
+        {/* Right: Privacy Badge & Chevron */}
+        <div className="flex items-center gap-2 shrink-0">
           {repo.private ? (
-            <span className="flex items-center gap-1 text-[11px] font-medium text-text-tertiary">
-              <Lock size={11} /> Private
+            <span className="flex items-center gap-1 text-[10px] font-mono font-bold text-text-tertiary px-2 py-0.5 rounded-full bg-surface-2 border border-border">
+              <Lock size={10} /> Private
             </span>
           ) : (
-            <span className="flex items-center gap-1 text-[11px] font-medium text-text-tertiary">
-              <Globe size={11} /> Public
+            <span className="flex items-center gap-1 text-[10px] font-mono font-bold text-emerald-400 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+              <Globe size={10} /> Public
             </span>
           )}
+          <ChevronRight size={15} className="text-text-tertiary group-hover:text-text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
         </div>
       </div>
 
-      {/* Description */}
-      {repo.description ? (
-        <p className="text-xs text-text-secondary line-clamp-2 leading-relaxed mb-2.5">
-          {repo.description}
-        </p>
-      ) : (
-        <p className="text-xs text-text-tertiary italic mb-2.5">
-          No description provided.
-        </p>
-      )}
-
-      {/* Bottom metadata row (Unboxed text with tabular-nums) */}
-      <div className="flex items-center justify-between text-xs text-text-tertiary font-mono pt-2 border-t border-border/40">
-        {/* Language */}
+      {/* Bottom metadata row: 8-point spatial rhythm with tabular-nums */}
+      <div className="flex items-center justify-between text-xs text-text-tertiary font-mono pt-2.5 border-t border-border/50">
+        {/* Language Pill */}
         <div className="flex items-center gap-1.5 min-w-0">
           <span
-            className="w-2.5 h-2.5 rounded-full shrink-0"
+            className="w-2 h-2 rounded-full shrink-0 shadow-2xs"
             style={{ backgroundColor: getLanguageColor(repo.language) }}
           />
-          <span className="truncate max-w-[100px] text-text-secondary text-[11px]">{repo.language || 'Markdown'}</span>
+          <span className="truncate max-w-[120px] text-text-secondary text-[11px] font-medium font-sans">
+            {repo.language || 'Markdown'}
+          </span>
         </div>
 
-        {/* Stars, Forks & Updated with Tabular Numbers */}
+        {/* Stars, Forks & Updated */}
         <div className="flex items-center gap-3 shrink-0 tabular-nums text-[11px]">
           <span className="flex items-center gap-1 text-text-secondary">
-            <Star size={12} className="text-warning shrink-0" />
-            <span>{repo.stargazers_count || 0}</span>
+            <Star size={11} className="text-[#D29922] fill-[#D29922]/20 shrink-0" />
+            <span className="font-bold">{repo.stargazers_count || 0}</span>
           </span>
 
           <span className="flex items-center gap-1 text-text-tertiary">
-            <GitFork size={12} className="shrink-0" />
+            <GitFork size={11} className="shrink-0" />
             <span>{repo.forks_count || 0}</span>
           </span>
 
           <span className="flex items-center gap-1 text-text-tertiary">
             <Clock size={11} className="shrink-0" />
-            <span>{formatRelativeTime(repo.pushed_at || repo.updated_at || '')}</span>
+            <span className="font-sans">{formatRelativeTime(repo.pushed_at || repo.updated_at || '')}</span>
           </span>
         </div>
       </div>

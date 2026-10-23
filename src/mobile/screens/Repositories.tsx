@@ -254,7 +254,7 @@ export const Repositories: React.FC = () => {
             />
           )
         ) : (
-          <div className="bg-surface-1 border border-border rounded-xl divide-y divide-border/60 overflow-hidden shadow-xs">
+          <div className="space-y-3.5 pb-6">
             {paginatedRepos.map((repo) => (
               <RepoCard
                 key={repo.name}

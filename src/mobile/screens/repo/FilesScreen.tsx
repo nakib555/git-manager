@@ -218,16 +218,16 @@ export const FilesScreen: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col relative w-full pb-6">
+    <div className="flex flex-col relative w-full pb-8 select-none">
       {/* 1. Header Toolbar */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-3 space-y-2 shrink-0">
+      <div className="sticky top-0 z-10 bg-surface-1/90 backdrop-blur-md border-b border-border px-4 py-3 space-y-2.5 shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5 text-xs text-text-tertiary font-mono truncate">
             <Home size={14} className="text-text-tertiary shrink-0" />
             <span>/</span>
-            <span className="text-text-primary font-semibold truncate">{currentRepo}</span>
+            <span className="text-text-primary font-bold truncate">{currentRepo}</span>
           </div>
-          <span className="text-[11px] font-mono text-accent font-semibold bg-accent-soft px-2.5 py-1 rounded-lg border border-accent/20">
+          <span className="text-[11px] font-mono text-accent font-bold bg-accent/15 px-2.5 py-0.5 rounded-full border border-accent/30 tabular-nums">
             {activeFiles.length} files
           </span>
         </div>
@@ -240,7 +240,7 @@ export const FilesScreen: React.FC = () => {
             placeholder="Search file name..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-10 pl-9 pr-8 bg-surface-1 border border-border rounded-xl text-xs text-text-primary placeholder:text-text-tertiary outline-none focus:border-accent transition-colors"
+            className="w-full h-10 pl-9 pr-8 bg-surface-2 border border-border rounded-xl text-xs text-text-primary placeholder:text-text-tertiary outline-none focus:border-accent transition-colors font-mono"
           />
           {searchQuery && (
             <button
@@ -287,7 +287,7 @@ export const FilesScreen: React.FC = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedFileForModal(null)}
-              className="absolute inset-0 bg-black/70"
+              className="absolute inset-0 bg-black/75 backdrop-blur-[2px]"
             />
 
             <motion.div
@@ -295,11 +295,11 @@ export const FilesScreen: React.FC = () => {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-              className={`relative w-full bg-surface-1 border-t border-x border-border rounded-t-2xl pb-[calc(env(safe-area-inset-bottom,0px)+24px)] pt-3 px-4 shadow-2xl z-10 flex flex-col transition-all duration-200 ${
+              className={`relative w-full bg-surface-1 border-t border-border-accent rounded-t-2xl pb-[calc(env(safe-area-inset-bottom,0px)+24px)] pt-3 px-4 shadow-2xl z-10 flex flex-col transition-all duration-200 ${
                 isFullscreen ? 'h-[96vh]' : 'max-h-[88vh] h-[85vh]'
               }`}
             >
-              <div className="w-10 h-1 bg-border rounded-full mx-auto mb-2 shrink-0" />
+              <div className="w-10 h-1 bg-border-accent rounded-full mx-auto mb-2 shrink-0" />
 
               {/* Top Navigation & Breadcrumbs Header */}
               <div className="flex items-center justify-between pb-2 border-b border-border shrink-0 min-h-[44px]">
