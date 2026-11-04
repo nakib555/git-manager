@@ -4,6 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <script>
+      // Ensure React Fast Refresh preamble hooks exist synchronously before any ESM modules evaluate
+      window.$RefreshReg$ = window.$RefreshReg$ || function() {};
+      window.$RefreshSig$ = window.$RefreshSig$ || function() { return function(type) { return type; }; };
+      window.__vite_plugin_react_preamble_installed__ = true;
+
       // Suppress benign Vite HMR WebSocket closed notifications in iframe / proxy environments
       window.addEventListener('error', function(event) {
         if (event.message && (event.message.includes('WebSocket closed without opened') || event.message.includes('vite-hmr'))) {
