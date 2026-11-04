@@ -85,7 +85,8 @@ export const DesktopLayout: React.FC = () => {
     currentScreen, currentRepo, currentBranch, navigate, githubUser, githubRepos, 
     disconnectGitHub, theme, toggleTheme, connectGitHub, openModal,
     toastMessage, githubToken, setRepoSearchQuery, isFetchingRepos,
-    openCommandPalette, refreshData, lastSyncTimestamp, isAutoSyncing
+    openCommandPalette, refreshData, lastSyncTimestamp, isAutoSyncing,
+    openZipSync
   } = useAppContext();
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -362,6 +363,18 @@ export const DesktopLayout: React.FC = () => {
                 className={`transition-transform duration-500 ${isAutoSyncing ? 'animate-spin text-emerald-400' : 'text-text-muted'}`} 
               />
             </button>
+
+            {/* ZIP Sync button when inside an opened repository */}
+            {isRepoScreen && currentRepo && (
+              <button 
+                onClick={openZipSync}
+                className="bg-accent/15 border border-accent/35 hover:border-accent text-accent hover:bg-accent/25 text-xs font-bold h-9 px-3.5 rounded-xl active:scale-95 transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                title="Sync changes from AI Studio ZIP package"
+              >
+                <Sparkles size={13} className="text-accent" />
+                <span>Sync ZIP</span>
+              </button>
+            )}
 
             {/* Quick Clone repo button */}
             <button 
@@ -1912,7 +1925,7 @@ const FileTreeItem = React.memo(({ item, depth, activeFileName, onSelect }: any)
 FileTreeItem.displayName = 'FileTreeItem';
 
 const DesktopFilesView: React.FC = () => {
-  const { activeFiles, currentRepo, githubToken, currentRepoOwner, currentBranch, githubUser, showToast, theme } = useAppContext();
+  const { activeFiles, currentRepo, githubToken, currentRepoOwner, currentBranch, githubUser, showToast, theme, openZipSync } = useAppContext();
   const [selectedFile, setSelectedFile] = useState<string>('');
   const [fileContent, setFileContent] = useState<string>('');
   const [isLoadingFile, setIsLoadingFile] = useState<boolean>(false);
@@ -1976,7 +1989,17 @@ const DesktopFilesView: React.FC = () => {
       <div className="w-80 bg-card border border-border rounded-2xl p-4 flex flex-col h-full shrink-0 min-h-0">
         <div className="flex items-center justify-between mb-2.5 px-1">
           <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">WORKSPACE FILES</span>
-          <span className="text-[10px] text-text-muted font-mono">{filteredFiles.length} files</span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={openZipSync}
+              className="flex items-center gap-1 text-[10px] font-bold text-accent hover:text-accent-hover bg-accent/10 border border-accent/25 px-2 py-0.5 rounded-md transition-colors cursor-pointer"
+              title="Sync code changes from AI Studio ZIP package"
+            >
+              <Sparkles size={11} />
+              <span>Sync ZIP</span>
+            </button>
+            <span className="text-[10px] text-text-muted font-mono">{filteredFiles.length} files</span>
+          </div>
         </div>
 
         {/* Filter input */}

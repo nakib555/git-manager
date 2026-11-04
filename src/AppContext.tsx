@@ -69,6 +69,12 @@ export const getLocalRepoDetails = (
     } catch (e) {}
   }
   
+  if (repoId === "nexus-web-engine" || !repoId) {
+    if (type === "files") return DEMO_FILES;
+    if (type === "commits") return DEMO_COMMITS;
+    if (type === "branches") return DEMO_BRANCHES;
+    if (type === "prs") return DEMO_PRS;
+  }
   return [];
 };
 
@@ -130,6 +136,7 @@ const defaultState: AppState = {
   isCommandPaletteOpen: false,
   lastSyncTimestamp: Date.now(),
   isAutoSyncing: false,
+  isZipSyncOpen: false,
 };
 const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: ReactNode }> = ({
@@ -183,6 +190,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
   const openCommandPalette = () => setState(prev => ({ ...prev, isCommandPaletteOpen: true }));
   const closeCommandPalette = () => setState(prev => ({ ...prev, isCommandPaletteOpen: false }));
   const toggleCommandPalette = () => setState(prev => ({ ...prev, isCommandPaletteOpen: !prev.isCommandPaletteOpen }));
+
+  const openZipSync = () => {
+    if (!state.currentRepo) {
+      showToast("Please open a repository first to sync ZIP files.", "warning");
+      return;
+    }
+    setState(prev => ({ ...prev, isZipSyncOpen: true }));
+  };
+  const closeZipSync = () => setState(prev => ({ ...prev, isZipSyncOpen: false }));
+  const toggleZipSync = () => {
+    if (!state.currentRepo && !state.isZipSyncOpen) {
+      showToast("Please open a repository first to sync ZIP files.", "warning");
+      return;
+    }
+    setState(prev => ({ ...prev, isZipSyncOpen: !prev.isZipSyncOpen }));
+  };
 
   // Global shortcut listener for Cmd+K and Ctrl+K
   useEffect(() => {
@@ -1398,13 +1421,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
   };
   const createLocalCommit = async (commit: {
     msg: string;
-    author: string;
+    author?: string;
     hash?: string;
     fullHash?: string;
     add?: string;
     del?: string;
     filePath?: string;
     fileContent?: string;
+    files?: Array<{ name: string; path?: string; type?: string; size?: number }>;
+    updatedFileList?: Array<{ name: string; path?: string; type?: string; size?: number }>;
   }) => {
     if (!state.currentRepo) {
       showToast("Select or open a repository first to make a commit.", "warning");
@@ -1485,12 +1510,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
       }
     } else {
       // Offline / Local Workspace Commit creation
-      const localHash = Math.random().toString(16).substring(2, 9);
+      const localHash = commit.hash || Math.random().toString(16).substring(2, 9);
       const key = `local_details_${repo}_commits`;
       const existing = getLocalRepoDetails(repo, "commits");
       const newLocalCommit = {
         hash: localHash,
-        fullHash: `${localHash}${Math.random().toString(16).substring(2, 16)}`,
+        fullHash: commit.fullHash || `${localHash}${Math.random().toString(16).substring(2, 16)}`,
         msg: commit.msg,
         author: authorName,
         time: "Just now",
@@ -1506,12 +1531,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         localStorage.setItem(key, JSON.stringify(updated.slice(0, 500)));
       } catch (_) {}
 
+      // If full synced file list or new files provided (e.g. from ZipSyncModal), sync activeFiles atomically
+      const syncFileList = commit.updatedFileList || commit.files;
+      if (syncFileList && syncFileList.length > 0) {
+        try {
+          localStorage.setItem(`local_details_${repo}_files`, JSON.stringify(syncFileList));
+        } catch (_) {}
+      }
+
       setState((prev) => {
         const newCount = prev.sessionCommitsCount + 1;
         localStorage.setItem("sessionCommitsCount", String(newCount));
         return {
           ...prev,
           activeCommits: updated,
+          activeFiles: (syncFileList && syncFileList.length > 0) ? syncFileList : prev.activeFiles,
           sessionCommitsCount: newCount,
         };
       });
@@ -1750,6 +1784,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
               : f
           )
         : [...prev.activeFiles, { name: cleanPath, path: cleanPath, type: 'file', isCurrent: true, localEdited: true }];
+
+      try {
+        localStorage.setItem(`local_details_${repo}_files`, JSON.stringify(updatedFiles));
+      } catch (_) {}
 
       return {
         ...prev,
@@ -2166,10 +2204,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         let prs = prev.activePRs;
         let files = prev.activeFiles;
         if (prev.currentRepo) {
-          commits = getLocalRepoDetails(prev.currentRepo, "commits");
-          branches = getLocalRepoDetails(prev.currentRepo, "branches");
-          prs = getLocalRepoDetails(prev.currentRepo, "prs");
-          files = getLocalRepoDetails(prev.currentRepo, "files");
+          const loadedCommits = getLocalRepoDetails(prev.currentRepo, "commits");
+          commits = loadedCommits.length > 0 ? loadedCommits : prev.activeCommits;
+          const loadedBranches = getLocalRepoDetails(prev.currentRepo, "branches");
+          branches = loadedBranches.length > 0 ? loadedBranches : prev.activeBranches;
+          const loadedPrs = getLocalRepoDetails(prev.currentRepo, "prs");
+          prs = loadedPrs.length > 0 ? loadedPrs : prev.activePRs;
+          const loadedFiles = getLocalRepoDetails(prev.currentRepo, "files");
+          files = loadedFiles.length > 0 ? loadedFiles : prev.activeFiles;
         }
         return {
           ...prev,
@@ -2242,6 +2284,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         openCommandPalette,
         closeCommandPalette,
         toggleCommandPalette,
+        openZipSync,
+        closeZipSync,
+        toggleZipSync,
       }}
     >
       {children}

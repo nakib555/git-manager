@@ -13,7 +13,7 @@ interface CommandPaletteProps {
 export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose }) => {
   const { 
     githubRepos, currentRepo, openRepo, navigate, 
-    activeBranches, switchBranch, openModal, theme, toggleTheme 
+    activeBranches, switchBranch, openModal, theme, toggleTheme, openZipSync
   } = useAppContext();
 
   const [query, setQuery] = useState('');
@@ -77,6 +77,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
       run: () => { navigate('clone'); onClose(); }
     },
     ...(currentRepo ? [
+      {
+        id: 'action-zip-sync',
+        title: `Sync ZIP package from AI Studio into "${currentRepo}"`,
+        category: 'Git Sync',
+        icon: Sparkles,
+        run: () => { openZipSync(); onClose(); }
+      },
       {
         id: 'action-commit',
         title: `Commit Changes in "${currentRepo}"`,

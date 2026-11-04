@@ -27,7 +27,7 @@ export function buildFastFileTree(files: { name?: string; path?: string; type?: 
 
     for (let depth = 0; depth < parts.length; depth++) {
       const part = parts[depth];
-      const isFile = depth === parts.length - 1 && (raw.type === 'file' || raw.type === 'blob');
+      const isFile = depth === parts.length - 1 && raw.type !== 'dir' && raw.type !== 'tree';
       currentPath = currentPath ? `${currentPath}/${part}` : part;
 
       if (isFile) {

@@ -88,6 +88,7 @@ export interface AppState {
   isCommandPaletteOpen: boolean;
   lastSyncTimestamp: number;
   isAutoSyncing: boolean;
+  isZipSyncOpen: boolean;
 }
 
 export type AppContextType = AppState & {
@@ -125,7 +126,17 @@ export type AppContextType = AppState & {
   deleteBranch: (branchName: string) => Promise<void>;
   createLocalPR: (pr: { title: string; desc: string; source: string; target: string; isDraft?: boolean }) => void;
   updateLocalPRStatus: (prId: number, status: 'Open' | 'Merged' | 'Closed', strategy?: 'merge' | 'squash') => Promise<void>;
-  createLocalCommit: (commit: { msg: string; author?: string; hash?: string; add?: string; del?: string; filePath?: string; fileContent?: string }) => void;
+  createLocalCommit: (commit: { 
+    msg: string; 
+    author?: string; 
+    hash?: string; 
+    add?: string; 
+    del?: string; 
+    filePath?: string; 
+    fileContent?: string;
+    files?: Array<{ name: string; path?: string; type?: string; size?: number }>;
+    updatedFileList?: Array<{ name: string; path?: string; type?: string; size?: number }>;
+  }) => Promise<boolean | void> | void;
   saveAndCommitFile: (params: { filePath: string; content: string; message: string; description?: string; branch?: string }) => Promise<boolean>;
   editCommitMessage: (hash: string, newMsg: string) => void;
   deleteCommit: (hash: string) => Promise<boolean>;
@@ -139,5 +150,8 @@ export type AppContextType = AppState & {
   openCommandPalette: () => void;
   closeCommandPalette: () => void;
   toggleCommandPalette: () => void;
+  openZipSync: () => void;
+  closeZipSync: () => void;
+  toggleZipSync: () => void;
 };
 

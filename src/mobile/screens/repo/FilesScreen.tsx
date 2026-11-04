@@ -4,7 +4,7 @@ import {
   Folder, FileText, ChevronRight, ChevronDown, Copy, 
   Check, Search, X, Home, Maximize2, Minimize2, 
   Download, FileCode, Clock, Info, ArrowUpRight,
-  FolderTree, RefreshCw, GitBranch, History, Edit3
+  FolderTree, RefreshCw, GitBranch, History, Edit3, Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -62,7 +62,8 @@ export const FilesScreen: React.FC = () => {
     activeCommits, 
     showToast,
     openModal,
-    refreshData
+    refreshData,
+    openZipSync
   } = useAppContext();
 
   const [activeFilePath, setActiveFilePath] = useState<string | null>(null);
@@ -229,9 +230,19 @@ export const FilesScreen: React.FC = () => {
             <span>/</span>
             <span className="text-text-primary font-bold truncate">{currentRepo}</span>
           </div>
-          <span className="text-[11px] font-mono text-text-tertiary tabular-nums">
-            {activeFiles.length} files
-          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={openZipSync}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-accent/15 border border-accent/30 text-accent font-bold text-xs active:scale-95 transition-all cursor-pointer"
+              title="Sync changes from AI Studio ZIP package"
+            >
+              <Sparkles size={12} />
+              <span>Sync ZIP</span>
+            </button>
+            <span className="text-[11px] font-mono text-text-tertiary tabular-nums">
+              {activeFiles.length} files
+            </span>
+          </div>
         </div>
 
         {/* Quick file search filter (40px = 5x8pt) */}
@@ -297,7 +308,7 @@ export const FilesScreen: React.FC = () => {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-              className={`relative w-full bg-surface-1 border-t border-border-accent rounded-t-2xl pb-[calc(env(safe-area-inset-bottom,0px)+24px)] pt-3 px-4 shadow-2xl z-10 flex flex-col transition-all duration-200 ${
+              className={`relative w-full bg-surface-1 border-t border-border-accent rounded-t-2xl pb-[calc(env(safe-area-inset-bottom,0px)+16px)] pt-3 px-4 shadow-2xl z-10 flex flex-col transition-all duration-200 ${
                 isFullscreen ? 'h-[96vh]' : 'max-h-[88vh] h-[85vh]'
               }`}
             >
@@ -383,12 +394,12 @@ export const FilesScreen: React.FC = () => {
                   </button>
                 </div>
 
-                {/* Right utility buttons: Edit, Wrap, Copy, Download */}
-                <div className="flex items-center gap-1.5 shrink-0">
+                {/* Right utility buttons: Edit, Copy, Download */}
+                <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={() => setIsEditingFile(true)}
                     disabled={activeFileLoading}
-                    className="h-8 px-3 rounded-xl bg-accent hover:opacity-90 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs active:scale-95 disabled:opacity-50"
+                    className="h-8 px-3 rounded-xl bg-accent hover:opacity-90 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs active:scale-95 disabled:opacity-50 min-h-[32px]"
                     title="Edit file"
                   >
                     <Edit3 size={13} />
@@ -396,19 +407,9 @@ export const FilesScreen: React.FC = () => {
                   </button>
 
                   <button
-                    onClick={() => setWrapLines(!wrapLines)}
-                    className={`h-8 px-2.5 rounded-xl text-[10px] font-mono border transition-colors cursor-pointer ${
-                      wrapLines ? 'bg-accent-soft text-accent border-accent/30 font-bold' : 'bg-surface-2 text-text-tertiary border-border'
-                    }`}
-                    title="Toggle word wrap"
-                  >
-                    Wrap
-                  </button>
-
-                  <button
                     onClick={handleCopyCode}
                     disabled={activeFileLoading}
-                    className="h-8 px-3 rounded-xl bg-surface-2 hover:bg-surface-3 border border-border text-xs text-text-primary hover:text-accent flex items-center gap-1.5 transition-colors cursor-pointer"
+                    className="h-8 px-3 rounded-xl bg-surface-2 hover:bg-surface-3 border border-border text-xs text-text-primary hover:text-accent flex items-center gap-1.5 transition-colors cursor-pointer min-h-[32px]"
                   >
                     {isCopied ? <Check size={13} className="text-success" /> : <Copy size={13} />}
                     <span>{isCopied ? 'Copied' : 'Copy'}</span>
@@ -416,7 +417,7 @@ export const FilesScreen: React.FC = () => {
 
                   <button
                     onClick={handleDownloadFile}
-                    className="h-8 w-8 rounded-xl bg-surface-2 hover:bg-surface-3 border border-border flex items-center justify-center text-text-tertiary hover:text-text-primary transition-colors cursor-pointer"
+                    className="h-8 w-8 rounded-xl bg-surface-2 hover:bg-surface-3 border border-border flex items-center justify-center text-text-tertiary hover:text-text-primary transition-colors cursor-pointer min-h-[32px]"
                     title="Download raw file"
                   >
                     <Download size={14} />
@@ -452,7 +453,7 @@ export const FilesScreen: React.FC = () => {
                         lineHeight: '1.6',
                       }}
                       showLineNumbers={true}
-                      wrapLines={wrapLines}
+                      wrapLines={false}
                     >
                       {activeFileContent}
                     </SyntaxHighlighter>

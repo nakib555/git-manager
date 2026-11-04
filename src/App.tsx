@@ -8,10 +8,12 @@ import { DesktopLayout } from './components/DesktopLayout';
 import { CommandPalette } from './components/CommandPalette';
 import { MobileShell } from './mobile/layout/MobileShell';
 
+import { ZipSyncModal } from './components/sync/ZipSyncModal';
+
 const queryClient = new QueryClient();
 
 const MainApp = () => {
-  const { isCommandPaletteOpen, closeCommandPalette } = useAppContext();
+  const { isCommandPaletteOpen, closeCommandPalette, isZipSyncOpen, closeZipSync } = useAppContext();
   const isDesktop = useIsDesktop();
 
   return (
@@ -22,6 +24,7 @@ const MainApp = () => {
         <MobileShell />
       )}
       <CommandPalette isOpen={isCommandPaletteOpen} onClose={closeCommandPalette} />
+      <ZipSyncModal isOpen={isZipSyncOpen} onClose={closeZipSync} />
       <CreateModals />
     </div>
   );

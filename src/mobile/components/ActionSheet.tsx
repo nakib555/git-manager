@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useAppContext } from '../../AppContext';
 import { 
   FolderPlus, Download, GitBranchPlus, GitPullRequest, 
-  GitCommit, Trash2, X 
+  GitCommit, Trash2, X, Sparkles 
 } from 'lucide-react';
 
 export interface ActionSheetProps {
@@ -12,7 +12,7 @@ export interface ActionSheetProps {
 }
 
 export const ActionSheet: React.FC<ActionSheetProps> = ({ isOpen, onClose }) => {
-  const { openModal, navigate, currentRepo } = useAppContext();
+  const { openModal, navigate, currentRepo, openZipSync } = useAppContext();
 
   const handleAction = (cb: () => void) => {
     onClose();
@@ -32,13 +32,13 @@ export const ActionSheet: React.FC<ActionSheetProps> = ({ isOpen, onClose }) => 
             className="absolute inset-0 bg-black/60"
           />
 
-          {/* Sheet Body */}
+          {/* Sheet Body (8-point System: 16px padding, 8px gaps) */}
           <motion.div
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-            className="relative w-full bg-surface-1 border-t border-x border-border rounded-t-3xl pb-[calc(env(safe-area-inset-bottom,0px)+24px)] pt-3 px-4 shadow-2xl z-10 max-h-[85vh] overflow-y-auto no-scrollbar"
+            className="relative w-full bg-surface-1 border-t border-x border-border rounded-t-3xl pb-[calc(env(safe-area-inset-bottom,0px)+16px)] pt-3 px-4 shadow-2xl z-10 max-h-[85vh] overflow-y-auto no-scrollbar"
           >
             {/* Grab handle */}
             <div className="w-10 h-1 bg-border rounded-full mx-auto mb-3" />
@@ -47,7 +47,7 @@ export const ActionSheet: React.FC<ActionSheetProps> = ({ isOpen, onClose }) => 
               <h3 className="text-sm font-semibold text-text-primary">Quick Actions</h3>
               <button
                 onClick={onClose}
-                className="w-9 h-9 flex items-center justify-center text-text-tertiary hover:text-text-primary rounded-xl hover:bg-surface-2 transition-colors cursor-pointer"
+                className="w-11 h-11 flex items-center justify-center text-text-tertiary hover:text-text-primary rounded-xl hover:bg-surface-2 transition-colors cursor-pointer"
                 aria-label="Close action sheet"
               >
                 <X size={18} />
@@ -90,6 +90,19 @@ export const ActionSheet: React.FC<ActionSheetProps> = ({ isOpen, onClose }) => 
                       Active: {currentRepo}
                     </span>
                   </div>
+
+                  <button
+                    onClick={() => handleAction(openZipSync)}
+                    className="w-full min-h-[48px] h-12 px-3 rounded-xl flex items-center gap-4 hover:bg-surface-2 transition-colors text-left text-xs font-semibold text-text-primary cursor-pointer active:scale-98 bg-accent/5 border border-accent/20"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-accent/15 text-accent flex items-center justify-center shrink-0">
+                      <Sparkles size={17} />
+                    </div>
+                    <div>
+                      <span className="block font-semibold text-accent">Sync ZIP Package</span>
+                      <span className="block text-[11px] text-text-tertiary font-normal">Auto-align roots, resolve conflicts, commit changes</span>
+                    </div>
+                  </button>
 
                   <button
                     onClick={() => handleAction(() => openModal('commit'))}
