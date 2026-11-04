@@ -2065,10 +2065,11 @@ const DesktopFilesView: React.FC = () => {
                 setTimeout(() => setIsCopied(false), 2000);
               }
             }}
-            className="flex items-center gap-1.5 text-[11px] bg-card hover:bg-hover border border-border px-3 py-1.5 rounded-lg font-semibold text-text-main transition-colors cursor-pointer shrink-0"
+            className="flex items-center justify-center w-8 h-8 text-[11px] bg-card hover:bg-hover border border-border rounded-lg text-text-main transition-colors cursor-pointer shrink-0"
+            title={isCopied ? 'Copied to clipboard' : 'Copy Code'}
+            aria-label={isCopied ? 'Copied' : 'Copy Code'}
           >
-            {isCopied ? <Check size={12} className="text-success" /> : <Copy size={12} className="text-text-muted" />}
-            <span>{isCopied ? 'Copied' : 'Copy Code'}</span>
+            {isCopied ? <Check size={14} className="text-success" /> : <Copy size={14} className="text-text-muted" />}
           </button>
         </div>
 

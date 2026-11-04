@@ -239,38 +239,38 @@ export const MobileFileEditor: React.FC<MobileFileEditorProps> = ({
           <button
             type="button"
             onClick={() => setEditorMode('edit')}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition font-semibold cursor-pointer ${
+            className={`flex items-center justify-center w-8 h-8 rounded-lg transition font-semibold cursor-pointer ${
               editorMode === 'edit'
                 ? 'bg-surface-1 text-text-primary shadow-2xs font-bold'
                 : 'text-text-tertiary hover:text-text-primary'
             }`}
             title="Edit mode"
+            aria-label="Edit mode"
           >
-            <Edit3 size={13} />
-            <span>Edit</span>
+            <Edit3 size={14} />
           </button>
           <button
             type="button"
             onClick={() => setEditorMode('preview')}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition font-semibold cursor-pointer ${
+            className={`flex items-center justify-center w-8 h-8 rounded-lg transition font-semibold cursor-pointer ${
               editorMode === 'preview'
                 ? 'bg-surface-1 text-accent shadow-2xs font-bold'
                 : 'text-text-tertiary hover:text-text-primary'
             }`}
             title="Syntax highlighted preview"
+            aria-label="Preview mode"
           >
-            <Eye size={13} />
-            <span>Preview</span>
+            <Eye size={14} />
           </button>
         </div>
 
         {/* Right utility & Commit Button */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0">
           {/* Wrap lines toggle */}
           <button
             type="button"
             onClick={() => setWrapLines(!wrapLines)}
-            className={`w-9 h-9 rounded-xl border flex items-center justify-center transition cursor-pointer ${
+            className={`w-8 h-8 rounded-xl border flex items-center justify-center transition cursor-pointer ${
               wrapLines
                 ? 'bg-accent/10 border-accent/40 text-accent font-bold'
                 : 'bg-surface-2 border-border text-text-tertiary hover:text-text-primary'
@@ -278,7 +278,7 @@ export const MobileFileEditor: React.FC<MobileFileEditorProps> = ({
             title="Toggle word wrap"
             aria-label="Toggle word wrap"
           >
-            <WrapText size={15} />
+            <WrapText size={14} />
           </button>
 
           {/* Real-time Diff Pill */}
@@ -289,19 +289,20 @@ export const MobileFileEditor: React.FC<MobileFileEditorProps> = ({
             </div>
           )}
 
-          {/* Save & Commit CTA (Min-h-[40px] = 5x8pt) */}
+          {/* Save & Commit CTA (Icon-only on mobile to save space) */}
           <button
             type="button"
             onClick={() => setIsCommitSheetOpen(true)}
-            className={`h-10 px-3.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition active:scale-95 cursor-pointer shadow-xs ${
+            className={`h-8 w-8 sm:w-auto sm:px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer shadow-xs ${
               isDirty
                 ? 'bg-accent hover:opacity-95 text-white'
                 : 'bg-surface-2 text-text-tertiary border border-border hover:text-text-primary'
             }`}
-            title="Save and commit changes compliant with GitHub guidelines"
+            title="Save and commit changes"
+            aria-label="Save and commit changes"
           >
-            <Check size={14} />
-            <span>Save Changes</span>
+            <Check size={15} />
+            <span className="hidden sm:inline">Save</span>
           </button>
         </div>
       </header>

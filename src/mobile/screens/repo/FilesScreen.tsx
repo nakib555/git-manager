@@ -354,71 +354,76 @@ export const FilesScreen: React.FC = () => {
                 </div>
               </div>
 
-              {/* Sub-Tabs: Code | Raw | History | Info (32px height = 4x8pt) */}
+              {/* Sub-Tabs: Code | History | Info & Right Action Buttons (Icon-only to maximize space) */}
               <div className="flex items-center justify-between border-b border-border py-2 shrink-0">
                 <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => setContentTab('code')}
-                    className={`h-8 px-3 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                    title="Code View"
+                    aria-label="Code View"
+                    className={`h-8 w-8 rounded-xl flex items-center justify-center transition-colors cursor-pointer ${
                       contentTab === 'code'
-                        ? 'bg-accent text-white font-bold shadow-xs'
+                        ? 'bg-accent text-white shadow-xs'
                         : 'text-text-tertiary hover:text-text-primary hover:bg-surface-2'
                     }`}
                   >
-                    <FileCode size={14} />
-                    <span>Code</span>
+                    <FileCode size={15} />
                   </button>
 
                   <button
                     onClick={() => setContentTab('history')}
-                    className={`h-8 px-3 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                    title="Commit History"
+                    aria-label="Commit History"
+                    className={`h-8 w-8 rounded-xl flex items-center justify-center transition-colors cursor-pointer ${
                       contentTab === 'history'
-                        ? 'bg-accent text-white font-bold shadow-xs'
+                        ? 'bg-accent text-white shadow-xs'
                         : 'text-text-tertiary hover:text-text-primary hover:bg-surface-2'
                     }`}
                   >
-                    <Clock size={14} />
-                    <span>History</span>
+                    <Clock size={15} />
                   </button>
 
                   <button
                     onClick={() => setContentTab('info')}
-                    className={`h-8 px-3 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                    title="File Info"
+                    aria-label="File Info"
+                    className={`h-8 w-8 rounded-xl flex items-center justify-center transition-colors cursor-pointer ${
                       contentTab === 'info'
-                        ? 'bg-accent text-white font-bold shadow-xs'
+                        ? 'bg-accent text-white shadow-xs'
                         : 'text-text-tertiary hover:text-text-primary hover:bg-surface-2'
                     }`}
                   >
-                    <Info size={14} />
-                    <span>Info</span>
+                    <Info size={15} />
                   </button>
                 </div>
 
                 {/* Right utility buttons: Edit, Copy, Download */}
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0">
                   <button
                     onClick={() => setIsEditingFile(true)}
                     disabled={activeFileLoading}
-                    className="h-8 px-3 rounded-xl bg-accent hover:opacity-90 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs active:scale-95 disabled:opacity-50 min-h-[32px]"
+                    className="h-8 w-8 rounded-xl bg-accent hover:opacity-90 text-white flex items-center justify-center transition-colors cursor-pointer shadow-2xs active:scale-95 disabled:opacity-50"
                     title="Edit file"
+                    aria-label="Edit file"
                   >
-                    <Edit3 size={13} />
-                    <span>Edit</span>
+                    <Edit3 size={14} />
                   </button>
 
                   <button
                     onClick={handleCopyCode}
                     disabled={activeFileLoading}
-                    className="h-8 px-3 rounded-xl bg-surface-2 hover:bg-surface-3 border border-border text-xs text-text-primary hover:text-accent flex items-center gap-1.5 transition-colors cursor-pointer min-h-[32px]"
+                    className="h-8 w-8 rounded-xl bg-surface-2 hover:bg-surface-3 border border-border text-text-primary hover:text-accent flex items-center justify-center transition-colors cursor-pointer"
+                    title={isCopied ? 'Copied' : 'Copy'}
+                    aria-label={isCopied ? 'Copied' : 'Copy'}
                   >
-                    {isCopied ? <Check size={13} className="text-success" /> : <Copy size={13} />}
-                    <span>{isCopied ? 'Copied' : 'Copy'}</span>
+                    {isCopied ? <Check size={14} className="text-success" /> : <Copy size={14} />}
                   </button>
 
                   <button
                     onClick={handleDownloadFile}
-                    className="h-8 w-8 rounded-xl bg-surface-2 hover:bg-surface-3 border border-border flex items-center justify-center text-text-tertiary hover:text-text-primary transition-colors cursor-pointer min-h-[32px]"
+                    className="h-8 w-8 rounded-xl bg-surface-2 hover:bg-surface-3 border border-border flex items-center justify-center text-text-tertiary hover:text-text-primary transition-colors cursor-pointer"
                     title="Download raw file"
+                    aria-label="Download raw file"
                   >
                     <Download size={14} />
                   </button>
