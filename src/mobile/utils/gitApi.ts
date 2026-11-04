@@ -1,5 +1,7 @@
 import { safeBase64Decode } from './treeBuilder';
 
+import { DEMO_FILE_CONTENTS, DEMO_ACTIVITY_EVENTS } from '../../data/demoData';
+
 export interface ChangedFileDiff {
   filename: string;
   status: 'modified' | 'added' | 'removed' | 'renamed';
@@ -71,8 +73,23 @@ export async function fetchFileContentSafe({
   const resolvedOwner = owner || '';
   const resolvedBranch = branch || 'main';
 
-  if (!resolvedOwner || !repoName) {
+  if (!resolvedOwner && !repoName) {
     return `// Repository or owner not specified.`;
+  }
+
+  // 0. Check if file content was edited/saved locally in workspace
+  try {
+    const localContent = localStorage.getItem(`local_file_${repoName}_${filePath}`);
+    if (localContent !== null) {
+      return localContent;
+    }
+  } catch (_) {}
+
+  // 0b. If in demo mode or demo repository, return authentic mock file content immediately
+  if (!token || repoName === 'nexus-web-engine') {
+    if (DEMO_FILE_CONTENTS[filePath]) {
+      return DEMO_FILE_CONTENTS[filePath];
+    }
   }
 
   // 1. If token is present, try authenticated GitHub contents API
@@ -333,6 +350,9 @@ export async function fetchTimelineEvents({
     headers['Authorization'] = token.startsWith('ghp_') || token.startsWith('github_pat_') || token.startsWith('gho_') || token.startsWith('Bearer ')
       ? (token.startsWith('Bearer ') ? token : `Bearer ${token}`)
       : `token ${token}`;
+  } else {
+    // Unauthenticated demo mode: return rich activity fixtures without triggering 403 API rate limits
+    return DEMO_ACTIVITY_EVENTS;
   }
 
   let url = '';

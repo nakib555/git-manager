@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, FolderGit2, Download, GitCommit, Settings } from 'lucide-react';
+import { Home, FolderGit2, Download, GitCommit } from 'lucide-react';
 import { useAppContext } from '../../AppContext';
 
 export const BottomNav: React.FC = () => {
@@ -13,7 +13,6 @@ export const BottomNav: React.FC = () => {
     { id: 'repos', label: 'Repos', icon: FolderGit2, isActive: isRepoActive },
     { id: 'clone', label: 'Clone', icon: Download, isActive: currentScreen === 'clone' },
     { id: 'activity', label: 'Activity', icon: GitCommit, isActive: currentScreen === 'activity' },
-    { id: 'settings', label: 'Settings', icon: Settings, isActive: currentScreen === 'settings' },
   ] as const;
 
   return (

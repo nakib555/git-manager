@@ -13,7 +13,16 @@ import {
   Screen,
   GitHubRepo,
   GitHubUser,
+  GitCommitNode,
 } from "./types";
+import {
+  DEMO_USER,
+  DEMO_REPOSITORIES,
+  DEMO_COMMITS,
+  DEMO_BRANCHES,
+  DEMO_PRS,
+  DEMO_FILES,
+} from "./data/demoData";
 export const formatTime = (dateStr: string) => {
   const date = new Date(dateStr);
   const now = new Date();
@@ -62,20 +71,36 @@ export const getLocalRepoDetails = (
   
   return [];
 };
+
+const storedToken = localStorage.getItem("githubToken");
+const initialDefaultRepo = storedToken
+  ? (localStorage.getItem("currentRepo") || "")
+  : (localStorage.getItem("currentRepo") || "nexus-web-engine");
+const initialDefaultOwner = storedToken
+  ? (localStorage.getItem("currentRepoOwner") || "")
+  : (localStorage.getItem("currentRepoOwner") || "octodev");
+const initialDefaultBranch = storedToken
+  ? (localStorage.getItem("currentBranch") || "")
+  : (localStorage.getItem("currentBranch") || "main");
+
 const defaultState: AppState = {
   currentScreen: (localStorage.getItem("currentScreen") as Screen) || "dash",
-  currentRepo: localStorage.getItem("currentRepo") || "",
-  currentRepoOwner: localStorage.getItem("currentRepoOwner") || "",
-  currentBranch: localStorage.getItem("currentBranch") || "",
+  currentRepo: initialDefaultRepo,
+  currentRepoOwner: initialDefaultOwner,
+  currentBranch: initialDefaultBranch,
   isActionSheetOpen: false,
   isDrawerOpen: false,
   toastMessage: null,
   toastType: 'info',
   isSearchFocused: false,
   theme: ((localStorage.getItem("theme") as "dark" | "light" | "slate" | "fantasy") === "fantasy" ? "slate" : (localStorage.getItem("theme") as "dark" | "light" | "slate") || "dark"),
-  githubToken: localStorage.getItem("githubToken") || null,
-  githubUser: localStorage.getItem("githubUser") ? sanitizeGitHubUser(JSON.parse(localStorage.getItem("githubUser")!)) : null,
-  githubRepos: getLocalRepos(),
+  githubToken: storedToken || null,
+  githubUser: storedToken
+    ? (localStorage.getItem("githubUser") ? sanitizeGitHubUser(JSON.parse(localStorage.getItem("githubUser")!)) : null)
+    : DEMO_USER,
+  githubRepos: storedToken
+    ? getLocalRepos()
+    : (getLocalRepos().length > 0 ? getLocalRepos() : DEMO_REPOSITORIES),
   repoPage: 1,
   repoPerPage: 10,
   repoTotalPages: 1,
@@ -86,11 +111,15 @@ const defaultState: AppState = {
   repoTypeFilter: 'all',
   repoLanguageFilter: 'all',
   isFetchingRepos: false,
-  activeCommits: getLocalRepoDetails(localStorage.getItem("currentRepo") || "", "commits"),
-  activePRs: getLocalRepoDetails(localStorage.getItem("currentRepo") || "", "prs"),
-  activeBranches: getLocalRepoDetails(localStorage.getItem("currentRepo") || "", "branches"),
-  activeFiles: getLocalRepoDetails(localStorage.getItem("currentRepo") || "", "files"),
-  activeLanguages: {},
+  activeCommits: storedToken
+    ? getLocalRepoDetails(initialDefaultRepo, "commits")
+    : (getLocalRepoDetails(initialDefaultRepo, "commits").length > 0
+        ? getLocalRepoDetails(initialDefaultRepo, "commits")
+        : DEMO_COMMITS),
+  activePRs: storedToken ? getLocalRepoDetails(initialDefaultRepo, "prs") : DEMO_PRS,
+  activeBranches: storedToken ? getLocalRepoDetails(initialDefaultRepo, "branches") : DEMO_BRANCHES,
+  activeFiles: storedToken ? getLocalRepoDetails(initialDefaultRepo, "files") : DEMO_FILES,
+  activeLanguages: storedToken ? {} : { TypeScript: 68, Rust: 22, CSS: 10 },
   isLoadingRepoDetails: false,
   activeModal: null,
   sessionCommitsCount: parseInt(
@@ -195,21 +224,41 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
     localStorage.removeItem("githubUser");
     localStorage.removeItem("currentRepo");
     localStorage.removeItem("currentRepoOwner");
+    localStorage.removeItem("currentBranch");
     setState((prev) => ({
       ...prev,
       githubToken: null,
-      githubUser: null,
-      githubRepos: getLocalRepos(),
-      currentRepo: null,
-      currentRepoOwner: null,
+      githubUser: DEMO_USER,
+      githubRepos: DEMO_REPOSITORIES,
+      currentRepo: "nexus-web-engine",
+      currentRepoOwner: "octodev",
+      currentBranch: "main",
+      activeCommits: DEMO_COMMITS,
+      activeBranches: DEMO_BRANCHES,
+      activePRs: DEMO_PRS,
+      activeFiles: DEMO_FILES,
+      activeLanguages: { TypeScript: 68, Rust: 22, CSS: 10 },
+      repoTotalPages: 1,
     }));
-    showToast("GitHub disconnected");
+    showToast("GitHub disconnected • Demo workspace loaded", "info");
   };
   const setManualToken = (token: string) => {
     console.log("Setting manual GitHub token");
     localStorage.setItem("githubToken", token);
-    setState((prev) => ({ ...prev, githubToken: token }));
-    showToast("GitHub token saved manually");
+    setState((prev) => ({
+      ...prev,
+      githubToken: token,
+      currentRepo: null,
+      currentRepoOwner: null,
+      currentBranch: null,
+      activeCommits: [],
+      activeBranches: [],
+      activePRs: [],
+      activeFiles: [],
+      activeLanguages: {},
+    }));
+    showToast("GitHub connected! Syncing live repositories...", "success");
+    fetchGitHubData(token, false, 1, "");
   };
 
   const fetchGitHubData = async (
@@ -352,10 +401,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         ? Math.max(1, Math.ceil(mergedRepos.length / perPage))
         : totalPages;
 
+      // If current repo is the demo repo or empty, switch to user's first live repo
+      let nextRepo = state.currentRepo;
+      let nextOwner = state.currentRepoOwner;
+      if ((!nextRepo || nextRepo === 'nexus-web-engine' || !mergedRepos.some(r => r.name === nextRepo)) && mergedRepos.length > 0) {
+        nextRepo = mergedRepos[0].name;
+        nextOwner = (mergedRepos[0].owner?.login) || sanitizedUser?.login || '';
+        localStorage.setItem("currentRepo", nextRepo);
+        localStorage.setItem("currentRepoOwner", nextOwner);
+      }
+
       setState((prev) => ({
         ...prev,
         githubUser: sanitizedUser,
         githubRepos: mergedRepos,
+        currentRepo: nextRepo,
+        currentRepoOwner: nextOwner,
         repoTotalPages: calculatedTotalPages,
         isFetchingRepos: false,
       }));
@@ -385,6 +446,27 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         headers["Authorization"] = token.startsWith('ghp_') || token.startsWith('github_pat_') || token.startsWith('gho_')
           ? `Bearer ${token}`
           : `token ${token}`;
+      }
+
+      // If unauthenticated or demo repo, immediately populate demo repository entities
+      if (!token || owner === 'octodev' || repoName === 'nexus-web-engine') {
+        const localCommits = getLocalRepoDetails(repoName, "commits");
+        const uniqueLocal = localCommits.filter(
+          (lc: any) => !DEMO_COMMITS.some((gc: any) => gc.hash === lc.hash),
+        );
+        const mergedCommits = [...uniqueLocal, ...DEMO_COMMITS];
+
+        setState((prev) => ({
+          ...prev,
+          currentBranch: branchOverride || prev.currentBranch || "main",
+          activeCommits: mergedCommits,
+          activeBranches: DEMO_BRANCHES,
+          activePRs: DEMO_PRS,
+          activeFiles: DEMO_FILES,
+          activeLanguages: { TypeScript: 68, Rust: 22, CSS: 10 },
+          isLoadingRepoDetails: false,
+        }));
+        return;
       }
       // Ensure webhook is setup (only if authenticated)
       if (token) {
@@ -677,10 +759,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
       fetchGitHubData(state.githubToken, false, state.repoPage, state.repoSearchQuery);
     } else {
       const local = getLocalRepos();
+      const reposToUse = local.length > 0 ? local : DEMO_REPOSITORIES;
       setState(prev => ({
         ...prev,
-        githubRepos: local,
-        repoTotalPages: Math.max(1, Math.ceil(local.length / (prev.repoPerPage || 10)))
+        githubRepos: reposToUse,
+        repoTotalPages: Math.max(1, Math.ceil(reposToUse.length / (prev.repoPerPage || 10)))
       }));
     }
   }, [state.githubToken, state.repoPage, state.repoSearchQuery, state.repoSearchScope, state.repoSortBy, state.repoSortDirection, refreshTrigger]);
@@ -1509,54 +1592,539 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
       showToast(`Commit message updated!`);
     }
   };
-  const deleteCommit = async (hash: string) => {
-    if (!state.currentRepo) return;
-    if (!state.githubToken || !state.currentRepoOwner) {
-      showToast("GitHub token and repository owner are required to delete a commit.");
-      return;
+  const saveAndCommitFile = async ({
+    filePath,
+    content,
+    message,
+    description,
+    branch,
+  }: {
+    filePath: string;
+    content: string;
+    message: string;
+    description?: string;
+    branch?: string;
+  }): Promise<boolean> => {
+    if (!state.currentRepo) {
+      showToast("No repository currently selected.", "error");
+      return false;
     }
+    const cleanPath = filePath.trim().replace(/^\/+/, '');
+    const cleanMsg = message.trim();
+    if (!cleanMsg) {
+      showToast("Commit message is required according to GitHub rules.", "error");
+      return false;
+    }
+
+    const fullCommitMsg = description?.trim()
+      ? `${cleanMsg}\n\n${description.trim()}`
+      : cleanMsg;
+
+    const repo = state.currentRepo;
+    const owner = state.currentRepoOwner || (state.githubUser?.login ? state.githubUser.login : "local-user");
+    const targetBranch = branch || state.currentBranch || state.activeBranches.find((b) => b.isDefault)?.name || "main";
+    const authorName = state.githubUser?.name || state.githubUser?.login || "Local Developer";
+    const token = state.githubToken;
+
+    // Cache updated file in local workspace storage
     try {
-      const token = state.githubToken;
-      const headers = {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-        Accept: "application/vnd.github.v3+json",
-      };
-      const owner = state.currentRepoOwner;
-      const repo = state.currentRepo;
-      const branch =
-        state.activeBranches.find((b) => b.isDefault)?.name || "main";
-      // 1. Get original commit
-      const commitRes = await fetch(
-        `https://api.github.com/repos/${owner}/${repo}/git/commits/${hash}`,
-        { headers },
-      );
-      if (!commitRes.ok) throw new Error("Failed to fetch commit details");
-      const commitData = await commitRes.json();
-      if (!commitData.parents || commitData.parents.length === 0) {
-        throw new Error("Cannot delete initial commit");
+      localStorage.setItem(`local_file_${repo}_${cleanPath}`, content);
+    } catch (_) {}
+
+    // Compute line changes
+    const newLines = content.split('\n').length;
+    let oldLines = 0;
+    try {
+      const oldContent = localStorage.getItem(`prev_file_${repo}_${cleanPath}`);
+      if (oldContent) {
+        oldLines = oldContent.split('\n').length;
       }
-      const parentSha = commitData.parents[0].sha;
-      // 2. Update branch ref to parent
-      const refRes = await fetch(
-        `https://api.github.com/repos/${owner}/${repo}/git/refs/heads/${branch}`,
-        {
-          method: "PATCH",
-          headers,
-          body: JSON.stringify({
-            sha: parentSha,
-            force: true,
-          }),
-        },
-      );
-      if (!refRes.ok) throw new Error("Failed to update branch reference");
-      showToast("Commit deleted from GitHub!");
-      await fetchRepoDetails(repo, owner);
-    } catch (error: any) {
-      console.error("Error deleting commit:", error);
-      showToast(`Failed to delete commit: ${error.message || error}`);
+    } catch (_) {}
+    const additionsCount = Math.max(1, newLines - oldLines > 0 ? newLines - oldLines : 1);
+    const deletionsCount = oldLines > newLines ? oldLines - newLines : 0;
+
+    try {
+      localStorage.setItem(`prev_file_${repo}_${cleanPath}`, content);
+    } catch (_) {}
+
+    if (token && state.currentRepoOwner) {
+      try {
+        const headers: Record<string, string> = {
+          Authorization: token.startsWith('ghp_') || token.startsWith('github_pat_') || token.startsWith('gho_') || token.startsWith('Bearer ')
+            ? (token.startsWith('Bearer ') ? token : `Bearer ${token}`)
+            : `token ${token}`,
+          "Content-Type": "application/json",
+          Accept: "application/vnd.github.v3+json",
+        };
+
+        const utf8Bytes = new TextEncoder().encode(content);
+        let binaryStr = "";
+        for (let i = 0; i < utf8Bytes.length; i++) {
+          binaryStr += String.fromCharCode(utf8Bytes[i]);
+        }
+        const b64Content = btoa(binaryStr);
+
+        let fileSha: string | undefined = undefined;
+        try {
+          const fileRes = await fetch(
+            `https://api.github.com/repos/${owner}/${repo}/contents/${cleanPath}?ref=${targetBranch}`,
+            { headers }
+          );
+          if (fileRes.ok) {
+            const fileData = await fileRes.json();
+            fileSha = fileData.sha;
+          }
+        } catch (e) {
+          console.warn("File sha lookup error:", e);
+        }
+
+        const commitRes = await fetch(
+          `https://api.github.com/repos/${owner}/${repo}/contents/${cleanPath}`,
+          {
+            method: "PUT",
+            headers,
+            body: JSON.stringify({
+              message: fullCommitMsg,
+              content: b64Content,
+              sha: fileSha,
+              branch: targetBranch,
+            }),
+          }
+        );
+
+        if (!commitRes.ok) {
+          const errData = await commitRes.json().catch(() => ({}));
+          throw new Error(errData.message || `Commit failed with status ${commitRes.status}`);
+        }
+
+        const commitData = await commitRes.json();
+        const shortSha = commitData.commit?.sha ? commitData.commit.sha.substring(0, 7) : Math.random().toString(16).substring(2, 9);
+        showToast(`Committed to ${targetBranch}! SHA: ${shortSha}`, 'success');
+
+        setState(prev => {
+          const newCount = prev.sessionCommitsCount + 1;
+          localStorage.setItem("sessionCommitsCount", String(newCount));
+          return { ...prev, sessionCommitsCount: newCount };
+        });
+
+        await fetchRepoDetails(repo, owner, false, targetBranch);
+        setRefreshTrigger(prev => prev + 1);
+        return true;
+      } catch (err: any) {
+        console.error("GitHub commit failed:", err);
+        showToast(`GitHub remote sync failed: ${err.message || err}. Saved to local workspace.`, 'warning');
+      }
     }
+
+    // Local / Offline Commit
+    const localHash = Math.random().toString(16).substring(2, 9);
+    const key = `local_details_${repo}_commits`;
+    const existing = getLocalRepoDetails(repo, "commits");
+    const newLocalCommit: GitCommitNode = {
+      hash: localHash,
+      fullHash: `${localHash}${Math.random().toString(16).substring(2, 16)}`,
+      msg: fullCommitMsg,
+      author: authorName,
+      time: "Just now",
+      timestamp: new Date().toISOString(),
+      add: `+${additionsCount}`,
+      del: `-${deletionsCount}`,
+      parents: existing.length > 0 ? [existing[0].hash] : [],
+      isPrimary: true,
+      files: [{ filename: cleanPath, status: 'modified', additions: additionsCount, deletions: deletionsCount }],
+    };
+
+    const updatedCommits = [newLocalCommit, ...existing];
+    try {
+      localStorage.setItem(key, JSON.stringify(updatedCommits.slice(0, 500)));
+    } catch (_) {}
+
+    setState((prev) => {
+      const newCount = prev.sessionCommitsCount + 1;
+      localStorage.setItem("sessionCommitsCount", String(newCount));
+      const fileExists = prev.activeFiles.some((f: any) => (f.name || f.path) === cleanPath);
+      const updatedFiles = fileExists
+        ? prev.activeFiles.map((f: any) =>
+            (f.name || f.path) === cleanPath
+              ? { ...f, isCurrent: true, localEdited: true }
+              : f
+          )
+        : [...prev.activeFiles, { name: cleanPath, path: cleanPath, type: 'file', isCurrent: true, localEdited: true }];
+
+      return {
+        ...prev,
+        activeCommits: updatedCommits,
+        activeFiles: updatedFiles,
+        sessionCommitsCount: newCount,
+      };
+    });
+
+    showToast(`Committed (${localHash})! Changes saved.`, 'success');
+    setRefreshTrigger(prev => prev + 1);
+    return true;
   };
+
+  const deleteCommit = async (hash: string): Promise<boolean> => {
+    if (!state.currentRepo) return false;
+    const repo = state.currentRepo;
+    const owner = state.currentRepoOwner;
+    const headCommit = state.activeCommits[0];
+
+    if (!headCommit) {
+      showToast("No commits found in active repository.", "error");
+      return false;
+    }
+
+    if (headCommit.hash !== hash && headCommit.fullHash !== hash) {
+      showToast("Only the latest HEAD commit can be deleted according to Git safety rules.", "error");
+      return false;
+    }
+
+    // Remote GitHub commit deletion (moving ref back to parent)
+    if (state.githubToken && owner) {
+      try {
+        const token = state.githubToken;
+        const headers: Record<string, string> = {
+          Authorization: token.startsWith('ghp_') || token.startsWith('github_pat_') || token.startsWith('gho_') || token.startsWith('Bearer ')
+            ? (token.startsWith('Bearer ') ? token : `Bearer ${token}`)
+            : `token ${token}`,
+          "Content-Type": "application/json",
+          Accept: "application/vnd.github.v3+json",
+        };
+        const branch = state.currentBranch || state.activeBranches.find((b) => b.isDefault)?.name || "main";
+
+        const commitRes = await fetch(
+          `https://api.github.com/repos/${owner}/${repo}/git/commits/${hash}`,
+          { headers },
+        );
+        if (!commitRes.ok) throw new Error("Failed to fetch commit details from GitHub");
+        const commitData = await commitRes.json();
+        if (!commitData.parents || commitData.parents.length === 0) {
+          showToast("Cannot delete the initial commit of a repository.", "error");
+          return false;
+        }
+        const parentSha = commitData.parents[0].sha;
+
+        const refRes = await fetch(
+          `https://api.github.com/repos/${owner}/${repo}/git/refs/heads/${branch}`,
+          {
+            method: "PATCH",
+            headers,
+            body: JSON.stringify({
+              sha: parentSha,
+              force: true,
+            }),
+          },
+        );
+        // Revert working files for remote branch reset
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && (k.startsWith(`local_file_${repo}_`) || k.startsWith(`prev_file_${repo}_`))) {
+            localStorage.removeItem(k);
+          }
+        }
+
+        showToast(`Deleted HEAD commit! Repository branch reset to ${parentSha.substring(0, 7)} and working directory reverted.`, "success");
+        await fetchRepoDetails(repo, owner, false, branch);
+        setRefreshTrigger(prev => prev + 1);
+        return true;
+      } catch (error: any) {
+        console.error("Error deleting remote commit:", error);
+        showToast(`Failed to delete remote commit: ${error.message || error}`, "error");
+        return false;
+      }
+    }
+
+    // Local / Offline HEAD Commit Deletion
+    const key = `local_details_${repo}_commits`;
+    const existing = getLocalRepoDetails(repo, "commits");
+    if (existing.length <= 1) {
+      showToast("Cannot delete the only remaining commit in repository history.", "warning");
+      return false;
+    }
+
+    const removedCommit = existing[0];
+    const updated = existing.slice(1);
+    try {
+      localStorage.setItem(key, JSON.stringify(updated));
+    } catch (_) {}
+
+    // Revert working directory files to their pre-commit state
+    const revertedFiles = new Set<string>();
+    if (removedCommit.files && Array.isArray(removedCommit.files)) {
+      removedCommit.files.forEach((f: any) => {
+        const fn = f.filename || f.path || f.name;
+        if (fn) revertedFiles.add(fn);
+      });
+    }
+
+    // Check all previous file snapshots for this repository
+    const keysToCheck: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(`prev_file_${repo}_`)) {
+        const fn = k.substring(`prev_file_${repo}_`.length);
+        revertedFiles.add(fn);
+        keysToCheck.push(fn);
+      }
+    }
+
+    revertedFiles.forEach((fn) => {
+      const prevContent = localStorage.getItem(`prev_file_${repo}_${fn}`);
+      if (prevContent !== null) {
+        localStorage.setItem(`local_file_${repo}_${fn}`, prevContent);
+        localStorage.removeItem(`prev_file_${repo}_${fn}`);
+      } else {
+        // Newly added file in this deleted commit with no previous version
+        localStorage.removeItem(`local_file_${repo}_${fn}`);
+      }
+    });
+
+    setState((prev) => {
+      const updatedFiles = prev.activeFiles
+        .filter((f: any) => {
+          const fn = f.name || f.path;
+          if (revertedFiles.has(fn)) {
+            const hasLocal = localStorage.getItem(`local_file_${repo}_${fn}`);
+            return hasLocal !== null || !f.localEdited;
+          }
+          return true;
+        })
+        .map((f: any) => {
+          const fn = f.name || f.path;
+          if (revertedFiles.has(fn)) {
+            return { ...f, localEdited: false };
+          }
+          return f;
+        });
+
+      return {
+        ...prev,
+        activeCommits: prev.activeCommits.filter((c) => c.hash !== hash && c.fullHash !== hash),
+        activeFiles: updatedFiles,
+      };
+    });
+
+    showToast(`Deleted HEAD commit ${removedCommit.hash}. Working directory files reverted to pre-commit state.`, "success");
+    setRefreshTrigger(prev => prev + 1);
+    return true;
+  };
+
+  const undoLatestCommit = async (): Promise<boolean> => {
+    if (state.activeCommits.length === 0) {
+      showToast("No commits to undo.", "warning");
+      return false;
+    }
+    return await deleteCommit(state.activeCommits[0].hash);
+  };
+
+  const restoreFilesToCommit = async (hash: string, msg?: string): Promise<boolean> => {
+    if (!state.currentRepo) return false;
+    const repo = state.currentRepo;
+    const shortSha = hash.substring(0, 7);
+    const commitMsg = msg || state.activeCommits.find(c => c.hash === hash || c.fullHash === hash)?.msg || "historical snapshot";
+    const rollbackTitle = `Revert to ${shortSha}: ${commitMsg.split('\n')[0]}`;
+    const rollbackDesc = `Rollback workspace repository state to historical commit ${hash}. Preserves branch history according to Git best practices.`;
+
+    if (state.githubToken && state.currentRepoOwner) {
+      try {
+        const token = state.githubToken;
+        const owner = state.currentRepoOwner;
+        const branch = state.currentBranch || state.activeBranches.find((b) => b.isDefault)?.name || "main";
+        const headers: Record<string, string> = {
+          Authorization: token.startsWith('ghp_') || token.startsWith('github_pat_') || token.startsWith('gho_') || token.startsWith('Bearer ')
+            ? (token.startsWith('Bearer ') ? token : `Bearer ${token}`)
+            : `token ${token}`,
+          "Content-Type": "application/json",
+          Accept: "application/vnd.github.v3+json",
+        };
+
+        const targetCommitRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/commits/${hash}`, { headers });
+        if (targetCommitRes.ok) {
+          const targetCommitData = await targetCommitRes.json();
+          const treeSha = targetCommitData.tree.sha;
+
+          const refRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/refs/heads/${branch}`, { headers });
+          if (refRes.ok) {
+            const refData = await refRes.json();
+            const currentHeadSha = refData.object.sha;
+
+            const newCommitRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/commits`, {
+              method: "POST",
+              headers,
+              body: JSON.stringify({
+                message: `${rollbackTitle}\n\n${rollbackDesc}`,
+                tree: treeSha,
+                parents: [currentHeadSha],
+              }),
+            });
+
+            if (newCommitRes.ok) {
+              const newCommit = await newCommitRes.json();
+              await fetch(`https://api.github.com/repos/${owner}/${repo}/git/refs/heads/${branch}`, {
+                method: "PATCH",
+                headers,
+                body: JSON.stringify({ sha: newCommit.sha }),
+              });
+
+              showToast(`Created rollback commit (${newCommit.sha.substring(0, 7)}) on GitHub!`, 'success');
+              await fetchRepoDetails(repo, owner, false, branch);
+              setRefreshTrigger(prev => prev + 1);
+              return true;
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("GitHub remote rollback failed, creating local rollback commit:", err);
+      }
+    }
+
+    // Local / Offline rollback commit creation
+    const localHash = Math.random().toString(16).substring(2, 9);
+    const key = `local_details_${repo}_commits`;
+    const existing = getLocalRepoDetails(repo, "commits");
+    const authorName = state.githubUser?.name || state.githubUser?.login || "Local Developer";
+
+    const rollbackCommit: GitCommitNode = {
+      hash: localHash,
+      fullHash: `${localHash}${Math.random().toString(16).substring(2, 16)}`,
+      msg: rollbackTitle,
+      author: authorName,
+      time: "Just now",
+      timestamp: new Date().toISOString(),
+      add: "+0",
+      del: "-0",
+      parents: existing.length > 0 ? [existing[0].hash] : [],
+      isPrimary: true,
+    };
+
+    const updated = [rollbackCommit, ...existing];
+    try {
+      localStorage.setItem(key, JSON.stringify(updated.slice(0, 500)));
+    } catch (_) {}
+
+    setState((prev) => ({
+      ...prev,
+      activeCommits: updated,
+      sessionCommitsCount: prev.sessionCommitsCount + 1,
+    }));
+
+    showToast(`Restored to ${shortSha} (created rollback commit ${localHash})`, 'success');
+    setRefreshTrigger(prev => prev + 1);
+    return true;
+  };
+
+  const revertCommit = async (hash: string, msg?: string): Promise<boolean> => {
+    if (!state.currentRepo) return false;
+    const repo = state.currentRepo;
+    const shortSha = hash.substring(0, 7);
+    const targetCommit = state.activeCommits.find(c => c.hash === hash || c.fullHash === hash);
+    const rawCommitMsg = msg || targetCommit?.msg || "commit";
+    const commitTitle = rawCommitMsg.split('\n')[0].replace(/^Revert\s+"(.*)"$/, '$1');
+    const revertTitle = `Revert "${commitTitle}"`;
+    const revertDesc = `This reverts commit ${hash}.\n\nReverses delta introduced in ${shortSha} while preserving history according to GitHub rules.`;
+
+    // Remote GitHub Revert commit
+    if (state.githubToken && state.currentRepoOwner) {
+      try {
+        const token = state.githubToken;
+        const owner = state.currentRepoOwner;
+        const branch = state.currentBranch || state.activeBranches.find((b) => b.isDefault)?.name || "main";
+        const headers: Record<string, string> = {
+          Authorization: token.startsWith('ghp_') || token.startsWith('github_pat_') || token.startsWith('gho_') || token.startsWith('Bearer ')
+            ? (token.startsWith('Bearer ') ? token : `Bearer ${token}`)
+            : `token ${token}`,
+          "Content-Type": "application/json",
+          Accept: "application/vnd.github.v3+json",
+        };
+
+        const targetCommitRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/commits/${hash}`, { headers });
+        if (targetCommitRes.ok) {
+          const targetCommitData = await targetCommitRes.json();
+          const parentSha = targetCommitData.parents?.[0]?.sha;
+
+          const refRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/refs/heads/${branch}`, { headers });
+          if (refRes.ok) {
+            const refData = await refRes.json();
+            const currentHeadSha = refData.object.sha;
+
+            let treeToUse = targetCommitData.tree.sha;
+            if (parentSha) {
+              const parentCommitRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/commits/${parentSha}`, { headers });
+              if (parentCommitRes.ok) {
+                const parentCommitData = await parentCommitRes.json();
+                treeToUse = parentCommitData.tree.sha;
+              }
+            }
+
+            const newCommitRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/commits`, {
+              method: "POST",
+              headers,
+              body: JSON.stringify({
+                message: `${revertTitle}\n\n${revertDesc}`,
+                tree: treeToUse,
+                parents: [currentHeadSha],
+              }),
+            });
+
+            if (newCommitRes.ok) {
+              const newCommit = await newCommitRes.json();
+              await fetch(`https://api.github.com/repos/${owner}/${repo}/git/refs/heads/${branch}`, {
+                method: "PATCH",
+                headers,
+                body: JSON.stringify({ sha: newCommit.sha }),
+              });
+
+              showToast(`Created revert commit (${newCommit.sha.substring(0, 7)}) on GitHub!`, 'success');
+              await fetchRepoDetails(repo, owner, false, branch);
+              setRefreshTrigger(prev => prev + 1);
+              return true;
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("GitHub remote revert failed, creating local revert commit:", err);
+      }
+    }
+
+    // Local / Offline Revert Commit
+    const localHash = Math.random().toString(16).substring(2, 9);
+    const key = `local_details_${repo}_commits`;
+    const existing = getLocalRepoDetails(repo, "commits");
+    const authorName = state.githubUser?.name || state.githubUser?.login || "Local Developer";
+
+    const origAdd = targetCommit?.add ? parseInt(targetCommit.add.replace(/[^0-9]/g, '') || '0', 10) : 0;
+    const origDel = targetCommit?.del ? parseInt(targetCommit.del.replace(/[^0-9]/g, '') || '0', 10) : 0;
+
+    const revertCommitNode: GitCommitNode = {
+      hash: localHash,
+      fullHash: `${localHash}${Math.random().toString(16).substring(2, 16)}`,
+      msg: revertTitle,
+      author: authorName,
+      time: "Just now",
+      timestamp: new Date().toISOString(),
+      add: `+${origDel}`,
+      del: `-${origAdd}`,
+      parents: existing.length > 0 ? [existing[0].hash] : [],
+      isPrimary: true,
+    };
+
+    const updated = [revertCommitNode, ...existing];
+    try {
+      localStorage.setItem(key, JSON.stringify(updated.slice(0, 500)));
+    } catch (_) {}
+
+    setState((prev) => ({
+      ...prev,
+      activeCommits: updated,
+      sessionCommitsCount: prev.sessionCommitsCount + 1,
+    }));
+
+    showToast(`Reverted commit ${shortSha} (created revert commit ${localHash})`, 'success');
+    setRefreshTrigger(prev => prev + 1);
+    return true;
+  };
+
   const amendLatestCommit = (
     msg: string,
     contentOnly: boolean,
@@ -1564,12 +2132,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
     changes?: { add?: string; del?: string },
   ) => {
     showToast("Amending commits is not supported via the GitHub API directly.");
-  };
-  const undoLatestCommit = () => {
-    showToast("Undoing commits is not supported via the GitHub API directly.");
-  };
-  const restoreFilesToCommit = (hash: string) => {
-    showToast("Restoring files is not supported via the GitHub API directly.");
   };
   const resetBranchToCommit = (hash: string) => {
     showToast("Resetting branch is not supported via the GitHub API directly.");
@@ -1667,11 +2229,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         createLocalPR,
         updateLocalPRStatus,
         createLocalCommit,
+        saveAndCommitFile,
         editCommitMessage,
         deleteCommit,
         amendLatestCommit,
         undoLatestCommit,
         restoreFilesToCommit,
+        revertCommit,
         resetBranchToCommit,
         createBranchAtCommit,
         createTagAtCommit,

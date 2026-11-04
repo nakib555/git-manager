@@ -393,24 +393,41 @@ export const DesktopLayout: React.FC = () => {
 
         {/* Content Viewport */}
         <div className="flex-1 overflow-hidden p-4 lg:p-6 relative min-h-0 flex flex-col">
-          {!githubToken && currentScreen !== 'settings' ? (
-            <UnauthenticatedState />
-          ) : (
-            <>
-              {currentScreen === 'dash' && (
-                <div className="flex-1 overflow-y-auto pr-1 no-scrollbar">
-                  <DesktopDashboard globalSearch={globalSearch} />
+          {!githubToken && (
+            <div className="mb-4 px-4 py-2.5 bg-primary/10 border border-primary/25 rounded-2xl flex items-center justify-between text-xs shrink-0 select-none">
+              <div className="flex items-center gap-2.5 text-text-main">
+                <div className="w-6 h-6 rounded-lg bg-primary/20 text-primary flex items-center justify-center shrink-0">
+                  <Sparkles size={13} />
                 </div>
-              )}
-              {currentScreen === 'repos' && <DesktopRepositories globalSearch={globalSearch} />}
-              {isRepoScreen && <DesktopRepoWorkspace />}
-              {currentScreen === 'settings' && (
-                <div className="flex-1 overflow-y-auto pr-1 no-scrollbar">
-                  <DesktopSettings />
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="font-bold text-primary">Demo Mode:</span>
+                  <span className="text-text-muted">Exploring sample repositories & commit graphs. Live GitHub sync is enabled once authenticated.</span>
                 </div>
-              )}
-            </>
+              </div>
+              <button
+                onClick={connectGitHub}
+                className="ml-3 px-3.5 py-1.5 bg-primary hover:opacity-90 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs shrink-0 active:scale-95"
+              >
+                <Github size={13} />
+                <span>Connect GitHub</span>
+              </button>
+            </div>
           )}
+
+          <>
+            {currentScreen === 'dash' && (
+              <div className="flex-1 overflow-y-auto pr-1 no-scrollbar">
+                <DesktopDashboard globalSearch={globalSearch} />
+              </div>
+            )}
+            {currentScreen === 'repos' && <DesktopRepositories globalSearch={globalSearch} />}
+            {isRepoScreen && <DesktopRepoWorkspace />}
+            {currentScreen === 'settings' && (
+              <div className="flex-1 overflow-y-auto pr-1 no-scrollbar">
+                <DesktopSettings />
+              </div>
+            )}
+          </>
         </div>
       </main>
     </div>

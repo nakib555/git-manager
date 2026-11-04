@@ -1,5 +1,5 @@
 import React from 'react';
-import { GitCommit, Copy, Clock, ChevronRight } from 'lucide-react';
+import { GitCommit, Copy, Clock, ChevronRight, RotateCcw, Trash2 } from 'lucide-react';
 import { formatRelativeTime } from '../utils/formatters';
 
 export interface CommitCardProps {
@@ -13,6 +13,8 @@ export interface CommitCardProps {
   };
   onClick?: () => void;
   onCopyHash?: () => void;
+  onRestoreClick?: (commit: any) => void;
+  onDeleteHeadClick?: (commit: any) => void;
   isLatest?: boolean;
 }
 
@@ -20,6 +22,8 @@ export const CommitCard: React.FC<CommitCardProps> = ({
   commit,
   onClick,
   onCopyHash,
+  onRestoreClick,
+  onDeleteHeadClick,
   isLatest = false,
 }) => {
   const shortSha = commit.hash ? commit.hash.substring(0, 7) : '';
@@ -83,8 +87,38 @@ export const CommitCard: React.FC<CommitCardProps> = ({
         </div>
       </div>
 
-      {/* Right Column: Copyable SHA button and chevron */}
-      <div className="flex items-center gap-2 shrink-0">
+      {/* Right Column: Restore action, Copyable SHA button, and chevron */}
+      <div className="flex items-center gap-1.5 shrink-0">
+        {onRestoreClick && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRestoreClick(commit);
+            }}
+            className="flex items-center justify-center w-8 h-8 rounded-lg bg-surface-2 hover:bg-accent/15 text-text-tertiary hover:text-accent border border-border/80 transition-all active:scale-95 cursor-pointer"
+            title="Restore or revert to this commit"
+            aria-label={`Restore or revert to commit ${shortSha}`}
+          >
+            <RotateCcw size={12} />
+          </button>
+        )}
+
+        {isHead && onDeleteHeadClick && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDeleteHeadClick(commit);
+            }}
+            className="flex items-center justify-center w-8 h-8 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/30 transition-all active:scale-95 cursor-pointer"
+            title="Delete Last Commit (HEAD) & revert working directory files"
+            aria-label={`Delete HEAD commit ${shortSha}`}
+          >
+            <Trash2 size={12} />
+          </button>
+        )}
+
         <button
           type="button"
           onClick={(e) => {

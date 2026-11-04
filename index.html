@@ -3,6 +3,30 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <script>
+      // Suppress benign Vite HMR WebSocket closed notifications in iframe / proxy environments
+      window.addEventListener('error', function(event) {
+        if (event.message && (event.message.includes('WebSocket closed without opened') || event.message.includes('vite-hmr'))) {
+          event.stopImmediatePropagation();
+          event.preventDefault();
+        }
+      }, true);
+      window.addEventListener('unhandledrejection', function(event) {
+        if (event.reason && (String(event.reason).includes('WebSocket closed without opened') || String(event.reason?.message || '').includes('WebSocket closed without opened'))) {
+          event.stopImmediatePropagation();
+          event.preventDefault();
+        }
+      }, true);
+      const _origConsoleError = console.error;
+      console.error = function(...args) {
+        const firstArg = args[0];
+        const msg = (firstArg && typeof firstArg === 'object' && firstArg.message) ? firstArg.message : String(firstArg || '');
+        if (msg.includes('WebSocket closed without opened') || msg.includes('vite-hmr')) {
+          return;
+        }
+        _origConsoleError.apply(console, args);
+      };
+    </script>
     <title>Git Manager</title>
     <meta name="description" content="Clean Developer Studio Git manager and repository activity workbench with desktop split-view, smooth anime.js micro-interactions, and command palette." />
     <meta property="og:title" content="Git Manager" />

@@ -4,7 +4,7 @@ import {
   Folder, FileText, ChevronRight, ChevronDown, Copy, 
   Check, Search, X, Home, Maximize2, Minimize2, 
   Download, FileCode, Clock, Info, ArrowUpRight,
-  FolderTree, RefreshCw, GitBranch, History
+  FolderTree, RefreshCw, GitBranch, History, Edit3
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -14,6 +14,7 @@ import { formatBytes, formatRelativeTime } from '../../utils/formatters';
 import { fetchFileContentSafe } from '../../utils/gitApi';
 import { EmptyState } from '../../components/EmptyState';
 import { InlineErrorCard } from '../../components/InlineErrorCard';
+import { MobileFileEditor } from '../../components/editor/MobileFileEditor';
 
 const getCodeLanguage = (filename: string): string => {
   const ext = filename.split('.').pop()?.toLowerCase();
@@ -76,6 +77,7 @@ export const FilesScreen: React.FC = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [wrapLines, setWrapLines] = useState(false);
   const [inCodeSearch, setInCodeSearch] = useState('');
+  const [isEditingFile, setIsEditingFile] = useState(false);
 
   // Fast O(1) single-pass tree builder
   const fileTree = useMemo(() => {
@@ -381,8 +383,18 @@ export const FilesScreen: React.FC = () => {
                   </button>
                 </div>
 
-                {/* Right utility buttons: Copy, Download, Wrap */}
+                {/* Right utility buttons: Edit, Wrap, Copy, Download */}
                 <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    onClick={() => setIsEditingFile(true)}
+                    disabled={activeFileLoading}
+                    className="h-8 px-3 rounded-xl bg-accent hover:opacity-90 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs active:scale-95 disabled:opacity-50"
+                    title="Edit file"
+                  >
+                    <Edit3 size={13} />
+                    <span>Edit</span>
+                  </button>
+
                   <button
                     onClick={() => setWrapLines(!wrapLines)}
                     className={`h-8 px-2.5 rounded-xl text-[10px] font-mono border transition-colors cursor-pointer ${
@@ -520,6 +532,21 @@ export const FilesScreen: React.FC = () => {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Full-Screen Mobile File Editor */}
+      {isEditingFile && selectedFileForModal && (
+        <MobileFileEditor
+          filePath={selectedFileForModal}
+          initialContent={activeFileContent}
+          onClose={() => setIsEditingFile(false)}
+          onCommitted={() => {
+            setIsEditingFile(false);
+            if (selectedFileForModal) {
+              loadFileContent(selectedFileForModal);
+            }
+          }}
+        />
+      )}
     </div>
   );
 };

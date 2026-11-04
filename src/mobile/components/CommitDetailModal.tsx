@@ -4,7 +4,8 @@ import {
   GitCommit, Copy, Check, X, FileDiff, 
   GitBranch, Tag, CheckCircle2, 
   RefreshCw, ExternalLink, XCircle,
-  Terminal, Shield
+  Terminal, Shield, RotateCcw, Trash2,
+  AlertTriangle, Loader2, Undo2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { fetchCommitDetailsSafe, DetailedCommitInfo, ChangedFileDiff, CheckRunItem } from '../utils/gitApi';
@@ -26,8 +27,12 @@ export const CommitDetailModal: React.FC<CommitDetailModalProps> = ({
     currentBranch,
     githubToken, 
     githubUser,
+    activeCommits,
     createBranchAtCommit,
-    createTagAtCommit
+    createTagAtCommit,
+    restoreFilesToCommit,
+    revertCommit,
+    deleteCommit,
   } = useAppContext();
 
   const [commitDetail, setCommitDetail] = useState<DetailedCommitInfo | null>(null);
@@ -42,6 +47,12 @@ export const CommitDetailModal: React.FC<CommitDetailModalProps> = ({
   const [branchInputName, setBranchInputName] = useState('');
   const [isTagModalOpen, setIsTagModalOpen] = useState(false);
   const [tagInputName, setTagInputName] = useState('v1.0.0');
+
+  // Restore and Delete modal states
+  const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
+  const [restoreMode, setRestoreMode] = useState<'snapshot' | 'revert'>('snapshot');
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isActionExecuting, setIsActionExecuting] = useState(false);
 
   // CI/CD state
   const [isRefreshingCI, setIsRefreshingCI] = useState(false);
@@ -124,11 +135,10 @@ export const CommitDetailModal: React.FC<CommitDetailModalProps> = ({
   const deletions = commitDetail?.stats?.deletions ?? commit.stats?.deletions ?? 18;
 
   const defaultFilesList: ChangedFileDiff[] = [
-    { filename: '.aistudio/artifacts/brain/9268af4...', status: 'added', additions: 35, deletions: 0 },
-    { filename: '.aistudio/artifacts/brain/9268af42...', status: 'added', additions: 6, deletions: 0 },
-    { filename: 'assets/.aistudio/.gitignore', status: 'added', additions: 1, deletions: 0 },
-    { filename: 'bun.lock', status: 'added', additions: 1187, deletions: 0 },
-    { filename: 'package-lock.json', status: 'added', additions: 6329, deletions: 0 },
+    { filename: 'src/mobile/components/CommitRestoreSheet.tsx', status: 'added', additions: 185, deletions: 0 },
+    { filename: 'src/mobile/components/CommitCard.tsx', status: 'modified', additions: 22, deletions: 2 },
+    { filename: 'src/mobile/screens/repo/CommitsScreen.tsx', status: 'modified', additions: 14, deletions: 1 },
+    { filename: 'src/AppContext.tsx', status: 'modified', additions: 98, deletions: 0 },
     {
       filename: 'src/components/commit/GitGraph.tsx',
       status: 'modified',
@@ -247,6 +257,64 @@ export const CommitDetailModal: React.FC<CommitDetailModalProps> = ({
       setIsRefreshingCI(false);
       showToast('Checks re-evaluated: 1 failed', 'warning');
     }, 700);
+  };
+
+  // Check if current commit is the HEAD commit
+  const isHeadCommit = Boolean(
+    commit && (
+      (activeCommits.length > 0 && (commit.hash === activeCommits[0].hash || commit.fullHash === activeCommits[0].hash)) ||
+      (commit as any).isHead || 
+      (commit as any).isLatest
+    )
+  );
+
+  const handleOpenRestoreModal = () => {
+    setIsRestoreModalOpen(true);
+    setIsDeleteModalOpen(false);
+    setIsBranchModalOpen(false);
+    setIsTagModalOpen(false);
+  };
+
+  const handleOpenDeleteModal = () => {
+    setIsDeleteModalOpen(true);
+    setIsRestoreModalOpen(false);
+    setIsBranchModalOpen(false);
+    setIsTagModalOpen(false);
+  };
+
+  const handleExecuteRestore = async () => {
+    if (!commit) return;
+    setIsActionExecuting(true);
+    try {
+      const sha = commit.fullHash || commit.hash;
+      let success = false;
+      if (restoreMode === 'snapshot') {
+        success = await restoreFilesToCommit(sha, commit.msg);
+      } else {
+        success = await revertCommit(sha, commit.msg);
+      }
+      if (success) {
+        setIsRestoreModalOpen(false);
+        onClose();
+      }
+    } finally {
+      setIsActionExecuting(false);
+    }
+  };
+
+  const handleExecuteDelete = async () => {
+    if (!commit) return;
+    setIsActionExecuting(true);
+    try {
+      const sha = commit.fullHash || commit.hash;
+      const success = await deleteCommit(sha);
+      if (success) {
+        setIsDeleteModalOpen(false);
+        onClose();
+      }
+    } finally {
+      setIsActionExecuting(false);
+    }
   };
 
   return (
@@ -758,37 +826,215 @@ export const CommitDetailModal: React.FC<CommitDetailModalProps> = ({
             )}
           </AnimatePresence>
 
-          {/* Modal Bottom Actions Bar (Exact Trio Matching Example 17) */}
-          <div className="p-3.5 border-t border-border bg-surface-1 flex items-center gap-2 shrink-0">
-            {/* Copy SHA Button */}
-            <button
-              type="button"
-              onClick={handleCopySha}
-              className="flex-1 py-2.5 bg-surface-2 hover:bg-surface-3 text-text-primary font-semibold rounded-xl flex items-center justify-center gap-1.5 transition active:scale-95 text-xs cursor-pointer shadow-2xs"
-            >
-              <Copy size={13} className="text-text-secondary" />
-              <span>{isCopiedSha ? 'Copied SHA!' : 'Copy SHA'}</span>
-            </button>
+          {/* Inline Dialog: Restore or Revert Commit */}
+          <AnimatePresence>
+            {isRestoreModalOpen && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="px-4 py-3.5 bg-surface-2 border-t border-border space-y-3 shrink-0"
+              >
+                <div className="flex items-center justify-between text-xs font-bold text-text-primary">
+                  <div className="flex items-center gap-1.5 text-accent">
+                    <RotateCcw size={14} />
+                    <span>Restore or Revert {shortSha}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsRestoreModalOpen(false)}
+                    className="text-text-tertiary hover:text-text-primary"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
 
-            {/* Branch Here Button */}
-            <button
-              type="button"
-              onClick={handleOpenBranchModal}
-              className="flex-[1.5] py-2.5 bg-text-primary hover:opacity-90 text-background font-semibold rounded-xl flex items-center justify-center gap-2 shadow-sm transition active:scale-95 text-xs cursor-pointer"
-            >
-              <GitBranch size={13} />
-              <span>Branch Here</span>
-            </button>
+                {/* Mode Selector Segment */}
+                <div className="grid grid-cols-2 gap-1.5 p-1 bg-surface-1 rounded-xl border border-border/80">
+                  <button
+                    type="button"
+                    onClick={() => setRestoreMode('snapshot')}
+                    className={`py-1.5 px-2 text-[11px] font-bold rounded-lg flex items-center justify-center gap-1 transition ${
+                      restoreMode === 'snapshot'
+                        ? 'bg-accent text-white shadow-xs'
+                        : 'text-text-secondary hover:text-text-primary'
+                    }`}
+                  >
+                    <RotateCcw size={12} />
+                    <span>Snapshot Rollback</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRestoreMode('revert')}
+                    className={`py-1.5 px-2 text-[11px] font-bold rounded-lg flex items-center justify-center gap-1 transition ${
+                      restoreMode === 'revert'
+                        ? 'bg-accent text-white shadow-xs'
+                        : 'text-text-secondary hover:text-text-primary'
+                    }`}
+                  >
+                    <Undo2 size={12} />
+                    <span>Revert Commit</span>
+                  </button>
+                </div>
 
-            {/* Tag Commit Button */}
-            <button
-              type="button"
-              onClick={handleOpenTagModal}
-              title={`Tag commit ${shortSha}`}
-              className="p-2.5 bg-surface-2 hover:bg-surface-3 text-text-secondary hover:text-text-primary rounded-xl transition active:scale-95 cursor-pointer shadow-2xs"
-            >
-              <Tag size={15} />
-            </button>
+                <p className="text-[11px] text-text-tertiary leading-relaxed">
+                  {restoreMode === 'snapshot' ? (
+                    <>
+                      Restores all repository files to this commit's snapshot and creates a rollback commit (<code className="font-mono text-text-primary bg-surface-1 px-1 py-0.5 rounded">Revert to {shortSha}</code>). Preserves history according to GitHub rules.
+                    </>
+                  ) : (
+                    <>
+                      Inverts only this commit's delta without altering other commits, creating standard (<code className="font-mono text-text-primary bg-surface-1 px-1 py-0.5 rounded">Revert "{parsedTitle.slice(0, 24)}"</code>).
+                    </>
+                  )}
+                </p>
+
+                <div className="flex items-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsRestoreModalOpen(false)}
+                    className="flex-1 h-9 bg-surface-1 hover:bg-surface-3 border border-border text-text-secondary rounded-xl text-xs font-semibold transition cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleExecuteRestore}
+                    disabled={isActionExecuting}
+                    className="flex-1 h-9 bg-accent hover:opacity-90 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    {isActionExecuting ? (
+                      <>
+                        <Loader2 size={13} className="animate-spin" />
+                        <span>{restoreMode === 'snapshot' ? 'Restoring...' : 'Reverting...'}</span>
+                      </>
+                    ) : (
+                      <>
+                        {restoreMode === 'snapshot' ? <RotateCcw size={13} /> : <Undo2 size={13} />}
+                        <span>{restoreMode === 'snapshot' ? 'Confirm Restore' : 'Confirm Revert'}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Inline Dialog: Delete Last Commit (HEAD) */}
+          <AnimatePresence>
+            {isDeleteModalOpen && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="px-4 py-3.5 bg-rose-500/10 border-t border-rose-500/30 space-y-3 shrink-0"
+              >
+                <div className="flex items-center justify-between text-xs font-bold text-rose-500">
+                  <div className="flex items-center gap-1.5">
+                    <AlertTriangle size={14} />
+                    <span>Delete Latest Commit ({shortSha})</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsDeleteModalOpen(false)}
+                    className="text-rose-400 hover:text-rose-200"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+                <p className="text-xs text-rose-200/90 leading-relaxed">
+                  This will remove the HEAD commit and revert repository files back to the previous commit state before this commit. This rewrites the active branch history.
+                </p>
+                <div className="flex items-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsDeleteModalOpen(false)}
+                    className="flex-1 h-9 bg-surface-1 hover:bg-surface-3 border border-border text-text-secondary rounded-xl text-xs font-semibold transition cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleExecuteDelete}
+                    disabled={isActionExecuting}
+                    className="flex-1 h-9 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    {isActionExecuting ? (
+                      <>
+                        <Loader2 size={13} className="animate-spin" />
+                        <span>Deleting...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 size={13} />
+                        <span>Delete Commit</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Modal Bottom Actions Bar */}
+          <div className="p-3 border-t border-border bg-surface-1 flex flex-col gap-2 shrink-0">
+            {/* Row 1: Primary Git Actions */}
+            <div className="flex items-center gap-2">
+              {/* Restore Button */}
+              <button
+                type="button"
+                onClick={handleOpenRestoreModal}
+                className="flex-1 h-10 px-3 bg-surface-2 hover:bg-surface-3 text-text-primary font-semibold rounded-xl flex items-center justify-center gap-1.5 transition active:scale-95 text-xs cursor-pointer shadow-2xs border border-border"
+                title="Restore repository state to this commit"
+              >
+                <RotateCcw size={13} className="text-accent" />
+                <span>Restore</span>
+              </button>
+
+              {/* Delete HEAD Button (Only visible on HEAD commit) */}
+              {isHeadCommit && (
+                <button
+                  type="button"
+                  onClick={handleOpenDeleteModal}
+                  className="flex-1 h-10 px-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/30 font-semibold rounded-xl flex items-center justify-center gap-1.5 transition active:scale-95 text-xs cursor-pointer shadow-2xs"
+                  title="Delete latest commit and revert working files"
+                >
+                  <Trash2 size={13} />
+                  <span>Delete HEAD</span>
+                </button>
+              )}
+
+              {/* Branch Here Button */}
+              <button
+                type="button"
+                onClick={handleOpenBranchModal}
+                className="flex-1 h-10 px-3 bg-text-primary hover:opacity-90 text-background font-semibold rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition active:scale-95 text-xs cursor-pointer"
+              >
+                <GitBranch size={13} />
+                <span>Branch</span>
+              </button>
+            </div>
+
+            {/* Row 2: Secondary Metadata Actions */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleCopySha}
+                className="flex-1 h-8 bg-surface-2 hover:bg-surface-3 text-text-secondary hover:text-text-primary rounded-lg flex items-center justify-center gap-1.5 transition active:scale-95 text-[11px] font-mono cursor-pointer border border-border/80"
+              >
+                <Copy size={12} />
+                <span>{isCopiedSha ? 'Copied!' : shortSha}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleOpenTagModal}
+                className="flex-1 h-8 bg-surface-2 hover:bg-surface-3 text-text-secondary hover:text-text-primary rounded-lg flex items-center justify-center gap-1.5 transition active:scale-95 text-[11px] font-semibold cursor-pointer border border-border/80"
+              >
+                <Tag size={12} />
+                <span>Tag</span>
+              </button>
+            </div>
           </div>
         </motion.div>
       </div>

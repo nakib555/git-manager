@@ -54,13 +54,14 @@ export const filterLocalCommits = (commits: any[], filters: Partial<CommitFilter
   const sinceTime = sinceDate ? sinceDate.getTime() : null;
   const untilTime = untilDate ? untilDate.getTime() : null;
 
-  return commits.filter((c: any) => {
-    // 1. Query filter (matches commit message, short hash, or full hash)
+  const result = commits.filter((c: any) => {
+    // 1. Query filter (matches commit message, short hash, full hash, or author)
     if (q) {
       const msgMatch = (c.msg || '').toLowerCase().includes(q);
       const hashMatch = (c.hash || '').toLowerCase().includes(q);
       const fullHashMatch = (c.fullHash || '').toLowerCase().includes(q);
-      if (!msgMatch && !hashMatch && !fullHashMatch) return false;
+      const authorMatch = (c.author || '').toLowerCase().includes(q);
+      if (!msgMatch && !hashMatch && !fullHashMatch && !authorMatch) return false;
     }
 
     // 2. Author filter
@@ -83,6 +84,15 @@ export const filterLocalCommits = (commits: any[], filters: Partial<CommitFilter
 
     return true;
   });
+
+  // Guarantee newest commits at top (HEAD at index 0)
+  result.sort((a: any, b: any) => {
+    const tA = new Date(a.timestamp || a.date || 0).getTime();
+    const tB = new Date(b.timestamp || b.date || 0).getTime();
+    return tB - tA;
+  });
+
+  return result;
 };
 
 export const useCommits = (filters: CommitFilter) => {
@@ -247,6 +257,13 @@ export const useCommits = (filters: CommitFilter) => {
             totalCount += localOnly.length;
           }
         }
+
+        // Ensure newest commits at the top (descending chronological order)
+        items.sort((a: any, b: any) => {
+          const tA = new Date(a.timestamp || a.date || 0).getTime();
+          const tB = new Date(b.timestamp || b.date || 0).getTime();
+          return tB - tA;
+        });
 
         return {
           items,

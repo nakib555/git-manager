@@ -2,17 +2,21 @@ import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../../../AppContext';
 import { CommitCard } from '../../components/CommitCard';
 import { CommitDetailModal } from '../../components/CommitDetailModal';
+import { CommitRestoreSheet } from '../../components/CommitRestoreSheet';
 import { filterLocalCommits } from '../../../hooks/useCommits';
 import { PaginationControls } from '../../../components/common/PaginationControls';
 import { EmptyState } from '../../components/EmptyState';
 import { 
-  GitCommit, Search, X, Filter, Plus
+  GitCommit, Search, X, Filter, Plus, Trash2, AlertTriangle, Loader2, RotateCcw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export const CommitsScreen: React.FC = () => {
-  const { activeCommits, showToast, currentRepo, openModal, githubUser } = useAppContext();
+  const { activeCommits, showToast, currentRepo, openModal, githubUser, deleteCommit } = useAppContext();
   const [selectedCommit, setSelectedCommit] = useState<any | null>(null);
+  const [selectedCommitForRestore, setSelectedCommitForRestore] = useState<any | null>(null);
+  const [commitToDeleteHead, setCommitToDeleteHead] = useState<any | null>(null);
+  const [isDeletingHead, setIsDeletingHead] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState<number>(10);
 
@@ -206,6 +210,13 @@ export const CommitsScreen: React.FC = () => {
     if (headOnly && result.length > 0) {
       result = [result[0]];
     }
+
+    // Ensure newest commits at top (HEAD at index 0)
+    result.sort((a: any, b: any) => {
+      const tA = new Date(a.timestamp || a.date || 0).getTime();
+      const tB = new Date(b.timestamp || b.date || 0).getTime();
+      return tB - tA;
+    });
 
     return result;
   }, [activeCommits, searchQuery, authorFilter, sinceDate, untilDate, ciStatusFilter, mergesOnly, headOnly]);
@@ -462,22 +473,63 @@ export const CommitsScreen: React.FC = () => {
         )
       ) : (
         <div className="space-y-2.5 pb-6">
-          {paginatedCommits.map((commit, idx) => (
-            <CommitCard
-              key={`${commit.hash}-${idx}`}
-              commit={{
-                hash: commit.hash,
-                msg: commit.msg,
-                author: commit.author,
-                date: commit.date || commit.timestamp,
-                avatarUrl: commit.avatarUrl,
-                stats: commit.stats,
-              }}
-              onClick={() => setSelectedCommit(commit)}
-              onCopyHash={() => handleCopyHash(commit.hash)}
-              isLatest={idx === 0 && currentPage === 1 && !searchQuery && dateRangeFilter === 'all' && authorFilter === 'all'}
-            />
-          ))}
+          {/* Quick HEAD commit banner with Restore and Delete Last Commit */}
+          {currentPage === 1 && !searchQuery && dateRangeFilter === 'all' && authorFilter === 'all' && paginatedCommits.length > 0 && (
+            <div className="flex items-center justify-between p-2.5 bg-surface-2/70 border border-border/90 rounded-2xl text-xs shadow-2xs">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 ring-2 ring-emerald-500/20" />
+                <span className="font-bold text-text-primary text-[11px] uppercase tracking-wider shrink-0">HEAD</span>
+                <span className="font-mono text-xs font-semibold text-accent px-1.5 py-0.5 rounded-md bg-accent/10 border border-accent/20 shrink-0">
+                  {paginatedCommits[0].hash?.substring(0, 7)}
+                </span>
+                <span className="text-xs text-text-secondary truncate">
+                  {paginatedCommits[0].msg}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0 pl-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedCommitForRestore(paginatedCommits[0])}
+                  className="h-7 px-2.5 bg-surface-1 hover:bg-surface-3 text-text-secondary hover:text-accent border border-border rounded-lg text-[11px] font-semibold flex items-center gap-1 transition active:scale-95 cursor-pointer"
+                  title="Restore or revert to this commit"
+                >
+                  <RotateCcw size={11} />
+                  <span>Restore</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCommitToDeleteHead(paginatedCommits[0])}
+                  className="h-7 px-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/30 rounded-lg text-[11px] font-semibold flex items-center gap-1 transition active:scale-95 cursor-pointer"
+                  title="Delete Last Commit and revert working directory"
+                >
+                  <Trash2 size={11} />
+                  <span>Delete HEAD</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {paginatedCommits.map((commit, idx) => {
+            const isHead = idx === 0 && currentPage === 1 && !searchQuery && dateRangeFilter === 'all' && authorFilter === 'all';
+            return (
+              <CommitCard
+                key={`${commit.hash}-${idx}`}
+                commit={{
+                  hash: commit.hash,
+                  msg: commit.msg,
+                  author: commit.author,
+                  date: commit.date || commit.timestamp,
+                  avatarUrl: commit.avatarUrl,
+                  stats: commit.stats,
+                }}
+                onClick={() => setSelectedCommit(commit)}
+                onCopyHash={() => handleCopyHash(commit.hash)}
+                onRestoreClick={() => setSelectedCommitForRestore(commit)}
+                onDeleteHeadClick={isHead ? () => setCommitToDeleteHead(commit) : undefined}
+                isLatest={isHead}
+              />
+            );
+          })}
 
           {/* Pagination Controls (10 items / page) */}
           <div className="pt-3 pb-6 border-t border-border/80">
@@ -775,6 +827,94 @@ export const CommitsScreen: React.FC = () => {
         commit={selectedCommit}
         onClose={() => setSelectedCommit(null)}
       />
+
+      {/* 8. Dedicated Universal Commit Restore & Revert Sheet */}
+      <CommitRestoreSheet
+        isOpen={selectedCommitForRestore !== null}
+        commit={selectedCommitForRestore}
+        onClose={() => setSelectedCommitForRestore(null)}
+      />
+
+      {/* 9. Delete Last Commit (HEAD) Confirmation Dialog */}
+      <AnimatePresence>
+        {commitToDeleteHead && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-head-title"
+            className="fixed inset-0 z-60 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-sm bg-surface-1 border border-border rounded-2xl p-5 shadow-2xl space-y-4"
+            >
+              <div className="flex items-start gap-3 text-rose-500">
+                <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center shrink-0">
+                  <Trash2 size={20} />
+                </div>
+                <div>
+                  <h3 id="delete-head-title" className="text-sm font-bold text-text-primary">
+                    Delete Last Commit (HEAD)?
+                  </h3>
+                  <p className="text-xs text-text-tertiary mt-1 leading-relaxed">
+                    Commit <strong className="font-mono text-text-primary">{commitToDeleteHead.hash?.substring(0, 7)}</strong> will be removed and working directory files will revert to their pre-commit state.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-3 bg-surface-2/60 border border-border/80 rounded-xl text-xs space-y-1">
+                <div className="font-bold text-text-primary truncate">
+                  {commitToDeleteHead.msg}
+                </div>
+                <div className="text-[11px] text-text-tertiary font-mono">
+                  {commitToDeleteHead.author} &bull; {commitToDeleteHead.hash?.substring(0, 7)}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  disabled={isDeletingHead}
+                  onClick={() => setCommitToDeleteHead(null)}
+                  className="flex-1 h-11 bg-surface-2 hover:bg-surface-3 text-text-primary font-semibold rounded-xl text-xs transition cursor-pointer disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isDeletingHead}
+                  onClick={async () => {
+                    setIsDeletingHead(true);
+                    try {
+                      const success = await deleteCommit(commitToDeleteHead.hash || commitToDeleteHead.fullHash);
+                      if (success) {
+                        setCommitToDeleteHead(null);
+                      }
+                    } finally {
+                      setIsDeletingHead(false);
+                    }
+                  }}
+                  className="flex-1 h-11 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-sm"
+                >
+                  {isDeletingHead ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      <span>Deleting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 size={14} />
+                      <span>Delete & Revert</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
