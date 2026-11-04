@@ -21,11 +21,13 @@ import { CommitsScreen } from '../screens/repo/CommitsScreen';
 import { BranchesScreen } from '../screens/repo/BranchesScreen';
 import { PRsScreen } from '../screens/repo/PRsScreen';
 import { InsightsScreen } from '../screens/repo/InsightsScreen';
+import { DeleteRepoModal } from '../../components/DeleteRepoModal';
 
 export const MobileShell: React.FC = () => {
-  const { currentScreen } = useAppContext();
+  const { currentScreen, currentRepo } = useAppContext();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   return (
     <div className="flex flex-col w-full h-full bg-background text-text-primary relative overflow-hidden select-none">
@@ -61,13 +63,21 @@ export const MobileShell: React.FC = () => {
       <ActionSheet
         isOpen={isActionSheetOpen}
         onClose={() => setIsActionSheetOpen(false)}
+        onDeleteRepo={() => setIsDeleteModalOpen(true)}
       />
       <MobileDrawer
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
       />
 
-      {/* 6. Floating Top Toast */}
+      {/* 6. Delete Active Repository Modal */}
+      <DeleteRepoModal
+        isOpen={isDeleteModalOpen}
+        repoName={currentRepo || ''}
+        onClose={() => setIsDeleteModalOpen(false)}
+      />
+
+      {/* 7. Floating Top Toast */}
       <Toast />
     </div>
   );

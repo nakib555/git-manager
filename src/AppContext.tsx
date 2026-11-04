@@ -659,21 +659,39 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
           // Cap at 1,500 files to prevent freezing the browser
           const cappedTree = filteredTree.slice(0, 1500);
 
-          filesData = cappedTree.map((f: any) => ({
-            name: f.path,
-            type: f.type === "tree" ? "dir" : "file",
-            isCurrent:
-              f.path.toLowerCase().endsWith(".tsx") ||
-              f.path.toLowerCase().endsWith(".md"),
-          }));
+          filesData = cappedTree.map((f: any) => {
+            const isDir = f.type === "tree" || f.type === "dir";
+            const size = isDir ? undefined : (typeof f.size === 'number' ? f.size : 1240);
+            const lines = isDir ? undefined : (f.lines || (typeof size === 'number' ? Math.max(1, Math.round(size / 32)) : 42));
+            return {
+              name: f.path,
+              path: f.path,
+              type: isDir ? "dir" : "file",
+              size,
+              lines,
+              sha: f.sha,
+              isCurrent:
+                f.path.toLowerCase().endsWith(".tsx") ||
+                f.path.toLowerCase().endsWith(".md"),
+            };
+          });
         } else if (Array.isArray(rawFiles)) {
-          filesData = rawFiles.slice(0, 1500).map((f: any) => ({
-            name: f.name || f.path,
-            type: f.type === "dir" ? "dir" : "file",
-            isCurrent:
-              (f.name || f.path).toLowerCase().endsWith(".tsx") ||
-              (f.name || f.path).toLowerCase().endsWith(".md"),
-          }));
+          filesData = rawFiles.slice(0, 1500).map((f: any) => {
+            const isDir = f.type === "dir" || f.type === "tree";
+            const size = isDir ? undefined : (typeof f.size === 'number' ? f.size : 1240);
+            const lines = isDir ? undefined : (f.lines || (typeof size === 'number' ? Math.max(1, Math.round(size / 32)) : 42));
+            return {
+              name: f.name || f.path,
+              path: f.name || f.path,
+              type: isDir ? "dir" : "file",
+              size,
+              lines,
+              sha: f.sha,
+              isCurrent:
+                (f.name || f.path).toLowerCase().endsWith(".tsx") ||
+                (f.name || f.path).toLowerCase().endsWith(".md"),
+            };
+          });
         }
       }
       // Merge any local commits created in the app for this repository
@@ -1167,6 +1185,103 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
       console.error("Error creating GitHub repository:", error);
       showToast(`Failed to create repository: ${error.message || error}`);
     }
+  };
+
+  const deleteRepo = async (repoName: string, owner?: string | null): Promise<boolean> => {
+    const targetOwner = owner || state.currentRepoOwner || state.githubUser?.login || '';
+    
+    // 1. If authenticated with GitHub, call GitHub DELETE endpoint
+    if (state.githubToken && targetOwner) {
+      try {
+        const token = state.githubToken;
+        const headers = {
+          Authorization: token.startsWith('ghp_') || token.startsWith('github_pat_') || token.startsWith('gho_') || token.startsWith('Bearer ')
+            ? (token.startsWith('Bearer ') ? token : `Bearer ${token}`)
+            : `token ${token}`,
+          Accept: "application/vnd.github.v3+json",
+        };
+
+        const res = await fetch(`https://api.github.com/repos/${targetOwner}/${repoName}`, {
+          method: "DELETE",
+          headers,
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          let errMsg = errData.message || `Status ${res.status}`;
+          if (res.status === 403) {
+            errMsg = "Must have admin rights and 'delete_repo' scope on your GitHub token.";
+          }
+          throw new Error(errMsg);
+        }
+        showToast(`Repository '${targetOwner}/${repoName}' deleted from GitHub!`, 'success');
+      } catch (error: any) {
+        console.error("Error deleting GitHub repository:", error);
+        showToast(`Failed to delete repository on GitHub: ${error.message || error}`, 'error');
+        return false;
+      }
+    } else {
+      showToast(`Repository '${repoName}' removed locally.`, 'info');
+    }
+
+    // 2. Clean up local storage items
+    try {
+      localStorage.removeItem(`local_details_${repoName}_commits`);
+      localStorage.removeItem(`local_details_${repoName}_branches`);
+      localStorage.removeItem(`local_details_${repoName}_prs`);
+      localStorage.removeItem(`local_details_${repoName}_files`);
+      localStorage.removeItem(`local_details_${repoName}_languages`);
+      localStorage.removeItem(`local_commits_${repoName}`);
+    } catch (_) {}
+
+    // 3. Update state repos list
+    const updatedRepos = state.githubRepos.filter(r => r.name !== repoName);
+    const wasActive = state.currentRepo === repoName;
+    let nextRepo: string | null = state.currentRepo;
+    let nextOwner: string | null = state.currentRepoOwner;
+
+    if (wasActive) {
+      if (updatedRepos.length > 0) {
+        nextRepo = updatedRepos[0].name;
+        nextOwner = (updatedRepos[0].owner?.login) || state.githubUser?.login || '';
+      } else {
+        nextRepo = null;
+        nextOwner = null;
+      }
+      try {
+        if (nextRepo) {
+          localStorage.setItem("currentRepo", nextRepo);
+          localStorage.setItem("currentRepoOwner", nextOwner || '');
+        } else {
+          localStorage.removeItem("currentRepo");
+          localStorage.removeItem("currentRepoOwner");
+        }
+      } catch (_) {}
+    }
+
+    setState(prev => ({
+      ...prev,
+      githubRepos: updatedRepos,
+      currentRepo: nextRepo,
+      currentRepoOwner: nextOwner,
+    }));
+
+    if (wasActive) {
+      if (nextRepo && nextOwner) {
+        fetchRepoDetails(nextRepo, nextOwner);
+      } else {
+        setState(prev => ({
+          ...prev,
+          activeCommits: [],
+          activeBranches: [],
+          activePRs: [],
+          activeFiles: [],
+          currentScreen: 'repos',
+        }));
+      }
+    }
+
+    return true;
   };
   const findBaseSha = async (
     owner: string,
@@ -2266,6 +2381,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         addRecentClone,
         cloneRepository,
         createLocalRepo,
+        deleteRepo,
         createLocalBranch,
         deleteBranch,
         createLocalPR,

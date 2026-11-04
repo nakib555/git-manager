@@ -9,9 +9,11 @@ import {
   Check, FolderGit2, Loader2, Download, FolderPlus, Globe 
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { RepoSortBy } from '../../types';
+import { RepoSortBy, GitHubRepo } from '../../types';
+import { DeleteRepoModal } from '../../components/DeleteRepoModal';
 
 export const Repositories: React.FC = () => {
+  const [repoToDelete, setRepoToDelete] = useState<GitHubRepo | null>(null);
   const { 
     githubRepos, 
     openRepo, 
@@ -261,6 +263,7 @@ export const Repositories: React.FC = () => {
                 repo={repo}
                 isActive={currentRepo === repo.name}
                 onClick={() => openRepo(repo.name, (repo as any).owner?.login)}
+                onDelete={(r) => setRepoToDelete(r)}
               />
             ))}
           </div>
@@ -364,6 +367,13 @@ export const Repositories: React.FC = () => {
           </div>
         )}
       </AnimatePresence>
+
+      <DeleteRepoModal
+        isOpen={!!repoToDelete}
+        repoName={repoToDelete?.name || ''}
+        repoOwner={(repoToDelete as any)?.owner?.login}
+        onClose={() => setRepoToDelete(null)}
+      />
     </div>
   );
 };

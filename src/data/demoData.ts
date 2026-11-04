@@ -301,16 +301,16 @@ export const DEMO_PRS = [
 export const DEMO_FILES = [
   { name: 'src', type: 'dir', isCurrent: false },
   { name: 'src/core', type: 'dir', isCurrent: false },
-  { name: 'src/core/vdom.ts', type: 'file', isCurrent: true },
-  { name: 'src/core/fiber.ts', type: 'file', isCurrent: false },
-  { name: 'src/core/signals.ts', type: 'file', isCurrent: false },
+  { name: 'src/core/vdom.ts', type: 'file', isCurrent: true, size: 2420, lines: 72 },
+  { name: 'src/core/fiber.ts', type: 'file', isCurrent: false, size: 3840, lines: 118 },
+  { name: 'src/core/signals.ts', type: 'file', isCurrent: false, size: 2960, lines: 84 },
   { name: 'src/server', type: 'dir', isCurrent: false },
-  { name: 'src/server/stream.ts', type: 'file', isCurrent: true },
-  { name: 'src/server/hydrate.ts', type: 'file', isCurrent: false },
-  { name: 'src/index.ts', type: 'file', isCurrent: true },
-  { name: 'package.json', type: 'file', isCurrent: false },
-  { name: 'README.md', type: 'file', isCurrent: true },
-  { name: 'tsconfig.json', type: 'file', isCurrent: false },
+  { name: 'src/server/stream.ts', type: 'file', isCurrent: true, size: 4120, lines: 142 },
+  { name: 'src/server/hydrate.ts', type: 'file', isCurrent: false, size: 1750, lines: 65 },
+  { name: 'src/index.ts', type: 'file', isCurrent: true, size: 890, lines: 45 },
+  { name: 'package.json', type: 'file', isCurrent: false, size: 1250, lines: 58 },
+  { name: 'README.md', type: 'file', isCurrent: true, size: 2480, lines: 96 },
+  { name: 'tsconfig.json', type: 'file', isCurrent: false, size: 680, lines: 32 },
 ];
 
 export const DEMO_FILE_CONTENTS: Record<string, string> = {

@@ -122,6 +122,7 @@ export type AppContextType = AppState & {
   addRecentClone: (clone: { name: string; url: string; dest: string; timestamp: number }) => void;
   cloneRepository: (repo: { url: string; destFolder: string; branch: string; shallow: boolean; submodules: boolean }) => void;
   createLocalRepo: (repo: { name: string; desc: string; isPrivate: boolean; lang: string }) => void;
+  deleteRepo: (repoName: string, owner?: string | null) => Promise<boolean>;
   createLocalBranch: (branch: { name: string; desc: string }) => void;
   deleteBranch: (branchName: string) => Promise<void>;
   createLocalPR: (pr: { title: string; desc: string; source: string; target: string; isDraft?: boolean }) => void;

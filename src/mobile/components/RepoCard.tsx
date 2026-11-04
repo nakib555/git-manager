@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star, GitFork, Lock, Globe, Clock, ChevronRight, FolderGit2 } from 'lucide-react';
+import { Star, GitFork, Lock, Globe, Clock, ChevronRight, FolderGit2, Trash2 } from 'lucide-react';
 import { GitHubRepo } from '../../types';
 import { formatRelativeTime } from '../utils/formatters';
 
@@ -7,6 +7,7 @@ export interface RepoCardProps {
   repo: GitHubRepo;
   onClick: () => void;
   isActive?: boolean;
+  onDelete?: (repo: GitHubRepo) => void;
 }
 
 const getLanguageColor = (lang?: string | null): string => {
@@ -63,6 +64,7 @@ export const RepoCard: React.FC<RepoCardProps> = ({
   repo,
   onClick,
   isActive = false,
+  onDelete,
 }) => {
   const owner = (repo as any).owner?.login;
   const displayName = owner ? `${owner}/${repo.name}` : repo.name;
@@ -113,12 +115,26 @@ export const RepoCard: React.FC<RepoCardProps> = ({
           </div>
         </div>
 
-        {/* Right: Clean Unboxed Privacy Metadata & Chevron */}
-        <div className="flex items-center gap-2 shrink-0">
+        {/* Right: Clean Unboxed Privacy Metadata, Delete Action & Chevron */}
+        <div className="flex items-center gap-1.5 shrink-0">
           <span className="flex items-center gap-1 text-[11px] font-mono text-text-tertiary">
             {repo.private ? <Lock size={11} /> : <Globe size={11} />}
             <span>{repo.private ? 'Private' : 'Public'}</span>
           </span>
+          {onDelete && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(repo);
+              }}
+              className="p-1 rounded-md text-text-tertiary hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+              title={`Delete ${repo.name}`}
+              aria-label={`Delete repository ${repo.name}`}
+            >
+              <Trash2 size={13} />
+            </button>
+          )}
           <ChevronRight size={15} className="text-text-tertiary group-hover:text-text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
         </div>
       </div>

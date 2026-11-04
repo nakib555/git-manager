@@ -9,9 +9,10 @@ import {
 export interface ActionSheetProps {
   isOpen: boolean;
   onClose: () => void;
+  onDeleteRepo?: () => void;
 }
 
-export const ActionSheet: React.FC<ActionSheetProps> = ({ isOpen, onClose }) => {
+export const ActionSheet: React.FC<ActionSheetProps> = ({ isOpen, onClose, onDeleteRepo }) => {
   const { openModal, navigate, currentRepo, openZipSync } = useAppContext();
 
   const handleAction = (cb: () => void) => {
@@ -142,6 +143,21 @@ export const ActionSheet: React.FC<ActionSheetProps> = ({ isOpen, onClose }) => 
                       <span className="block text-[11px] text-text-tertiary font-normal">Submit branch review for merging</span>
                     </div>
                   </button>
+
+                  {onDeleteRepo && (
+                    <button
+                      onClick={() => handleAction(onDeleteRepo)}
+                      className="w-full min-h-[48px] h-12 px-3 rounded-xl flex items-center gap-4 hover:bg-red-500/10 transition-colors text-left text-xs font-semibold text-red-400 cursor-pointer active:scale-98 border border-red-500/20 mt-2"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-red-500/15 border border-red-500/30 text-red-400 flex items-center justify-center shrink-0">
+                        <Trash2 size={17} />
+                      </div>
+                      <div>
+                        <span className="block font-semibold text-red-400">Delete Repository</span>
+                        <span className="block text-[11px] text-red-400/70 font-normal">Permanently remove {currentRepo}</span>
+                      </div>
+                    </button>
+                  )}
                 </>
               )}
             </div>

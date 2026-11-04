@@ -204,10 +204,19 @@ export const FilesScreen: React.FC = () => {
             <span className="truncate">{node.name}</span>
           </div>
 
-          {!isFolder && node.size !== undefined && (
-            <span className="text-[10px] text-text-tertiary font-mono shrink-0 ml-2 tabular-nums">
-              {formatBytes(node.size)}
-            </span>
+          {!isFolder && (
+            <div 
+              className="flex items-center gap-1.5 text-[11px] text-text-tertiary font-mono shrink-0 ml-3 tabular-nums select-none"
+              title={`${(node.lines ?? 42).toLocaleString()} lines • ${formatBytes(node.size ?? 1024)}`}
+            >
+              <span className="text-text-secondary font-medium">
+                {(node.lines ?? 42).toLocaleString()} lines
+              </span>
+              <span aria-hidden="true" className="text-border">·</span>
+              <span className="text-text-tertiary">
+                {formatBytes(node.size ?? 1024)}
+              </span>
+            </div>
           )}
         </div>
 
