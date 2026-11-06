@@ -2,6 +2,7 @@ import { AppState, CommitCreationPayload, SaveAndCommitFileParams } from '../../
 import { getLocalRepoDetails } from '../contextUtils';
 import { deleteRemoteHeadCommit } from '../gitCommitFileService';
 import { executeRemoteOrLocalCommit, executeRevertCommitOperation, executeSaveAndCommitFileOperation } from './commitSliceServices';
+import { executeCreateBranchAtCommit, executeCreateTagAtCommit } from './commitRefService';
 
 interface UseCommitSliceParams {
   state: AppState;
@@ -12,11 +13,7 @@ interface UseCommitSliceParams {
 }
 
 export const useCommitSlice = ({
-  state,
-  setState,
-  showToast,
-  fetchRepoDetails,
-  setRefreshTrigger,
+  state, setState, showToast, fetchRepoDetails, setRefreshTrigger,
 }: UseCommitSliceParams) => {
   const createLocalCommit = async (commit: CommitCreationPayload) => {
     if (!state.currentRepo) return showToast("Select or open a repository first to make a commit.", "warning");
@@ -37,8 +34,7 @@ export const useCommitSlice = ({
         await fetchRepoDetails(repo, owner, false, branch);
       } else {
         setState(prev => ({
-          ...prev,
-          activeCommits: res.updatedCommits || prev.activeCommits,
+          ...prev, activeCommits: res.updatedCommits || prev.activeCommits,
           activeFiles: commit.updatedFileList?.length ? commit.updatedFileList : prev.activeFiles,
           sessionCommitsCount: prev.sessionCommitsCount + 1,
         }));
@@ -53,16 +49,12 @@ export const useCommitSlice = ({
   const saveAndCommitFile = async ({ filePath, content, message, description, branch }: SaveAndCommitFileParams): Promise<boolean> => {
     if (!state.currentRepo) { showToast("No repository currently selected.", "error"); return false; }
     if (!message.trim()) { showToast("Commit message is required.", "error"); return false; }
-    const repo = state.currentRepo;
+    const repo = state.currentRepo, targetBranch = branch || state.currentBranch || "main";
     const owner = state.currentRepoOwner || state.githubUser?.login || "local-user";
-    const authorName = state.githubUser?.name || "Local Developer";
-    const targetBranch = branch || state.currentBranch || "main";
-
     const res = await executeSaveAndCommitFileOperation({
-      repo, owner, authorName, branch: targetBranch, filePath, content, message,
-      description, githubToken: state.githubToken, activeCommits: state.activeCommits,
+      repo, owner, authorName: state.githubUser?.name || "Local Developer", branch: targetBranch,
+      filePath, content, message, description, githubToken: state.githubToken, activeCommits: state.activeCommits,
     });
-
     if (res.isRemote) {
       showToast(`Committed to ${targetBranch}! SHA: ${res.sha}`, 'success');
       setState(prev => ({ ...prev, sessionCommitsCount: prev.sessionCommitsCount + 1 }));
@@ -123,17 +115,34 @@ export const useCommitSlice = ({
   };
 
   return {
-    createLocalCommit, saveAndCommitFile,
+    createLocalCommit, saveAndCommitFile, deleteCommit, revertCommit,
     editCommitMessage: (h: string, m: string) => {
       setState(prev => ({ ...prev, activeCommits: prev.activeCommits.map(c => c.hash === h ? { ...c, msg: m } : c) }));
       showToast("Commit message updated!");
     },
-    deleteCommit, undoLatestCommit: async () => state.activeCommits.length > 0 ? deleteCommit(state.activeCommits[0].hash) : false,
+    undoLatestCommit: async () => state.activeCommits.length > 0 ? deleteCommit(state.activeCommits[0].hash) : false,
     restoreFilesToCommit: async (h: string, m?: string) => revertCommit(h, m),
-    revertCommit,
-    amendLatestCommit: () => showToast("Amending commits is not supported via GitHub REST API."),
-    resetBranchToCommit: () => showToast("Resetting branch is not supported via GitHub REST API."),
-    createBranchAtCommit: () => showToast("Creating branch at commit is not supported."),
-    createTagAtCommit: () => showToast("Creating tags is not supported."),
+    createBranchAtCommit: (name: string, sha: string) =>
+      executeCreateBranchAtCommit({ state, branchName: name, commitSha: sha, showToast, fetchRepoDetails, setState, setRefreshTrigger }),
+    createTagAtCommit: (name: string, sha: string) =>
+      executeCreateTagAtCommit({ state, tagName: name, commitSha: sha, showToast, fetchRepoDetails, setState, setRefreshTrigger }),
+    amendLatestCommit: (newMsg: string) => {
+      if (!state.activeCommits.length) return false;
+      const updated = [{ ...state.activeCommits[0], msg: newMsg }, ...state.activeCommits.slice(1)];
+      localStorage.setItem(`local_details_${state.currentRepo}_commits`, JSON.stringify(updated));
+      setState(prev => ({ ...prev, activeCommits: updated }));
+      showToast('Amended latest commit message!', 'success');
+      return true;
+    },
+    resetBranchToCommit: async (sha: string) => {
+      const idx = state.activeCommits.findIndex(c => c.hash === sha || c.fullHash === sha);
+      if (idx === -1) return false;
+      const updated = state.activeCommits.slice(idx);
+      localStorage.setItem(`local_details_${state.currentRepo}_commits`, JSON.stringify(updated));
+      setState(prev => ({ ...prev, activeCommits: updated }));
+      showToast(`Reset branch to ${sha.slice(0, 7)}!`, 'success');
+      setRefreshTrigger(prev => prev + 1);
+      return true;
+    },
   };
 };

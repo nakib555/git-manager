@@ -1,5 +1,6 @@
 import React from 'react';
 import { GitMerge, GitPullRequest, CornerDownRight, Check, Trash2, X } from 'lucide-react';
+import { ConfirmationCountdownButton } from '../../../components/ui/ConfirmationCountdownButton';
 
 interface PRDetailOverviewProps {
   pr: any;
@@ -79,18 +80,22 @@ export const PRDetailOverview: React.FC<PRDetailOverviewProps> = ({
             <span>Delete branch <code className="font-mono text-text-main">{pr.branch}</code> after merging</span>
           </label>
 
-          <div className="flex gap-2 pt-1">
-            <button
-              onClick={onMerge}
-              disabled={isMerging}
-              className="flex-1 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold transition-all shadow-md shadow-primary/20 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40"
-            >
-              <GitMerge size={14} />
-              <span>{isMerging ? 'Merging...' : mergeStrategy === 'squash' ? 'Confirm Squash and Merge' : 'Confirm Merge'}</span>
-            </button>
+          <div className="flex gap-2 pt-1 items-center">
+            <div className="flex-1">
+              <ConfirmationCountdownButton
+                onConfirm={onMerge}
+                label={mergeStrategy === 'squash' ? 'Confirm Squash & Merge' : 'Confirm Merge'}
+                confirmingLabel="Merging pull request in"
+                countdownSeconds={3}
+                variant="accent"
+                disabled={isMerging}
+                icon={<GitMerge size={14} />}
+              />
+            </div>
             <button
               onClick={onClosePR}
-              className="px-4 py-2.5 rounded-xl border border-border bg-main hover:bg-hover text-xs font-bold text-text-muted hover:text-rose-500 transition-colors cursor-pointer"
+              disabled={isMerging}
+              className="px-4 py-2.5 rounded-xl border border-border bg-main hover:bg-hover text-xs font-bold text-text-muted hover:text-rose-500 transition-colors cursor-pointer disabled:opacity-40"
             >
               Close PR
             </button>

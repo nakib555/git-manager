@@ -1,6 +1,8 @@
-import React from 'react';
-import { RotateCcw, Undo2, Loader2, ArrowRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { RotateCcw, Undo2, ArrowRight } from 'lucide-react';
 import { RestoreMode } from '../CommitRestoreSheet';
+import { ConfirmationCountdownButton } from '../../../components/ui/ConfirmationCountdownButton';
+import { RollbackTransitionLoader } from '../../../components/ui/RollbackTransitionLoader';
 
 interface CommitRestoreFooterProps {
   selectedMode: RestoreMode;
@@ -17,36 +19,52 @@ export const CommitRestoreFooter: React.FC<CommitRestoreFooterProps> = ({
   onClose,
   onSubmit,
 }) => {
-  return (
-    <div className="p-4 border-t border-border bg-surface-1 flex items-center gap-3 shrink-0">
-      <button
-        type="button"
-        onClick={onClose}
-        disabled={isSubmitting}
-        className="flex-1 h-11 bg-surface-2 hover:bg-surface-3 text-text-secondary font-bold rounded-2xl text-xs transition active:scale-95 disabled:opacity-50 cursor-pointer"
-      >
-        Cancel
-      </button>
+  const [stepIdx, setStepIdx] = useState(0);
 
-      <button
-        type="button"
-        onClick={onSubmit}
-        disabled={isSubmitting}
-        className="flex-[2] h-11 bg-accent hover:opacity-90 text-white font-bold rounded-2xl text-xs shadow-md transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-      >
-        {isSubmitting ? (
-          <>
-            <Loader2 size={15} className="animate-spin" />
-            <span>{selectedMode === 'snapshot' ? 'Restoring Snapshot...' : 'Reverting Commit...'}</span>
-          </>
-        ) : (
-          <>
-            {selectedMode === 'snapshot' ? <RotateCcw size={15} /> : <Undo2 size={15} />}
-            <span>{selectedMode === 'snapshot' ? `Restore to ${shortSha}` : `Revert ${shortSha}`}</span>
-            <ArrowRight size={13} className="opacity-70" />
-          </>
-        )}
-      </button>
+  useEffect(() => {
+    if (isSubmitting) {
+      setStepIdx(0);
+      const t1 = setTimeout(() => setStepIdx(1), 500);
+      const t2 = setTimeout(() => setStepIdx(2), 1000);
+      return () => { clearTimeout(t1); clearTimeout(t2); };
+    }
+  }, [isSubmitting]);
+
+  const buttonLabel = selectedMode === 'snapshot'
+    ? `Restore Files to ${shortSha}`
+    : `Revert Commit ${shortSha}`;
+
+  return (
+    <div className="p-4 pb-[calc(env(safe-area-inset-bottom,0px)+16px)] border-t border-border bg-surface-1 space-y-3 shrink-0">
+      {isSubmitting && (
+        <RollbackTransitionLoader
+          steps={['Analyzing commit delta...', 'Generating forward patch...', 'Committing to branch...']}
+          activeStepIndex={stepIdx}
+          isComplete={stepIdx >= 2}
+        />
+      )}
+
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={isSubmitting}
+          className="w-1/3 h-11 bg-surface-2 hover:bg-surface-3 text-text-secondary font-bold rounded-2xl text-xs transition active:scale-95 disabled:opacity-50 cursor-pointer"
+        >
+          Cancel
+        </button>
+
+        <div className="flex-1">
+          <ConfirmationCountdownButton
+            label={buttonLabel}
+            countdownSeconds={2}
+            onConfirm={onSubmit}
+            disabled={isSubmitting}
+            variant="accent"
+            icon={selectedMode === 'snapshot' ? <RotateCcw size={14} /> : <Undo2 size={14} />}
+          />
+        </div>
+      </div>
     </div>
   );
 };

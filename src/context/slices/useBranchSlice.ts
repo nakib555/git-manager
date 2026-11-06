@@ -10,10 +10,7 @@ interface UseBranchSliceParams {
 }
 
 export const useBranchSlice = ({
-  state,
-  setState,
-  showToast,
-  fetchRepoDetails,
+  state, setState, showToast, fetchRepoDetails,
 }: UseBranchSliceParams) => {
   const switchBranch = async (branchName: string) => {
     if (!state.currentRepo) return;
@@ -25,22 +22,32 @@ export const useBranchSlice = ({
 
   const createLocalBranch = async (branch: { name: string; desc: string }) => {
     if (!state.currentRepo) return;
-    if (!state.githubToken || !state.currentRepoOwner) {
-      showToast("GitHub token and repository owner are required to create a branch.");
+    const cleanName = branch.name.trim();
+    if (!cleanName) return;
+
+    if (state.githubToken && state.currentRepoOwner) {
+      try {
+        const resName = await createRemoteGitHubBranch(state.currentRepoOwner, state.currentRepo, cleanName, state.githubToken);
+        showToast(`Branch '${resName}' created on GitHub!`, 'success');
+        await fetchRepoDetails(state.currentRepo, state.currentRepoOwner);
+      } catch (error: any) {
+        showToast(`Failed to create branch: ${error.message || error}`, 'error');
+      }
       return;
     }
-    try {
-      const cleanName = await createRemoteGitHubBranch(
-        state.currentRepoOwner,
-        state.currentRepo,
-        branch.name,
-        state.githubToken
-      );
-      showToast(`Branch '${cleanName}' created on GitHub!`, 'success');
-      await fetchRepoDetails(state.currentRepo, state.currentRepoOwner);
-    } catch (error: any) {
-      showToast(`Failed to create branch: ${error.message || error}`, 'error');
+
+    const key = `local_details_${state.currentRepo}_branches`;
+    const existing = getLocalRepoDetails(state.currentRepo, "branches");
+    if (existing.some((b: any) => b.name === cleanName)) {
+      showToast(`Branch '${cleanName}' already exists.`, 'warning');
+      return;
     }
+    const headCommit = state.activeCommits[0]?.hash || 'head';
+    const newBranch = { name: cleanName, commitHash: headCommit, isDefault: false, behindBy: 0, aheadBy: 0 };
+    const updated = [...existing, newBranch];
+    try { localStorage.setItem(key, JSON.stringify(updated)); } catch (_) {}
+    setState(prev => ({ ...prev, activeBranches: updated }));
+    showToast(`Branch '${cleanName}' created locally!`, 'success');
   };
 
   const deleteBranch = async (branchName: string) => {
@@ -49,14 +56,8 @@ export const useBranchSlice = ({
     const isDefault = branchInfo?.isDefault || branchName === 'main' || branchName === 'master';
     const isActive = branchName === (state.currentBranch || 'main');
 
-    if (isDefault) {
-      showToast(`Cannot delete protected branch '${branchName}': Default branch is protected.`, 'error');
-      return;
-    }
-    if (isActive) {
-      showToast(`Cannot delete active branch '${branchName}': Switch to another branch first.`, 'error');
-      return;
-    }
+    if (isDefault) return showToast(`Cannot delete protected branch '${branchName}'.`, 'error');
+    if (isActive) return showToast(`Cannot delete active branch '${branchName}'. Switch branches first.`, 'error');
 
     if (state.githubToken && state.currentRepoOwner) {
       try {
@@ -76,9 +77,5 @@ export const useBranchSlice = ({
     }
   };
 
-  return {
-    switchBranch,
-    createLocalBranch,
-    deleteBranch,
-  };
+  return { switchBranch, createLocalBranch, deleteBranch };
 };

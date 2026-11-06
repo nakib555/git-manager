@@ -94,8 +94,10 @@ export const DirectoryTreeModal: React.FC<DirectoryTreeModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs select-none">
-      <div className="w-full max-w-lg max-h-[80vh] bg-surface-1 border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-60 flex items-end sm:items-center justify-center p-0 sm:p-4 select-none">
+      <div className="absolute inset-0 bg-black/75 backdrop-blur-xs cursor-pointer" onClick={onClose} aria-hidden="true" />
+      <div className="relative w-full max-w-lg max-h-[85vh] bg-surface-1 border-t sm:border border-border rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden z-10 pb-[env(safe-area-inset-bottom,0px)]">
+        <div className="w-10 h-1 bg-border rounded-full mx-auto mt-2.5 -mb-1 sm:hidden shrink-0" />
         <div className="h-14 px-5 border-b border-border flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2 font-bold text-sm text-text-primary">
             <FolderOpen size={18} className="text-amber-400" />
@@ -114,7 +116,7 @@ export const DirectoryTreeModal: React.FC<DirectoryTreeModalProps> = ({
           {renderTreeNode(directoryTree, 0)}
         </div>
 
-        <div className="p-4 border-t border-border bg-surface-2/40 flex justify-end gap-3 shrink-0">
+        <div className="p-4 pb-[calc(env(safe-area-inset-bottom,0px)+16px)] border-t border-border bg-surface-2/40 flex justify-end gap-3 shrink-0">
           <button
             type="button"
             onClick={onClose}

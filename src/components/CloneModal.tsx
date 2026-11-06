@@ -70,16 +70,21 @@ export const CloneModal = () => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-4 backdrop-blur-xs">
+    <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={closeModal} className="absolute inset-0 bg-black/65 backdrop-blur-xs cursor-pointer" aria-hidden="true" />
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-card border border-border rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+        initial={{ y: '100%', opacity: 0.8 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: '100%', opacity: 0 }}
+        transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+        role="dialog"
+        aria-modal="true"
+        className="relative bg-surface-1 border-t sm:border border-border rounded-t-3xl sm:rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh] z-10 pb-[env(safe-area-inset-bottom,0px)]"
       >
+        <div className="w-10 h-1 bg-border rounded-full mx-auto mt-2.5 -mb-1 sm:hidden shrink-0" />
         <CloneTabHeader activeTab={activeTab} setActiveTab={setActiveTab} onClose={closeModal} />
 
-        <div className="p-6 overflow-y-auto flex-1">
+        <div className="p-6 pb-[calc(env(safe-area-inset-bottom,0px)+24px)] overflow-y-auto flex-1">
           {activeTab === 'clone' && step === 'config' && (
             <div className="space-y-4">
               <div className="flex bg-main p-1 rounded-xl border border-border">

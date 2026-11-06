@@ -8,7 +8,7 @@ import { DesktopRepoWorkspace } from '../features/desktop/screens/DesktopRepoWor
 import { DesktopSettings } from '../features/desktop/screens/DesktopSettings';
 
 export const DesktopLayout: React.FC = () => {
-  const { currentScreen, setRepoSearchQuery, githubToken, connectGitHub } = useAppContext();
+  const { currentScreen, setRepoSearchQuery, githubToken, connectGitHub, openModal } = useAppContext();
   const [globalSearch, setGlobalSearch] = useState('');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
@@ -43,12 +43,20 @@ export const DesktopLayout: React.FC = () => {
                   <span className="text-text-muted">Exploring sample repositories & commit graphs. Live GitHub sync is enabled once authenticated.</span>
                 </div>
               </div>
-              <button
-                onClick={connectGitHub}
-                className="ml-3 px-3.5 py-1.5 bg-primary hover:opacity-90 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs shrink-0 active:scale-95"
-              >
-                <span>Connect GitHub</span>
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => openModal('oauth_setup')}
+                  className="px-3 py-1.5 bg-card hover:bg-hover border border-border text-text-main rounded-xl text-xs font-bold transition cursor-pointer shadow-xs active:scale-95"
+                >
+                  Enter Token (PAT)
+                </button>
+                <button
+                  onClick={connectGitHub}
+                  className="px-3.5 py-1.5 bg-primary hover:opacity-90 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+                >
+                  <span>Connect GitHub</span>
+                </button>
+              </div>
             </div>
           )}
 

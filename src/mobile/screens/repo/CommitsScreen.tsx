@@ -12,7 +12,7 @@ import { CommitsFilterDrawer } from './commits/CommitsFilterDrawer';
 import { CommitsDeleteHeadDialog } from './commits/CommitsDeleteHeadDialog';
 
 export const CommitsScreen: React.FC = () => {
-  const { activeCommits, showToast, openModal, githubUser, deleteCommit } = useAppContext();
+  const { activeCommits, showToast, openModal, githubUser, deleteCommit, currentBranch } = useAppContext();
   const [selectedCommit, setSelectedCommit] = useState<any | null>(null);
   const [selectedCommitForRestore, setSelectedCommitForRestore] = useState<any | null>(null);
   const [commitToDeleteHead, setCommitToDeleteHead] = useState<any | null>(null);
@@ -95,7 +95,15 @@ export const CommitsScreen: React.FC = () => {
 
       <CommitDetailModal commit={selectedCommit} onClose={() => setSelectedCommit(null)} />
       <CommitRestoreSheet isOpen={!!selectedCommitForRestore} commit={selectedCommitForRestore} onClose={() => setSelectedCommitForRestore(null)} />
-      <CommitsDeleteHeadDialog commit={commitToDeleteHead} isOpen={!!commitToDeleteHead} isDeleting={isDeletingHead} onClose={() => setCommitToDeleteHead(null)} onConfirm={handleDeleteConfirm} />
+      <CommitsDeleteHeadDialog
+        commit={commitToDeleteHead}
+        parentCommit={activeCommits[1]}
+        branchName={currentBranch || 'main'}
+        isOpen={!!commitToDeleteHead}
+        isDeleting={isDeletingHead}
+        onClose={() => setCommitToDeleteHead(null)}
+        onConfirm={handleDeleteConfirm}
+      />
       <CommitsFilterDrawer
         isOpen={isFilterSheetOpen} onClose={() => setIsFilterSheetOpen(false)} authors={distinctAuthors}
         selectedAuthor={authorFilter} setSelectedAuthor={setAuthorFilter} dateRange={dateRangeFilter} setDateRange={setDateRangeFilter}

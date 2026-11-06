@@ -106,16 +106,26 @@ export const ZipSyncModal: React.FC<{ isOpen: boolean; onClose: () => void }> = 
 
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-4 backdrop-blur-xs">
-      <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} className="bg-card border border-border rounded-2xl w-full max-w-4xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-black/65 backdrop-blur-xs cursor-pointer" aria-hidden="true" />
+      <motion.div
+        initial={{ y: '100%', opacity: 0.8 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: '100%', opacity: 0 }}
+        transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+        role="dialog"
+        aria-modal="true"
+        className="relative bg-surface-1 border-t sm:border border-border rounded-t-3xl sm:rounded-2xl w-full max-w-4xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh] z-10 pb-[env(safe-area-inset-bottom,0px)]"
+      >
+        <div className="w-10 h-1 bg-border rounded-full mx-auto mt-2.5 -mb-1 sm:hidden shrink-0" />
         <div className="p-4 border-b border-border flex items-center justify-between shrink-0">
-          <span className="font-bold text-sm text-text-main">AI Studio ZIP Synchronization Wizard</span>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-hover text-text-muted hover:text-text-main cursor-pointer"><X size={16} /></button>
+          <span className="font-bold text-sm text-text-primary">AI Studio ZIP Synchronization Wizard</span>
+          <button type="button" onClick={onClose} className="p-1.5 rounded-lg hover:bg-surface-2 text-text-tertiary hover:text-text-primary cursor-pointer"><X size={16} /></button>
         </div>
         {!commitSuccess && (
           <ZipSyncStepper currentStep={currentStep} onSelectStep={setCurrentStep} canNavigateToStep2={zipExtractedFiles.length > 0} canNavigateToStep3={zipExtractedFiles.length > 0} />
         )}
-        <div className="p-6 overflow-y-auto flex-1">
+        <div className="p-6 pb-[calc(env(safe-area-inset-bottom,0px)+24px)] overflow-y-auto flex-1">
           {commitSuccess ? (
             <ZipSyncSuccessView success={commitSuccess} onClose={onClose} />
           ) : (

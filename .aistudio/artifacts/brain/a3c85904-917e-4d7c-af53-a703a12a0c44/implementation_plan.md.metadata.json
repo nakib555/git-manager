@@ -1,0 +1,6 @@
+{
+  "summary": "Master Engineering Planning Specification to fix all non-working application functions (enabling dual-mode offline/local and GitHub execution across Repo, Branch, Commit, PR, Tag, and Diff workflows), implement interactive confirmation loaders with animated countdown and progress states, and enforce 'padding-bottom: env(safe-area-inset-bottom)' across all mobile bottom sheet containers.",
+  "updatedAt": "2026-11-06T15:29:53.865693975Z",
+  "requestFeedback": true,
+  "userFacing": true
+}

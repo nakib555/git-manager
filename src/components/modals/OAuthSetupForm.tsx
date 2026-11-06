@@ -6,12 +6,30 @@ export const OAuthSetupForm: React.FC = () => {
   const { setManualToken, closeModal } = useAppContext();
   const [token, setToken] = useState('');
   const [tab, setTab] = useState<'pat' | 'oauth'>('pat');
+  const [isValidating, setIsValidating] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const handlePatSubmit = (e: React.FormEvent) => {
+  const handlePatSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!token.trim()) return;
-    setManualToken(token.trim());
-    closeModal();
+    const cleanToken = token.trim();
+    if (!cleanToken) return;
+    setIsValidating(true);
+    setErrorMsg(null);
+    try {
+      const res = await fetch('https://api.github.com/user', {
+        headers: { Authorization: `Bearer ${cleanToken}`, Accept: 'application/vnd.github.v3+json' },
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || 'Invalid GitHub token. Please verify scopes.');
+      }
+      setManualToken(cleanToken);
+      closeModal();
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Failed to authenticate with GitHub.');
+    } finally {
+      setIsValidating(false);
+    }
   };
 
   return (
@@ -70,12 +88,28 @@ export const OAuthSetupForm: React.FC = () => {
             />
           </div>
 
+          {errorMsg && (
+            <p className="text-xs text-rose-500 font-medium bg-rose-500/10 border border-rose-500/20 rounded-xl p-2.5">
+              {errorMsg}
+            </p>
+          )}
+
           <button 
             type="submit" 
-            disabled={!token.trim()}
-            className="w-full bg-primary hover:bg-primary-hover text-white font-semibold text-sm py-3 rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
+            disabled={!token.trim() || isValidating}
+            className="w-full bg-primary hover:bg-primary-hover text-white font-semibold text-sm py-3 rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-2 cursor-pointer"
           >
-            <Check size={16} strokeWidth={3} /> Connect GitHub Account
+            {isValidating ? (
+              <span className="flex items-center gap-2">
+                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span>Verifying with GitHub...</span>
+              </span>
+            ) : (
+              <>
+                <Check size={16} strokeWidth={3} />
+                <span>Connect GitHub Account</span>
+              </>
+            )}
           </button>
         </form>
       ) : (
@@ -90,25 +124,16 @@ export const OAuthSetupForm: React.FC = () => {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <p className="font-semibold text-text-main">For Cloudflare Workers:</p>
-            <div className="bg-main border border-border p-2.5 rounded-xl font-mono text-[11px] text-primary space-y-1 overflow-x-auto">
-              <p>npx wrangler secret put GITHUB_CLIENT_ID</p>
-              <p>npx wrangler secret put GITHUB_CLIENT_SECRET</p>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <p className="font-semibold text-text-main">For Local Development / Cloud Run:</p>
+          <div className="space-y-1.5">
+            <p className="font-semibold text-text-main">Configure OAuth Secrets:</p>
             <p className="text-text-muted">
-              Add <code className="text-text-main font-mono bg-hover px-1 rounded">GITHUB_CLIENT_ID</code> and <code className="text-text-main font-mono bg-hover px-1 rounded">GITHUB_CLIENT_SECRET</code> to your <code className="text-text-main font-mono bg-hover px-1 rounded">.env</code> file.
+              Add <code className="text-text-main font-mono bg-hover px-1 rounded">GITHUB_CLIENT_ID</code> and <code className="text-text-main font-mono bg-hover px-1 rounded">GITHUB_CLIENT_SECRET</code> to your <code className="text-text-main font-mono bg-hover px-1 rounded">.env</code> file or host environment.
             </p>
           </div>
-
           <button 
             type="button" 
             onClick={() => setTab('pat')}
-            className="w-full bg-hover hover:bg-border text-text-main font-semibold text-xs py-2.5 rounded-xl transition-all mt-2"
+            className="w-full bg-hover hover:bg-border text-text-main font-semibold text-xs py-2.5 rounded-xl transition-all mt-2 cursor-pointer"
           >
             Use Personal Access Token Instead
           </button>

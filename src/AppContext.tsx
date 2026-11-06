@@ -37,6 +37,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   });
   const prSlice = usePRSlice({
     state,
+    setState,
     showToast: uiSlice.showToast,
     fetchRepoDetails: repoSlice.fetchRepoDetails,
   });

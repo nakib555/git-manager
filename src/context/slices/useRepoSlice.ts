@@ -2,6 +2,7 @@ import { AppState } from '../../types';
 import { getLocalRepoDetails } from '../contextUtils';
 import { deleteRemoteGitHubRepo } from '../gitMutationServices';
 import { executeFetchGitHubData, executeFetchRepoDetails } from './repoSliceServices';
+import { buildInitialLocalRepo } from './repoCreationHelper';
 
 interface UseRepoSliceParams {
   state: AppState;
@@ -15,13 +16,9 @@ export const useRepoSlice = ({ state, setState, showToast }: UseRepoSliceParams)
     try {
       const data = await executeFetchGitHubData(token, state, pageOverride, searchOverride);
       setState(prev => ({
-        ...prev,
-        githubUser: data.sanitizedUser,
-        githubRepos: data.githubRepos,
-        currentRepo: data.currentRepo,
-        currentRepoOwner: data.currentRepoOwner,
-        repoTotalPages: data.repoTotalPages,
-        isFetchingRepos: false,
+        ...prev, githubUser: data.sanitizedUser, githubRepos: data.githubRepos,
+        currentRepo: data.currentRepo, currentRepoOwner: data.currentRepoOwner,
+        repoTotalPages: data.repoTotalPages, isFetchingRepos: false,
       }));
     } catch (error: any) {
       if (!isBackground) showToast(`Error loading GitHub data: ${error.message || error}`, 'error');
@@ -104,10 +101,8 @@ export const useRepoSlice = ({ state, setState, showToast }: UseRepoSliceParams)
     const parts = cleanUrl.split('/');
     const name = parts[parts.length - 1] || 'cloned-repo';
     const owner = parts.length >= 2 ? parts[parts.length - 2] : 'custom-owner';
-
     addRecentClone({ name, url: repo.url, dest: repo.destFolder, timestamp: Date.now() });
     const newRepo = { id: Date.now(), name, private: false, description: `Cloned from ${repo.url}`, language: 'TypeScript', pushed_at: new Date().toISOString(), owner: { login: owner } };
-
     setState(prev => {
       const newRepos = [newRepo, ...prev.githubRepos.filter(r => r.name !== name)];
       localStorage.setItem("localRepos", JSON.stringify(newRepos));
@@ -117,32 +112,32 @@ export const useRepoSlice = ({ state, setState, showToast }: UseRepoSliceParams)
   };
 
   const createLocalRepo = async (repo: { name: string; desc: string; isPrivate: boolean; lang: string }) => {
-    if (!state.githubToken) {
-      showToast("GitHub token is required to create a repository.");
+    const cleanName = repo.name.trim();
+    if (!cleanName) return;
+    if (state.githubToken) {
+      try {
+        const headers = { Authorization: `Bearer ${state.githubToken}`, "Content-Type": "application/json", Accept: "application/vnd.github.v3+json" };
+        const res = await fetch("https://api.github.com/user/repos", {
+          method: "POST", headers, body: JSON.stringify({ name: cleanName, description: repo.desc, private: repo.isPrivate, auto_init: true }),
+        });
+        if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || `Status ${res.status}`);
+        showToast(`Repository '${cleanName}' created on GitHub!`, 'success');
+        await fetchGitHubData(state.githubToken);
+      } catch (e: any) { showToast(`Failed to create repository: ${e.message || e}`, 'error'); }
       return;
     }
-    try {
-      const headers = { Authorization: `Bearer ${state.githubToken}`, "Content-Type": "application/json", Accept: "application/vnd.github.v3+json" };
-      const res = await fetch("https://api.github.com/user/repos", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ name: repo.name, description: repo.desc, private: repo.isPrivate, auto_init: true }),
-      });
-      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || `Status ${res.status}`);
-      showToast(`Repository '${repo.name}' created on GitHub!`);
-      await fetchGitHubData(state.githubToken);
-    } catch (e: any) {
-      showToast(`Failed to create repository: ${e.message || e}`);
-    }
+    const owner = state.githubUser?.login || 'local-developer';
+    const { newRepoItem, initialCommit, initialFiles, initialBranches } = buildInitialLocalRepo(cleanName, repo.desc, repo.isPrivate, repo.lang, owner);
+    setState(prev => {
+      const updated = [newRepoItem, ...prev.githubRepos.filter(r => r.name !== cleanName)];
+      localStorage.setItem("localRepos", JSON.stringify(updated));
+      return {
+        ...prev, githubRepos: updated, currentRepo: cleanName, currentRepoOwner: owner, currentBranch: 'main',
+        activeCommits: [initialCommit], activeFiles: initialFiles, activeBranches: initialBranches, activePRs: [],
+      };
+    });
+    showToast(`Repository '${cleanName}' created locally!`, 'success');
   };
 
-  return {
-    fetchGitHubData,
-    fetchRepoDetails,
-    openRepo,
-    deleteRepo,
-    addRecentClone,
-    cloneRepository,
-    createLocalRepo,
-  };
+  return { fetchGitHubData, fetchRepoDetails, openRepo, deleteRepo, addRecentClone, cloneRepository, createLocalRepo };
 };
