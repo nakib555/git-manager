@@ -1,7 +1,7 @@
 import React from 'react';
-import { Star, GitFork, Lock, Globe, Clock, ChevronRight, FolderGit2, Trash2 } from 'lucide-react';
+import { Lock, Globe, ChevronRight, FolderGit2, Trash2 } from 'lucide-react';
 import { GitHubRepo } from '../../types';
-import { formatRelativeTime } from '../utils/formatters';
+import { RepoCardFooter } from './repoCard/RepoCardFooter';
 
 export interface RepoCardProps {
   repo: GitHubRepo;
@@ -9,56 +9,6 @@ export interface RepoCardProps {
   isActive?: boolean;
   onDelete?: (repo: GitHubRepo) => void;
 }
-
-const getLanguageColor = (lang?: string | null): string => {
-  switch (lang?.toLowerCase()) {
-    case 'typescript':
-      return '#3178C6';
-    case 'javascript':
-      return '#F7DF1E';
-    case 'python':
-      return '#3572A5';
-    case 'rust':
-      return '#DEA584';
-    case 'go':
-      return '#00ADD8';
-    case 'html':
-      return '#E34C26';
-    case 'css':
-      return '#563D7C';
-    case 'c++':
-    case 'cpp':
-      return '#F34B7D';
-    case 'c':
-      return '#555555';
-    case 'c#':
-    case 'csharp':
-      return '#178600';
-    case 'java':
-      return '#B07219';
-    case 'kotlin':
-      return '#A97BFF';
-    case 'swift':
-      return '#F05138';
-    case 'ruby':
-      return '#701516';
-    case 'php':
-      return '#4F5D95';
-    case 'shell':
-    case 'bash':
-      return '#89E051';
-    case 'dart':
-      return '#00B4AB';
-    case 'vue':
-      return '#41B883';
-    case 'svelte':
-      return '#FF3E00';
-    case 'markdown':
-      return '#083FA1';
-    default:
-      return '#8B949E';
-  }
-};
 
 export const RepoCard: React.FC<RepoCardProps> = ({
   repo,
@@ -86,7 +36,6 @@ export const RepoCard: React.FC<RepoCardProps> = ({
           : 'border-border/80 hover:border-accent/50 hover:bg-surface-2/40'
       }`}
     >
-      {/* Top row: Folder Glyph, Name/Desc & Privacy Badge */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3 min-w-0">
           <div className="w-9 h-9 rounded-xl bg-surface-2 border border-border flex items-center justify-center text-text-primary shrink-0 mt-0.5 group-hover:border-text-primary/30 transition-colors">
@@ -115,7 +64,6 @@ export const RepoCard: React.FC<RepoCardProps> = ({
           </div>
         </div>
 
-        {/* Right: Clean Unboxed Privacy Metadata, Delete Action & Chevron */}
         <div className="flex items-center gap-1.5 shrink-0">
           <span className="flex items-center gap-1 text-[11px] font-mono text-text-tertiary">
             {repo.private ? <Lock size={11} /> : <Globe size={11} />}
@@ -139,37 +87,7 @@ export const RepoCard: React.FC<RepoCardProps> = ({
         </div>
       </div>
 
-      {/* Bottom metadata row: 8-point spatial rhythm with tabular-nums */}
-      <div className="flex items-center justify-between text-xs text-text-tertiary font-mono pt-2.5 border-t border-border/50">
-        {/* Language Pill */}
-        <div className="flex items-center gap-1.5 min-w-0">
-          <span
-            className="w-2 h-2 rounded-full shrink-0 shadow-2xs"
-            style={{ backgroundColor: getLanguageColor(repo.language) }}
-          />
-          <span className="truncate max-w-[120px] text-text-secondary text-[11px] font-medium font-sans">
-            {repo.language || 'Markdown'}
-          </span>
-        </div>
-
-        {/* Stars, Forks & Updated */}
-        <div className="flex items-center gap-3 shrink-0 tabular-nums text-[11px]">
-          <span className="flex items-center gap-1 text-text-secondary">
-            <Star size={11} className="text-[#D29922] fill-[#D29922]/20 shrink-0" />
-            <span className="font-bold">{repo.stargazers_count || 0}</span>
-          </span>
-
-          <span className="flex items-center gap-1 text-text-tertiary">
-            <GitFork size={11} className="shrink-0" />
-            <span>{repo.forks_count || 0}</span>
-          </span>
-
-          <span className="flex items-center gap-1 text-text-tertiary">
-            <Clock size={11} className="shrink-0" />
-            <span className="font-sans">{formatRelativeTime(repo.pushed_at || repo.updated_at || '')}</span>
-          </span>
-        </div>
-      </div>
+      <RepoCardFooter repo={repo} />
     </div>
   );
 };

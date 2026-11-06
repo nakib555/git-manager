@@ -1,0 +1,6 @@
+{
+  "summary": "Master Engineering Planning Specification for comprehensive codebase, architectural, and visual cleanups across the Git Manager platform. Eliminates dead root assets (bun.lock, unignored dev-dist), standardizes desktop screen folder hierarchies, activates unreferenced sorting and clone services, polishes SaaS dashboard styling to strict zero-pill standards, and enforces the <= 150 LOC ceiling across all files.",
+  "updatedAt": "2026-11-06T14:39:29.130102272Z",
+  "requestFeedback": true,
+  "userFacing": true
+}

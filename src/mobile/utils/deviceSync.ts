@@ -1,51 +1,13 @@
-export interface LocalDeviceRepoSync {
-  repoName: string;
-  repoOwner: string;
-  localPath: string;
-  lastSyncedAt: number; // Unix timestamp ms
-  syncedBranch: string;
-  syncedSha: string;
-  status: 'synced' | 'diverged' | 'syncing';
-  fileCount: number;
-  sizeBytes: number;
-}
+import { LocalDeviceRepoSync, DEVICE_SYNC_STORAGE_KEY, INITIAL_DEVICE_SYNC_REPOS } from './deviceSyncDefaults';
 
-const DEVICE_SYNC_STORAGE_KEY = 'git_manager_device_synced_repos';
+export type { LocalDeviceRepoSync };
 
-/**
- * Retrieve all repositories currently registered as saved/cloned on device.
- */
 export function getDeviceSyncedRepos(): Record<string, LocalDeviceRepoSync> {
   try {
     const raw = localStorage.getItem(DEVICE_SYNC_STORAGE_KEY);
     if (!raw) {
-      // Default initial sync state for sample repos
-      const initial: Record<string, LocalDeviceRepoSync> = {
-        'git-manager': {
-          repoName: 'git-manager',
-          repoOwner: 'nakib555',
-          localPath: '/Documents/Projects/git-manager',
-          lastSyncedAt: Date.now() - 1000 * 60 * 18, // 18m ago
-          syncedBranch: 'main',
-          syncedSha: '81fcda9',
-          status: 'synced',
-          fileCount: 42,
-          sizeBytes: 1024 * 380, // 380 KB
-        },
-        'Excel-grid': {
-          repoName: 'Excel-grid',
-          repoOwner: 'nakib555',
-          localPath: '/Documents/Projects/Excel-grid',
-          lastSyncedAt: Date.now() - 1000 * 60 * 60 * 4, // 4h ago
-          syncedBranch: 'main',
-          syncedSha: '4c81a2f',
-          status: 'synced',
-          fileCount: 28,
-          sizeBytes: 1024 * 210,
-        }
-      };
-      localStorage.setItem(DEVICE_SYNC_STORAGE_KEY, JSON.stringify(initial));
-      return initial;
+      localStorage.setItem(DEVICE_SYNC_STORAGE_KEY, JSON.stringify(INITIAL_DEVICE_SYNC_REPOS));
+      return INITIAL_DEVICE_SYNC_REPOS;
     }
     return JSON.parse(raw);
   } catch (err) {
@@ -54,9 +16,6 @@ export function getDeviceSyncedRepos(): Record<string, LocalDeviceRepoSync> {
   }
 }
 
-/**
- * Checks if a repository exists on device by name or remote URL.
- */
 export function checkDeviceRepoExists(repoName: string, repoOwner?: string): LocalDeviceRepoSync | null {
   if (!repoName) return null;
   const store = getDeviceSyncedRepos();
@@ -70,7 +29,6 @@ export function checkDeviceRepoExists(repoName: string, repoOwner?: string): Loc
     }
   }
 
-  // Also check recentClones from localStorage if present
   try {
     const recentRaw = localStorage.getItem('recentClones');
     if (recentRaw) {
@@ -95,9 +53,6 @@ export function checkDeviceRepoExists(repoName: string, repoOwner?: string): Loc
   return null;
 }
 
-/**
- * Registers or updates a repository in local device storage.
- */
 export function registerDeviceClone(params: {
   repoName: string;
   repoOwner: string;
@@ -123,9 +78,6 @@ export function registerDeviceClone(params: {
   return entry;
 }
 
-/**
- * Simulates differential synchronization of an existing on-device repository.
- */
 export async function syncDeviceRepo(
   repoName: string,
   onProgress?: (step: string, percent: number) => void
@@ -143,7 +95,6 @@ export async function syncDeviceRepo(
     sizeBytes: 1024 * 350,
   };
 
-  // Differential sync pipeline simulation
   onProgress?.('Fetching remote refs and commit delta...', 25);
   await new Promise(r => setTimeout(r, 250));
 

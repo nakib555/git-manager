@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { AlertTriangle, Trash2, X, Loader2 } from 'lucide-react';
+import { Trash2, Loader2 } from 'lucide-react';
 import { useAppContext } from '../AppContext';
+import { DeleteRepoHeader } from './DeleteRepoHeader';
 
 interface DeleteRepoModalProps {
   isOpen: boolean;
@@ -22,8 +23,6 @@ export const DeleteRepoModal: React.FC<DeleteRepoModalProps> = ({
 
   const owner = repoOwner || githubUser?.login || 'user';
   const fullRepoId = `${owner}/${repoName}`;
-  
-  // Accept either just the repo name or the full owner/name
   const isMatch = confirmInput.trim() === repoName || confirmInput.trim() === fullRepoId;
 
   const handleDelete = async (e: React.FormEvent) => {
@@ -57,7 +56,6 @@ export const DeleteRepoModal: React.FC<DeleteRepoModalProps> = ({
           aria-labelledby="delete-repo-title"
           className="fixed inset-0 z-[250] flex items-center justify-center p-4 sm:p-6"
         >
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -66,7 +64,6 @@ export const DeleteRepoModal: React.FC<DeleteRepoModalProps> = ({
             className="absolute inset-0 bg-black/75 backdrop-blur-[2px]"
           />
 
-          {/* Modal Content */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -75,31 +72,8 @@ export const DeleteRepoModal: React.FC<DeleteRepoModalProps> = ({
             className="relative w-full max-w-md bg-card border border-danger/40 rounded-2xl shadow-2xl overflow-hidden z-10 flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header / Warning Banner */}
-            <div className="p-5 border-b border-border bg-danger/10 flex items-start gap-3.5">
-              <div className="w-10 h-10 rounded-xl bg-danger/15 text-danger border border-danger/30 flex items-center justify-center shrink-0">
-                <AlertTriangle size={20} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h2 id="delete-repo-title" className="text-base font-bold text-text-main flex items-center gap-2">
-                  <span>Delete Repository</span>
-                </h2>
-                <p className="text-xs text-text-muted mt-0.5">
-                  GitHub & Git Danger Zone specification
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={handleModalClose}
-                disabled={isDeleting}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-main hover:bg-hover transition cursor-pointer shrink-0 disabled:opacity-40"
-                aria-label="Close dialog"
-              >
-                <X size={16} />
-              </button>
-            </div>
+            <DeleteRepoHeader onClose={handleModalClose} isDeleting={isDeleting} />
 
-            {/* Warning Body */}
             <form onSubmit={handleDelete} className="p-5 space-y-4">
               <div className="text-xs text-text-muted space-y-2 leading-relaxed">
                 <p>
@@ -107,22 +81,12 @@ export const DeleteRepoModal: React.FC<DeleteRepoModalProps> = ({
                   <span className="font-mono font-bold text-text-main bg-hover px-1.5 py-0.5 rounded border border-border">
                     {fullRepoId}
                   </span>
-                  , including all:
+                  , including all branches, tags, commits, PRs, and workstation staging.
                 </p>
-                <ul className="list-disc pl-5 space-y-1 text-text-muted/90 text-[11px]">
-                  <li>Branches, tags, and commits</li>
-                  <li>Pull requests, issues, and discussions</li>
-                  <li>Webhooks, keys, and branch protection rules</li>
-                  <li>Local workstation staging and cached files</li>
-                </ul>
               </div>
 
-              {/* Type-to-Confirm Input */}
               <div className="space-y-1.5 pt-2">
-                <label 
-                  htmlFor="confirm-repo-input" 
-                  className="block text-xs font-semibold text-text-main"
-                >
+                <label htmlFor="confirm-repo-input" className="block text-xs font-semibold text-text-main">
                   Please type <span className="font-mono text-danger font-bold">{repoName}</span> to confirm:
                 </label>
                 <input
@@ -137,7 +101,6 @@ export const DeleteRepoModal: React.FC<DeleteRepoModalProps> = ({
                 />
               </div>
 
-              {/* Action Buttons */}
               <div className="flex items-center gap-3 pt-3">
                 <button
                   type="button"

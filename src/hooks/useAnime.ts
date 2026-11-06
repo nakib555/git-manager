@@ -1,13 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { animate, stagger } from 'animejs';
+import { checkPrefersReducedMotion, useCountUp } from './useCountUp';
 
-/**
- * Checks if the user prefers reduced motion
- */
-export function checkPrefersReducedMotion(): boolean {
-  if (typeof window === 'undefined') return false;
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
+export { checkPrefersReducedMotion, useCountUp };
 
 /**
  * Hook to animate an element ref using anime.js
@@ -100,50 +95,7 @@ export function useStaggerList<T extends HTMLElement = HTMLDivElement>(
 }
 
 /**
- * Smooth numeric count up animation using anime.js
- */
-export function useCountUp(
-  targetValue: number,
-  duration = 800,
-  formatter?: (val: number) => string
-) {
-  const ref = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    if (!ref.current) return;
-    const isReduced = checkPrefersReducedMotion();
-    if (isReduced) {
-      ref.current.textContent = formatter ? formatter(targetValue) : String(targetValue);
-      return;
-    }
-
-    const obj = { val: 0 };
-    const anim = animate(obj, {
-      val: targetValue,
-      duration,
-      ease: 'outExpo',
-      onUpdate: () => {
-        if (ref.current) {
-          const rounded = Math.round(obj.val);
-          ref.current.textContent = formatter ? formatter(rounded) : String(rounded);
-        }
-      },
-    });
-
-    return () => {
-      try {
-        anim.revert();
-      } catch {
-        // Safe fallback
-      }
-    };
-  }, [targetValue, duration, formatter]);
-
-  return ref;
-}
-
-/**
- * Flash or pulse highlight on action completion (e.g. commit created, branch switched)
+ * Flash or pulse highlight on action completion
  */
 export function triggerPulseHighlight(element: HTMLElement, color = 'rgba(99, 102, 241, 0.35)') {
   if (checkPrefersReducedMotion() || !element) return;
