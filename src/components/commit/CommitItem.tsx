@@ -2,6 +2,7 @@ import React, { memo } from 'react';
 import { motion } from 'motion/react';
 import { MoreVertical } from 'lucide-react';
 import { CiCdBadge } from './CiCdStatus';
+import { formatRelativeTime } from '../../mobile/utils/formatters';
 
 export const CommitItem = memo(({ commit, isSelected, isLatest, onSelect, onActionClick, style, isDesktop }: any) => {
   return (
@@ -47,7 +48,7 @@ export const CommitItem = memo(({ commit, isSelected, isLatest, onSelect, onActi
             </div>
             <div className="flex justify-between text-[9px] text-text-muted mt-2">
               <span className="font-semibold">{commit.author}</span>
-              <span className="font-mono tabular-nums">{commit.time}</span>
+              <span className="font-mono tabular-nums">{formatRelativeTime(commit.timestamp || commit.date, commit.time)}</span>
             </div>
           </>
         ) : (
@@ -79,7 +80,7 @@ export const CommitItem = memo(({ commit, isSelected, isLatest, onSelect, onActi
                     )}
                   </div>
                   <span className="text-[10px] font-bold text-text-main/80 truncate max-w-[100px]">{commit.author}</span>
-                  <span className="text-[10px] text-text-muted font-mono tabular-nums">{commit.time}</span>
+                  <span className="text-[10px] text-text-muted font-mono tabular-nums">{formatRelativeTime(commit.timestamp || commit.date, commit.time)}</span>
                 </div>
                 <div className="flex items-center gap-2 text-[10px] font-mono tabular-nums">
                   <span className="text-success font-bold">{commit.add}</span>

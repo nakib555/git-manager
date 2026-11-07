@@ -13,6 +13,7 @@ interface FileViewerModalProps {
   contentTab: 'code' | 'history' | 'info';
   isFullscreen: boolean;
   isCopied: boolean;
+  isOwner?: boolean;
   onSetContentTab: (tab: 'code' | 'history' | 'info') => void;
   onToggleFullscreen: () => void;
   onClose: () => void;
@@ -32,6 +33,7 @@ export const FileViewerModal: React.FC<FileViewerModalProps> = ({
   contentTab,
   isFullscreen,
   isCopied,
+  isOwner = true,
   onSetContentTab,
   onToggleFullscreen,
   onClose,
@@ -73,6 +75,7 @@ export const FileViewerModal: React.FC<FileViewerModalProps> = ({
           isFullscreen={isFullscreen}
           isCopied={isCopied}
           activeFileLoading={activeFileLoading}
+          isOwner={isOwner}
           onSetContentTab={onSetContentTab}
           onToggleFullscreen={onToggleFullscreen}
           onClose={onClose}

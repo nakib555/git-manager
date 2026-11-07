@@ -35,28 +35,11 @@ const DELETE_BRANCH_STEPS: WorkflowStep[] = [
 ];
 
 export const BranchDetailModal: React.FC<BranchDetailModalProps> = ({
-  selectedBranch,
-  currentBranch,
-  activeTab,
-  activeCommits,
-  onTabChange,
-  onClose,
-  onSelectCommit,
-  onCreatePR,
-  onSwitch,
-  onDelete,
+  selectedBranch, currentBranch, activeTab, activeCommits,
+  onTabChange, onClose, onSelectCommit, onCreatePR, onSwitch, onDelete,
 }) => {
-  const switchWorkflow = useActionWorkflow({
-    steps: SWITCH_STEPS,
-    autoCloseDelay: 2000,
-    onClose,
-  });
-
-  const deleteWorkflow = useActionWorkflow({
-    steps: DELETE_BRANCH_STEPS,
-    autoCloseDelay: 2000,
-    onClose,
-  });
+  const switchWorkflow = useActionWorkflow({ steps: SWITCH_STEPS, autoCloseDelay: 2000, onClose });
+  const deleteWorkflow = useActionWorkflow({ steps: DELETE_BRANCH_STEPS, autoCloseDelay: 2000, onClose });
 
   const handleSwitch = () => {
     if (!selectedBranch || switchWorkflow.isBusy) return;
@@ -65,10 +48,7 @@ export const BranchDetailModal: React.FC<BranchDetailModalProps> = ({
       return {
         title: `Switched to ${selectedBranch}`,
         subtitle: `Branch ${selectedBranch} is now the active HEAD.`,
-        metaItems: [
-          { label: 'Branch', value: selectedBranch },
-          { label: 'HEAD', value: 'Active' },
-        ],
+        metaItems: [{ label: 'Branch', value: selectedBranch }, { label: 'HEAD', value: 'Active' }],
       };
     });
   };
@@ -80,10 +60,7 @@ export const BranchDetailModal: React.FC<BranchDetailModalProps> = ({
       return {
         title: `Branch Deleted`,
         subtitle: `Branch ${selectedBranch} has been purged from the repository.`,
-        metaItems: [
-          { label: 'Branch', value: selectedBranch },
-          { label: 'Status', value: 'Purged' },
-        ],
+        metaItems: [{ label: 'Branch', value: selectedBranch }, { label: 'Status', value: 'Purged' }],
       };
     });
   };
@@ -96,56 +73,39 @@ export const BranchDetailModal: React.FC<BranchDetailModalProps> = ({
       {selectedBranch && (
         <div className="fixed inset-0 z-50 flex flex-col justify-end">
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={() => !isWorkflowActive && onClose()}
             className="absolute inset-0 bg-black/75 backdrop-blur-[2px]"
           />
           <motion.div
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
+            initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 28, stiffness: 320 }}
             className="relative w-full bg-surface-1 border-t border-border-accent rounded-t-2xl shadow-2xl z-10 max-h-[90vh] flex flex-col overflow-hidden pb-[env(safe-area-inset-bottom,0px)]"
           >
             <BranchModalHeader
-              selectedBranch={selectedBranch}
-              currentBranch={currentBranch}
-              activeTab={activeTab}
-              onTabChange={onTabChange}
-              onClose={onClose}
+              selectedBranch={selectedBranch} currentBranch={currentBranch}
+              activeTab={activeTab} onTabChange={onTabChange} onClose={onClose}
             />
             {isWorkflowActive ? (
               <div className="p-5 flex-1 overflow-y-auto">
                 <ActionVerificationTracker
-                  phase={activeWorkflow.phase}
-                  steps={activeWorkflow.steps}
-                  activeStepIndex={activeWorkflow.activeStepIndex}
-                  resultSummary={activeWorkflow.resultSummary}
-                  errorMsg={activeWorkflow.errorMsg}
-                  countdownRemaining={activeWorkflow.countdownRemaining}
-                  onDismissNow={activeWorkflow.dismissNow}
-                  onBackToEdit={activeWorkflow.reset}
+                  phase={activeWorkflow.phase} steps={activeWorkflow.steps}
+                  activeStepIndex={activeWorkflow.activeStepIndex} resultSummary={activeWorkflow.resultSummary}
+                  errorMsg={activeWorkflow.errorMsg} countdownRemaining={activeWorkflow.countdownRemaining}
+                  onDismissNow={activeWorkflow.dismissNow} onBackToEdit={activeWorkflow.reset}
                   onRetry={switchWorkflow.phase !== 'idle' ? handleSwitch : handleDelete}
                 />
               </div>
             ) : (
               <>
                 <BranchModalTabs
-                  activeTab={activeTab}
-                  selectedBranch={selectedBranch}
-                  activeCommits={activeCommits}
-                  onSelectCommit={onSelectCommit}
-                  onCreatePR={onCreatePR}
+                  activeTab={activeTab} selectedBranch={selectedBranch}
+                  activeCommits={activeCommits} onSelectCommit={onSelectCommit} onCreatePR={onCreatePR}
                 />
                 <BranchModalFooter
-                  selectedBranch={selectedBranch}
-                  currentBranch={currentBranch}
-                  isSwitching={switchWorkflow.isBusy}
-                  isDeleting={deleteWorkflow.isBusy}
-                  onSwitch={handleSwitch}
-                  onDelete={handleDelete}
+                  selectedBranch={selectedBranch} currentBranch={currentBranch}
+                  isSwitching={switchWorkflow.isBusy} isDeleting={deleteWorkflow.isBusy}
+                  onSwitch={handleSwitch} onDelete={handleDelete}
                 />
               </>
             )}

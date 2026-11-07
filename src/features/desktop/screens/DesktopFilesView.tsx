@@ -1,19 +1,29 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '../../../AppContext';
-import { Search, Home, Copy, Check, FileCode } from 'lucide-react';
+import { Search, Home, Copy, Check, Lock } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus, vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { fetchFileContentSafe } from '../../../mobile/utils/gitApi';
+import { isRepositoryOwnedByUser } from '../../../mobile/utils/repoOwnership';
 import { getCodeLanguage } from '../utils/desktopUtils';
 import { DesktopFileTreeItem } from './DesktopFileTreeItem';
 
 export const DesktopFilesView: React.FC = () => {
-  const { currentRepo, currentRepoOwner, currentBranch, activeFiles, githubToken, showToast, theme } = useAppContext();
+  const { currentRepo, currentRepoOwner, currentBranch, activeFiles, githubToken, githubUser, githubRepos, showToast, theme } = useAppContext();
   const [selectedFile, setSelectedFile] = useState<any | null>(null);
   const [fileContent, setFileContent] = useState<string>('');
   const [isLoadingFile, setIsLoadingFile] = useState<boolean>(false);
   const [fileSearch, setFileSearch] = useState<string>('');
   const [isCopied, setIsCopied] = useState<boolean>(false);
+
+  const isOwner = useMemo(() => {
+    return isRepositoryOwnedByUser({
+      repoName: currentRepo,
+      repoOwner: currentRepoOwner,
+      userLogin: githubUser?.login,
+      reposList: githubRepos,
+    });
+  }, [currentRepo, currentRepoOwner, githubUser?.login, githubRepos]);
 
   const treeNodes = useMemo(() => {
     const list = activeFiles || [];
@@ -97,6 +107,14 @@ export const DesktopFilesView: React.FC = () => {
             <span className="font-semibold text-text-main">{currentRepo}</span>
             <span className="text-border">/</span>
             <span className="font-mono text-primary truncate">{activePath}</span>
+            <span className="text-border">·</span>
+            {isOwner ? (
+              <span className="text-[10px] text-text-muted font-mono">Own Repo</span>
+            ) : (
+              <span className="text-[10px] text-amber-400 font-mono flex items-center gap-1">
+                <Lock size={10} /> Read-only (Global)
+              </span>
+            )}
           </div>
           <button
             onClick={() => {

@@ -8,7 +8,10 @@ const DEFAULT_STEPS: WorkflowStep[] = [
 ];
 
 export function useActionWorkflow(options: ActionWorkflowOptions = {}) {
-  const { steps = DEFAULT_STEPS, autoCloseDelay = 2000, onSuccess, onClose } = options;
+  const { steps = DEFAULT_STEPS, autoCloseDelay = 2000 } = options;
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
+
   const [phase, setPhase] = useState<WorkflowPhase>('idle');
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [errorMsg, setErrorMsg] = useState('');
@@ -21,6 +24,8 @@ export function useActionWorkflow(options: ActionWorkflowOptions = {}) {
   const cleanup = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
     if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+    timerRef.current = null;
+    countdownIntervalRef.current = null;
   }, []);
 
   useEffect(() => cleanup, [cleanup]);
@@ -45,6 +50,10 @@ export function useActionWorkflow(options: ActionWorkflowOptions = {}) {
         stepDelay(380),
       ]);
 
+      if (actionResult === false) {
+        throw new Error('Operation was rejected or could not be completed.');
+      }
+
       setPhase('verifying');
       setActiveStepIndex(2);
       await stepDelay(260);
@@ -55,16 +64,16 @@ export function useActionWorkflow(options: ActionWorkflowOptions = {}) {
 
       setResultSummary(summary);
       setPhase('success');
-      onSuccess?.();
+      optionsRef.current.onSuccess?.();
 
-      // Start auto-close countdown
-      const totalSeconds = Math.ceil(autoCloseDelay / 1000);
+      const delay = optionsRef.current.autoCloseDelay ?? 2000;
+      const totalSeconds = Math.max(1, Math.ceil(delay / 1000));
       setCountdownRemaining(totalSeconds);
 
       countdownIntervalRef.current = setInterval(() => {
         setCountdownRemaining((prev) => {
           if (prev <= 1) {
-            clearInterval(countdownIntervalRef.current);
+            if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
             return 0;
           }
           return prev - 1;
@@ -72,15 +81,15 @@ export function useActionWorkflow(options: ActionWorkflowOptions = {}) {
       }, 1000);
 
       timerRef.current = setTimeout(() => {
-        onClose?.();
-      }, autoCloseDelay);
+        optionsRef.current.onClose?.();
+      }, delay);
 
     } catch (err: any) {
       cleanup();
       setPhase('error');
-      setErrorMsg(err?.message || 'Operation failed. Please try again.');
+      setErrorMsg(err?.message || 'Operation failed. Please verify input and try again.');
     }
-  }, [actionFnWrapper(onSuccess, onClose, autoCloseDelay, cleanup)]);
+  }, [cleanup]);
 
   const reset = useCallback(() => {
     cleanup();
@@ -92,8 +101,8 @@ export function useActionWorkflow(options: ActionWorkflowOptions = {}) {
 
   const dismissNow = useCallback(() => {
     cleanup();
-    onClose?.();
-  }, [cleanup, onClose]);
+    optionsRef.current.onClose?.();
+  }, [cleanup]);
 
   return {
     phase,
@@ -107,8 +116,4 @@ export function useActionWorkflow(options: ActionWorkflowOptions = {}) {
     reset,
     dismissNow,
   };
-}
-
-function actionFnWrapper(onSuccess?: () => void, onClose?: () => void, delay?: number, cleanup?: () => void) {
-  return [onSuccess, onClose, delay, cleanup];
 }

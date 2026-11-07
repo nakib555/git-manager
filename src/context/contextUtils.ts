@@ -1,18 +1,9 @@
 import { GitHubRepo, GitHubUser, GitCommitNode, Screen, AppState } from '../types';
 import { DEMO_USER, DEMO_REPOSITORIES, DEMO_COMMITS, DEMO_BRANCHES, DEMO_PRS, DEMO_FILES } from '../data/demoData';
+import { formatRelativeTime } from '../mobile/utils/formatters';
 
-export const formatTime = (dateStr: string) => {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffInMs = now.getTime() - date.getTime();
-  const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
-  if (diffInHours < 1) {
-    const diffInMins = Math.floor(diffInMs / (1000 * 60));
-    return `${Math.max(1, diffInMins)}m ago`;
-  }
-  if (diffInHours < 24) return `${diffInHours}h ago`;
-  const diffInDays = Math.floor(diffInHours / 24);
-  return `${diffInDays}d ago`;
+export const formatTime = (dateStr?: string | number | Date | null) => {
+  return formatRelativeTime(dateStr);
 };
 
 export const getLocalRepos = (): GitHubRepo[] => {

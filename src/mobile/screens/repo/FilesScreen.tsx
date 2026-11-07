@@ -8,8 +8,10 @@ import { FilesHeaderBar } from './files/FilesHeaderBar';
 import { FilesTreeNodeItem } from './files/FilesTreeNodeItem';
 import { FileViewerModal } from './files/FileViewerModal';
 import { useFilesScreen } from './files/useFilesScreen';
+import { useAppContext } from '../../../AppContext';
 
 export const FilesScreen: React.FC = () => {
+  const { showToast } = useAppContext();
   const {
     activeFiles,
     currentRepo,
@@ -25,6 +27,7 @@ export const FilesScreen: React.FC = () => {
     contentTab,
     isFullscreen,
     isEditingFile,
+    isOwner,
     fileHistory,
     setSearchQuery,
     setSelectedFileForModal,
@@ -41,6 +44,14 @@ export const FilesScreen: React.FC = () => {
   } = useFilesScreen();
 
   const fileTree = useMemo(() => buildFastFileTree(activeFiles), [activeFiles]);
+
+  const handleEditRequest = () => {
+    if (!isOwner) {
+      showToast('Read-only: You can only edit code in repositories you own.', 'error');
+      return;
+    }
+    setIsEditingFile(true);
+  };
 
   return (
     <div className="flex flex-col relative w-full pb-8 select-none">
@@ -91,10 +102,11 @@ export const FilesScreen: React.FC = () => {
             contentTab={contentTab}
             isFullscreen={isFullscreen}
             isCopied={isCopied}
+            isOwner={isOwner}
             onSetContentTab={setContentTab}
             onToggleFullscreen={() => setIsFullscreen(!isFullscreen)}
             onClose={() => setSelectedFileForModal(null)}
-            onEdit={() => setIsEditingFile(true)}
+            onEdit={handleEditRequest}
             onCopy={handleCopyCode}
             onDownload={handleDownloadFile}
             onRetry={() => activeFilePath && loadFileContent(activeFilePath)}
@@ -106,6 +118,7 @@ export const FilesScreen: React.FC = () => {
         <MobileFileEditor
           filePath={selectedFileForModal}
           initialContent={activeFileContent}
+          isOwner={isOwner}
           onClose={() => setIsEditingFile(false)}
           onCommitted={() => {
             setIsEditingFile(false);

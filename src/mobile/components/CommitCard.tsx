@@ -72,7 +72,7 @@ export const CommitCard: React.FC<CommitCardProps> = ({
               {commit.author}
             </span>
             <span aria-hidden="true" className="opacity-50">&bull;</span>
-            <span className="tabular-nums font-sans">{formatRelativeTime(commit.date)}</span>
+            <span className="tabular-nums font-sans">{formatRelativeTime((commit as any).timestamp || commit.date, (commit as any).time)}</span>
             {isFailing && (
               <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0 ml-0.5" title="CI Failed" />
             )}

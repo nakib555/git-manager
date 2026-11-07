@@ -4,17 +4,19 @@ import { useAppContext } from '../../../AppContext';
 export function useMobileFileEditor({
   filePath,
   initialContent,
+  isOwner = true,
   onClose,
   onCommitted,
 }: {
   filePath: string;
   initialContent: string;
+  isOwner?: boolean;
   onClose: () => void;
   onCommitted: () => void;
 }) {
-  const { currentBranch, activeBranches, githubUser, saveAndCommitFile } = useAppContext();
+  const { currentBranch, activeBranches, githubUser, saveAndCommitFile, showToast } = useAppContext();
 
-  const [editorMode, setEditorMode] = useState<'edit' | 'preview'>('edit');
+  const [editorMode, setEditorMode] = useState<'edit' | 'preview'>(isOwner ? 'edit' : 'preview');
   const [draftContent, setDraftContent] = useState<string>(initialContent);
   const [history, setHistory] = useState<string[]>([initialContent]);
   const [historyIndex, setHistoryIndex] = useState<number>(0);
@@ -44,6 +46,7 @@ export function useMobileFileEditor({
   }, [initialContent, draftContent, isDirty]);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    if (!isOwner) return;
     const nextVal = e.target.value;
     setDraftContent(nextVal);
     const newHistory = history.slice(0, historyIndex + 1);
@@ -60,6 +63,7 @@ export function useMobileFileEditor({
   };
 
   const handleInsertSymbol = (symbol: string) => {
+    if (!isOwner) return;
     const ta = textareaRef.current;
     if (!ta) return;
     const start = ta.selectionStart;
@@ -77,6 +81,7 @@ export function useMobileFileEditor({
   };
 
   const handleUndo = () => {
+    if (!isOwner) return;
     if (historyIndex > 0) {
       const prevIdx = historyIndex - 1;
       setHistoryIndex(prevIdx);
@@ -85,6 +90,7 @@ export function useMobileFileEditor({
   };
 
   const handleRedo = () => {
+    if (!isOwner) return;
     if (historyIndex < history.length - 1) {
       const nextIdx = historyIndex + 1;
       setHistoryIndex(nextIdx);
@@ -93,6 +99,10 @@ export function useMobileFileEditor({
   };
 
   const handleExecuteCommit = async (params: { message: string; description?: string }) => {
+    if (!isOwner) {
+      showToast('Unauthorized: You can only commit to repositories you own.', 'error');
+      return;
+    }
     setIsSubmitting(true);
     try {
       const targetBranch = currentBranch || activeBranches.find((b) => b.isDefault)?.name || 'main';

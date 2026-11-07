@@ -85,7 +85,7 @@ export const FileViewerTabs: React.FC<FileViewerTabsProps> = ({
                     <span aria-hidden="true">·</span>
                     <span>{c.author}</span>
                     <span aria-hidden="true">·</span>
-                    <span className="tabular-nums">{formatRelativeTime(c.date || c.timestamp)}</span>
+                    <span className="tabular-nums">{formatRelativeTime(c.timestamp || c.date, c.time)}</span>
                   </div>
                 </div>
                 <span className="text-xs font-mono text-success">{c.add || '+12'}</span>

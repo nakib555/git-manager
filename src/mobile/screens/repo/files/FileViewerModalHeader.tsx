@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Maximize2, Minimize2, FileCode, Clock, Info, Edit3, Copy, Check, Download } from 'lucide-react';
+import { X, Maximize2, Minimize2, FileCode, Clock, Info, Edit3, Copy, Check, Download, Lock } from 'lucide-react';
 import { formatBytes } from '../../../utils/formatters';
 import { getCodeLanguage } from './fileLanguageUtils';
 
@@ -12,6 +12,7 @@ interface FileViewerModalHeaderProps {
   isFullscreen: boolean;
   isCopied: boolean;
   activeFileLoading: boolean;
+  isOwner?: boolean;
   onSetContentTab: (tab: 'code' | 'history' | 'info') => void;
   onToggleFullscreen: () => void;
   onClose: () => void;
@@ -29,6 +30,7 @@ export const FileViewerModalHeader: React.FC<FileViewerModalHeaderProps> = ({
   isFullscreen,
   isCopied,
   activeFileLoading,
+  isOwner = true,
   onSetContentTab,
   onToggleFullscreen,
   onClose,
@@ -51,6 +53,10 @@ export const FileViewerModalHeader: React.FC<FileViewerModalHeaderProps> = ({
             <span className="tabular-nums">{lineCount} lines</span>
             <span aria-hidden="true">·</span>
             <span className="tabular-nums">{formatBytes(fileSizeEst)}</span>
+            <span aria-hidden="true">·</span>
+            <span className={`font-semibold ${isOwner ? 'text-text-muted' : 'text-amber-400'}`}>
+              {isOwner ? 'Own Repo' : 'Read-Only'}
+            </span>
           </div>
         </div>
 
@@ -107,10 +113,14 @@ export const FileViewerModalHeader: React.FC<FileViewerModalHeaderProps> = ({
           <button
             onClick={onEdit}
             disabled={activeFileLoading}
-            className="h-8 w-8 rounded-xl bg-accent hover:opacity-90 text-white flex items-center justify-center transition-colors cursor-pointer shadow-2xs active:scale-95 disabled:opacity-50"
-            title="Edit file"
+            className={`h-8 w-8 rounded-xl flex items-center justify-center transition-colors cursor-pointer shadow-2xs active:scale-95 disabled:opacity-50 ${
+              isOwner
+                ? 'bg-accent hover:opacity-90 text-white'
+                : 'bg-surface-2 border border-border text-amber-400 hover:bg-surface-3'
+            }`}
+            title={isOwner ? 'Edit file' : 'Read-only: global repository'}
           >
-            <Edit3 size={14} />
+            {isOwner ? <Edit3 size={14} /> : <Lock size={14} />}
           </button>
           <button
             onClick={onCopy}

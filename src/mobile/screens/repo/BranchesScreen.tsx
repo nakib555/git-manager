@@ -34,11 +34,11 @@ export const BranchesScreen: React.FC = () => {
     try {
       await switchBranch(name);
       showToast(`Switched to branch "${name}"`, 'success');
-      setSelectedBranch(null);
     } catch (err: any) {
       const msg = err.message || `Failed to switch to branch "${name}"`;
       setSwitchError(msg);
       showToast(msg, 'error');
+      throw err;
     } finally {
       setIsSwitching(false);
     }
@@ -46,16 +46,18 @@ export const BranchesScreen: React.FC = () => {
 
   const handleDelete = async (name: string) => {
     if (name === currentBranch || name === 'main' || name === 'master') {
-      showToast('Cannot delete default or currently active branch', 'error');
-      return;
+      const msg = 'Cannot delete default or currently active branch';
+      showToast(msg, 'error');
+      throw new Error(msg);
     }
     setIsDeleting(true);
     try {
       await deleteBranchOnGitHub(name);
       showToast(`Deleted branch "${name}"`, 'success');
-      setSelectedBranch(null);
     } catch (err: any) {
-      showToast(`Delete failed: ${err.message || err}`, 'error');
+      const msg = `Delete failed: ${err.message || err}`;
+      showToast(msg, 'error');
+      throw new Error(msg);
     } finally {
       setIsDeleting(false);
     }

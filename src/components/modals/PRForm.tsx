@@ -25,22 +25,15 @@ export const PRForm: React.FC<PRFormProps> = ({ onExecute, onSubmit, onClose }) 
   
   const defaultSource = activeBranches.length > 1 ? activeBranches[1].name : (activeBranches[0]?.name || 'develop');
   const defaultTarget = activeBranches[0]?.name || 'main';
-
   const [source, setSource] = useState(defaultSource);
   const [target, setTarget] = useState(defaultTarget);
 
-  const workflow = useActionWorkflow({
-    steps: PR_STEPS,
-    autoCloseDelay: 2000,
-    onClose,
-  });
-
+  const workflow = useActionWorkflow({ steps: PR_STEPS, autoCloseDelay: 2000, onClose });
   const isIdentical = source === target;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || isIdentical) return;
-
     const payload = { title: title.trim(), desc, source, target, isDraft };
 
     if (onExecute) {
@@ -64,14 +57,9 @@ export const PRForm: React.FC<PRFormProps> = ({ onExecute, onSubmit, onClose }) 
   if (workflow.phase !== 'idle') {
     return (
       <ActionVerificationTracker
-        phase={workflow.phase}
-        steps={workflow.steps}
-        activeStepIndex={workflow.activeStepIndex}
-        resultSummary={workflow.resultSummary}
-        errorMsg={workflow.errorMsg}
-        countdownRemaining={workflow.countdownRemaining}
-        onDismissNow={workflow.dismissNow}
-        onBackToEdit={workflow.reset}
+        phase={workflow.phase} steps={workflow.steps} activeStepIndex={workflow.activeStepIndex}
+        resultSummary={workflow.resultSummary} errorMsg={workflow.errorMsg} countdownRemaining={workflow.countdownRemaining}
+        onDismissNow={workflow.dismissNow} onBackToEdit={workflow.reset}
         onRetry={() => handleSubmit({ preventDefault: () => {} } as any)}
       />
     );
@@ -85,25 +73,16 @@ export const PRForm: React.FC<PRFormProps> = ({ onExecute, onSubmit, onClose }) 
           <span className="text-[10px] text-text-muted">Required</span>
         </div>
         <input 
-          type="text" 
-          placeholder="e.g. feat: add repository activity dashboard" 
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
+          type="text" placeholder="e.g. feat: add repository activity dashboard" 
+          value={title} onChange={(e) => setTitle(e.target.value)} required
           className="w-full bg-main border border-border rounded-xl px-3.5 py-2.5 text-sm text-text-main outline-none focus:border-primary transition-colors placeholder:text-text-muted/60"
         />
       </div>
 
       <div>
-        <div className="flex justify-between items-center mb-1.5">
-          <label className="block text-xs font-semibold text-text-main">Overview & Context</label>
-          <span className="text-[10px] text-text-muted">Optional</span>
-        </div>
+        <label className="block text-xs font-semibold text-text-main mb-1.5">Overview & Context</label>
         <textarea 
-          placeholder="Describe what these changes do..." 
-          value={desc}
-          onChange={(e) => setDesc(e.target.value)}
-          rows={2}
+          placeholder="Describe what these changes do..." value={desc} onChange={(e) => setDesc(e.target.value)} rows={2}
           className="w-full bg-main border border-border rounded-xl px-3.5 py-2.5 text-sm text-text-main outline-none focus:border-primary transition-colors placeholder:text-text-muted/60 resize-none"
         />
       </div>
@@ -111,37 +90,20 @@ export const PRForm: React.FC<PRFormProps> = ({ onExecute, onSubmit, onClose }) 
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-xs font-semibold text-text-main mb-1.5">Compare (Source)</label>
-          <select 
-            value={source} 
-            onChange={(e) => setSource(e.target.value)}
-            className="w-full bg-main border border-border rounded-xl px-3.5 py-2.5 text-sm text-text-main outline-none focus:border-primary transition-colors"
-          >
-            {activeBranches.map(b => (
-              <option key={b.name} value={b.name}>{b.name}</option>
-            ))}
+          <select value={source} onChange={(e) => setSource(e.target.value)} className="w-full bg-main border border-border rounded-xl px-3.5 py-2.5 text-sm text-text-main outline-none focus:border-primary transition-colors">
+            {activeBranches.map(b => (<option key={b.name} value={b.name}>{b.name}</option>))}
           </select>
         </div>
         <div>
           <label className="block text-xs font-semibold text-text-muted mb-1.5 uppercase tracking-wider">Base (Target)</label>
-          <select 
-            value={target} 
-            onChange={(e) => setTarget(e.target.value)}
-            className="w-full bg-main border border-border rounded-xl px-3.5 py-2.5 text-sm text-text-main outline-none focus:border-primary transition-colors"
-          >
-            {activeBranches.map(b => (
-              <option key={b.name} value={b.name}>{b.name}</option>
-            ))}
+          <select value={target} onChange={(e) => setTarget(e.target.value)} className="w-full bg-main border border-border rounded-xl px-3.5 py-2.5 text-sm text-text-main outline-none focus:border-primary transition-colors">
+            {activeBranches.map(b => (<option key={b.name} value={b.name}>{b.name}</option>))}
           </select>
         </div>
       </div>
 
       <label className="flex items-center gap-2 cursor-pointer mt-2">
-        <input 
-          type="checkbox" 
-          checked={isDraft}
-          onChange={(e) => setIsDraft(e.target.checked)}
-          className="w-4 h-4 rounded border-border text-primary focus:ring-primary accent-primary"
-        />
+        <input type="checkbox" checked={isDraft} onChange={(e) => setIsDraft(e.target.checked)} className="w-4 h-4 rounded border-border text-primary focus:ring-primary accent-primary" />
         <span className="text-xs font-semibold text-text-main">Create as Draft</span>
       </label>
 
@@ -153,8 +115,7 @@ export const PRForm: React.FC<PRFormProps> = ({ onExecute, onSubmit, onClose }) 
       )}
 
       <button 
-        type="submit" 
-        disabled={!title.trim() || isIdentical}
+        type="submit" disabled={!title.trim() || isIdentical}
         className="w-full bg-success text-white font-semibold text-sm py-3 rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-4 cursor-pointer"
       >
         <Check size={16} strokeWidth={3} /> {isDraft ? 'Open Draft PR' : 'Open Pull Request'}

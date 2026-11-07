@@ -114,7 +114,7 @@ export const DashboardRecentLists: React.FC<DashboardRecentListsProps> = ({
                     <div className="flex items-center gap-2 mt-1 text-[11px] text-text-tertiary font-mono">
                       <span className="text-text-secondary font-semibold tabular-nums">{commit.hash.substring(0, 7)}</span>
                       <span aria-hidden="true">&bull;</span>
-                      <span className="tabular-nums">{formatRelativeTime(commit.date || commit.timestamp)}</span>
+                      <span className="tabular-nums">{formatRelativeTime(commit.timestamp || commit.date, commit.time)}</span>
                     </div>
                   </div>
                 </div>

@@ -94,7 +94,7 @@ export const BranchModalTabs: React.FC<BranchModalTabsProps> = ({
                     <span>·</span>
                     <span>{commit.author.split(' ')[0]}</span>
                     <span>·</span>
-                    <span className="tabular-nums">{formatRelativeTime(commit.date || commit.timestamp)}</span>
+                    <span className="tabular-nums">{formatRelativeTime(commit.timestamp || commit.date, commit.time)}</span>
                   </div>
                 </div>
                 <ChevronRight size={14} className="text-text-tertiary shrink-0 mt-1" />

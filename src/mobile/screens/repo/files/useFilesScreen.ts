@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useAppContext } from '../../../../AppContext';
 import { fetchFileContentSafe } from '../../../utils/gitApi';
+import { isRepositoryOwnedByUser } from '../../../utils/repoOwnership';
 
 export function useFilesScreen() {
   const { 
@@ -10,6 +11,7 @@ export function useFilesScreen() {
     currentBranch,
     githubToken,
     githubUser,
+    githubRepos,
     activeCommits, 
     showToast,
     openModal,
@@ -28,6 +30,15 @@ export function useFilesScreen() {
   const [contentTab, setContentTab] = useState<'code' | 'history' | 'info'>('code');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isEditingFile, setIsEditingFile] = useState(false);
+
+  const isOwner = useMemo(() => {
+    return isRepositoryOwnedByUser({
+      repoName: currentRepo,
+      repoOwner: currentRepoOwner,
+      userLogin: githubUser?.login,
+      reposList: githubRepos,
+    });
+  }, [currentRepo, currentRepoOwner, githubUser?.login, githubRepos]);
 
   const toggleFolder = (path: string) => {
     setExpandedFolders(prev => {
@@ -109,6 +120,7 @@ export function useFilesScreen() {
     contentTab,
     isFullscreen,
     isEditingFile,
+    isOwner,
     fileHistory,
     setSearchQuery,
     setSelectedFileForModal,

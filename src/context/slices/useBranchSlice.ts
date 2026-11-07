@@ -13,7 +13,7 @@ export const useBranchSlice = ({
   state, setState, showToast, fetchRepoDetails,
 }: UseBranchSliceParams) => {
   const switchBranch = async (branchName: string) => {
-    if (!state.currentRepo) return;
+    if (!state.currentRepo) throw new Error("No repository currently selected.");
     const owner = state.currentRepoOwner || state.githubUser?.login || 'octodev';
     localStorage.setItem("currentBranch", branchName);
     setState((prev) => ({ ...prev, currentBranch: branchName }));
@@ -21,43 +21,56 @@ export const useBranchSlice = ({
   };
 
   const createLocalBranch = async (branch: { name: string; desc: string }) => {
-    if (!state.currentRepo) return;
+    if (!state.currentRepo) throw new Error("Select or open a repository before creating a branch.");
     const cleanName = branch.name.trim();
-    if (!cleanName) return;
+    if (!cleanName) throw new Error("Branch name cannot be empty.");
 
     if (state.githubToken && state.currentRepoOwner) {
       try {
         const resName = await createRemoteGitHubBranch(state.currentRepoOwner, state.currentRepo, cleanName, state.githubToken);
         showToast(`Branch '${resName}' created on GitHub!`, 'success');
         await fetchRepoDetails(state.currentRepo, state.currentRepoOwner);
+        return { name: resName };
       } catch (error: any) {
-        showToast(`Failed to create branch: ${error.message || error}`, 'error');
+        const msg = error.message || String(error);
+        showToast(`Failed to create branch: ${msg}`, 'error');
+        throw new Error(msg);
       }
-      return;
     }
 
     const key = `local_details_${state.currentRepo}_branches`;
     const existing = getLocalRepoDetails(state.currentRepo, "branches");
     if (existing.some((b: any) => b.name === cleanName)) {
-      showToast(`Branch '${cleanName}' already exists.`, 'warning');
-      return;
+      const msg = `Branch '${cleanName}' already exists.`;
+      showToast(msg, 'warning');
+      throw new Error(msg);
     }
+
     const headCommit = state.activeCommits[0]?.hash || 'head';
     const newBranch = { name: cleanName, commitHash: headCommit, isDefault: false, behindBy: 0, aheadBy: 0 };
     const updated = [...existing, newBranch];
     try { localStorage.setItem(key, JSON.stringify(updated)); } catch (_) {}
     setState(prev => ({ ...prev, activeBranches: updated }));
     showToast(`Branch '${cleanName}' created locally!`, 'success');
+    return newBranch;
   };
 
   const deleteBranch = async (branchName: string) => {
-    if (!state.currentRepo) return;
+    if (!state.currentRepo) throw new Error("No repository currently selected.");
     const branchInfo = state.activeBranches.find((b) => b.name === branchName);
     const isDefault = branchInfo?.isDefault || branchName === 'main' || branchName === 'master';
     const isActive = branchName === (state.currentBranch || 'main');
 
-    if (isDefault) return showToast(`Cannot delete protected branch '${branchName}'.`, 'error');
-    if (isActive) return showToast(`Cannot delete active branch '${branchName}'. Switch branches first.`, 'error');
+    if (isDefault) {
+      const msg = `Cannot delete protected branch '${branchName}'.`;
+      showToast(msg, 'error');
+      throw new Error(msg);
+    }
+    if (isActive) {
+      const msg = `Cannot delete active branch '${branchName}'. Switch branches first.`;
+      showToast(msg, 'error');
+      throw new Error(msg);
+    }
 
     if (state.githubToken && state.currentRepoOwner) {
       try {
@@ -65,7 +78,9 @@ export const useBranchSlice = ({
         showToast(`Branch '${branchName}' deleted from GitHub!`, 'success');
         await fetchRepoDetails(state.currentRepo, state.currentRepoOwner, false, state.currentBranch || undefined);
       } catch (error: any) {
-        showToast(`Failed to delete branch: ${error.message || error}`, 'error');
+        const msg = error.message || String(error);
+        showToast(`Failed to delete branch: ${msg}`, 'error');
+        throw new Error(msg);
       }
     } else {
       const key = `local_details_${state.currentRepo}_branches`;

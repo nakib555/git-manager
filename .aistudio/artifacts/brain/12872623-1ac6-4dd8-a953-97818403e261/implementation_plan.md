@@ -1,219 +1,241 @@
-# Master Engineering Specification: Inline Lazy Loading & Verified Result Handling for Action Dialogs
+# Engineering Plan: Fix Action Dialog Failures & Normalize Dynamic Timestamps Across App
 
-A professional, unified inline execution, lazy loading, and verified result feedback system across all action and mutation dialogs in Git Manager.
-
----
-
-## User Review & Critical Decisions
-
-> [!IMPORTANT]
-> The following decisions were clarified and confirmed in Phase 1:
-> 
-> - **Progress Representation**: Multi-step progress tracker with live verification status (e.g., Validating Payload → Mutating Git Tree → Verifying Branch State → Done).
-> - **Completion Behavior**: Displays a verified success card containing contextual resource metadata and summary badges, followed by an animated 2-second auto-close countdown (with manual "Close Now" or "View Resource" options).
-> - **Feature Scope**: Covers every action modal across the system:
->   1. Repository Creation (`RepoForm` in `CreateModals.tsx`)
->   2. Branch Creation (`BranchForm` in `CreateModals.tsx`)
->   3. Commit Creation (`CommitForm` in `CreateModals.tsx`)
->   4. Pull Request Creation (`PRForm` in `CreateModals.tsx`)
->   5. Repository Deletion (`DeleteRepoModal.tsx` & `DeleteRepoStatusView.tsx`)
->   6. Branch Checkout, Deletion & Merge (`BranchDetailModal.tsx` & `DesktopBranchesView.tsx`)
->   7. Commit Restore & Revert (`CommitRestoreSheet.tsx` & `CommitRestoreStatusCard.tsx`)
->   8. Mobile File Editor Commit Sheet (`CommitSheet.tsx`)
+Resolves critical failures in action dialog workflows (Create Repo, Create Branch, Create PR, Commit, Delete Repo, Branch Switch/Delete, and Commit Restore/Rewind) and normalizes dynamic relative timestamps across all repository lists, commit timelines, and activity feeds.
 
 ---
 
-## 1. Verified Evidence & Initial Triage
+## 1. Verified Evidence & Root Cause Analysis
 
 ### Verified Facts
-1. **Existing Modals**: `CreateModals.tsx` currently wraps `RepoForm`, `BranchForm`, `PRForm`, and `CommitForm`. Currently, each form triggers an asynchronous mutation in `AppContext.tsx` (`createLocalRepo`, `createLocalBranch`, `createLocalPR`, `createLocalCommit`), but the modal immediately closes upon click without showing in-dialog loading progress.
-2. **Existing Status Cards**: `DeleteRepoStatusView.tsx` and `CommitRestoreStatusCard.tsx` contain basic localized status renderings, but they use disjointed UI components and lack the multi-step verification pipeline requested by the user.
-3. **Branch Actions**: `BranchDetailModal.tsx` and `DesktopBranchesView.tsx` contain deletion and checkout buttons with only basic text changes (`"Deleting..."`, `"Checking out..."`), lacking structured inline verification cards.
-4. **Design System & Theme**: The app utilizes Tailwind CSS v4 with custom semantic variables (`--color-background`, `--color-surface-1`, `--color-surface-2`, `--color-border`, `--color-accent`, `--color-success`, `--color-danger`). All new dialog states must adhere to the 8-point spatial system, zero-pill typography, and 60-30-10 color budget.
-5. **LOC Constraint**: The codebase enforces modular file architectures under 150 LOC per file.
+1. **Unstable Workflow Callback Re-creation**:
+   - In `src/components/common/actionWorkflow/useActionWorkflow.ts` (line 83), the dependency array contains `[actionFnWrapper(onSuccess, onClose, autoCloseDelay, cleanup)]`. Because `actionFnWrapper` returns a new array reference on every render, the `execute` callback is recreated on every single render cycle, creating race conditions during async state transitions.
+2. **False Success on Unsuccessful Actions**:
+   - In `useActionWorkflow.ts` (lines 52–55), the verification logic evaluates:
+     ```ts
+     const summary: ActionResultSummary = (typeof actionResult === 'object' && actionResult !== null)
+       ? actionResult as ActionResultSummary
+       : { title: 'Action Verified', subtitle: 'Repository successfully updated.' };
+     ```
+     When an action function returns `false` (such as `saveAndCommitFile` or `deleteRepo` returning `false` on authorization failure or missing target), `actionResult === false` is NOT an object. Instead of treating this as an error, `useActionWorkflow` falls back to the default success summary and marks the phase as `'success'`, falsely declaring success to the user.
+3. **Error Swallowing in Context Slices**:
+   - In `src/context/slices/useCommitSlice.ts`: `createLocalCommit` catches exceptions internally, displays an error toast, and returns `undefined`. When invoked via `onExecute` in `CommitForm.tsx`, `useActionWorkflow` receives an unrejected promise and concludes the commit succeeded.
+   - In `src/context/slices/useBranchSlice.ts`: `createLocalBranch` and `deleteBranch` catch errors or detect invalid constraints (e.g. duplicate branch name, attempting to delete protected or active branch), show a toast, and return `undefined` rather than throwing an explicit error.
+4. **Premature Modal Unmount Race in `BranchesScreen.tsx`**:
+   - In `src/mobile/screens/repo/BranchesScreen.tsx` (lines 37 & 56), `handleSwitch` and `handleDelete` call `setSelectedBranch(null)` immediately inside the execution block. This instantly unmounts `BranchDetailModal` while `switchWorkflow` or `deleteWorkflow` is actively transitioning between `executing` and `verifying`, preventing the user from ever seeing the inline progress tracker, verified result, or 2-second auto-close countdown.
+5. **Timestamp Parsing Degenerating to `NaNd ago`**:
+   - In `src/context/contextUtils.ts` (line 4), `formatTime(dateStr)` does `const date = new Date(dateStr)`. When `dateStr` is a relative label such as `"2 hours ago"` or `"yesterday"` (common in demo commits and cached snapshots), `new Date("2 hours ago")` evaluates to `Invalid Date` (`NaN`), causing `Math.floor(NaN / 24)` to return `NaN` and the UI to display `"NaNd ago"`.
+6. **Inconsistent and Static Timestamp Fields Across Views**:
+   - In `src/components/commit/CommitItem.tsx` (lines 50 & 82), the component directly renders `{commit.time}` without running a relative formatter.
+   - In `src/mobile/components/CommitCard.tsx` (line 75), it calls `formatRelativeTime(commit.date)`, but commit items commonly store `commit.timestamp` or `commit.time`, leaving `commit.date` undefined and falling back to `"recently"`.
+   - In `src/mobile/utils/formatters.ts`, `formatRelativeTime` abruptly bypasses calculation if a string ends with `"ago"`, freezing static demo dates indefinitely.
 
 ### Assumptions
-1. When creating a resource offline (without GitHub token), the local tree mutation and catalog indexing complete in 400ms–800ms; adding an orchestrated multi-step verification sequence (minimum 600ms–900ms) provides transparent feedback without causing perceived lag.
-2. When connected to GitHub via OAuth token, real REST API roundtrips take 500ms–2500ms; the multi-step verification tracker will smoothly transition steps based on real Promise milestones.
+- All mutation dialogs (`CreateModals` for repo/branch/pr/commit, `DeleteRepoModal`, `BranchDetailModal`, `DesktopDeleteBranchModal`, and `CommitRestoreSheet`) must use the unified `useActionWorkflow` engine.
+- Modal closures upon successful completion must be managed cleanly by `useActionWorkflow` via its `autoCloseDelay` timer or manual `onDismissNow`, rather than being aborted synchronously by parent event handlers.
+- Dynamic timestamps should format relative durations concisely (e.g. `just now`, `5s ago`, `2m ago`, `3h ago`, `4d ago`, `2mo ago`, `1y ago`), handling ISO strings, numeric timestamps, and fallback strings cleanly without ever producing `NaN`.
 
 ### Missing Information & Clarifications
-- All critical user preferences were resolved during Phase 1 interactive clarification.
+- None; the clarifying question confirmed that all mutation dialogs under error/edge conditions and dynamic relative timestamps across repositories, commits, and activity must be addressed.
 
 ---
 
 ## 2. Complexity Classification
-- **Level 3 (Large Feature / System-wide UX Infrastructure)**: Standardizes dialog submission workflows across 8 major modal components, establishes a centralized action verification pipeline, provides rich feedback states, and guarantees zero breaking changes.
+- **Level 2 / 3 (Subsystem Fortification & Cross-App Consistency)**: Touches core async mutation workflow state engine, context error propagation, parent modal lifecycle orchestration, and application-wide timestamp normalization.
 
 ---
 
-## 3. Objective & Technical Requirements
+## 3. Objective
 
-### Purpose & Problem Statement
-Currently, several modal actions close instantly or display simple spinner text upon submission. If a network issue, permission error, or Git tree conflict occurs, the user is left disoriented or forced to check global toasts. 
+### Purpose
+Eliminate workflow failures, false positives, and unmount race conditions in all action dialogs, and ensure every timestamp across the application displays an accurate, dynamic relative time with zero `NaN` occurrences.
 
-### Expected Results & Acceptance Criteria
-1. **Zero Premature Modal Dismissal**: Modals remain open during action execution.
-2. **Reusable Verification Engine**: A shared `<ActionVerificationTracker />` component supporting standard step sequences:
-   - `validating` (checking parameters, formatting Git refs)
-   - `executing` (sending payload to GitHub API or local Git engine)
-   - `verifying` (reading back updated HEAD, commit SHA, or branch list)
-   - `success` (verified outcome with summary metadata badges)
-   - `error` (inline failure diagnostics with Retry and Edit Form buttons)
-3. **Success Card with Summary Badges**:
-   - Resource icon and title (e.g. `feature/user-auth` or `commit 7a3f8c1`)
-   - Unboxed metadata with typographic separators (`·`) per anti-slop guidelines
-   - 2-second animated circular/linear countdown before auto-dismiss
-   - "Dismiss Now" button for instant closure
-4. **Failure Resilience**: If an error occurs, the user can inspect the exact error reason and click "Back to Form" to amend their input without losing typed form state.
+### Problem Statement
+Users encountering action errors (such as attempting to delete an active branch, committing with missing repo, or network rejection) either see false success cards or have the modal vanish instantly due to premature unmounting. Concurrently, commits and repository cards show stale or broken timestamps (`NaNd ago` or static strings).
+
+### Business & Technical Value
+- Provides rock-solid engineering reliability: action dialogs only report success when the backend or state slice genuinely verifies the change.
+- Errors in action dialogs are gracefully caught and displayed within the inline error card with retry and back-to-edit capabilities.
+- Timestamps become reliable, standardized, and dynamic across mobile, tablet, and desktop views.
+
+### Acceptance Criteria
+1. **Robust Action Workflow State Engine**:
+   - `useActionWorkflow` must maintain callback references via `useRef` to prevent unneeded recreation of `execute`.
+   - `useActionWorkflow` must strictly treat `actionResult === false` as an error and transition to `'error'`.
+   - Slice functions (`useCommitSlice`, `useBranchSlice`, `useRepoSlice`) must throw clear error messages or return explicit booleans rather than swallowing errors into silent `undefined` returns.
+2. **Coordinated Dialog Lifecycle**:
+   - `BranchesScreen.tsx` must not call `setSelectedBranch(null)` immediately inside `onSwitch` / `onDelete`. Modal dismissal must occur only when the action dialog completes its countdown or when the user explicitly taps dismiss/close.
+   - `DesktopDeleteBranchModal.tsx` and `DesktopBranchesView.tsx` must properly propagate errors if deleting protected/active branches.
+3. **Unified Dynamic Relative Timestamps**:
+   - `formatRelativeTime` in `src/mobile/utils/formatters.ts` must parse ISO dates, unix timestamps (seconds or ms), and gracefully resolve fallback strings, producing clean dynamic output (`just now`, `12s ago`, `4m ago`, `2h ago`, `3d ago`).
+   - `formatTime` in `src/context/contextUtils.ts` must be a direct alias to the robust `formatRelativeTime`, eliminating the `NaNd ago` calculation bug.
+   - `CommitItem.tsx`, `CommitCard.tsx`, `CommitRestorePreviewCard.tsx`, `BranchModalTabs.tsx`, `DesktopRepoCard.tsx`, `PRDetailCommits.tsx`, and `FileViewerTabs.tsx` must pass `commit.timestamp || commit.date || commit.time` into `formatRelativeTime`.
+4. **Architectural Constraints**:
+   - All modified files must strictly adhere to the $\le 150$ LOC ceiling.
+   - Anti-AI slop: clean unboxed metadata with `·` separators, tabular-nums font formatting, and zero pill-soup.
 
 ---
 
-## 4. Architecture Design & Component Hierarchy
+## 4. Existing System Analysis
 
-### System Diagram
+### Architecture & Affected Components
+- `src/components/common/actionWorkflow/useActionWorkflow.ts` (115 lines): Core hook managing workflow phases (`idle` -> `validating` -> `executing` -> `verifying` -> `success` / `error`).
+- `src/context/slices/useCommitSlice.ts` (154 lines): Handles local & GitHub commits, file commits, commit rollbacks. Needs error re-throwing on failure so callers know the operation failed.
+- `src/context/slices/useBranchSlice.ts` (82 lines): Handles branch creation & deletion. Needs error throwing on protected branch or duplicate ref errors.
+- `src/mobile/screens/repo/BranchesScreen.tsx` (147 lines): Renders active branches and opens `BranchDetailModal`. Currently prematurely unmounts the modal on action execution.
+- `src/mobile/utils/formatters.ts` (122 lines): Core formatting utilities. Needs robust timestamp parsing supporting ISO, unix seconds, unix milliseconds, and smart relative fallback.
+- `src/context/contextUtils.ts` (119 lines): Contains broken `formatTime` function susceptible to `NaN`.
+- `src/components/commit/CommitItem.tsx` (106 lines): Commit renderer in timeline. Renders `{commit.time}` directly.
+- `src/mobile/components/CommitCard.tsx` (143 lines): Commit card on mobile. Calls `formatRelativeTime(commit.date)`.
 
+---
+
+## 5. Architecture Design
+
+### Data Flow & Error Handling Strategy
 ```
-┌────────────────────────────────────────────────────────────────────────┐
-│                        Action Feature Dialog                           │
-│  (RepoForm / BranchForm / CommitForm / PRForm / Delete / Restore)      │
-└───────────────────────────────────┬────────────────────────────────────┘
-                                    │
-                                    ▼
-       ┌────────────────────────────────────────────────────────┐
-       │             useActionWorkflow(options) Hook            │
-       │  • status: 'idle' | 'validating' | 'executing' |       │
-       │            'verifying' | 'success' | 'error'           │
-       │  • currentStepIndex: 0..N                              │
-       │  • errorDetails?: string                               │
-       │  • resultMetadata?: ActionSummaryData                  │
-       │  • execute(mutationFn, steps)                          │
-       │  • autoCloseCountdown: 2s (active during 'success')    │
-       └────────────────────────────┬───────────────────────────┘
-                                    │
-            ┌───────────────────────┴───────────────────────┐
-            ▼                                               ▼
-┌───────────────────────────────┐               ┌───────────────────────┐
-│     Form Inputs / Controls    │               │  ActionVerification   │
-│       (when status === idle)  │               │        Tracker        │
-└───────────────────────────────┘               │  (when status !== idle)│
-                                                └───────────┬───────────┘
-                                                            │
-                       ┌────────────────────────────────────┴────────────────────────────────────┐
-                       ▼                                                                         ▼
-┌──────────────────────────────────────────────┐                         ┌──────────────────────────────────────────────┐
-│          Progress Step Indicator             │                         │             Verified Result Card             │
-│  • Step 1: Validating payload & Git refs     │                         │  • CheckCircle2 & Status Badge               │
-│  • Step 2: Executing mutation engine         │                         │  • Summary Badges (SHA, Branch, Author)      │
-│  • Step 3: Verifying workspace & tree state  │                         │  • 2s Countdown Bar + "Close Now"            │
-└──────────────────────────────────────────────┘                         └──────────────────────────────────────────────┘
+User initiates action (e.g. New Branch, Delete Repo, Commit, Restore)
+                     │
+                     ▼
+       ┌───────────────────────────────┐
+       │   useActionWorkflow.execute   │
+       └──────────────┬────────────────┘
+                      │
+     ┌────────────────┴────────────────┐
+     ▼                                 ▼
+Phase: 'validating' (280ms)      Invariants checked
+     │
+     ▼
+Phase: 'executing'               Invokes actionFn()
+     │                           - Calls slice / GitHub API
+     │                           - Throws Error OR returns false on failure
+     │                           - Returns ActionResultSummary on success
+     ├─────────────────────────────────┐
+     │ (Throws or returns false)       │ (Resolved summary / true)
+     ▼                                 ▼
+Phase: 'error'                   Phase: 'verifying' (260ms)
+- Displays ActionErrorCard             │
+- Shows precise error message          ▼
+- Offers 'Back to edit' &        Phase: 'success'
+  'Try again' buttons            - Displays ActionSuccessCard with badges
+                                 - Starts auto-close countdown (2s)
+                                 - Calls options.onClose() on expiry
 ```
 
-### Component Breakdown & Folder Organization
-1. `src/components/common/actionWorkflow/types.ts`: Workflow status types, step definitions, and summary payload interfaces.
-2. `src/components/common/actionWorkflow/useActionWorkflow.ts`: State machine hook managing step progression, fake/real timing orchestration, error handling, and 2-second auto-close timer with cancelation support.
-3. `src/components/common/actionWorkflow/ActionVerificationTracker.tsx`: The primary container rendering the active step tracker, live verification status, success card, or error recovery card.
-4. `src/components/common/actionWorkflow/ActionStepList.tsx`: Visual step items with pending, active (spinning pulse), and completed (emerald check) states.
-5. `src/components/common/actionWorkflow/ActionSuccessCard.tsx`: The verified result view with summary metadata, unboxed badges, and auto-close countdown.
-6. `src/components/common/actionWorkflow/ActionErrorCard.tsx`: Diagnostic failure view with error details and "Amend & Retry" action.
+### Key Architectural Safeguards
+1. **Ref-Stabilized Options**: Store `options` in `useRef(options)` inside `useActionWorkflow` to eliminate unstable recreation of `execute` and prevent stale closures over `onSuccess` and `onClose`.
+2. **Strict Boolean & Throw Checks**:
+   ```ts
+   const actionResult = await actionFn();
+   if (actionResult === false) {
+     throw new Error('Operation was rejected or could not be completed.');
+   }
+   ```
+3. **Modal Lifecycle Separation**:
+   - In `BranchesScreen.tsx`, `handleSwitch` and `handleDelete` only invoke the slice operations. They do NOT close the modal directly.
+   - The modal is closed by `BranchDetailModal` via `useActionWorkflow`'s `onClose` callback only after the 2-second verified success state or when the user clicks dismiss.
+4. **Resilient Dynamic Relative Time Formatter**:
+   - Supports:
+     1. ISO 8601 strings (`2026-11-03T08:15:00Z`)
+     2. Unix timestamps in milliseconds (`1730621700000`)
+     3. Unix timestamps in seconds (`1730621700`)
+     4. Date objects (`new Date()`)
+     5. Strings containing relative markers (calculates from companion `timestamp` if present, or validates format)
+   - Guaranteed output format:
+     - `< 10s` -> `just now`
+     - `< 60s` -> `${s}s ago`
+     - `< 60m` -> `${m}m ago`
+     - `< 24h` -> `${h}h ago`
+     - `< 30d` -> `${d}d ago`
+     - `< 12mo` -> `${mo}mo ago`
+     - `>= 12mo` -> `${y}y ago`
+   - NEVER returns `NaNd ago` or unformatted raw epoch strings.
 
 ---
 
-## 5. Implementation Breakdown
+## 6. Implementation Breakdown
 
-### Phase 1: Workflow Infrastructure & Types
-- Create `types.ts` defining `WorkflowStep`, `WorkflowStatus`, and `ActionResultSummary`.
-- Build `useActionWorkflow.ts` hook with standard transition orchestration:
-  - Step transitions with guaranteed minimum visual clarity (prevents flashing).
-  - Configurable auto-close timer (default 2000ms).
-  - Full cleanup on unmount.
+### Phase 1: Workflow Engine Hardening (`useActionWorkflow.ts`)
+- **Files**: `src/components/common/actionWorkflow/useActionWorkflow.ts` ($\le 150$ LOC).
+- **Changes**:
+  - Replace `actionFnWrapper` with stable `optionsRef`.
+  - Add explicit rejection when `actionResult === false`.
+  - Clean up countdown timers reliably on unmount or reset.
+- **Validation**: Ensure `execute` reference remains stable between renders; simulate action rejection to verify transition to `'error'`.
 
-### Phase 2: Action Verification UI Components
-- Build `ActionStepList.tsx`: Clean tabular typography, subtle progress connectors, and status icons.
-- Build `ActionSuccessCard.tsx`: Verified checkmark, resource pill-free metadata, and smooth countdown bar.
-- Build `ActionErrorCard.tsx`: Clear error messaging with retry and back-to-edit actions.
-- Build `ActionVerificationTracker.tsx`: Combines the above with smooth Motion transitions.
+### Phase 2: Slice Error Propagation & Dialog Alignment
+- **Files**:
+  - `src/context/slices/useBranchSlice.ts` ($\le 150$ LOC)
+  - `src/context/slices/useCommitSlice.ts` ($\le 150$ LOC)
+  - `src/mobile/screens/repo/BranchesScreen.tsx` ($\le 150$ LOC)
+  - `src/features/desktop/screens/DesktopBranchesView.tsx` ($\le 150$ LOC)
+- **Changes**:
+  - In `useBranchSlice.ts`: Throw descriptive errors on duplicate branch names, protected branch deletion, or active branch deletion.
+  - In `useCommitSlice.ts`: Throw error when `!state.currentRepo` or when GitHub/local commit execution fails.
+  - In `BranchesScreen.tsx`: Remove synchronous `setSelectedBranch(null)` from `handleSwitch` and `handleDelete` so `BranchDetailModal` displays verification progress and auto-closes gracefully.
+- **Validation**: Test deleting active branch (shows inline error instead of crashing or disappearing); test successful branch creation/switch (shows full verification flow).
 
-### Phase 3: Integration into Creation Modals (`CreateModals.tsx`)
-- Update `RepoForm.tsx`: Wire `useActionWorkflow` for repo creation (Validating Name -> Initializing Repo -> Verifying Local Catalog -> Success).
-- Update `BranchForm.tsx`: Wire `useActionWorkflow` for branch creation (Validating Ref -> Creating Branch -> Indexing Tree -> Success).
-- Update `CommitForm.tsx`: Wire `useActionWorkflow` for commit creation (Staging Files -> Generating Tree SHA -> Verifying HEAD -> Success).
-- Update `PRForm.tsx`: Wire `useActionWorkflow` for PR creation (Validating Branches -> Opening PR -> Verifying Base Comparison -> Success).
-- Update `CreateModals.tsx` to respect workflow execution (prevent accidental backdrop closing while executing).
-
-### Phase 4: Integration into Action & Management Modals
-- Update `DeleteRepoModal.tsx` & `DeleteRepoStatusView.tsx`: Integrate multi-step purge verification with 2s verified dismissal.
-- Update `BranchDetailModal.tsx` & `DesktopBranchesView.tsx`: Wrap branch delete and checkout actions in the verification tracker.
-- Update `CommitRestoreSheet.tsx`: Align existing restore/revert status cards with the unified verification specification.
-
----
-
-## 6. Responsive Experience & Viewport Support
-
-### Desktop Experience (>= 1024px)
-- Centered dialogs with backdrop blur (`backdrop-blur-xs`), subtle borders (`border-border`), and spring entrance animations.
-- Inline workflow replaces form content within the existing modal box without resizing or jumping.
-- Keyboard navigation: Escape is blocked while `status === 'executing'` or `'validating'`, and enabled during `'success'` or `'error'` to quickly dismiss.
-
-### Tablet Experience (768px - 1023px)
-- Symmetrical padding (`p-6`), touch-friendly button targets (minimum 44px height).
-- Clean horizontal alignment of step indicators and result badges.
-
-### Mobile Experience (< 768px)
-- Bottom-sheet presentation or compact centered dialogs with `pb-[env(safe-area-inset-bottom,0px)]`.
-- Touch-friendly 48px action buttons for "Close Now" and "Retry".
-- Single-line summary badges with overflow ellipsis and truncation.
+### Phase 3: Timestamp Engine Standardization
+- **Files**:
+  - `src/mobile/utils/formatters.ts` ($\le 150$ LOC)
+  - `src/context/contextUtils.ts` ($\le 150$ LOC)
+  - `src/components/commit/CommitItem.tsx` ($\le 150$ LOC)
+  - `src/mobile/components/CommitCard.tsx` ($\le 150$ LOC)
+- **Changes**:
+  - Update `formatRelativeTime` to comprehensively parse dates and avoid returning static bypasses when actual timestamp data is present.
+  - Change `formatTime` in `contextUtils.ts` to delegate directly to `formatRelativeTime`.
+  - Update `CommitItem.tsx` and `CommitCard.tsx` to pass `commit.timestamp || commit.date || commit.time` through `formatRelativeTime`.
+- **Validation**: Inspect commit items and repo cards to ensure all timestamps display dynamic relative formats (`5m ago`, `2h ago`, `3d ago`) with no `NaN`.
 
 ---
 
-## 7. Performance & Accessibility
+## 7. Device Experience
+
+### Desktop Experience
+- Dialogs display centered modal dialogs with smooth scaling and clear backdrop blur.
+- Timestamps render in unboxed monospace tabular-nums with muted contrast for high readability.
+- Multi-step verification tracker displays distinct validation, execution, and verification phases with real-time spinners and status checkmarks.
+
+### Tablet Experience
+- Adapts dialog widths responsively (`max-w-md sm:max-w-lg`) with centered overlay placement.
+- Preserves ample touch targets ($\ge 44\times 44\text{px}$) on close, retry, and back-to-edit action buttons.
+
+### Mobile Experience
+- Bottom sheets animate from viewport bottom with proper safe-area bottom inset padding (`pb-[env(safe-area-inset-bottom,0px)]`).
+- Auto-close countdown (2s) clearly communicates verification with animated countdown badge and immediate "Dismiss now" action.
+- Relative timestamps remain compact (`2m ago`, `5h ago`) to prevent wrapping onto multiple lines.
+
+---
+
+## 8. Non-Functional Requirements & Quality Gates
 
 ### Performance
-- Zero layout recalculation thrashing: Animates only `transform` and `opacity`.
-- Timers cleanly cleared via React `useEffect` cleanups to prevent memory leaks or state updates after unmount.
-- Code split into modular sub-150 LOC components.
+- Storing `options` in `useRef` eliminates unnecessary re-renders of modal dialogs during typing or background sync.
+- Timestamps are calculated purely in-memory with negligible CPU overhead.
 
-### Accessibility (WCAG AA)
-- `aria-live="polite"` on status updates so screen readers announce step progress.
-- `role="status"` on the verification tracker and `role="alert"` on error diagnostics.
-- Contrast ratios >= 4.5:1 on all text elements across light, slate, and dark workstation themes.
-- Respects `prefers-reduced-motion` for all spinner animations and step transitions.
+### Accessibility (a11y)
+- Live region announcements for workflow state transitions (`validating`, `executing`, `verifying`, `success`, `error`).
+- Action retry and back-to-edit buttons have full keyboard navigation support (`Enter`, `Space`, `Escape`).
+- Clear contrast adhering to WCAG 2.1 AA.
 
----
-
-## 8. Security & Compatibility Analysis
-- Input validation occurs prior to mutation step execution.
-- No sensitive tokens or secrets are rendered in summary badges.
-- Fully backward compatible with offline mock state and live GitHub OAuth mode.
+### Security
+- Ownership checks remain strictly enforced prior to executing any code edits or commits.
+- All branch names and commit messages are sanitized before dispatch.
 
 ---
 
-## 9. Testing & Verification Strategy
-1. **Compilation & Type Check**: Run `tsc --noEmit` and Vite build to guarantee zero TypeScript or bundle issues.
-2. **Behavioral Testing**:
-   - Verify Repo Creation displays Validating -> Creating -> Verifying -> Success -> Auto-closes after 2s.
-   - Verify Branch Creation with custom prefix displays live steps and summary badge.
-   - Verify Commit Form (both offline mode and real GitHub mode) displays verified SHA result.
-   - Verify PR Form displays comparison summary and auto-closes smoothly.
-   - Verify Delete Repo modal accurately executes countdown and verified status view.
-   - Verify Commit Restore sheet runs step verification and auto-closes after 2s.
-3. **Error Recovery Testing**: Simulate invalid inputs/errors and verify "Back to Form" preserves state.
+## 9. Execution Checklist
+1. [ ] Update `src/components/common/actionWorkflow/useActionWorkflow.ts` to stabilize options via ref, handle `false` results as errors, and prevent unmount timer leaks ($\le 150$ LOC).
+2. [ ] Update `src/context/slices/useBranchSlice.ts` to throw descriptive errors on invalid branch operations ($\le 150$ LOC).
+3. [ ] Update `src/context/slices/useCommitSlice.ts` to propagate execution errors properly ($\le 150$ LOC).
+4. [ ] Update `src/mobile/screens/repo/BranchesScreen.tsx` to remove premature `setSelectedBranch(null)` calls, letting `useActionWorkflow` handle dismissal on completion ($\le 150$ LOC).
+5. [ ] Update `src/features/desktop/screens/DesktopBranchesView.tsx` to handle error propagation in desktop delete branch flow ($\le 150$ LOC).
+6. [ ] Update `src/mobile/utils/formatters.ts` to implement robust dynamic relative time formatting with zero `NaN` possibilities ($\le 150$ LOC).
+7. [ ] Update `src/context/contextUtils.ts` so `formatTime` delegates to `formatRelativeTime` ($\le 150$ LOC).
+8. [ ] Update `src/components/commit/CommitItem.tsx` and `src/mobile/components/CommitCard.tsx` to format commit timestamps dynamically ($\le 150$ LOC each).
+9. [ ] Run `compile_applet` and `lint_applet` together to verify zero syntax or typing errors.
+10. [ ] Execute application verification check (10-second wait and error monitoring).
 
 ---
 
-## 10. Execution Checklist
-- [ ] Create `src/components/common/actionWorkflow/types.ts`
-- [ ] Create `src/components/common/actionWorkflow/useActionWorkflow.ts`
-- [ ] Create `src/components/common/actionWorkflow/ActionStepList.tsx`
-- [ ] Create `src/components/common/actionWorkflow/ActionSuccessCard.tsx`
-- [ ] Create `src/components/common/actionWorkflow/ActionErrorCard.tsx`
-- [ ] Create `src/components/common/actionWorkflow/ActionVerificationTracker.tsx`
-- [ ] Integrate into `src/components/modals/RepoForm.tsx`
-- [ ] Integrate into `src/components/modals/BranchForm.tsx`
-- [ ] Integrate into `src/components/modals/CommitForm.tsx`
-- [ ] Integrate into `src/components/modals/PRForm.tsx`
-- [ ] Refactor `src/components/CreateModals.tsx` to handle workflow locking
-- [ ] Standardize `src/components/DeleteRepoModal.tsx` and `DeleteRepoStatusView.tsx`
-- [ ] Standardize `src/mobile/screens/repo/branches/BranchDetailModal.tsx`
-- [ ] Standardize `src/features/desktop/screens/DesktopBranchesView.tsx`
-- [ ] Standardize `src/mobile/components/CommitRestoreSheet.tsx`
-- [ ] Run `compile_applet` and `lint_applet` verification
+## 10. Approval Gate
+Awaiting user confirmation to proceed with implementation.
