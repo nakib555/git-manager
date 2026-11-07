@@ -15,8 +15,13 @@ export const fetchRemoteCommits = async ({
   filters,
 }: FetchRemoteCommitsParams) => {
   const { sinceDate, untilDate } = normalizeDateRange(filters.since, filters.until);
-  const headers: any = {};
-  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const headers: any = { Accept: 'application/vnd.github.v3+json' };
+  if (token) {
+    const clean = token.trim();
+    headers['Authorization'] = clean.startsWith('Bearer ') || clean.startsWith('token ')
+      ? clean
+      : (clean.startsWith('ghp_') || clean.startsWith('github_pat_') ? `token ${clean}` : `Bearer ${clean}`);
+  }
 
   const isSearch = !!filters.query;
   const selectedPageSize = filters.pageSize === -1 ? 100 : (filters.pageSize || 10);
@@ -54,7 +59,11 @@ export const fetchRemoteCommits = async ({
       const linkHeader = res.headers.get('Link');
       if (linkHeader) {
         const match = linkHeader.match(/&page=(\d+)>; rel="last"/);
-        if (match) totalCount = parseInt(match[1], 10);
+        if (match) {
+          totalCount = parseInt(match[1], 10) * selectedPageSize;
+        } else {
+          totalCount = Array.isArray(data) ? (filters.page || 1) * selectedPageSize : 0;
+        }
       } else {
         totalCount = Array.isArray(data) ? data.length : 0;
       }

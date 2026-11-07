@@ -7,12 +7,14 @@ export const fetchRemoteCommits = async (
   branch: string,
   headers: Record<string, string>
 ): Promise<GitCommitNode[]> => {
-  const commitsRes = await fetch(
-    `https://api.github.com/repos/${owner}/${repo}/commits?sha=${branch}&per_page=100`,
-    { headers },
-  );
+  const cleanBranch = (branch || '').trim();
+  const url = cleanBranch
+    ? `https://api.github.com/repos/${owner}/${repo}/commits?sha=${encodeURIComponent(cleanBranch)}&per_page=100`
+    : `https://api.github.com/repos/${owner}/${repo}/commits?per_page=100`;
+  const commitsRes = await fetch(url, { headers });
   if (!commitsRes.ok) return [];
   const rawCommits = await commitsRes.json();
+  if (!Array.isArray(rawCommits)) return [];
   return Promise.all(
     rawCommits.map(async (c: any, index: number) => {
       let add = "+0";
@@ -102,8 +104,9 @@ export const fetchRemoteFilesTree = async (
   branch: string,
   headers: Record<string, string>
 ) => {
+  const cleanBranch = (branch || 'HEAD').trim() || 'HEAD';
   const filesRes = await fetch(
-    `https://api.github.com/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`,
+    `https://api.github.com/repos/${owner}/${repo}/git/trees/${encodeURIComponent(cleanBranch)}?recursive=1`,
     { headers },
   );
   if (!filesRes.ok) return [];

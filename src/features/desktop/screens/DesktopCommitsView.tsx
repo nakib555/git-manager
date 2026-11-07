@@ -27,8 +27,12 @@ export const DesktopCommitsView: React.FC = () => {
     if (!selectedCommit) return setCommitDetailData(null);
     const sha = selectedCommit.fullHash || selectedCommit.hash;
     if (githubToken && currentRepoOwner && sha && currentRepo) {
+      const clean = githubToken.trim();
+      const authHeader = clean.startsWith('Bearer ') || clean.startsWith('token ')
+        ? clean
+        : (clean.startsWith('ghp_') || clean.startsWith('github_pat_') ? `token ${clean}` : `Bearer ${clean}`);
       fetch(`https://api.github.com/repos/${currentRepoOwner}/${currentRepo}/commits/${sha}`, {
-        headers: { Authorization: `Bearer ${githubToken}` }
+        headers: { Authorization: authHeader, Accept: 'application/vnd.github.v3+json' }
       })
         .then(res => res.ok ? res.json() : null)
         .then(data => { if (data) setCommitDetailData(data); })
