@@ -34,7 +34,7 @@ export const CloneQrCodeModal: React.FC<CloneQrCodeModalProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[220] flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div className="fixed inset-0 z-[220] flex items-center justify-center p-4 sm:p-6">
           {/* Backdrop with tap-to-dismiss */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -46,18 +46,18 @@ export const CloneQrCodeModal: React.FC<CloneQrCodeModalProps> = ({
           />
 
           <motion.div
-            initial={{ y: '100%', opacity: 0.8 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: '100%', opacity: 0 }}
-            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-            className="relative bg-surface-1 border-t sm:border border-border rounded-t-3xl sm:rounded-2xl p-6 pb-[calc(env(safe-area-inset-bottom,0px)+20px)] max-w-sm w-full space-y-4 shadow-2xl z-10"
+            initial={{ opacity: 0, scale: 0.94, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.94, y: 8 }}
+            transition={{ type: 'spring', damping: 26, stiffness: 320 }}
+            className="relative bg-surface-1 border border-border rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl z-10 max-h-[88vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Mobile Sheet Drag Handle */}
-            <div className="w-10 h-1 bg-border rounded-full mx-auto -mt-2 mb-2 sm:hidden shrink-0" />
-
             <div className="flex items-center justify-between pb-3 border-b border-border">
-              <span className="font-bold text-sm text-text-primary">Transfer to Mobile</span>
+              <div>
+                <h2 className="font-bold text-sm text-text-primary leading-tight">Transfer to Mobile</h2>
+                <p className="text-[11px] text-text-tertiary mt-0.5">Scan QR code to open or clone this repo</p>
+              </div>
               <button
                 type="button"
                 onClick={onClose}

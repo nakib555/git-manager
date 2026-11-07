@@ -75,11 +75,11 @@ export const CommitsDeleteHeadVisualCard: React.FC<CommitsDeleteHeadVisualCardPr
       </div>
 
       {/* Safety Notice */}
-      <div className="p-3 bg-surface-2/40 border border-border/70 rounded-xl flex items-start gap-2 text-[11px] text-text-tertiary leading-relaxed">
-        <ShieldAlert size={14} className="text-amber-500 shrink-0 mt-0.5" />
+      <div className="p-3 bg-surface-2/60 border border-border/80 rounded-xl flex items-start gap-2.5 text-[11px] text-text-secondary leading-relaxed">
+        <ShieldAlert size={15} className="text-amber-500 shrink-0 mt-0.5" />
         <div>
-          <strong className="text-text-secondary font-semibold">Important Git Safety: </strong>
-          This updates the branch reference on <code className="font-mono text-text-primary font-semibold">{branchName}</code>. Older historical commits are preserved.
+          <strong className="text-text-primary font-semibold">Safe Rollback Guarantee: </strong>
+          Only the branch pointer for <code className="font-mono text-accent font-semibold">{branchName}</code> rewinds. Your local working files remain untouched, and older commits in history are preserved.
         </div>
       </div>
     </div>

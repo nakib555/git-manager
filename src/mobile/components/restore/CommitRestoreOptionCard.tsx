@@ -1,5 +1,5 @@
 import React from 'react';
-import { Undo2, RotateCcw, Check, Sparkles, History, Terminal } from 'lucide-react';
+import { Undo2, RotateCcw, Check, Sparkles, History, Terminal, Loader2 } from 'lucide-react';
 import { RestoreMode } from '../CommitRestoreSheet';
 
 interface CommitRestoreOptionCardProps {
@@ -37,7 +37,11 @@ export const CommitRestoreOptionCard: React.FC<CommitRestoreOptionCardProps> = (
               : 'border-border bg-surface-3'
           }`}
         >
-          {selectedMode === 'revert' && <Check size={12} className="stroke-[3]" />}
+          {isSubmitting && selectedMode === 'revert' ? (
+            <Loader2 size={12} className="animate-spin" />
+          ) : selectedMode === 'revert' ? (
+            <Check size={12} className="stroke-[3]" />
+          ) : null}
         </div>
 
         <div className="min-w-0 flex-1">
@@ -46,10 +50,17 @@ export const CommitRestoreOptionCard: React.FC<CommitRestoreOptionCardProps> = (
               <Undo2 size={13} className="text-accent" />
               <span>Revert This Commit</span>
             </div>
-            <span className="text-[10px] font-bold text-accent bg-accent/15 px-2 py-0.5 rounded-md flex items-center gap-1">
-              <Sparkles size={10} />
-              Recommended
-            </span>
+            {isSubmitting && selectedMode === 'revert' ? (
+              <span className="text-[10px] font-bold text-accent bg-accent/20 px-2 py-0.5 rounded-md flex items-center gap-1 animate-pulse">
+                <Loader2 size={10} className="animate-spin" />
+                Reverting...
+              </span>
+            ) : (
+              <span className="text-[10px] font-bold text-accent bg-accent/15 px-2 py-0.5 rounded-md flex items-center gap-1">
+                <Sparkles size={10} />
+                Recommended
+              </span>
+            )}
           </div>
 
           <p className="text-[11px] text-text-secondary mt-1.5 leading-relaxed">
@@ -82,7 +93,11 @@ export const CommitRestoreOptionCard: React.FC<CommitRestoreOptionCardProps> = (
               : 'border-border bg-surface-3'
           }`}
         >
-          {selectedMode === 'snapshot' && <Check size={12} className="stroke-[3]" />}
+          {isSubmitting && selectedMode === 'snapshot' ? (
+            <Loader2 size={12} className="animate-spin" />
+          ) : selectedMode === 'snapshot' ? (
+            <Check size={12} className="stroke-[3]" />
+          ) : null}
         </div>
 
         <div className="min-w-0 flex-1">
@@ -91,10 +106,17 @@ export const CommitRestoreOptionCard: React.FC<CommitRestoreOptionCardProps> = (
               <RotateCcw size={13} className="text-accent" />
               <span>Restore Snapshot (Entire Tree)</span>
             </div>
-            <span className="text-[10px] font-bold text-text-tertiary bg-surface-3 px-2 py-0.5 rounded-md flex items-center gap-1">
-              <History size={10} />
-              Full Rollback
-            </span>
+            {isSubmitting && selectedMode === 'snapshot' ? (
+              <span className="text-[10px] font-bold text-accent bg-accent/20 px-2 py-0.5 rounded-md flex items-center gap-1 animate-pulse">
+                <Loader2 size={10} className="animate-spin" />
+                Restoring...
+              </span>
+            ) : (
+              <span className="text-[10px] font-bold text-text-tertiary bg-surface-3 px-2 py-0.5 rounded-md flex items-center gap-1">
+                <History size={10} />
+                Full Rollback
+              </span>
+            )}
           </div>
 
           <p className="text-[11px] text-text-secondary mt-1.5 leading-relaxed">

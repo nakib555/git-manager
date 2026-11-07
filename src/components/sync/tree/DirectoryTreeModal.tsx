@@ -98,10 +98,13 @@ export const DirectoryTreeModal: React.FC<DirectoryTreeModalProps> = ({
       <div className="absolute inset-0 bg-black/75 backdrop-blur-xs cursor-pointer" onClick={onClose} aria-hidden="true" />
       <div className="relative w-full max-w-lg max-h-[85vh] bg-surface-1 border-t sm:border border-border rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden z-10 pb-[env(safe-area-inset-bottom,0px)]">
         <div className="w-10 h-1 bg-border rounded-full mx-auto mt-2.5 -mb-1 sm:hidden shrink-0" />
-        <div className="h-14 px-5 border-b border-border flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2 font-bold text-sm text-text-primary">
-            <FolderOpen size={18} className="text-amber-400" />
-            <span>Select Project Root Folder</span>
+        <div className="py-3 px-5 border-b border-border flex items-center justify-between shrink-0">
+          <div className="flex items-start gap-2.5">
+            <FolderOpen size={18} className="text-amber-400 mt-0.5 shrink-0" />
+            <div>
+              <h2 className="font-bold text-sm text-text-primary leading-tight">Select Project Root Folder</h2>
+              <p className="text-[11px] text-text-tertiary mt-0.5">Pick the folder in your ZIP that aligns with your repository</p>
+            </div>
           </div>
           <button
             type="button"

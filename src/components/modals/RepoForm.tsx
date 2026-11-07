@@ -16,7 +16,10 @@ export const RepoForm: React.FC<{ onSubmit: (data: any) => void }> = ({ onSubmit
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-xs font-semibold text-text-muted mb-2 uppercase tracking-wider">Repository Name</label>
+        <div className="flex justify-between items-center mb-1.5">
+          <label className="block text-xs font-semibold text-text-main">Repository Name</label>
+          <span className="text-[10px] text-text-muted">Required</span>
+        </div>
         <input 
           type="text" 
           placeholder="e.g. awesome-react-app" 
@@ -25,11 +28,15 @@ export const RepoForm: React.FC<{ onSubmit: (data: any) => void }> = ({ onSubmit
           required
           className="w-full h-10 bg-main border border-border rounded-xl px-4 text-sm text-text-main outline-none focus:border-primary transition-colors placeholder:text-text-muted/60"
         />
+        <p className="text-[10px] text-text-muted mt-1">Use lowercase letters, numbers, and hyphens.</p>
       </div>
       <div>
-        <label className="block text-xs font-semibold text-text-muted mb-2 uppercase tracking-wider">Description</label>
+        <div className="flex justify-between items-center mb-1.5">
+          <label className="block text-xs font-semibold text-text-main">Description</label>
+          <span className="text-[10px] text-text-muted">Optional</span>
+        </div>
         <textarea 
-          placeholder="A brief description about your project..." 
+          placeholder="A brief summary of what your repository does..." 
           value={desc}
           onChange={(e) => setDesc(e.target.value)}
           rows={2}

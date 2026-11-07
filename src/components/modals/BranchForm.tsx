@@ -14,21 +14,28 @@ export const BranchForm: React.FC<{ onSubmit: (data: any) => void }> = ({ onSubm
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-xs font-semibold text-text-muted mb-1.5 uppercase tracking-wider">Branch Name</label>
+        <div className="flex justify-between items-center mb-1.5">
+          <label className="block text-xs font-semibold text-text-main">Branch Name</label>
+          <span className="text-[10px] text-text-muted">Required</span>
+        </div>
         <input 
           type="text" 
           placeholder="e.g. feature/add-login" 
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
-          className="w-full bg-main border border-border rounded-xl px-3.5 py-2.5 text-sm text-text-main outline-none focus:border-primary transition-colors placeholder:text-text-muted/60"
+          className="w-full bg-main border border-border rounded-xl px-3.5 py-2.5 text-sm text-text-main font-mono outline-none focus:border-primary transition-colors placeholder:text-text-muted/60"
         />
+        <p className="text-[10px] text-text-muted mt-1">Recommended: prefix with <code className="font-mono text-info">feature/</code>, <code className="font-mono text-info">bugfix/</code>, or <code className="font-mono text-info">hotfix/</code>.</p>
       </div>
       <div>
-        <label className="block text-xs font-semibold text-text-muted mb-1.5 uppercase tracking-wider">Purpose</label>
+        <div className="flex justify-between items-center mb-1.5">
+          <label className="block text-xs font-semibold text-text-main">Description / Purpose</label>
+          <span className="text-[10px] text-text-muted">Optional</span>
+        </div>
         <input 
           type="text" 
-          placeholder="e.g. Active development for OAuth" 
+          placeholder="e.g. Implement user login and session handling" 
           value={desc}
           onChange={(e) => setDesc(e.target.value)}
           className="w-full bg-main border border-border rounded-xl px-3.5 py-2.5 text-sm text-text-main outline-none focus:border-primary transition-colors placeholder:text-text-muted/60"

@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, GitBranch, Trash2, AlertTriangle } from 'lucide-react';
+import { Search, GitBranch, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
 import { useAppContext } from '../../../AppContext';
 
 export const DesktopBranchesView: React.FC = () => {
   const { activeBranches, openModal, deleteBranch, switchBranch, currentBranch } = useAppContext();
   const [search, setSearch] = useState('');
   const [branchToDelete, setBranchToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const filtered = activeBranches.filter(b => b.name.toLowerCase().includes(search.toLowerCase()));
 
@@ -118,22 +119,23 @@ export const DesktopBranchesView: React.FC = () => {
               </div>
               <div className="p-6 flex items-center gap-3">
                 <button
-                  onClick={() => setBranchToDelete(null)}
-                  className="flex-1 py-3 text-xs font-bold text-text-muted bg-hover rounded-2xl hover:text-text-main hover:bg-hover/80 active:scale-95 transition-all cursor-pointer border border-border/40"
+                  disabled={isDeleting} onClick={() => setBranchToDelete(null)}
+                  className="flex-1 py-3 text-xs font-bold text-text-muted bg-hover rounded-2xl hover:text-text-main hover:bg-hover/80 active:scale-95 transition-all cursor-pointer border border-border/40 disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={() => {
-                    if (branchToDelete) {
-                      deleteBranch(branchToDelete);
-                      setBranchToDelete(null);
+                  disabled={isDeleting}
+                  onClick={async () => {
+                    if (branchToDelete && !isDeleting) {
+                      setIsDeleting(true);
+                      try { await deleteBranch(branchToDelete); setBranchToDelete(null); } finally { setIsDeleting(false); }
                     }
                   }}
-                  className="flex-1 py-3 text-xs font-bold text-white bg-error rounded-2xl hover:bg-error/90 active:scale-95 transition-all shadow-md shadow-error/10 flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="flex-1 py-3 text-xs font-bold text-white bg-error rounded-2xl hover:bg-error/90 active:scale-95 transition-all shadow-md shadow-error/10 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
-                  <Trash2 size={14} />
-                  <span>Delete Branch</span>
+                  {isDeleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                  <span>{isDeleting ? 'Deleting...' : 'Delete Branch'}</span>
                 </button>
               </div>
             </motion.div>

@@ -16,7 +16,7 @@ export const DeleteRepoHeader: React.FC<DeleteRepoHeaderProps> = ({ onClose, isD
         <span>Delete Repository</span>
       </h2>
       <p className="text-xs text-text-muted mt-0.5">
-        GitHub & Git Danger Zone specification
+        Permanently remove this repository and all associated Git history
       </p>
     </div>
     <button

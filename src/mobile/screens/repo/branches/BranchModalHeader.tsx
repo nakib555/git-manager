@@ -23,12 +23,13 @@ export const BranchModalHeader: React.FC<BranchModalHeaderProps> = ({
       <div className="px-4 py-3 border-b border-border-accent/80 shrink-0">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="flex items-center gap-2 mb-1 text-xs font-mono">
-              <span className="text-text-tertiary uppercase tracking-wider font-semibold">Branch</span>
+            <div className="flex items-center gap-2 mb-0.5 text-xs font-mono">
+              <span className="text-text-tertiary uppercase tracking-wider font-semibold">Branch Overview</span>
               {selectedBranch === currentBranch && <span className="text-emerald-400 font-bold">· Active HEAD</span>}
               {(selectedBranch === 'main' || selectedBranch === 'master') && <span className="text-text-tertiary">· Default</span>}
             </div>
             <h3 className="text-base font-bold text-text-primary leading-tight truncate">{selectedBranch}</h3>
+            <p className="text-[11px] text-text-tertiary mt-0.5">Inspect branch tracking, commits, and checkout revisions</p>
           </div>
           <button
             onClick={onClose}

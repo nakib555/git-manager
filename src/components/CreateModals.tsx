@@ -24,7 +24,7 @@ export const CreateModals: React.FC = () => {
   return (
     <AnimatePresence>
       {activeModal && (
-        <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-6">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -35,16 +35,14 @@ export const CreateModals: React.FC = () => {
           />
 
           <motion.div
-            initial={{ y: '100%', opacity: 0.8 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: '100%', opacity: 0 }}
-            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+            initial={{ opacity: 0, scale: 0.94, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.94, y: 8 }}
+            transition={{ type: 'spring', damping: 26, stiffness: 320 }}
             role="dialog"
             aria-modal="true"
-            className="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-surface-1 rounded-t-3xl sm:rounded-2xl border-t sm:border border-border p-5 sm:p-6 pb-[calc(env(safe-area-inset-bottom,0px)+20px)] shadow-2xl z-10 flex flex-col"
+            className="relative w-full max-w-md max-h-[88vh] overflow-y-auto bg-surface-1 rounded-2xl border border-border p-5 sm:p-6 shadow-2xl z-10 flex flex-col"
           >
-            {/* Mobile Sheet Drag Indicator */}
-            <div className="w-10 h-1 bg-border rounded-full mx-auto -mt-1 mb-3 sm:hidden shrink-0" />
 
             <ModalHeader activeModal={activeModal} onClose={closeModal} />
 

@@ -44,7 +44,10 @@ export const RepoSortSheet: React.FC<RepoSortSheetProps> = ({
             <div className="w-10 h-1 bg-border rounded-full mx-auto mb-4" />
 
             <div className="flex items-center justify-between pb-3 border-b border-border">
-              <h3 className="text-sm font-semibold text-text-primary">Sort Repositories</h3>
+              <div>
+                <h3 className="text-sm font-semibold text-text-primary">Sort Repositories</h3>
+                <p className="text-[11px] text-text-tertiary mt-0.5">Choose how repositories are ordered in your workstation list</p>
+              </div>
               <button
                 onClick={onClose}
                 className="w-7 h-7 flex items-center justify-center text-text-tertiary hover:text-text-primary rounded-full hover:bg-surface-2 transition-colors cursor-pointer"

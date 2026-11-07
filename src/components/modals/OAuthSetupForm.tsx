@@ -57,9 +57,9 @@ export const OAuthSetupForm: React.FC = () => {
 
       {tab === 'pat' ? (
         <form onSubmit={handlePatSubmit} className="space-y-3.5">
-          <div className="p-3 bg-primary/5 rounded-xl border border-primary/20 text-xs text-text-main leading-relaxed">
-            <p className="font-semibold text-primary mb-1">Fastest Way to Connect</p>
-            You can connect your GitHub account in 10 seconds using a Personal Access Token (PAT).
+          <div className="p-3 bg-primary/5 rounded-xl border border-primary/20 text-xs text-text-main leading-relaxed space-y-1">
+            <p className="font-semibold text-primary">Fast & Secure Connection</p>
+            <p className="text-text-muted text-[11px]">Connect your account in seconds using a Personal Access Token (PAT). Tokens are kept safely in your browser session and never sent to third parties.</p>
           </div>
 
           <div>

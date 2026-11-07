@@ -25,10 +25,13 @@ export const PRForm: React.FC<{ onSubmit: (data: any) => void }> = ({ onSubmit }
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-xs font-semibold text-text-muted mb-1.5 uppercase tracking-wider">Title</label>
+        <div className="flex justify-between items-center mb-1.5">
+          <label className="block text-xs font-semibold text-text-main">Pull Request Title</label>
+          <span className="text-[10px] text-text-muted">Required</span>
+        </div>
         <input 
           type="text" 
-          placeholder="e.g. Add dashboard search bar" 
+          placeholder="e.g. feat: add repository activity dashboard" 
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           required
@@ -36,9 +39,12 @@ export const PRForm: React.FC<{ onSubmit: (data: any) => void }> = ({ onSubmit }
         />
       </div>
       <div>
-        <label className="block text-xs font-semibold text-text-muted mb-1.5 uppercase tracking-wider">Description</label>
+        <div className="flex justify-between items-center mb-1.5">
+          <label className="block text-xs font-semibold text-text-main">Overview & Context</label>
+          <span className="text-[10px] text-text-muted">Optional</span>
+        </div>
         <textarea 
-          placeholder="Describe your pull request..." 
+          placeholder="Describe what these changes do and any testing notes for reviewers..." 
           value={desc}
           onChange={(e) => setDesc(e.target.value)}
           rows={2}
@@ -47,7 +53,7 @@ export const PRForm: React.FC<{ onSubmit: (data: any) => void }> = ({ onSubmit }
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-semibold text-text-muted mb-1.5 uppercase tracking-wider">Compare (Source)</label>
+          <label className="block text-xs font-semibold text-text-main mb-1.5">Compare (Source Branch)</label>
           <select 
             value={source} 
             onChange={(e) => setSource(e.target.value)}

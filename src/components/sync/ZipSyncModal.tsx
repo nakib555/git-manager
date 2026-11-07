@@ -44,18 +44,10 @@ export const ZipSyncModal: React.FC<{ isOpen: boolean; onClose: () => void }> = 
   const runComparison = async (files: ZipExtractedFile[], root: string) => {
     try {
       const res = await compareZipWithRepo({
-        zipFiles: files,
-        repoFiles: activeFiles,
-        rootPrefixToStrip: root,
-        fetchOldContent: async (filePath: string) => {
-          return fetchFileContentSafe({
-            filePath,
-            repoName: currentRepo || '',
-            owner: currentRepoOwner || '',
-            branch: currentBranch || 'main',
-            token: githubToken,
-          });
-        }
+        zipFiles: files, repoFiles: activeFiles, rootPrefixToStrip: root,
+        fetchOldContent: async (filePath: string) => fetchFileContentSafe({
+          filePath, repoName: currentRepo || '', owner: currentRepoOwner || '', branch: currentBranch || 'main', token: githubToken,
+        })
       });
       setDiffItems(res.files);
       if (res.files.length > 0) setSelectedFilePath(res.files[0].path);
@@ -119,7 +111,10 @@ export const ZipSyncModal: React.FC<{ isOpen: boolean; onClose: () => void }> = 
       >
         <div className="w-10 h-1 bg-border rounded-full mx-auto mt-2.5 -mb-1 sm:hidden shrink-0" />
         <div className="p-4 border-b border-border flex items-center justify-between shrink-0">
-          <span className="font-bold text-sm text-text-primary">AI Studio ZIP Synchronization Wizard</span>
+          <div>
+            <h2 className="font-bold text-sm text-text-primary leading-tight">AI Studio ZIP Synchronization Wizard</h2>
+            <p className="text-[11px] text-text-tertiary mt-0.5">3-step wizard to align, review diffs, and commit updates from AI Studio</p>
+          </div>
           <button type="button" onClick={onClose} className="p-1.5 rounded-lg hover:bg-surface-2 text-text-tertiary hover:text-text-primary cursor-pointer"><X size={16} /></button>
         </div>
         {!commitSuccess && (

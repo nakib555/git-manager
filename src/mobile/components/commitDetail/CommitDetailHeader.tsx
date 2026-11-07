@@ -34,11 +34,13 @@ export const CommitDetailHeader: React.FC<CommitDetailHeaderProps> = ({ commit, 
             <button
               onClick={handleCopySha}
               className="font-mono text-[10px] text-text-muted hover:text-primary flex items-center gap-1 bg-main px-2 py-0.5 rounded border border-border cursor-pointer"
+              title="Copy commit SHA"
             >
               <span>{shortSha}</span>
               {copiedSha ? <Check size={10} className="text-emerald-500" /> : <Copy size={10} />}
             </button>
-            <span className="text-[10px] text-text-muted">by {commit.author}</span>
+            <span className="text-[10px] text-text-muted font-medium">by {commit.author}</span>
+            <span className="text-[10px] text-text-muted hidden sm:inline">&bull; Detailed commit inspection</span>
           </div>
         </div>
       </div>

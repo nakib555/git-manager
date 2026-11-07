@@ -25,15 +25,19 @@ export const CommitForm: React.FC<{ onSubmit: (data: any) => void }> = ({ onSubm
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-xs font-semibold text-text-muted mb-1.5 uppercase tracking-wider">Commit Message</label>
+        <div className="flex justify-between items-center mb-1.5">
+          <label className="block text-xs font-semibold text-text-main">Commit Message Summary</label>
+          <span className="text-[10px] text-text-muted">Required</span>
+        </div>
         <input 
           type="text" 
-          placeholder="e.g. feat: integrate UI feedback loop" 
+          placeholder="e.g. feat: implement activity feed search" 
           value={msg}
           onChange={(e) => setMsg(e.target.value)}
           required
           className="w-full bg-main border border-border rounded-xl px-3.5 py-2.5 text-sm text-text-main outline-none focus:border-primary transition-colors placeholder:text-text-muted/60"
         />
+        <p className="text-[10px] text-text-muted mt-1">Short summary in imperative tense (e.g. <code className="font-mono text-accent">fix:</code>, <code className="font-mono text-accent">feat:</code>, or <code className="font-mono text-accent">refactor:</code>).</p>
       </div>
 
       {isRealGitHub && (

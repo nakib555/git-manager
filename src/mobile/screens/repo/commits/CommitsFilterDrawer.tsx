@@ -44,9 +44,12 @@ export const CommitsFilterDrawer: React.FC<CommitsFilterDrawerProps> = ({
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
         className="bg-card border-t border-border rounded-t-3xl w-full max-w-lg p-5 space-y-4 max-h-[85vh] overflow-y-auto"
       >
-        <div className="flex items-center justify-between pb-2 border-b border-border">
-          <span className="font-bold text-sm text-text-main">Filter Commits</span>
-          <button onClick={onClose} className="p-1 rounded-lg text-text-muted hover:text-text-main">
+        <div className="flex items-center justify-between pb-2.5 border-b border-border">
+          <div>
+            <h3 className="font-bold text-sm text-text-main">Filter Commits</h3>
+            <p className="text-[11px] text-text-muted mt-0.5">Filter by author, time window, and CI status</p>
+          </div>
+          <button onClick={onClose} className="p-1 rounded-lg text-text-muted hover:text-text-main cursor-pointer" aria-label="Close filters">
             <X size={16} />
           </button>
         </div>
