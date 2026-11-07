@@ -1,15 +1,19 @@
+import { getSvgAvatar } from '../utils/avatarUtils';
+
+const now = Date.now();
+
 export const DEMO_ACTIVITY_EVENTS = [
   {
     id: 'demo-ev-1',
     type: 'PushEvent',
     actor: {
       login: 'octodev',
-      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+      avatarUrl: getSvgAvatar('octodev', 215),
     },
     repo: {
       name: 'octodev/nexus-web-engine',
     },
-    createdAt: new Date(Date.now() - 1000 * 60 * 35).toISOString(),
+    createdAt: new Date(now - 1000 * 60 * 35).toISOString(),
     payload: {
       commits: [
         {
@@ -25,12 +29,12 @@ export const DEMO_ACTIVITY_EVENTS = [
     type: 'PullRequestEvent',
     actor: {
       login: 'sarah-lin',
-      avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+      avatarUrl: getSvgAvatar('Sarah Lin', 145),
     },
     repo: {
       name: 'octodev/nexus-web-engine',
     },
-    createdAt: new Date(Date.now() - 1000 * 60 * 180).toISOString(),
+    createdAt: new Date(now - 1000 * 60 * 180).toISOString(),
     payload: {
       action: 'opened',
       pull_request: {
@@ -44,12 +48,12 @@ export const DEMO_ACTIVITY_EVENTS = [
     type: 'WatchEvent',
     actor: {
       login: 'chen-coder',
-      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+      avatarUrl: getSvgAvatar('David Kim', 280),
     },
     repo: {
       name: 'octodev/distributed-kv-store',
     },
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(),
+    createdAt: new Date(now - 1000 * 60 * 60 * 6).toISOString(),
     payload: {
       action: 'started',
     },
@@ -59,12 +63,12 @@ export const DEMO_ACTIVITY_EVENTS = [
     type: 'PushEvent',
     actor: {
       login: 'octodev',
-      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+      avatarUrl: getSvgAvatar('octodev', 215),
     },
     repo: {
       name: 'octodev/tailwind-mobile-kit',
     },
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 18).toISOString(),
+    createdAt: new Date(now - 1000 * 60 * 60 * 18).toISOString(),
     payload: {
       commits: [
         {

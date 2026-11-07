@@ -1,5 +1,4 @@
-import React from 'react';
-import { Folder, FileText, ChevronRight, ChevronDown } from 'lucide-react';
+import { Folder, FileText, ChevronRight, ChevronDown, Trash2 } from 'lucide-react';
 import { TreeNode } from '../../../utils/treeBuilder';
 import { formatBytes } from '../../../utils/formatters';
 
@@ -9,8 +8,10 @@ interface FilesTreeNodeItemProps {
   expandedFolders: Set<string>;
   activeFilePath: string | null;
   searchQuery: string;
+  isOwner?: boolean;
   onToggleFolder: (path: string) => void;
   onSelectFile: (path: string) => void;
+  onDelete?: (node: TreeNode) => void;
 }
 
 export const FilesTreeNodeItem: React.FC<FilesTreeNodeItemProps> = ({
@@ -19,8 +20,10 @@ export const FilesTreeNodeItem: React.FC<FilesTreeNodeItemProps> = ({
   expandedFolders,
   activeFilePath,
   searchQuery,
+  isOwner,
   onToggleFolder,
   onSelectFile,
+  onDelete,
 }) => {
   const isFolder = node.type === 'dir';
   const isExpanded = expandedFolders.has(node.path);
@@ -62,20 +65,36 @@ export const FilesTreeNodeItem: React.FC<FilesTreeNodeItemProps> = ({
           <span className="truncate">{node.name}</span>
         </div>
 
-        {!isFolder && (
-          <div 
-            className="flex items-center gap-1.5 text-[11px] text-text-tertiary font-mono shrink-0 ml-3 tabular-nums select-none"
-            title={`${(node.lines ?? 42).toLocaleString()} lines • ${formatBytes(node.size ?? 1024)}`}
-          >
-            <span className="text-text-secondary font-medium">
-              {(node.lines ?? 42).toLocaleString()} lines
-            </span>
-            <span aria-hidden="true" className="text-border">·</span>
-            <span className="text-text-tertiary">
-              {formatBytes(node.size ?? 1024)}
-            </span>
-          </div>
-        )}
+        <div className="flex items-center gap-2 shrink-0 ml-2">
+          {!isFolder && (
+            <div 
+              className="hidden sm:flex items-center gap-1.5 text-[11px] text-text-tertiary font-mono tabular-nums select-none"
+              title={`${(node.lines ?? 42).toLocaleString()} lines • ${formatBytes(node.size ?? 1024)}`}
+            >
+              <span className="text-text-secondary font-medium">
+                {(node.lines ?? 42).toLocaleString()} lines
+              </span>
+              <span aria-hidden="true" className="text-border">·</span>
+              <span className="text-text-tertiary">
+                {formatBytes(node.size ?? 1024)}
+              </span>
+            </div>
+          )}
+
+          {isOwner && onDelete && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(node);
+              }}
+              className="w-8 h-8 flex items-center justify-center text-text-tertiary hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
+              title={isFolder ? `Delete folder '${node.name}'` : `Delete file '${node.name}'`}
+            >
+              <Trash2 size={13} />
+            </button>
+          )}
+        </div>
       </div>
 
       {isFolder && isExpanded && node.children && (
@@ -88,8 +107,10 @@ export const FilesTreeNodeItem: React.FC<FilesTreeNodeItemProps> = ({
               expandedFolders={expandedFolders}
               activeFilePath={activeFilePath}
               searchQuery={searchQuery}
+              isOwner={isOwner}
               onToggleFolder={onToggleFolder}
               onSelectFile={onSelectFile}
+              onDelete={onDelete}
             />
           ))}
         </div>

@@ -46,9 +46,9 @@ export const CommitCard: React.FC<CommitCardProps> = ({
       <div className="flex items-start gap-3 min-w-0 pr-2">
         {/* Author avatar or commit glyph with HEAD halo */}
         <div className="relative shrink-0 mt-0.5">
-          {commit.avatarUrl ? (
+          {((commit as any).avatar || commit.avatarUrl) ? (
             <img
-              src={commit.avatarUrl}
+              src={(commit as any).avatar || commit.avatarUrl}
               alt={commit.author}
               className="w-8 h-8 rounded-full border border-border/80 object-cover"
             />

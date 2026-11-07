@@ -95,7 +95,19 @@ export const useAuthSlice = ({
   };
 
   const disconnectGitHub = () => {
-    ['githubToken', 'githubUser', 'githubScopes', 'currentRepo', 'currentRepoOwner', 'currentBranch'].forEach((k) => localStorage.removeItem(k));
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch (_) {
+      // Fallback key-by-key removal if clear() is restricted
+      const keysToRemove = [
+        'githubToken', 'githubUser', 'githubScopes', 'currentRepo',
+        'currentRepoOwner', 'currentBranch', 'gm_custom_commits',
+        'git_manager_repos_cache', 'git_device_id'
+      ];
+      keysToRemove.forEach((k) => localStorage.removeItem(k));
+    }
+
     setState((prev) => ({
       ...prev,
       githubToken: null,
@@ -112,8 +124,10 @@ export const useAuthSlice = ({
       activeFiles: [],
       activeLanguages: {},
       repoTotalPages: 1,
+      selectedPR: null,
+      selectedCommit: null,
     }));
-    showToast("Signed out from GitHub. Please log in to continue.", "info");
+    showToast("Signed out. All credentials and local session caches have been purged.", "info");
   };
 
   const setManualToken = (token: string) => {

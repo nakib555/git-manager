@@ -21,6 +21,7 @@ interface FileViewerModalProps {
   onCopy: () => void;
   onDownload: () => void;
   onRetry: () => void;
+  onDelete?: () => void;
 }
 
 export const FileViewerModal: React.FC<FileViewerModalProps> = ({
@@ -41,6 +42,7 @@ export const FileViewerModal: React.FC<FileViewerModalProps> = ({
   onCopy,
   onDownload,
   onRetry,
+  onDelete,
 }) => {
   const lineCount = activeFileContent ? activeFileContent.split('\n').length : 0;
   const fileSizeEst = activeFileContent ? activeFileContent.length : 0;
@@ -82,6 +84,7 @@ export const FileViewerModal: React.FC<FileViewerModalProps> = ({
           onEdit={onEdit}
           onCopy={onCopy}
           onDownload={onDownload}
+          onDelete={onDelete}
         />
 
         <div className="flex-1 overflow-auto rounded-xl bg-background border border-border mt-2 text-xs font-mono min-h-0 relative">

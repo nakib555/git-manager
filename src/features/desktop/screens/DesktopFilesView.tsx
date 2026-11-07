@@ -1,20 +1,22 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '../../../AppContext';
-import { Search, Home, Copy, Check, Lock } from 'lucide-react';
+import { Search, Home, Copy, Check, Lock, Trash2 } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus, vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { fetchFileContentSafe } from '../../../mobile/utils/gitApi';
 import { isRepositoryOwnedByUser } from '../../../mobile/utils/repoOwnership';
 import { getCodeLanguage } from '../utils/desktopUtils';
-import { DesktopFileTreeItem } from './DesktopFileTreeItem';
+import { DesktopFileTreeItem, DesktopTreeNode } from './DesktopFileTreeItem';
+import { DeleteFileConfirmModal } from '../../../components/modals/DeleteFileConfirmModal';
 
 export const DesktopFilesView: React.FC = () => {
-  const { currentRepo, currentRepoOwner, currentBranch, activeFiles, githubToken, githubUser, githubRepos, showToast, theme } = useAppContext();
+  const { currentRepo, currentRepoOwner, currentBranch, activeFiles, githubToken, githubUser, githubRepos, deleteFileOrFolder, showToast, theme } = useAppContext();
   const [selectedFile, setSelectedFile] = useState<any | null>(null);
   const [fileContent, setFileContent] = useState<string>('');
   const [isLoadingFile, setIsLoadingFile] = useState<boolean>(false);
   const [fileSearch, setFileSearch] = useState<string>('');
   const [isCopied, setIsCopied] = useState<boolean>(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ path: string; isFolder: boolean } | null>(null);
 
   const isOwner = useMemo(() => {
     return isRepositoryOwnedByUser({
@@ -93,7 +95,9 @@ export const DesktopFilesView: React.FC = () => {
               item={node}
               depth={0}
               activeFileName={activePath}
+              isOwner={isOwner}
               onSelect={setSelectedFile}
+              onDelete={(item: DesktopTreeNode) => setDeleteTarget({ path: item.path, isFolder: item.type === 'dir' })}
             />
           ))}
         </div>
@@ -116,17 +120,30 @@ export const DesktopFilesView: React.FC = () => {
               </span>
             )}
           </div>
-          <button
-            onClick={() => {
-              navigator.clipboard.writeText(fileContent);
-              setIsCopied(true);
-              showToast('Code copied to clipboard!');
-              setTimeout(() => setIsCopied(false), 2000);
-            }}
-            className="flex items-center justify-center w-8 h-8 bg-card hover:bg-hover border border-border rounded-lg text-text-main transition-colors cursor-pointer"
-          >
-            {isCopied ? <Check size={14} className="text-success" /> : <Copy size={14} className="text-text-muted" />}
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            {isOwner && activePath && (
+              <button
+                type="button"
+                onClick={() => setDeleteTarget({ path: activePath, isFolder: false })}
+                className="flex items-center gap-1.5 h-8 px-2.5 bg-card hover:bg-rose-500/10 border border-border hover:border-rose-500/30 text-text-muted hover:text-rose-400 rounded-lg text-xs font-medium transition-colors cursor-pointer"
+                title={`Delete ${activePath}`}
+              >
+                <Trash2 size={13} />
+                <span>Delete</span>
+              </button>
+            )}
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(fileContent);
+                setIsCopied(true);
+                showToast('Code copied to clipboard!');
+                setTimeout(() => setIsCopied(false), 2000);
+              }}
+              className="flex items-center justify-center w-8 h-8 bg-card hover:bg-hover border border-border rounded-lg text-text-main transition-colors cursor-pointer"
+            >
+              {isCopied ? <Check size={14} className="text-success" /> : <Copy size={14} className="text-text-muted" />}
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-auto bg-main select-text relative">
@@ -148,6 +165,31 @@ export const DesktopFilesView: React.FC = () => {
           )}
         </div>
       </div>
+
+      {deleteTarget && (
+        <DeleteFileConfirmModal
+          isOpen={true}
+          onClose={() => setDeleteTarget(null)}
+          targetPath={deleteTarget.path}
+          isFolder={deleteTarget.isFolder}
+          currentRepo={currentRepo || ''}
+          currentBranch={currentBranch || 'main'}
+          allFiles={activeFiles || []}
+          onConfirmDelete={async ({ targetPath, isFolder, commitMessage }) => {
+            const success = await deleteFileOrFolder({
+              targetPath,
+              isFolder,
+              commitMessage,
+              branch: currentBranch || 'main',
+            });
+            if (success && selectedFile?.path === targetPath) {
+              setSelectedFile(null);
+              setFileContent('');
+            }
+            return success;
+          }}
+        />
+      )}
     </div>
   );
 };

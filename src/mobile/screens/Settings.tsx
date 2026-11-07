@@ -15,9 +15,16 @@ export const Settings: React.FC = () => {
   } = useAppContext();
 
   const handleClearCache = () => {
-    localStorage.removeItem('gm_custom_commits');
-    localStorage.removeItem('git_manager_repos_cache');
-    showToast('Local cache cleared successfully', 'success');
+    try {
+      const keys = Object.keys(localStorage);
+      keys.forEach(k => {
+        if (k.startsWith('local_') || k === 'gm_custom_commits' || k === 'git_manager_repos_cache') {
+          localStorage.removeItem(k);
+        }
+      });
+      sessionStorage.clear();
+    } catch (_) {}
+    showToast('Local repository cache purged successfully', 'success');
   };
 
   return (

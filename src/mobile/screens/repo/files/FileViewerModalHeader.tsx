@@ -1,5 +1,4 @@
-import React from 'react';
-import { X, Maximize2, Minimize2, FileCode, Clock, Info, Edit3, Copy, Check, Download, Lock } from 'lucide-react';
+import { X, Maximize2, Minimize2, FileCode, Clock, Info, Edit3, Copy, Check, Download, Lock, Trash2 } from 'lucide-react';
 import { formatBytes } from '../../../utils/formatters';
 import { getCodeLanguage } from './fileLanguageUtils';
 
@@ -19,6 +18,7 @@ interface FileViewerModalHeaderProps {
   onEdit: () => void;
   onCopy: () => void;
   onDownload: () => void;
+  onDelete?: () => void;
 }
 
 export const FileViewerModalHeader: React.FC<FileViewerModalHeaderProps> = ({
@@ -37,6 +37,7 @@ export const FileViewerModalHeader: React.FC<FileViewerModalHeaderProps> = ({
   onEdit,
   onCopy,
   onDownload,
+  onDelete,
 }) => {
   return (
     <>
@@ -137,6 +138,15 @@ export const FileViewerModalHeader: React.FC<FileViewerModalHeaderProps> = ({
           >
             <Download size={14} />
           </button>
+          {isOwner && onDelete && (
+            <button
+              onClick={onDelete}
+              className="h-8 w-8 rounded-xl bg-surface-2 hover:bg-rose-500/10 border border-border hover:border-rose-500/30 text-text-tertiary hover:text-rose-400 flex items-center justify-center transition-colors cursor-pointer"
+              title="Delete file from repository"
+            >
+              <Trash2 size={14} />
+            </button>
+          )}
         </div>
       </div>
     </>

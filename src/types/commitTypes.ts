@@ -35,3 +35,11 @@ export interface SaveAndCommitFileParams {
   description?: string;
   branch?: string;
 }
+
+export interface DeleteFileOrFolderParams {
+  targetPath: string;
+  isFolder: boolean;
+  commitMessage: string;
+  branch?: string;
+}
+

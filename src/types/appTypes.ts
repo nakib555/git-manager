@@ -84,6 +84,7 @@ export type AppContextType = AppState & {
   updateLocalPRStatus: (prId: number, status: 'Open' | 'Merged' | 'Closed', strategy?: 'merge' | 'squash') => Promise<void>;
   createLocalCommit: (commit: CommitCreationPayload) => Promise<any> | void;
   saveAndCommitFile: (params: SaveAndCommitFileParams) => Promise<boolean>;
+  deleteFileOrFolder: (params: import('./commitTypes').DeleteFileOrFolderParams) => Promise<boolean>;
   editCommitMessage: (hash: string, newMsg: string) => void;
   deleteCommit: (hash: string) => Promise<boolean>;
   amendLatestCommit: (msg: string, contentOnly: boolean, messageOnly: boolean, changes?: { add?: string; del?: string }) => void;

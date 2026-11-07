@@ -26,6 +26,8 @@ export const sanitizeGitHubUser = (user: any): GitHubUser | null => {
   };
 };
 
+import { getCatalogOrDefault } from '../data/demoRepoCatalog';
+
 export const getLocalRepoDetails = (
   repoId: string,
   type: "commits" | "branches" | "prs" | "files",
@@ -39,13 +41,8 @@ export const getLocalRepoDetails = (
     } catch (e) {}
   }
   
-  if (repoId === "nexus-web-engine" || !repoId) {
-    if (type === "files") return DEMO_FILES;
-    if (type === "commits") return DEMO_COMMITS;
-    if (type === "branches") return DEMO_BRANCHES;
-    if (type === "prs") return DEMO_PRS;
-  }
-  return [];
+  const catalog = getCatalogOrDefault(repoId);
+  return catalog[type] || [];
 };
 
 export const getInitialDefaultState = (): AppState => {

@@ -1,3 +1,9 @@
+import { getSvgAvatar } from '../utils/avatarUtils';
+import { formatRelativeTime } from '../mobile/utils/formatters';
+
+const now = Date.now();
+const rel = (h: number) => new Date(now - h * 3600 * 1000).toISOString();
+
 export const DEMO_BRANCHES = [
   { name: 'main', desc: 'Default production branch (head: a7f1c9d)', isDefault: true, borderColor: '#38BDF8' },
   { name: 'feature/virtual-dom-v2', desc: 'Concurrent fiber reconciliation (head: b3e2a0f)', isDefault: false, borderColor: 'transparent' },
@@ -12,9 +18,9 @@ export const DEMO_PRS = [
     title: 'feat: concurrent fiber reconciliation engine',
     desc: 'Introduces time-sliced rendering prioritizing user interactions over passive DOM updates.',
     author: 'octodev',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-    time: '2 hours ago',
-    created_at: '2026-11-03T07:30:00Z',
+    avatar: getSvgAvatar('octodev', 215),
+    time: formatRelativeTime(rel(3)),
+    created_at: rel(3),
     status: 'Open',
     comments: 6,
     hasConflicts: false,
@@ -26,9 +32,9 @@ export const DEMO_PRS = [
     title: 'fix: hydration mismatch error boundary fallback',
     desc: 'Corrects DOM node mismatch during progressive server-side streaming render.',
     author: 'sarah-lin',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-    time: 'Yesterday',
-    created_at: '2026-11-02T13:10:00Z',
+    avatar: getSvgAvatar('Sarah Lin', 145),
+    time: formatRelativeTime(rel(26)),
+    created_at: rel(26),
     status: 'Merged',
     comments: 11,
     hasConflicts: false,
@@ -40,9 +46,9 @@ export const DEMO_PRS = [
     title: 'perf: memory reduction in reactive signal dependency graph',
     desc: 'Replaces doubly-linked node allocations with pooled array indices.',
     author: 'davidkim-dev',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-    time: '3 days ago',
-    created_at: '2026-10-31T09:45:00Z',
+    avatar: getSvgAvatar('David Kim', 280),
+    time: formatRelativeTime(rel(74)),
+    created_at: rel(74),
     status: 'Merged',
     comments: 4,
     hasConflicts: false,
@@ -54,9 +60,9 @@ export const DEMO_PRS = [
     title: 'RFC: WebAssembly acceleration for layout recalculations',
     desc: 'Draft proposal exploring WASM bindings for compute-heavy layout calculations.',
     author: 'elena-rossi',
-    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
-    time: '5 days ago',
-    created_at: '2026-10-29T16:20:00Z',
+    avatar: getSvgAvatar('Elena Rossi', 35),
+    time: formatRelativeTime(rel(122)),
+    created_at: rel(122),
     status: 'Draft',
     comments: 15,
     hasConflicts: false,

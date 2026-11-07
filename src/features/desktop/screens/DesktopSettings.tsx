@@ -126,6 +126,35 @@ export const DesktopSettings: React.FC = () => {
             </div>
           </div>
 
+          <div className="p-5 flex items-center justify-between hover:bg-hover/10 transition-colors">
+            <div className="flex gap-4 items-center">
+              <div className="w-10 h-10 rounded-xl bg-hover text-rose-400 flex items-center justify-center">
+                <Sliders size={18} />
+              </div>
+              <div>
+                <span className="block text-xs font-bold text-text-main">Purge Local Repository Cache</span>
+                <span className="block text-[10px] text-text-muted mt-0.5">Wipe all cached repository trees, local commits, and session snapshots</span>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                try {
+                  const keys = Object.keys(localStorage);
+                  keys.forEach(k => {
+                    if (k.startsWith('local_') || k === 'gm_custom_commits' || k === 'git_manager_repos_cache') {
+                      localStorage.removeItem(k);
+                    }
+                  });
+                  sessionStorage.clear();
+                } catch (_) {}
+                showToast('Local repository cache purged successfully', 'success');
+              }}
+              className="text-xs font-bold py-1.5 px-3 rounded-lg border border-border bg-card hover:bg-rose-500/10 hover:border-rose-500/30 text-text-muted hover:text-rose-400 transition-colors cursor-pointer"
+            >
+              Purge Cache
+            </button>
+          </div>
+
           <div className="p-5 flex items-center justify-between hover:bg-hover/10 transition-colors group">
             <div className="flex gap-4 items-center">
               <div className="w-10 h-10 rounded-xl bg-hover text-text-muted flex items-center justify-center">
@@ -136,7 +165,7 @@ export const DesktopSettings: React.FC = () => {
                 <span className="block text-[10px] text-text-muted mt-0.5">Desktop Workstation Client</span>
               </div>
             </div>
-            <span className="text-xs font-medium text-text-muted">v2.4.1</span>
+            <span className="text-xs font-medium text-text-muted font-mono">v2.4.1</span>
           </div>
         </div>
       </div>

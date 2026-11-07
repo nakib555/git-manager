@@ -1,5 +1,6 @@
 import { safeBase64Decode } from '../treeBuilder';
 import { DEMO_FILE_CONTENTS } from '../../../data/demoData';
+import { getCatalogOrDefault } from '../../../data/demoRepoCatalog';
 
 export async function fetchFileContentSafe({
   filePath,
@@ -28,7 +29,11 @@ export async function fetchFileContentSafe({
     }
   } catch (_) {}
 
-  if (!token || repoName === 'nexus-web-engine') {
+  if (!token || repoName === 'nexus-web-engine' || resolvedOwner === 'octodev') {
+    const catalog = getCatalogOrDefault(repoName);
+    if (catalog.fileContents && catalog.fileContents[filePath]) {
+      return catalog.fileContents[filePath];
+    }
     if (DEMO_FILE_CONTENTS[filePath]) {
       return DEMO_FILE_CONTENTS[filePath];
     }

@@ -9,9 +9,11 @@ import { FilesTreeNodeItem } from './files/FilesTreeNodeItem';
 import { FileViewerModal } from './files/FileViewerModal';
 import { useFilesScreen } from './files/useFilesScreen';
 import { useAppContext } from '../../../AppContext';
+import { DeleteFileConfirmModal } from '../../../components/modals/DeleteFileConfirmModal';
 
 export const FilesScreen: React.FC = () => {
-  const { showToast } = useAppContext();
+  const { showToast, deleteFileOrFolder } = useAppContext();
+  const [deleteTarget, setDeleteTarget] = React.useState<{ path: string; isFolder: boolean } | null>(null);
   const {
     activeFiles,
     currentRepo,
@@ -82,8 +84,10 @@ export const FilesScreen: React.FC = () => {
                 expandedFolders={expandedFolders}
                 activeFilePath={activeFilePath}
                 searchQuery={searchQuery}
+                isOwner={isOwner}
                 onToggleFolder={toggleFolder}
                 onSelectFile={loadFileContent}
+                onDelete={(node) => setDeleteTarget({ path: node.path, isFolder: node.type === 'dir' })}
               />
             ))}
           </div>
@@ -109,6 +113,11 @@ export const FilesScreen: React.FC = () => {
             onEdit={handleEditRequest}
             onCopy={handleCopyCode}
             onDownload={handleDownloadFile}
+            onDelete={() => {
+              const file = selectedFileForModal;
+              setSelectedFileForModal(null);
+              setDeleteTarget({ path: file, isFolder: false });
+            }}
             onRetry={() => activeFilePath && loadFileContent(activeFilePath)}
           />
         )}
@@ -123,6 +132,26 @@ export const FilesScreen: React.FC = () => {
           onCommitted={() => {
             setIsEditingFile(false);
             if (selectedFileForModal) loadFileContent(selectedFileForModal);
+          }}
+        />
+      )}
+
+      {deleteTarget && (
+        <DeleteFileConfirmModal
+          isOpen={true}
+          onClose={() => setDeleteTarget(null)}
+          targetPath={deleteTarget.path}
+          isFolder={deleteTarget.isFolder}
+          currentRepo={currentRepo || ''}
+          currentBranch={currentBranch || 'main'}
+          allFiles={activeFiles || []}
+          onConfirmDelete={async ({ targetPath, isFolder, commitMessage }) => {
+            return await deleteFileOrFolder({
+              targetPath,
+              isFolder,
+              commitMessage,
+              branch: currentBranch || 'main',
+            });
           }}
         />
       )}

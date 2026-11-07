@@ -1,7 +1,8 @@
-import { AppState, CommitCreationPayload, SaveAndCommitFileParams } from '../../types';
+import { AppState, CommitCreationPayload, SaveAndCommitFileParams, DeleteFileOrFolderParams } from '../../types';
 import { getLocalRepoDetails } from '../contextUtils'; import { deleteRemoteHeadCommit } from '../gitCommitFileService';
 import { executeRemoteOrLocalCommit, executeRevertCommitOperation, executeSaveAndCommitFileOperation } from './commitSliceServices';
 import { executeCreateBranchAtCommit, executeCreateTagAtCommit } from './commitRefService';
+import { executeFileOrFolderDelete } from './commitFileDeleteService';
 import { isRepositoryOwnedByUser } from '../../mobile/utils/repoOwnership';
 
 interface UseCommitSliceParams {
@@ -118,6 +119,8 @@ export const useCommitSlice = ({ state, setState, showToast, fetchRepoDetails, s
 
   return {
     createLocalCommit, saveAndCommitFile, deleteCommit, revertCommit,
+    deleteFileOrFolder: (params: DeleteFileOrFolderParams) =>
+      executeFileOrFolderDelete({ state, setState, params, showToast, fetchRepoDetails, setRefreshTrigger }),
     editCommitMessage: (h: string, m: string) => {
       setState(p => ({ ...p, activeCommits: p.activeCommits.map(c => c.hash === h ? { ...c, msg: m } : c) }));
       showToast("Commit message updated!");
