@@ -4,8 +4,9 @@ import { RotateCcw, X, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CommitRestorePreviewCard } from './restore/CommitRestorePreviewCard';
 import { CommitRestoreOptionCard } from './restore/CommitRestoreOptionCard';
-import { CommitRestoreStatusCard } from './restore/CommitRestoreStatusCard';
+import { CommitRestoreStatusCard, RESTORE_COMMIT_STEPS } from './restore/CommitRestoreStatusCard';
 import { CommitRestoreFooter } from './restore/CommitRestoreFooter';
+import { useActionWorkflow } from '../../components/common/actionWorkflow/useActionWorkflow';
 
 export type RestoreMode = 'snapshot' | 'revert';
 
@@ -16,37 +17,39 @@ export interface CommitRestoreSheetProps {
 export const CommitRestoreSheet: React.FC<CommitRestoreSheetProps> = ({
   isOpen, commit, onClose, onSuccess,
 }) => {
-  const { restoreFilesToCommit, revertCommit, showToast, currentBranch } = useAppContext();
+  const { restoreFilesToCommit, revertCommit, currentBranch } = useAppContext();
   const [selectedMode, setSelectedMode] = useState<RestoreMode>('revert');
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [errorMsg, setErrorMsg] = useState('');
+
+  const shortSha = commit?.hash?.substring(0, 7) || commit?.shortSha || 'HEAD';
+  const fullSha = commit?.fullHash || commit?.hash || shortSha;
+  const firstLineMsg = (commit?.msg || commit?.fullMessage || 'Commit').split('\n')[0];
+
+  const workflow = useActionWorkflow({
+    steps: RESTORE_COMMIT_STEPS,
+    autoCloseDelay: 2000,
+    onSuccess,
+    onClose,
+  });
 
   if (!isOpen || !commit) return null;
 
-  const shortSha = commit.hash?.substring(0, 7) || commit.shortSha || 'HEAD';
-  const fullSha = commit.fullHash || commit.hash || shortSha;
-  const firstLineMsg = (commit.msg || commit.fullMessage || 'Commit').split('\n')[0];
-  const isBusy = status === 'loading' || status === 'success';
-
-  const handleSubmit = async () => {
-    setStatus('loading');
-    try {
+  const handleSubmit = () => {
+    if (workflow.isBusy) return;
+    workflow.execute(async () => {
       const ok = selectedMode === 'snapshot'
         ? await restoreFilesToCommit(fullSha, firstLineMsg)
         : await revertCommit(fullSha, firstLineMsg);
-      if (ok) {
-        setStatus('success');
-        onSuccess?.();
-        setTimeout(() => onClose(), 1300);
-      } else {
-        setStatus('error');
-        setErrorMsg('Action returned unsuccessful status.');
-      }
-    } catch (err: any) {
-      setStatus('error');
-      setErrorMsg(err.message || 'Operation failed');
-      showToast(err.message || 'Operation failed', 'error');
-    }
+      if (!ok) throw new Error('Commit rollback operation returned unsuccessful status.');
+      return {
+        title: selectedMode === 'snapshot' ? 'Snapshot Restored' : 'Commit Reverted',
+        subtitle: `Applied forward rollback commit for ${shortSha} on ${currentBranch || 'main'}.`,
+        metaItems: [
+          { label: 'Mode', value: selectedMode === 'snapshot' ? 'Files Snapshot' : 'Commit Revert' },
+          { label: 'Target SHA', value: shortSha },
+          { label: 'Branch', value: currentBranch || 'main' },
+        ],
+      };
+    });
   };
 
   return (
@@ -54,7 +57,7 @@ export const CommitRestoreSheet: React.FC<CommitRestoreSheetProps> = ({
       <div className="fixed inset-0 z-[220] flex items-end sm:items-center justify-center p-0 sm:p-4">
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          onClick={() => !isBusy && onClose()}
+          onClick={() => !workflow.isBusy && onClose()}
           className="absolute inset-0 bg-black/65 backdrop-blur-xs cursor-pointer"
         />
 
@@ -81,7 +84,7 @@ export const CommitRestoreSheet: React.FC<CommitRestoreSheetProps> = ({
             </div>
 
             <button
-              type="button" onClick={onClose} disabled={isBusy}
+              type="button" onClick={onClose} disabled={workflow.isBusy}
               className="w-8 h-8 rounded-full bg-surface-2 hover:bg-surface-3 flex items-center justify-center text-text-tertiary hover:text-text-primary transition disabled:opacity-40 cursor-pointer"
             >
               <X size={15} />
@@ -89,42 +92,56 @@ export const CommitRestoreSheet: React.FC<CommitRestoreSheetProps> = ({
           </div>
 
           <div className="p-4 sm:p-5 space-y-4 overflow-y-auto">
-            <CommitRestoreStatusCard
-              status={status} selectedMode={selectedMode} shortSha={shortSha}
-              errorMsg={errorMsg} onRetry={() => setStatus('idle')}
-            />
-
-            <CommitRestorePreviewCard
-              shortSha={shortSha} firstLineMsg={firstLineMsg}
-              authorName={commit.author || 'Author'}
-              commitTime={commit.date || commit.timestamp || commit.time}
-              stats={commit.stats} branchName={currentBranch || 'main'}
-            />
-
-            <div>
-              <label className="block text-[11px] font-bold text-text-tertiary uppercase tracking-wider mb-2">
-                Choose Restore Method
-              </label>
-              <CommitRestoreOptionCard
-                selectedMode={selectedMode} shortSha={shortSha}
-                firstLineMsg={firstLineMsg} isSubmitting={isBusy}
-                onSelectMode={setSelectedMode}
+            {workflow.phase !== 'idle' ? (
+              <CommitRestoreStatusCard
+                phase={workflow.phase}
+                selectedMode={selectedMode}
+                shortSha={shortSha}
+                activeStepIndex={workflow.activeStepIndex}
+                resultSummary={workflow.resultSummary}
+                errorMsg={workflow.errorMsg}
+                countdownRemaining={workflow.countdownRemaining}
+                onDismissNow={workflow.dismissNow}
+                onBackToEdit={workflow.reset}
+                onRetry={handleSubmit}
               />
-            </div>
+            ) : (
+              <>
+                <CommitRestorePreviewCard
+                  shortSha={shortSha} firstLineMsg={firstLineMsg}
+                  authorName={commit.author || 'Author'}
+                  commitTime={commit.date || commit.timestamp || commit.time}
+                  stats={commit.stats} branchName={currentBranch || 'main'}
+                />
 
-            <div className="p-3 bg-surface-2/60 border border-border/70 rounded-2xl flex items-start gap-2.5 text-[11px] text-text-secondary leading-relaxed">
-              <ShieldCheck size={16} className="text-emerald-500 shrink-0 mt-0.5" />
-              <span>
-                <strong className="text-text-primary font-semibold">Non-destructive: </strong>
-                Appends forward commit. Branch history remains intact.
-              </span>
-            </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-text-tertiary uppercase tracking-wider mb-2">
+                    Choose Restore Method
+                  </label>
+                  <CommitRestoreOptionCard
+                    selectedMode={selectedMode} shortSha={shortSha}
+                    firstLineMsg={firstLineMsg} isSubmitting={workflow.isBusy}
+                    onSelectMode={setSelectedMode}
+                  />
+                </div>
+
+                <div className="p-3 bg-surface-2/60 border border-border/70 rounded-2xl flex items-start gap-2.5 text-[11px] text-text-secondary leading-relaxed">
+                  <ShieldCheck size={16} className="text-emerald-500 shrink-0 mt-0.5" />
+                  <span>
+                    <strong className="text-text-primary font-semibold">Non-destructive: </strong>
+                    Appends forward commit. Branch history remains intact.
+                  </span>
+                </div>
+              </>
+            )}
           </div>
 
-          <CommitRestoreFooter
-            selectedMode={selectedMode} shortSha={shortSha}
-            isSubmitting={isBusy} onClose={onClose} onSubmit={handleSubmit}
-          />
+          {workflow.phase === 'idle' && (
+            <CommitRestoreFooter
+              selectedMode={selectedMode} shortSha={shortSha}
+              isSubmitting={workflow.isBusy} onClose={onClose} onSubmit={handleSubmit}
+            />
+          )}
         </motion.div>
       </div>
     </AnimatePresence>

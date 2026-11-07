@@ -1,26 +1,82 @@
 import React, { useState } from 'react';
 import { Check } from 'lucide-react';
 import { useAppContext } from '../../AppContext';
+import { useActionWorkflow } from '../common/actionWorkflow/useActionWorkflow';
+import { ActionVerificationTracker } from '../common/actionWorkflow/ActionVerificationTracker';
+import { WorkflowStep } from '../common/actionWorkflow/types';
 
-export const CommitForm: React.FC<{ onSubmit: (data: any) => void }> = ({ onSubmit }) => {
-  const { githubToken, currentRepoOwner } = useAppContext();
+interface CommitFormProps {
+  onExecute?: (data: any) => Promise<any> | void;
+  onSubmit?: (data: any) => void;
+  onClose?: () => void;
+}
+
+const COMMIT_STEPS: WorkflowStep[] = [
+  { id: 'stage', label: 'Staging files & formatting delta', sublabel: 'Validating commit message & tree objects' },
+  { id: 'commit', label: 'Writing Git commit object', sublabel: 'Generating cryptographic tree hash' },
+  { id: 'head', label: 'Advancing branch HEAD pointer', sublabel: 'Synchronizing commit history logs' },
+];
+
+export const CommitForm: React.FC<CommitFormProps> = ({ onExecute, onSubmit, onClose }) => {
+  const { githubToken, currentRepoOwner, currentBranch } = useAppContext();
   const [msg, setMsg] = useState('');
   const [author, setAuthor] = useState('');
   const [filePath, setFilePath] = useState('README.md');
   const [fileContent, setFileContent] = useState('');
 
-  const isRealGitHub = githubToken && currentRepoOwner;
+  const isRealGitHub = Boolean(githubToken && currentRepoOwner);
+
+  const workflow = useActionWorkflow({
+    steps: COMMIT_STEPS,
+    autoCloseDelay: 2000,
+    onClose,
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!msg.trim()) return;
-    onSubmit({ 
+
+    const payload = { 
       msg: msg.trim(), 
       author: author.trim(),
       filePath: isRealGitHub ? filePath : undefined,
-      fileContent: isRealGitHub ? fileContent : undefined
-    });
+      fileContent: isRealGitHub ? fileContent : undefined,
+    };
+
+    if (onExecute) {
+      workflow.execute(async () => {
+        const result = await onExecute(payload);
+        const shortSha = result?.hash?.substring(0, 7) || Math.random().toString(16).substring(2, 9);
+        return {
+          title: msg.trim().split('\n')[0],
+          subtitle: `Recorded to branch ${currentBranch || 'main'}.`,
+          metaItems: [
+            { label: 'Commit', value: shortSha },
+            { label: 'Branch', value: currentBranch || 'main' },
+            { label: 'Author', value: author.trim() || 'Active User' },
+          ],
+        };
+      });
+    } else if (onSubmit) {
+      onSubmit(payload);
+    }
   };
+
+  if (workflow.phase !== 'idle') {
+    return (
+      <ActionVerificationTracker
+        phase={workflow.phase}
+        steps={workflow.steps}
+        activeStepIndex={workflow.activeStepIndex}
+        resultSummary={workflow.resultSummary}
+        errorMsg={workflow.errorMsg}
+        countdownRemaining={workflow.countdownRemaining}
+        onDismissNow={workflow.dismissNow}
+        onBackToEdit={workflow.reset}
+        onRetry={() => handleSubmit({ preventDefault: () => {} } as any)}
+      />
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -37,7 +93,7 @@ export const CommitForm: React.FC<{ onSubmit: (data: any) => void }> = ({ onSubm
           required
           className="w-full bg-main border border-border rounded-xl px-3.5 py-2.5 text-sm text-text-main outline-none focus:border-primary transition-colors placeholder:text-text-muted/60"
         />
-        <p className="text-[10px] text-text-muted mt-1">Short summary in imperative tense (e.g. <code className="font-mono text-accent">fix:</code>, <code className="font-mono text-accent">feat:</code>, or <code className="font-mono text-accent">refactor:</code>).</p>
+        <p className="text-[10px] text-text-muted mt-1">Short summary in imperative tense (<code className="font-mono text-accent">feat:</code>, <code className="font-mono text-accent">fix:</code>).</p>
       </div>
 
       {isRealGitHub && (
@@ -47,7 +103,7 @@ export const CommitForm: React.FC<{ onSubmit: (data: any) => void }> = ({ onSubm
             <label className="block text-[10px] font-semibold text-text-muted mb-1 uppercase">Target File Path</label>
             <input 
               type="text" 
-              placeholder="e.g. README.md or activity.log" 
+              placeholder="e.g. README.md" 
               value={filePath}
               onChange={(e) => setFilePath(e.target.value)}
               required
@@ -72,7 +128,7 @@ export const CommitForm: React.FC<{ onSubmit: (data: any) => void }> = ({ onSubm
           <label className="block text-xs font-semibold text-text-muted mb-1.5 uppercase tracking-wider">Author (Optional)</label>
           <input 
             type="text" 
-            placeholder="e.g. Tanvir Ahmed" 
+            placeholder="e.g. Developer Name" 
             value={author}
             onChange={(e) => setAuthor(e.target.value)}
             className="w-full bg-main border border-border rounded-xl px-3.5 py-2.5 text-sm text-text-main outline-none focus:border-primary transition-colors placeholder:text-text-muted/60"

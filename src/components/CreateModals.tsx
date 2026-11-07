@@ -43,14 +43,21 @@ export const CreateModals: React.FC = () => {
             aria-modal="true"
             className="relative w-full max-w-md max-h-[88vh] overflow-y-auto bg-surface-1 rounded-2xl border border-border p-5 sm:p-6 shadow-2xl z-10 flex flex-col"
           >
-
             <ModalHeader activeModal={activeModal} onClose={closeModal} />
 
             <div className="mt-2">
-              {activeModal === 'repo' && <RepoForm onSubmit={(data) => { createLocalRepo(data); closeModal(); }} />}
-              {activeModal === 'branch' && <BranchForm onSubmit={(data) => { createLocalBranch(data); closeModal(); }} />}
-              {activeModal === 'pr' && <PRForm onSubmit={(data) => { createLocalPR(data); closeModal(); }} />}
-              {activeModal === 'commit' && <CommitForm onSubmit={(data) => { createLocalCommit(data); closeModal(); }} />}
+              {activeModal === 'repo' && (
+                <RepoForm onExecute={createLocalRepo} onClose={closeModal} />
+              )}
+              {activeModal === 'branch' && (
+                <BranchForm onExecute={createLocalBranch} onClose={closeModal} />
+              )}
+              {activeModal === 'pr' && (
+                <PRForm onExecute={createLocalPR} onClose={closeModal} />
+              )}
+              {activeModal === 'commit' && (
+                <CommitForm onExecute={createLocalCommit} onClose={closeModal} />
+              )}
               {activeModal === 'oauth_setup' && <OAuthSetupForm />}
               {activeModal === 'clone' && <CloneModal />}
             </div>

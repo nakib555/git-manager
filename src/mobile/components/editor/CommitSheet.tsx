@@ -3,6 +3,9 @@ import { motion } from 'motion/react';
 import { GitCommit, GitBranch, X } from 'lucide-react';
 import { CommitSheetStaging } from './CommitSheetStaging';
 import { CommitSheetInputs } from './CommitSheetInputs';
+import { useActionWorkflow } from '../../../components/common/actionWorkflow/useActionWorkflow';
+import { ActionVerificationTracker } from '../../../components/common/actionWorkflow/ActionVerificationTracker';
+import { WorkflowStep } from '../../../components/common/actionWorkflow/types';
 
 interface CommitSheetProps {
   isOpen: boolean;
@@ -13,8 +16,14 @@ interface CommitSheetProps {
   authorName: string;
   authorAvatar?: string;
   stats: { additions: number; deletions: number };
-  isSubmitting: boolean;
+  isSubmitting?: boolean;
 }
+
+const EDITOR_COMMIT_STEPS: WorkflowStep[] = [
+  { id: 'stage', label: 'Validating staged file delta', sublabel: 'Checking unified diff & line mutations' },
+  { id: 'write', label: 'Writing commit tree to Git', sublabel: 'Creating commit object on target branch' },
+  { id: 'ver', label: 'Verifying working tree sync', sublabel: 'Updating file cache and repository index' },
+];
 
 export const CommitSheet: React.FC<CommitSheetProps> = ({
   isOpen,
@@ -25,30 +34,47 @@ export const CommitSheet: React.FC<CommitSheetProps> = ({
   authorName,
   authorAvatar,
   stats,
-  isSubmitting,
 }) => {
   const [isStaged, setIsStaged] = useState<boolean>(true);
   const [commitSummary, setCommitSummary] = useState('');
   const [commitDescription, setCommitDescription] = useState('');
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [inputError, setInputError] = useState<string | null>(null);
+
+  const workflow = useActionWorkflow({
+    steps: EDITOR_COMMIT_STEPS,
+    autoCloseDelay: 2000,
+    onClose,
+  });
 
   if (!isOpen) return null;
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const summaryTrimmed = commitSummary.trim();
     if (!isStaged) {
-      setErrorMsg('Please stage the file before committing.');
+      setInputError('Please stage the file before committing.');
       return;
     }
     if (!summaryTrimmed) {
-      setErrorMsg('Commit summary is required according to GitHub rules.');
+      setInputError('Commit summary is required.');
       return;
     }
-    setErrorMsg(null);
-    await onCommit({
-      message: summaryTrimmed,
-      description: commitDescription.trim() || undefined,
+    setInputError(null);
+
+    workflow.execute(async () => {
+      await onCommit({
+        message: summaryTrimmed,
+        description: commitDescription.trim() || undefined,
+      });
+      return {
+        title: summaryTrimmed,
+        subtitle: `Changes committed to ${filePath} on branch ${targetBranch}.`,
+        metaItems: [
+          { label: 'File', value: filePath },
+          { label: 'Branch', value: targetBranch },
+          { label: 'Author', value: authorName || 'Active User' },
+        ],
+      };
     });
   };
 
@@ -89,7 +115,7 @@ export const CommitSheet: React.FC<CommitSheetProps> = ({
           <button
             type="button"
             onClick={onClose}
-            disabled={isSubmitting}
+            disabled={workflow.isBusy}
             className="w-9 h-9 rounded-xl flex items-center justify-center text-text-tertiary hover:text-text-primary hover:bg-surface-2 transition cursor-pointer"
             aria-label="Close commit sheet"
           >
@@ -97,31 +123,47 @@ export const CommitSheet: React.FC<CommitSheetProps> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-4 space-y-4 overflow-y-auto flex-1">
-          <CommitSheetStaging
-            filePath={filePath}
-            isStaged={isStaged}
-            stats={stats}
-            authorName={authorName}
-            authorAvatar={authorAvatar}
-            onToggleStaged={() => setIsStaged(!isStaged)}
-            onSetStaged={setIsStaged}
-          />
+        <div className="p-4 space-y-4 overflow-y-auto flex-1">
+          {workflow.phase !== 'idle' ? (
+            <ActionVerificationTracker
+              phase={workflow.phase}
+              steps={workflow.steps}
+              activeStepIndex={workflow.activeStepIndex}
+              resultSummary={workflow.resultSummary}
+              errorMsg={workflow.errorMsg}
+              countdownRemaining={workflow.countdownRemaining}
+              onDismissNow={workflow.dismissNow}
+              onBackToEdit={workflow.reset}
+              onRetry={() => handleSubmit({ preventDefault: () => {} } as any)}
+            />
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <CommitSheetStaging
+                filePath={filePath}
+                isStaged={isStaged}
+                stats={stats}
+                authorName={authorName}
+                authorAvatar={authorAvatar}
+                onToggleStaged={() => setIsStaged(!isStaged)}
+                onSetStaged={setIsStaged}
+              />
 
-          <CommitSheetInputs
-            filePath={filePath}
-            commitSummary={commitSummary}
-            commitDescription={commitDescription}
-            errorMsg={errorMsg}
-            isStaged={isStaged}
-            isSubmitting={isSubmitting}
-            onSummaryChange={(val) => {
-              setCommitSummary(val);
-              if (errorMsg) setErrorMsg(null);
-            }}
-            onDescriptionChange={setCommitDescription}
-          />
-        </form>
+              <CommitSheetInputs
+                filePath={filePath}
+                commitSummary={commitSummary}
+                commitDescription={commitDescription}
+                errorMsg={inputError}
+                isStaged={isStaged}
+                isSubmitting={workflow.isBusy}
+                onSummaryChange={(val) => {
+                  setCommitSummary(val);
+                  if (inputError) setInputError(null);
+                }}
+                onDescriptionChange={setCommitDescription}
+              />
+            </form>
+          )}
+        </div>
       </motion.div>
     </div>
   );
