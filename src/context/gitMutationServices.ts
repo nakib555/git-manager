@@ -51,7 +51,7 @@ export const deleteRemoteGitHubRepo = async (owner: string, repo: string, token:
     if (res.status === 401) {
       errMsg = "GitHub token expired or unauthorized. Please re-authenticate.";
     } else if (res.status === 403) {
-      errMsg = "Must have admin rights and 'delete_repo' scope on your GitHub token.";
+      errMsg = "GitHub 403 Forbidden: Missing 'delete_repo' permission scope or repository admin rights. Please re-authenticate to grant delete permissions.";
     } else if (res.status === 404) {
       errMsg = `Repository ${owner}/${repo} not found on GitHub.`;
     }

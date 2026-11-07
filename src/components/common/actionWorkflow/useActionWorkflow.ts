@@ -20,6 +20,7 @@ export function useActionWorkflow(options: ActionWorkflowOptions = {}) {
 
   const timerRef = useRef<any>(null);
   const countdownIntervalRef = useRef<any>(null);
+  const isMountedRef = useRef<boolean>(true);
 
   const cleanup = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -28,12 +29,19 @@ export function useActionWorkflow(options: ActionWorkflowOptions = {}) {
     countdownIntervalRef.current = null;
   }, []);
 
-  useEffect(() => cleanup, [cleanup]);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      cleanup();
+    };
+  }, [cleanup]);
 
   const execute = useCallback(async (
     actionFn: () => Promise<ActionResultSummary | boolean | void>
   ) => {
     cleanup();
+    if (!isMountedRef.current) return;
     setErrorMsg('');
     setPhase('validating');
     setActiveStepIndex(0);
@@ -42,6 +50,7 @@ export function useActionWorkflow(options: ActionWorkflowOptions = {}) {
 
     try {
       await stepDelay(280);
+      if (!isMountedRef.current) return;
       setPhase('executing');
       setActiveStepIndex(1);
 
@@ -50,6 +59,7 @@ export function useActionWorkflow(options: ActionWorkflowOptions = {}) {
         stepDelay(380),
       ]);
 
+      if (!isMountedRef.current) return;
       if (actionResult === false) {
         throw new Error('Operation was rejected or could not be completed.');
       }
@@ -57,6 +67,7 @@ export function useActionWorkflow(options: ActionWorkflowOptions = {}) {
       setPhase('verifying');
       setActiveStepIndex(2);
       await stepDelay(260);
+      if (!isMountedRef.current) return;
 
       const summary: ActionResultSummary = (typeof actionResult === 'object' && actionResult !== null)
         ? actionResult as ActionResultSummary
@@ -71,6 +82,7 @@ export function useActionWorkflow(options: ActionWorkflowOptions = {}) {
       setCountdownRemaining(totalSeconds);
 
       countdownIntervalRef.current = setInterval(() => {
+        if (!isMountedRef.current) return;
         setCountdownRemaining((prev) => {
           if (prev <= 1) {
             if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
@@ -81,11 +93,13 @@ export function useActionWorkflow(options: ActionWorkflowOptions = {}) {
       }, 1000);
 
       timerRef.current = setTimeout(() => {
+        if (!isMountedRef.current) return;
         optionsRef.current.onClose?.();
       }, delay);
 
     } catch (err: any) {
       cleanup();
+      if (!isMountedRef.current) return;
       setPhase('error');
       setErrorMsg(err?.message || 'Operation failed. Please verify input and try again.');
     }
@@ -93,6 +107,7 @@ export function useActionWorkflow(options: ActionWorkflowOptions = {}) {
 
   const reset = useCallback(() => {
     cleanup();
+    if (!isMountedRef.current) return;
     setPhase('idle');
     setActiveStepIndex(0);
     setErrorMsg('');
@@ -101,6 +116,7 @@ export function useActionWorkflow(options: ActionWorkflowOptions = {}) {
 
   const dismissNow = useCallback(() => {
     cleanup();
+    if (!isMountedRef.current) return;
     optionsRef.current.onClose?.();
   }, [cleanup]);
 

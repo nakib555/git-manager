@@ -1,177 +1,111 @@
-# Engineering Plan: Fix All Dialog Box Action Failures & GitHub OAuth Integration
+# Engineering Implementation Plan: Modal Unmounting Lifecycle Refactoring & Mounted State Verification
 
-Addresses the root cause of why file edits appear to work while dialog box actions (Create Repo, Create Branch, Create PR, Commit, Delete Repo) fail even when connected or reconnected. Fixes the silent fallback discrepancy, resolves the demo repo trap (`octodev/nexus-web-engine`), standardizes GitHub Authorization headers, dynamically populates real remote branches in dialogs, and provides an inline re-authentication prompt.
+## Objective
+Refactor the modal unmounting lifecycle across `AppContext`, `CreateModals`, and the shared modal action workflow (`useActionWorkflow`) to strictly verify the component's mounted state before invoking cleanup functions, resetting state, or transferring focus after failed API requests. This eliminates the browser console warning: `Node cannot be found in the current page`.
 
----
-
-## 1. Verified Evidence: Why File Edits Work While Dialogs Fail
-
-### The Core Architectural Discrepancy
-1. **Why File Edits Work (`saveAndCommitFile`)**:
-   - In `src/context/slices/commitSliceServices.ts` (lines 124–131):
-     ```typescript
-     if (githubToken && owner && owner !== 'local-user') {
-       try {
-         const res = await pushFileToGitHub(owner, repo, cleanPath, content, fullMsg, branch, githubToken);
-         return { isRemote: true, sha: shortSha };
-       } catch (err: any) {
-         // Remote push failed, proceed to local save with warning
-       }
-     }
-     // Slices proceed to local save in localStorage and return success!
-     return { isRemote: false, sha: localHash, updatedCommits: updated };
-     ```
-   - When a user edits a file in `useMobileFileEditor.ts`, `saveAndCommitFile` is called. Even if GitHub returns a 401, 403, or 404 error, the file editor's underlying service **silently catches the error**, saves the file to browser `localStorage`, and returns `{ success: true }`. The editor closes happily, making file edits appear completely functional.
-2. **Why Dialog Box Actions Fail (`useActionWorkflow`)**:
-   - In contrast, all modal dialogs (`RepoForm`, `BranchForm`, `PRForm`, `CommitForm`, `DeleteRepoModal`) run through `useActionWorkflow`.
-   - In `useCommitSlice.ts` (`createLocalCommit`), `useBranchSlice.ts` (`createLocalBranch`), and `useRepoSlice.ts` (`deleteRepo`), when GitHub API requests fail, they throw an unhandled error or return `false`.
-   - `useActionWorkflow` catches the exception and immediately transitions the dialog to `phase: 'error'`, displaying the red `ActionErrorCard`.
-3. **The "Connected / Reconnected" Demo Repo Trap**:
-   - In `src/context/slices/useAuthSlice.ts` (lines 44–54):
-     ```typescript
-     if (event.data?.type === "OAUTH_AUTH_SUCCESS") {
-       const token = event.data.token;
-       localStorage.setItem("githubToken", token);
-       setState((prev) => ({ ...prev, githubToken: token }));
-       showToast("Successfully connected to GitHub", "success");
-     }
-     ```
-   - Notice that upon OAuth completion, **`fetchGitHubData(token)` is never invoked** and `currentRepo` / `currentRepoOwner` are never updated to the user's account!
-   - Because initial state defaults to `currentRepo = "nexus-web-engine"` and `currentRepoOwner = "octodev"`, the user remains on `octodev`'s demo repository even while their GitHub token is active.
-   - When the user opens a dialog to create a branch, commit, or PR, the app attempts to execute against `https://api.github.com/repos/octodev/nexus-web-engine/...`. GitHub naturally returns **404 Not Found** or **403 Forbidden** because the user does not own `octodev`'s repo!
-4. **Header Discrepancy Between File Edit & Dialog Services**:
-   - In `gitCommitFileService.ts` (used by file edit), line 11:
-     `token.startsWith('Bearer ') || token.startsWith('token ') ? token : 'token ' + token`
-   - In `gitMutationServices.ts` (used by branch creation) and `gitPrMutationServices.ts` (used by PR creation):
-     Hardcoded `Authorization: Bearer ${token}`.
-   - GitHub's REST API for Git Database endpoints (`/git/refs`) rejects classic Personal Access Tokens (`ghp_...`) when prefixed with `Bearer` instead of `token`.
-5. **Phantom Demo Branch References in PR Dialog**:
-   - `PRForm.tsx` defaults its comparison dropdowns to `activeBranches`, which contains demo branches (`develop`, `feature/analytics`) from `DEMO_BRANCHES`.
-   - If the user creates a PR comparing `develop` to `main` on their real GitHub repo, GitHub responds with `422 Unprocessable Entity` ("head ref does not exist") because `develop` only exists in client mock state.
+- **Problem**: When a GitHub API request or mutation fails (e.g., 403 Forbidden, 422 Unprocessable, network failure) while a modal is closing or transitioning, cleanup functions and state setters (`cleanup()`, `setPhase('error')`, `setErrorMsg()`, `optionsRef.current.onClose?.()`) are executed without checking if the modal component is still mounted. Furthermore, when `activeModal` in `AppContext` transitions to `null`, `AnimatePresence` unmounts the modal dialog while focus or pending timers attempt to query or update the detached DOM node.
+- **Expected Result**:
+  1. `CreateModals` and `AppContext` manage a verified mounted lifecycle that checks mounted status before executing any post-failure cleanup functions.
+  2. `useActionWorkflow` implements an explicit `isMountedRef` check surrounding all `catch` handlers, cleanup invocations, and state updates.
+  3. Active DOM focus is safely surrendered before unmounting so no detached DOM nodes trigger `Node cannot be found in the current page`.
+- **Success Criteria**:
+  - Failed API requests (simulated or real) never invoke cleanup or state setters on unmounted components.
+  - Zero `Node cannot be found in the current page` errors during error recovery or modal dismissal.
+  - All modified files strictly comply with the $\le 150$ LOC ceiling.
 
 ---
 
-## 2. Objective
-
-### Purpose
-Make all dialog box actions (Create Repo, Create Branch, Create PR, Commit, Delete Repo) function seamlessly with GitHub, eliminate the demo repo trap upon OAuth login/reconnection, ensure all API mutation calls use valid auth schemes, populate genuine remote branches, and present actionable error resolution with one-click re-authentication.
-
-### Success Criteria
-1. Re-authenticating or connecting via OAuth (`/auth/callback` popup) automatically updates the user's profile and switches the workspace to their owned GitHub repositories instead of leaving them stranded on `octodev/nexus-web-engine`.
-2. All mutation endpoints (`createRemoteGitHubBranch`, `createRemoteGitHubPR`, `createRemoteGitHubRepo`, `deleteRemoteGitHubRepo`, `pushFileToGitHub`) use robust header formatting:
-   `token.startsWith('Bearer ') || token.startsWith('token ') ? token : (token.startsWith('ghp_') ? 'token ' + token : 'Bearer ' + token)`.
-3. In `findBaseSha`, if `refs/heads/main` or `master` is missing, the service inspects the user's actual active branch (`currentBranch`) and default branch from GitHub metadata.
-4. When in a demo repository or unowned repo, dialogs clearly inform the user: *"You are viewing demo repo 'nexus-web-engine'. Select or create your own repository to push live GitHub changes."*
-5. In `ActionErrorCard`, if an action fails due to credentials or permissions (HTTP 401/403), an inline "Re-authenticate GitHub" button is rendered, allowing the user to refresh their session without losing form inputs.
-
----
-
-## 3. Architecture & Data Flow
-
-```
-User authenticates (OAuth Popup or Token Paste)
-                       │
-                       ▼
-             useAuthSlice Handler
-  1. Stores token in localStorage & state
-  2. Fetches real authenticated profile (user.login)
-  3. Loads user's live repositories
-  4. Auto-switches currentRepo & currentRepoOwner to user's first repo
-                       │
-                       ▼
-          Workspace Context Synchronized
-         (e.g., nakib555/git-manager instead of octodev/nexus-web-engine)
-                       │
-                       ▼
-User opens Action Dialog (Branch, PR, Commit, Repo, Delete)
-                       │
-                       ▼
-            useActionWorkflow.execute()
-                       │
-          ┌────────────┴────────────┐
-          ▼                         ▼
-   GitHub Token Active?       No Token / Offline?
-          │                         │
-          ▼                         ▼
-Send request with normalized       Execute local mutation cleanly
-auth headers & valid ref SHA       in localStorage and state
-          │                         │
-    ┌─────┴─────┐                   ▼
-    ▼           ▼             Phase: 'success'
- HTTP 200/201  HTTP 401/403/422
-    │           │
-    ▼           ▼
-Phase:        Phase: 'error'
-'success'     ActionErrorCard:
-Auto-close    - Display exact GitHub error
-in 2s         - [Edit Form]
-              - [Retry Operation]
-              - [Re-authenticate GitHub]
-```
+## Existing System Analysis
+- **`src/AppContext.tsx` & `src/context/slices/useUISlice.ts`**:
+  `closeModal()` immediately clears `activeModal: null`. It does not coordinate teardown with in-flight or failing API requests.
+- **`src/components/CreateModals.tsx`**:
+  Renders modal backdrop and content via `AnimatePresence`. Escape key and backdrop clicks invoke `closeModal()` directly. No mounted state guard exists around child component teardown or error callbacks.
+- **`src/components/common/actionWorkflow/useActionWorkflow.ts`**:
+  In lines 87–91:
+  ```typescript
+  } catch (err: any) {
+    cleanup();
+    setPhase('error');
+    setErrorMsg(err?.message || 'Operation failed. Please verify input and try again.');
+  }
+  ```
+  `cleanup()` and `setPhase` run unconditionally even if the component unmounted during the async API call.
+- **`src/components/modals/RepoForm.tsx`, `BranchForm.tsx`, `PRForm.tsx`, `CommitForm.tsx`**:
+  All delegate execution to `useActionWorkflow`.
 
 ---
 
-## 4. Implementation Breakdown
+## Verified Facts & Constraints
+- **Verified Fact 1**: `Node cannot be found in the current page` occurs when cleanup handlers, timers, or focus handlers target a DOM element that was already unmounted from the document during or immediately following an async rejection.
+- **Verified Fact 2**: All files in the codebase must strictly adhere to the $\le 150$ LOC rule.
+- **Verified Fact 3**: The user specifically requested: *"Refactor the modal unmounting lifecycle in the AppContext/CreateModals components to prevent the 'Node cannot be found' error by verifying the component's mounted state before invoking cleanup functions after failed API requests."*
 
-### Phase 1: Post-Auth State Resynchronization & Demo Trap Eradication
+---
+
+## Complexity Classification
+**Level 2: Small Feature / Lifecycle Refactoring**
+Scope spans `AppContext` / `useUISlice`, `CreateModals.tsx`, and `useActionWorkflow.ts` to ensure consistent mounted-state tracking across modal lifecycles.
+
+---
+
+## Architecture Design
+
+### 1. Mounted-State Guard in `useActionWorkflow`
+Introduce `isMountedRef` into `useActionWorkflow.ts`:
+- Initialize `isMountedRef.current = true` on mount and set to `false` in the `useEffect` cleanup.
+- In the `catch` handler for failed API requests:
+  - Check `if (!isMountedRef.current) return;` before calling `setPhase('error')`, `setErrorMsg(...)`, or any error-specific callbacks.
+  - Make `cleanup()` safe against detached timers by nulling refs before clearing.
+
+### 2. Modal Unmounting Lifecycle in `CreateModals.tsx`
+- Maintain an `isMountedRef` in `CreateModals.tsx`.
+- Wrap `closeModal` into a safe handler `handleSafeClose` that:
+  - Checks if the component is mounted.
+  - Releases active element focus (`document.activeElement?.blur()`) inside a `try/catch` before initiating the exit animation.
+  - Ensures cleanup functions from failed API requests do not attempt DOM queries on detached elements.
+- Ensure `AnimatePresence` onExitComplete executes any deferred cleanup safely only after the node has finished animating out.
+
+### 3. Safe Modal Teardown Coordination in `AppContext` / `useUISlice`
+- In `useUISlice.ts`, add a safe modal dismiss coordinator that allows modals with in-flight or failed requests to cleanly cancel without causing race conditions or invalid unmount queries.
+
+---
+
+## Implementation Breakdown
+
+### Phase 1: `useActionWorkflow.ts` Mounted-State Verification
+- **File**: `/src/components/common/actionWorkflow/useActionWorkflow.ts`
+- **Actions**:
+  - Add `isMountedRef` initialized to `true` and cleaned up to `false`.
+  - Guard `setPhase`, `setActiveStepIndex`, `setErrorMsg`, `setResultSummary`, `setCountdownRemaining`, and `cleanup` with `if (!isMountedRef.current) return;`.
+  - Verify line count $\le 150$ LOC (currently 120 lines).
+
+### Phase 2: `CreateModals.tsx` Unmounting Lifecycle & Safe Blur
+- **File**: `/src/components/CreateModals.tsx`
+- **Actions**:
+  - Add `isMountedRef` to track mounted state.
+  - Implement safe unmount handler that releases focus (`blur()`) before dismissing.
+  - Pass guarded `onClose` callback to modal forms to prevent invoking cleanup after unmount.
+  - Verify line count $\le 150$ LOC (currently 70 lines).
+
+### Phase 3: `useUISlice.ts` / `AppContext.tsx` Safety Alignment
 - **Files**:
-  - `src/context/slices/useAuthSlice.ts` ($\le 150$ LOC)
-  - `src/context/slices/repoSliceServices.ts` ($\le 150$ LOC)
-- **Changes**:
-  - In `useAuthSlice.ts`: Change OAuth popup to `window.open(url, 'github_oauth_popup', 'width=600,height=700')`.
-  - When `OAUTH_AUTH_SUCCESS` is received: Immediately call `fetchGitHubData(token, false, 1, '')` to pull the user's real GitHub account and repositories.
-  - In `repoSliceServices.ts`: Ensure that if `currentRepoOwner === 'octodev'` or `currentRepo === 'nexus-web-engine'`, the workspace immediately switches to the authenticated user's first GitHub repo.
-  - In `setManualToken`: Also guarantee automatic switch away from demo repositories.
-
-### Phase 2: Mutation Service Header & Ref Hardening
-- **Files**:
-  - `src/context/gitMutationServices.ts` ($\le 150$ LOC)
-  - `src/context/gitPrMutationServices.ts` ($\le 150$ LOC)
-  - `src/context/gitCommitFileService.ts` ($\le 150$ LOC)
-- **Changes**:
-  - Standardize Authorization header across all mutation functions:
-    `token.startsWith('Bearer ') || token.startsWith('token ') ? token : (token.startsWith('ghp_') ? 'token ' + token : 'Bearer ' + token)`.
-  - Update `findBaseSha` to check:
-    1. Active branch ref: `git/ref/heads/${currentBranch}`
-    2. Default branch ref: `git/ref/heads/main`
-    3. Alternate branch ref: `git/ref/heads/master`
-    4. Latest commit: `commits?per_page=1`
-  - Ensure 401 and 403 status codes are not swallowed in `findBaseSha` so authentication failures are clearly reported.
-
-### Phase 3: Dialog Slices & Form Alignment
-- **Files**:
-  - `src/context/slices/useRepoSlice.ts` ($\le 150$ LOC)
-  - `src/context/slices/useBranchSlice.ts` ($\le 150$ LOC)
-  - `src/context/slices/usePRSlice.ts` ($\le 150$ LOC)
-  - `src/context/slices/useCommitSlice.ts` ($\le 150$ LOC)
-  - `src/components/modals/PRForm.tsx` ($\le 150$ LOC)
-  - `src/components/modals/CommitForm.tsx` ($\le 150$ LOC)
-- **Changes**:
-  - Add explicit repo ownership guard: If the user attempts a mutation on `octodev/nexus-web-engine` while logged in, throw: `"Please select one of your own repositories to perform this action on GitHub."`
-  - In `PRForm.tsx`: Filter `activeBranches` to only include branches present on the active repository.
-  - In `CommitForm.tsx`: Populate `currentBranch` accurately and ensure `pushFileToGitHub` uses the verified branch ref.
-
-### Phase 4: ActionErrorCard Re-Authentication Action
-- **Files**:
-  - `src/components/common/actionWorkflow/ActionErrorCard.tsx` ($\le 150$ LOC)
-  - `src/components/common/actionWorkflow/ActionVerificationTracker.tsx` ($\le 150$ LOC)
-- **Changes**:
-  - Detect auth-related errors (`401`, `Bad credentials`, `unauthorized`, `permission denied`, `demo repository`).
-  - Render a distinct "Re-authenticate with GitHub" button that launches `connectGitHub()` without resetting user inputs.
+  - `/src/context/slices/useUISlice.ts`
+  - `/src/AppContext.tsx`
+- **Actions**:
+  - Ensure `closeModal` does not trigger redundant state changes if already closing.
+  - Verify line counts $\le 150$ LOC.
 
 ---
 
-## 5. Execution Checklist
-1. [ ] Update `src/context/slices/useAuthSlice.ts` to implement `window.open` popup flow and trigger `fetchGitHubData` on OAuth success ($\le 150$ LOC).
-2. [ ] Update `src/context/slices/repoSliceServices.ts` to switch `currentRepo` and `currentRepoOwner` to the user's repositories upon login ($\le 150$ LOC).
-3. [ ] Update `src/context/gitMutationServices.ts` and `gitPrMutationServices.ts` to standardize Authorization headers and enhance `findBaseSha` ($\le 150$ LOC each).
-4. [ ] Update `src/context/slices/useRepoSlice.ts`, `useBranchSlice.ts`, and `usePRSlice.ts` to properly handle and rethrow mutation errors ($\le 150$ LOC each).
-5. [ ] Update `src/components/common/actionWorkflow/ActionErrorCard.tsx` and `ActionVerificationTracker.tsx` to provide an inline Re-authenticate action ($\le 150$ LOC each).
-6. [ ] Update `src/components/modals/PRForm.tsx` and `CommitForm.tsx` for real branch and ref mapping ($\le 150$ LOC each).
-7. [ ] Run `compile_applet` and `lint_applet` together to verify zero compile or typing errors.
-8. [ ] Execute verification check (10-second wait and error monitoring).
+## Execution Checklist
+1. Update `src/components/common/actionWorkflow/useActionWorkflow.ts` with `isMountedRef` and guarded failure catch blocks.
+2. Update `src/components/CreateModals.tsx` with mounted-state verification and safe focus release on unmount.
+3. Verify `src/context/slices/useUISlice.ts` and `src/AppContext.tsx` alignment.
+4. Execute `compile_applet` and `lint_applet` together to verify zero syntax/TypeScript errors.
+5. Wait 10 seconds and test runtime console/endpoints for errors.
 
 ---
 
-## 6. Approval Gate
-Awaiting user confirmation to proceed with implementation.
+## Quality Gates & Approval Gate
+- No implementation code will be written until this plan receives your explicit approval.
+- Standing by for your confirmation (`Approved`, `Proceed`, or `Implement`).

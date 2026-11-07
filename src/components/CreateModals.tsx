@@ -11,15 +11,35 @@ import { OAuthSetupForm } from './modals/OAuthSetupForm';
 
 export const CreateModals: React.FC = () => {
   const { activeModal, closeModal, createLocalRepo, createLocalBranch, createLocalPR, createLocalCommit } = useAppContext();
+  const isMountedRef = React.useRef<boolean>(true);
 
-  useEffect(() => {
+  React.useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  const handleSafeClose = React.useCallback(() => {
+    if (!isMountedRef.current) return;
+    try {
+      if (document.activeElement && typeof (document.activeElement as HTMLElement).blur === 'function') {
+        (document.activeElement as HTMLElement).blur();
+      }
+    } catch (_) {}
+    if (isMountedRef.current) {
+      closeModal();
+    }
+  }, [closeModal]);
+
+  React.useEffect(() => {
     if (!activeModal) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') closeModal();
+      if (e.key === 'Escape' && isMountedRef.current) handleSafeClose();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeModal, closeModal]);
+  }, [activeModal, handleSafeClose]);
 
   return (
     <AnimatePresence>
@@ -29,7 +49,7 @@ export const CreateModals: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={closeModal}
+            onClick={handleSafeClose}
             className="absolute inset-0 bg-black/65 backdrop-blur-xs cursor-pointer"
             aria-hidden="true"
           />
@@ -43,20 +63,20 @@ export const CreateModals: React.FC = () => {
             aria-modal="true"
             className="relative w-full max-w-md max-h-[88vh] overflow-y-auto bg-surface-1 rounded-2xl border border-border p-5 sm:p-6 shadow-2xl z-10 flex flex-col"
           >
-            <ModalHeader activeModal={activeModal} onClose={closeModal} />
+            <ModalHeader activeModal={activeModal} onClose={handleSafeClose} />
 
             <div className="mt-2">
               {activeModal === 'repo' && (
-                <RepoForm onExecute={createLocalRepo} onClose={closeModal} />
+                <RepoForm onExecute={createLocalRepo} onClose={handleSafeClose} />
               )}
               {activeModal === 'branch' && (
-                <BranchForm onExecute={createLocalBranch} onClose={closeModal} />
+                <BranchForm onExecute={createLocalBranch} onClose={handleSafeClose} />
               )}
               {activeModal === 'pr' && (
-                <PRForm onExecute={createLocalPR} onClose={closeModal} />
+                <PRForm onExecute={createLocalPR} onClose={handleSafeClose} />
               )}
               {activeModal === 'commit' && (
-                <CommitForm onExecute={createLocalCommit} onClose={closeModal} />
+                <CommitForm onExecute={createLocalCommit} onClose={handleSafeClose} />
               )}
               {activeModal === 'oauth_setup' && <OAuthSetupForm />}
               {activeModal === 'clone' && <CloneModal />}

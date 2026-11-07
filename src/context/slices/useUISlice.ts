@@ -55,7 +55,7 @@ export const useUISlice = ({ state, setState }: UseUISliceParams) => {
   const openModal = (modalType: 'repo' | 'branch' | 'pr' | 'commit' | 'clone' | 'oauth_setup') => {
     setState((prev) => ({ ...prev, activeModal: modalType, isActionSheetOpen: false }));
   };
-  const closeModal = () => setState((prev) => ({ ...prev, activeModal: null }));
+  const closeModal = () => setState((prev) => (prev.activeModal ? { ...prev, activeModal: null } : prev));
 
   const closeModals = () => setState((prev) => ({
     ...prev,

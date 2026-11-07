@@ -48,7 +48,11 @@ export const ActionErrorCard: React.FC<ActionErrorCardProps> = ({
             className="h-10 px-4 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
           >
             <KeyRound size={13} />
-            <span>Re-authenticate GitHub</span>
+            <span>
+              {/delete_repo|delete permission|admin rights/i.test(errorMsg)
+                ? 'Re-authorize (Grant Delete)'
+                : 'Re-authenticate GitHub'}
+            </span>
           </button>
         )}
 

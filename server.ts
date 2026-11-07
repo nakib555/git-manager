@@ -110,7 +110,7 @@ async function startServer() {
     const params = new URLSearchParams({
       client_id: process.env.GITHUB_CLIENT_ID,
       redirect_uri: redirectUri,
-      scope: 'repo read:user user:email',
+      scope: 'repo delete_repo read:user user:email',
     });
 
     const authUrl = `https://github.com/login/oauth/authorize?${params.toString()}`;

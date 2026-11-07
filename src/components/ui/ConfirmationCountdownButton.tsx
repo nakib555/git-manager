@@ -24,10 +24,17 @@ export const ConfirmationCountdownButton: React.FC<ConfirmationCountdownButtonPr
   const [secondsLeft, setSecondsLeft] = useState(countdownSeconds);
   const [isExecuting, setIsExecuting] = useState(false);
   const timerRef = useRef<any>(null);
+  const isMountedRef = useRef<boolean>(true);
+  const btnRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
+    isMountedRef.current = true;
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      isMountedRef.current = false;
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
     };
   }, []);
 
@@ -42,13 +49,25 @@ export const ConfirmationCountdownButton: React.FC<ConfirmationCountdownButtonPr
     timerRef.current = setInterval(() => {
       const elapsed = Date.now() - startTime;
       const remaining = Math.max(0, Math.ceil((duration - elapsed) / 1000));
-      setSecondsLeft(remaining);
+      if (isMountedRef.current) {
+        setSecondsLeft(remaining);
+      }
 
       if (elapsed >= duration) {
-        clearInterval(timerRef.current);
-        setIsCounting(false);
-        setIsExecuting(true);
-        Promise.resolve(onConfirm()).finally(() => setIsExecuting(false));
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
+        try {
+          btnRef.current?.blur();
+        } catch (_) {}
+        if (isMountedRef.current) {
+          setIsCounting(false);
+          setIsExecuting(true);
+        }
+        Promise.resolve(onConfirm()).finally(() => {
+          if (isMountedRef.current) setIsExecuting(false);
+        });
       }
     }, 100);
   };
@@ -73,6 +92,7 @@ export const ConfirmationCountdownButton: React.FC<ConfirmationCountdownButtonPr
   return (
     <div className="relative inline-flex items-center w-full">
       <button
+        ref={btnRef}
         type="button"
         disabled={disabled || isExecuting}
         onClick={isCounting ? cancelCountdown : startCountdown}

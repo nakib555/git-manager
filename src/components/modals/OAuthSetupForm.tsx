@@ -64,7 +64,7 @@ export const OAuthSetupForm: React.FC = () => {
 
           <div>
             <a 
-              href="https://github.com/settings/tokens/new?scopes=repo,user,read:org&description=Git%20Manager%20App"
+              href="https://github.com/settings/tokens/new?scopes=repo,delete_repo,user,read:org&description=Git%20Manager%20App"
               target="_blank"
               rel="noreferrer"
               className="w-full bg-hover border border-border hover:border-primary/50 text-text-main font-semibold text-xs py-2.5 px-3 rounded-xl transition-all flex items-center justify-center gap-2 text-center"

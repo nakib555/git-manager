@@ -36,6 +36,11 @@ export const DeleteRepoModal: React.FC<DeleteRepoModalProps> = ({
 
   const handleModalClose = () => {
     if (workflow.isBusy) return;
+    try {
+      if (document.activeElement && typeof (document.activeElement as HTMLElement).blur === 'function') {
+        (document.activeElement as HTMLElement).blur();
+      }
+    } catch (_) {}
     setConfirmInput('');
     workflow.reset();
     onClose();
