@@ -50,15 +50,9 @@ export const getLocalRepoDetails = (
 
 export const getInitialDefaultState = (): AppState => {
   const storedToken = localStorage.getItem("githubToken");
-  const initialDefaultRepo = storedToken
-    ? (localStorage.getItem("currentRepo") || "")
-    : (localStorage.getItem("currentRepo") || "nexus-web-engine");
-  const initialDefaultOwner = storedToken
-    ? (localStorage.getItem("currentRepoOwner") || "")
-    : (localStorage.getItem("currentRepoOwner") || "octodev");
-  const initialDefaultBranch = storedToken
-    ? (localStorage.getItem("currentBranch") || "")
-    : (localStorage.getItem("currentBranch") || "main");
+  const initialDefaultRepo = storedToken ? (localStorage.getItem("currentRepo") || "") : null;
+  const initialDefaultOwner = storedToken ? (localStorage.getItem("currentRepoOwner") || "") : null;
+  const initialDefaultBranch = storedToken ? (localStorage.getItem("currentBranch") || "") : null;
 
   return {
     currentScreen: (localStorage.getItem("currentScreen") as Screen) || "dash",
@@ -74,10 +68,8 @@ export const getInitialDefaultState = (): AppState => {
     githubToken: storedToken || null,
     githubUser: storedToken
       ? (localStorage.getItem("githubUser") ? sanitizeGitHubUser(JSON.parse(localStorage.getItem("githubUser")!)) : null)
-      : DEMO_USER,
-    githubRepos: storedToken
-      ? getLocalRepos()
-      : (getLocalRepos().length > 0 ? getLocalRepos() : DEMO_REPOSITORIES),
+      : null,
+    githubRepos: storedToken ? getLocalRepos() : [],
     repoPage: 1,
     repoPerPage: 10,
     repoTotalPages: 1,
@@ -88,15 +80,11 @@ export const getInitialDefaultState = (): AppState => {
     repoTypeFilter: 'all',
     repoLanguageFilter: 'all',
     isFetchingRepos: false,
-    activeCommits: storedToken
-      ? getLocalRepoDetails(initialDefaultRepo, "commits")
-      : (getLocalRepoDetails(initialDefaultRepo, "commits").length > 0
-          ? getLocalRepoDetails(initialDefaultRepo, "commits")
-          : DEMO_COMMITS),
-    activePRs: storedToken ? getLocalRepoDetails(initialDefaultRepo, "prs") : DEMO_PRS,
-    activeBranches: storedToken ? getLocalRepoDetails(initialDefaultRepo, "branches") : DEMO_BRANCHES,
-    activeFiles: storedToken ? getLocalRepoDetails(initialDefaultRepo, "files") : DEMO_FILES,
-    activeLanguages: storedToken ? {} : { TypeScript: 68, Rust: 22, CSS: 10 },
+    activeCommits: storedToken && initialDefaultRepo ? getLocalRepoDetails(initialDefaultRepo, "commits") : [],
+    activePRs: storedToken && initialDefaultRepo ? getLocalRepoDetails(initialDefaultRepo, "prs") : [],
+    activeBranches: storedToken && initialDefaultRepo ? getLocalRepoDetails(initialDefaultRepo, "branches") : [],
+    activeFiles: storedToken && initialDefaultRepo ? getLocalRepoDetails(initialDefaultRepo, "files") : [],
+    activeLanguages: {},
     isLoadingRepoDetails: false,
     activeModal: null,
     sessionCommitsCount: parseInt(localStorage.getItem("sessionCommitsCount") || "0", 10),

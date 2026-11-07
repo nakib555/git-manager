@@ -9,12 +9,22 @@ import { CommandPalette } from './components/CommandPalette';
 import { MobileShell } from './mobile/layout/MobileShell';
 
 import { ZipSyncModal } from './components/sync/ZipSyncModal';
+import { UnauthenticatedState } from './components/UnauthenticatedState';
 
 const queryClient = new QueryClient();
 
 const MainApp = () => {
-  const { isCommandPaletteOpen, closeCommandPalette, isZipSyncOpen, closeZipSync } = useAppContext();
+  const { githubToken, isCommandPaletteOpen, closeCommandPalette, isZipSyncOpen, closeZipSync } = useAppContext();
   const isDesktop = useIsDesktop();
+
+  if (!githubToken) {
+    return (
+      <div className="flex flex-col w-full h-full bg-background text-text-primary relative overflow-y-auto justify-center items-center">
+        <UnauthenticatedState />
+        <CreateModals />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col w-full h-full bg-background text-text-primary opacity-0 animate-[fadeUp_0.3s_ease_forwards] relative">

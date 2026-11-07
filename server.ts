@@ -111,6 +111,7 @@ async function startServer() {
       client_id: process.env.GITHUB_CLIENT_ID,
       redirect_uri: redirectUri,
       scope: 'repo delete_repo admin:repo_hook admin:org admin:public_key admin:org_hook user workflow write:discussion project',
+      prompt: 'consent',
     });
 
     const authUrl = `https://github.com/login/oauth/authorize?${params.toString()}`;

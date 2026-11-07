@@ -101,19 +101,19 @@ export const useAuthSlice = ({
       githubToken: null,
       tokenScopes: [],
       hasDeleteRepoScope: false,
-      githubUser: DEMO_USER,
-      githubRepos: DEMO_REPOSITORIES,
-      currentRepo: "nexus-web-engine",
-      currentRepoOwner: "octodev",
-      currentBranch: "main",
-      activeCommits: DEMO_COMMITS,
-      activeBranches: DEMO_BRANCHES,
-      activePRs: DEMO_PRS,
-      activeFiles: DEMO_FILES,
-      activeLanguages: { TypeScript: 68, Rust: 22, CSS: 10 },
+      githubUser: null,
+      githubRepos: [],
+      currentRepo: null,
+      currentRepoOwner: null,
+      currentBranch: null,
+      activeCommits: [],
+      activeBranches: [],
+      activePRs: [],
+      activeFiles: [],
+      activeLanguages: {},
       repoTotalPages: 1,
     }));
-    showToast("GitHub disconnected • Demo workspace loaded", "info");
+    showToast("Signed out from GitHub. Please log in to continue.", "info");
   };
 
   const setManualToken = (token: string) => {
