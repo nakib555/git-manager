@@ -1,6 +1,6 @@
 import { AppState } from '../../types';
 import { getLocalRepoDetails } from '../contextUtils';
-import { deleteRemoteGitHubRepo } from '../gitMutationServices';
+import { deleteRemoteGitHubRepo, getGitHubAuthHeader } from '../gitMutationServices';
 import { executeFetchGitHubData, executeFetchRepoDetails } from './repoSliceServices';
 import { buildInitialLocalRepo } from './repoCreationHelper';
 
@@ -31,15 +31,11 @@ export const useRepoSlice = ({ state, setState, showToast }: UseRepoSliceParams)
     try {
       const details = await executeFetchRepoDetails(repoName, owner, state.githubToken, branchOverride);
       setState(prev => ({ ...prev, ...details, isLoadingRepoDetails: false }));
-    } catch (error: any) {
+    } catch (_) {
       if (!isBackground) {
         setState(prev => ({
-          ...prev,
-          activeCommits: getLocalRepoDetails(repoName, "commits"),
-          activeBranches: getLocalRepoDetails(repoName, "branches"),
-          activePRs: getLocalRepoDetails(repoName, "prs"),
-          activeFiles: getLocalRepoDetails(repoName, "files"),
-          isLoadingRepoDetails: false,
+          ...prev, activeCommits: getLocalRepoDetails(repoName, "commits"), activeBranches: getLocalRepoDetails(repoName, "branches"),
+          activePRs: getLocalRepoDetails(repoName, "prs"), activeFiles: getLocalRepoDetails(repoName, "files"), isLoadingRepoDetails: false,
         }));
       }
     }
@@ -59,23 +55,24 @@ export const useRepoSlice = ({ state, setState, showToast }: UseRepoSliceParams)
 
   const deleteRepo = async (repoName: string, owner?: string | null): Promise<boolean> => {
     const targetOwner = owner || state.currentRepoOwner || state.githubUser?.login || '';
-    if (state.githubToken && targetOwner) {
-      try {
-        await deleteRemoteGitHubRepo(targetOwner, repoName, state.githubToken);
-        showToast(`Repository '${targetOwner}/${repoName}' deleted from GitHub!`, 'success');
-      } catch (err: any) {
-        showToast(`Failed to delete repository on GitHub: ${err.message || err}`, 'error');
-        return false;
+    if (state.githubToken && targetOwner && targetOwner !== 'local-developer') {
+      if (targetOwner === 'octodev' && repoName === 'nexus-web-engine') {
+        showToast("Demo repository removed from local view.", 'info');
+      } else {
+        try {
+          await deleteRemoteGitHubRepo(targetOwner, repoName, state.githubToken);
+          showToast(`Repository '${targetOwner}/${repoName}' deleted from GitHub!`, 'success');
+        } catch (err: any) {
+          showToast(`Failed to delete repository on GitHub: ${err.message || err}`, 'error');
+          throw err;
+        }
       }
     } else {
       showToast(`Repository '${repoName}' removed locally.`, 'info');
     }
 
     try {
-      localStorage.removeItem(`local_details_${repoName}_commits`);
-      localStorage.removeItem(`local_details_${repoName}_branches`);
-      localStorage.removeItem(`local_details_${repoName}_prs`);
-      localStorage.removeItem(`local_details_${repoName}_files`);
+      ['commits', 'branches', 'prs', 'files'].forEach(t => localStorage.removeItem(`local_details_${repoName}_${t}`));
     } catch (_) {}
 
     const updated = state.githubRepos.filter(r => r.name !== repoName);
@@ -97,8 +94,7 @@ export const useRepoSlice = ({ state, setState, showToast }: UseRepoSliceParams)
   };
 
   const cloneRepository = async (repo: { url: string; destFolder: string; branch: string; shallow: boolean; submodules: boolean }) => {
-    const cleanUrl = repo.url.trim().replace(/\.git$/, '');
-    const parts = cleanUrl.split('/');
+    const parts = repo.url.trim().replace(/\.git$/, '').split('/');
     const name = parts[parts.length - 1] || 'cloned-repo';
     const owner = parts.length >= 2 ? parts[parts.length - 2] : 'custom-owner';
     addRecentClone({ name, url: repo.url, dest: repo.destFolder, timestamp: Date.now() });
@@ -113,18 +109,28 @@ export const useRepoSlice = ({ state, setState, showToast }: UseRepoSliceParams)
 
   const createLocalRepo = async (repo: { name: string; desc: string; isPrivate: boolean; lang: string }) => {
     const cleanName = repo.name.trim();
-    if (!cleanName) return;
+    if (!cleanName) throw new Error("Repository name cannot be empty.");
     if (state.githubToken) {
       try {
-        const headers = { Authorization: `Bearer ${state.githubToken}`, "Content-Type": "application/json", Accept: "application/vnd.github.v3+json" };
+        const headers = { Authorization: getGitHubAuthHeader(state.githubToken), "Content-Type": "application/json", Accept: "application/vnd.github.v3+json" };
         const res = await fetch("https://api.github.com/user/repos", {
           method: "POST", headers, body: JSON.stringify({ name: cleanName, description: repo.desc, private: repo.isPrivate, auto_init: true }),
         });
-        if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || `Status ${res.status}`);
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          let msg = errData.message || `Status ${res.status}`;
+          if (res.status === 401) msg = "GitHub authentication failed (401). Please re-authenticate.";
+          if (res.status === 422) msg = `Repository '${cleanName}' already exists on your GitHub account.`;
+          throw new Error(msg);
+        }
+        const newRepoData = await res.json();
         showToast(`Repository '${cleanName}' created on GitHub!`, 'success');
         await fetchGitHubData(state.githubToken);
-      } catch (e: any) { showToast(`Failed to create repository: ${e.message || e}`, 'error'); }
-      return;
+        return { name: cleanName, id: newRepoData.id };
+      } catch (e: any) {
+        showToast(`Failed to create repository: ${e.message || e}`, 'error');
+        throw e;
+      }
     }
     const owner = state.githubUser?.login || 'local-developer';
     const { newRepoItem, initialCommit, initialFiles, initialBranches } = buildInitialLocalRepo(cleanName, repo.desc, repo.isPrivate, repo.lang, owner);
@@ -137,6 +143,7 @@ export const useRepoSlice = ({ state, setState, showToast }: UseRepoSliceParams)
       };
     });
     showToast(`Repository '${cleanName}' created locally!`, 'success');
+    return { name: cleanName };
   };
 
   return { fetchGitHubData, fetchRepoDetails, openRepo, deleteRepo, addRecentClone, cloneRepository, createLocalRepo };

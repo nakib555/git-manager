@@ -24,13 +24,10 @@ export const CommitForm: React.FC<CommitFormProps> = ({ onExecute, onSubmit, onC
   const [filePath, setFilePath] = useState('README.md');
   const [fileContent, setFileContent] = useState('');
 
-  const isRealGitHub = Boolean(githubToken && currentRepoOwner);
+  const isRealGitHub = Boolean(githubToken && currentRepoOwner && currentRepoOwner !== 'octodev' && currentRepoOwner !== 'local-developer');
+  const isDemoActive = Boolean(githubToken && currentRepoOwner === 'octodev');
 
-  const workflow = useActionWorkflow({
-    steps: COMMIT_STEPS,
-    autoCloseDelay: 2000,
-    onClose,
-  });
+  const workflow = useActionWorkflow({ steps: COMMIT_STEPS, autoCloseDelay: 2000, onClose });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,14 +62,9 @@ export const CommitForm: React.FC<CommitFormProps> = ({ onExecute, onSubmit, onC
   if (workflow.phase !== 'idle') {
     return (
       <ActionVerificationTracker
-        phase={workflow.phase}
-        steps={workflow.steps}
-        activeStepIndex={workflow.activeStepIndex}
-        resultSummary={workflow.resultSummary}
-        errorMsg={workflow.errorMsg}
-        countdownRemaining={workflow.countdownRemaining}
-        onDismissNow={workflow.dismissNow}
-        onBackToEdit={workflow.reset}
+        phase={workflow.phase} steps={workflow.steps} activeStepIndex={workflow.activeStepIndex}
+        resultSummary={workflow.resultSummary} errorMsg={workflow.errorMsg} countdownRemaining={workflow.countdownRemaining}
+        onDismissNow={workflow.dismissNow} onBackToEdit={workflow.reset}
         onRetry={() => handleSubmit({ preventDefault: () => {} } as any)}
       />
     );
@@ -86,15 +78,18 @@ export const CommitForm: React.FC<CommitFormProps> = ({ onExecute, onSubmit, onC
           <span className="text-[10px] text-text-muted">Required</span>
         </div>
         <input 
-          type="text" 
-          placeholder="e.g. feat: implement activity feed search" 
-          value={msg}
-          onChange={(e) => setMsg(e.target.value)}
-          required
+          type="text" placeholder="e.g. feat: implement activity feed search" value={msg}
+          onChange={(e) => setMsg(e.target.value)} required
           className="w-full bg-main border border-border rounded-xl px-3.5 py-2.5 text-sm text-text-main outline-none focus:border-primary transition-colors placeholder:text-text-muted/60"
         />
         <p className="text-[10px] text-text-muted mt-1">Short summary in imperative tense (<code className="font-mono text-accent">feat:</code>, <code className="font-mono text-accent">fix:</code>).</p>
       </div>
+
+      {isDemoActive && (
+        <div className="p-2.5 bg-blue-500/10 border border-blue-500/20 rounded-xl text-[11px] text-blue-400">
+          Viewing demo repository. Commits will be recorded in local workspace.
+        </div>
+      )}
 
       {isRealGitHub && (
         <div className="p-3 bg-primary/5 border border-primary/10 rounded-xl space-y-3">
@@ -102,21 +97,14 @@ export const CommitForm: React.FC<CommitFormProps> = ({ onExecute, onSubmit, onC
           <div>
             <label className="block text-[10px] font-semibold text-text-muted mb-1 uppercase">Target File Path</label>
             <input 
-              type="text" 
-              placeholder="e.g. README.md" 
-              value={filePath}
-              onChange={(e) => setFilePath(e.target.value)}
-              required
+              type="text" placeholder="e.g. README.md" value={filePath} onChange={(e) => setFilePath(e.target.value)} required
               className="w-full bg-main border border-border rounded-lg px-2.5 py-1.5 text-xs text-text-main outline-none focus:border-primary transition-colors font-mono"
             />
           </div>
           <div>
             <label className="block text-[10px] font-semibold text-text-muted mb-1 uppercase">File Contents</label>
             <textarea 
-              placeholder="Type the contents you want to commit to GitHub..." 
-              value={fileContent}
-              onChange={(e) => setFileContent(e.target.value)}
-              rows={3}
+              placeholder="Type the contents you want to commit to GitHub..." value={fileContent} onChange={(e) => setFileContent(e.target.value)} rows={3}
               className="w-full bg-main border border-border rounded-lg px-2.5 py-1.5 text-xs text-text-main outline-none focus:border-primary transition-colors resize-none font-mono"
             />
           </div>
@@ -127,18 +115,14 @@ export const CommitForm: React.FC<CommitFormProps> = ({ onExecute, onSubmit, onC
         <div>
           <label className="block text-xs font-semibold text-text-muted mb-1.5 uppercase tracking-wider">Author (Optional)</label>
           <input 
-            type="text" 
-            placeholder="e.g. Developer Name" 
-            value={author}
-            onChange={(e) => setAuthor(e.target.value)}
+            type="text" placeholder="e.g. Developer Name" value={author} onChange={(e) => setAuthor(e.target.value)}
             className="w-full bg-main border border-border rounded-xl px-3.5 py-2.5 text-sm text-text-main outline-none focus:border-primary transition-colors placeholder:text-text-muted/60"
           />
         </div>
       )}
 
       <button 
-        type="submit" 
-        disabled={!msg.trim()}
+        type="submit" disabled={!msg.trim()}
         className="w-full bg-accent hover:opacity-90 text-white font-medium text-xs py-2.5 rounded-lg border border-accent/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-2 cursor-pointer"
       >
         <Check size={16} strokeWidth={3} /> {isRealGitHub ? 'Push Real Commit to GitHub' : 'Commit to branch'}

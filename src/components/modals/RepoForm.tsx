@@ -103,38 +103,18 @@ export const RepoForm: React.FC<RepoFormProps> = ({ onExecute, onSubmit, onClose
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-semibold text-text-muted mb-2 uppercase tracking-wider">Primary Language</label>
-          <select 
-            value={lang} 
-            onChange={(e) => setLang(e.target.value)}
-            className="w-full h-10 bg-main border border-border rounded-xl px-3 text-sm text-text-main outline-none focus:border-primary transition-colors"
-          >
-            <option value="TypeScript">TypeScript</option>
-            <option value="JavaScript">JavaScript</option>
-            <option value="Python">Python</option>
-            <option value="Rust">Rust</option>
-            <option value="Swift">Swift</option>
-            <option value="Go">Go</option>
-            <option value="HTML">HTML</option>
+          <label className="block text-xs font-semibold text-text-muted mb-2 uppercase tracking-wider">Language</label>
+          <select value={lang} onChange={(e) => setLang(e.target.value)} className="w-full h-10 bg-main border border-border rounded-xl px-3 text-sm text-text-main outline-none focus:border-primary transition-colors">
+            {['TypeScript', 'JavaScript', 'Python', 'Rust', 'Swift', 'Go', 'HTML'].map(l => (
+              <option key={l} value={l}>{l}</option>
+            ))}
           </select>
         </div>
         <div>
           <label className="block text-xs font-semibold text-text-muted mb-2 uppercase tracking-wider">Visibility</label>
           <div className="flex gap-2">
-            <button 
-              type="button" 
-              onClick={() => setIsPrivate(false)} 
-              className={`flex-1 h-10 text-xs font-semibold rounded-xl border transition-all cursor-pointer ${!isPrivate ? 'bg-primary/10 text-primary border-primary/40' : 'bg-main border-border text-text-muted'}`}
-            >
-              Public
-            </button>
-            <button 
-              type="button" 
-              onClick={() => setIsPrivate(true)} 
-              className={`flex-1 h-10 text-xs font-semibold rounded-xl border transition-all cursor-pointer ${isPrivate ? 'bg-primary/10 text-primary border-primary/40' : 'bg-main border-border text-text-muted'}`}
-            >
-              Private
-            </button>
+            <button type="button" onClick={() => setIsPrivate(false)} className={`flex-1 h-10 text-xs font-semibold rounded-xl border transition-all cursor-pointer ${!isPrivate ? 'bg-primary/10 text-primary border-primary/40' : 'bg-main border-border text-text-muted'}`}>Public</button>
+            <button type="button" onClick={() => setIsPrivate(true)} className={`flex-1 h-10 text-xs font-semibold rounded-xl border transition-all cursor-pointer ${isPrivate ? 'bg-primary/10 text-primary border-primary/40' : 'bg-main border-border text-text-muted'}`}>Private</button>
           </div>
         </div>
       </div>

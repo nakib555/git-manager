@@ -39,7 +39,10 @@ export async function executeRemoteOrLocalCommit(params: {
   const { repo, owner, authorName, branch, msg, filePath, fileContent, githubToken, activeCommits, syncFileList } = params;
   const path = (filePath?.trim() || "README.md").replace(/^\/+/, '');
 
-  if (githubToken && owner && owner !== 'local-user') {
+  if (githubToken && owner && owner !== 'local-user' && owner !== 'local-developer') {
+    if (owner === 'octodev' && repo === 'nexus-web-engine') {
+      throw new Error("Cannot push remote commits to demo repository 'nexus-web-engine'. Please select or create your own repository.");
+    }
     const contentStr = fileContent || `# ${repo}\n\nActivity log commit: ${msg}\n\n_Committed via Git Manager at ${new Date().toISOString()}_`;
     const res = await pushFileToGitHub(owner, repo, path, contentStr, msg, branch, githubToken);
     const shortSha = res.commit?.sha ? res.commit.sha.substring(0, 7) : "updated";

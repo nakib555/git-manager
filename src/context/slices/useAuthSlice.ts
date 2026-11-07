@@ -37,6 +37,7 @@ export const useAuthSlice = ({
     const handleMessage = (event: MessageEvent) => {
       const origin = event.origin;
       if (
+        origin !== window.location.origin &&
         !origin.endsWith(".run.app") && !origin.includes("localhost") && !origin.endsWith(".workers.dev") && !origin.endsWith(".pages.dev")
       ) {
         return;
@@ -45,8 +46,19 @@ export const useAuthSlice = ({
         const token = event.data.token;
         if (token && token !== "undefined" && token !== "null") {
           localStorage.setItem("githubToken", token);
-          setState((prev) => ({ ...prev, githubToken: token }));
-          showToast("Successfully connected to GitHub", "success");
+          setState((prev) => ({
+            ...prev,
+            githubToken: token,
+            currentRepo: null,
+            currentRepoOwner: null,
+            currentBranch: null,
+            activeCommits: [],
+            activeBranches: [],
+            activePRs: [],
+            activeFiles: [],
+          }));
+          showToast("Connected to GitHub! Syncing repositories...", "success");
+          fetchGitHubData(token, false, 1, "");
         } else {
           showToast("Failed to connect to GitHub. Invalid token received.", "error");
         }
@@ -54,7 +66,7 @@ export const useAuthSlice = ({
     };
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, [setState, showToast]);
+  }, [setState, showToast, fetchGitHubData]);
 
   const connectGitHub = async () => {
     try {
@@ -69,7 +81,14 @@ export const useAuthSlice = ({
         throw new Error(errorData.error || "Failed to get auth URL");
       }
       const { url } = await response.json();
-      window.location.href = url;
+      const popup = window.open(
+        url,
+        "github_oauth_popup",
+        "width=600,height=700,status=no,toolbar=no,menubar=no,location=no"
+      );
+      if (!popup) {
+        showToast("Please allow popups to connect with GitHub.", "warning");
+      }
     } catch (error: any) {
       showToast(error.message || "Error connecting to GitHub", "warning");
     }

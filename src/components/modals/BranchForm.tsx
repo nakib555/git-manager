@@ -35,13 +35,13 @@ export const BranchForm: React.FC<BranchFormProps> = ({ onExecute, onSubmit, onC
 
     if (onExecute) {
       workflow.execute(async () => {
-        await onExecute(payload);
+        const result = await onExecute(payload);
         return {
           title: cleanName,
           subtitle: desc || 'Branch created and ready for new commits.',
           metaItems: [
             { label: 'Ref', value: `refs/heads/${cleanName}` },
-            { label: 'Tracking', value: 'Local HEAD' },
+            { label: 'Branch', value: result?.name || cleanName },
           ],
         };
       });

@@ -17,16 +17,18 @@ export const usePRSlice = ({ state, setState, showToast, fetchRepoDetails }: Use
     target: string;
     isDraft?: boolean;
   }) => {
-    if (!state.currentRepo) return;
-    if (state.currentRepoOwner && state.githubToken) {
+    if (!state.currentRepo) throw new Error("No repository currently selected.");
+    const isDemoRepo = state.currentRepoOwner === 'octodev' && state.currentRepo === 'nexus-web-engine';
+    if (state.currentRepoOwner && state.githubToken && !isDemoRepo && state.currentRepoOwner !== 'local-developer') {
       try {
         const prData = await createRemoteGitHubPR(state.currentRepoOwner, state.currentRepo, pr, state.githubToken);
         showToast(`Pull Request #${prData.number} opened on GitHub!`, 'success');
         await fetchRepoDetails(state.currentRepo, state.currentRepoOwner);
+        return prData;
       } catch (error: any) {
         showToast(`Failed to open Pull Request: ${error.message || error}`, 'error');
+        throw error;
       }
-      return;
     }
 
     const newPR = {
@@ -49,6 +51,7 @@ export const usePRSlice = ({ state, setState, showToast, fetchRepoDetails }: Use
     try { localStorage.setItem(key, JSON.stringify(updated)); } catch (_) {}
     setState(prev => ({ ...prev, activePRs: updated }));
     showToast(`Pull Request #${newPR.number} created locally!`, 'success');
+    return newPR;
   };
 
   const updateLocalPRStatus = async (
@@ -57,7 +60,8 @@ export const usePRSlice = ({ state, setState, showToast, fetchRepoDetails }: Use
     strategy: 'merge' | 'squash' = 'merge'
   ) => {
     if (!state.currentRepo) return;
-    if (state.currentRepoOwner && state.githubToken) {
+    const isDemoRepo = state.currentRepoOwner === 'octodev' && state.currentRepo === 'nexus-web-engine';
+    if (state.currentRepoOwner && state.githubToken && !isDemoRepo && state.currentRepoOwner !== 'local-developer') {
       try {
         await updateRemoteGitHubPRStatus(state.currentRepoOwner, state.currentRepo, prId, status, strategy, state.githubToken);
         showToast(status === 'Merged' ? `Successfully merged Pull Request #${prId}!` : `Pull Request #${prId} set to ${status}!`, 'success');

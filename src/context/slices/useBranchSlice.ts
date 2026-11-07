@@ -25,9 +25,18 @@ export const useBranchSlice = ({
     const cleanName = branch.name.trim();
     if (!cleanName) throw new Error("Branch name cannot be empty.");
 
-    if (state.githubToken && state.currentRepoOwner) {
+    if (state.githubToken && state.currentRepoOwner && state.currentRepoOwner !== 'local-developer') {
+      if (state.currentRepoOwner === 'octodev' && state.currentRepo === 'nexus-web-engine') {
+        throw new Error("Cannot create remote branches on demo repository 'nexus-web-engine'. Please select or create your own repository.");
+      }
       try {
-        const resName = await createRemoteGitHubBranch(state.currentRepoOwner, state.currentRepo, cleanName, state.githubToken);
+        const resName = await createRemoteGitHubBranch(
+          state.currentRepoOwner,
+          state.currentRepo,
+          cleanName,
+          state.githubToken,
+          state.currentBranch || undefined
+        );
         showToast(`Branch '${resName}' created on GitHub!`, 'success');
         await fetchRepoDetails(state.currentRepo, state.currentRepoOwner);
         return { name: resName };
@@ -72,7 +81,8 @@ export const useBranchSlice = ({
       throw new Error(msg);
     }
 
-    if (state.githubToken && state.currentRepoOwner) {
+    const isDemoRepo = state.currentRepoOwner === 'octodev' && state.currentRepo === 'nexus-web-engine';
+    if (state.githubToken && state.currentRepoOwner && !isDemoRepo && state.currentRepoOwner !== 'local-developer') {
       try {
         await deleteRemoteGitHubBranch(state.currentRepoOwner, state.currentRepo, branchName, state.githubToken);
         showToast(`Branch '${branchName}' deleted from GitHub!`, 'success');

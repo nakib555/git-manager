@@ -21,7 +21,13 @@ export async function executeFetchGitHubData(
   const searchQuery = searchOverride !== undefined ? searchOverride : state.repoSearchQuery;
 
   let sanitizedUser = state.githubUser;
-  if (!sanitizedUser) sanitizedUser = await fetchUserProfile(token);
+  if (!sanitizedUser || sanitizedUser.login === 'octodev') {
+    try {
+      sanitizedUser = await fetchUserProfile(token);
+    } catch (_) {
+      sanitizedUser = state.githubUser;
+    }
+  }
 
   let reposData: GitHubRepo[] = [];
   let totalPages = 1;
@@ -47,7 +53,8 @@ export async function executeFetchGitHubData(
 
   let nextRepo = state.currentRepo;
   let nextOwner = state.currentRepoOwner;
-  if ((!nextRepo || nextRepo === 'nexus-web-engine' || !mergedRepos.some(r => r.name === nextRepo)) && mergedRepos.length > 0) {
+  const isDemoSelection = !nextRepo || nextRepo === 'nexus-web-engine' || nextOwner === 'octodev';
+  if ((isDemoSelection || !mergedRepos.some(r => r.name === nextRepo)) && mergedRepos.length > 0) {
     nextRepo = mergedRepos[0].name;
     nextOwner = (mergedRepos[0].owner?.login) || sanitizedUser?.login || '';
     localStorage.setItem("currentRepo", nextRepo);

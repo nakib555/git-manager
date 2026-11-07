@@ -23,13 +23,15 @@ export const PRForm: React.FC<PRFormProps> = ({ onExecute, onSubmit, onClose }) 
   const [desc, setDesc] = useState('');
   const [isDraft, setIsDraft] = useState(false);
   
-  const defaultSource = activeBranches.length > 1 ? activeBranches[1].name : (activeBranches[0]?.name || 'develop');
-  const defaultTarget = activeBranches[0]?.name || 'main';
+  const validBranches = activeBranches.length > 0 ? activeBranches.map(b => b.name) : ['main'];
+  const defaultTarget = validBranches.includes('main') ? 'main' : (validBranches[0] || 'main');
+  const defaultSource = validBranches.find(b => b !== defaultTarget) || defaultTarget;
   const [source, setSource] = useState(defaultSource);
   const [target, setTarget] = useState(defaultTarget);
 
   const workflow = useActionWorkflow({ steps: PR_STEPS, autoCloseDelay: 2000, onClose });
   const isIdentical = source === target;
+  const hasInsufficientBranches = validBranches.length < 2;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,7 +109,14 @@ export const PRForm: React.FC<PRFormProps> = ({ onExecute, onSubmit, onClose }) 
         <span className="text-xs font-semibold text-text-main">Create as Draft</span>
       </label>
 
-      {isIdentical && (
+      {hasInsufficientBranches && (
+        <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-xl text-xs flex items-center gap-2">
+          <ShieldAlert size={14} className="shrink-0" />
+          <span>This repository needs at least 2 branches to compare. Create a branch first.</span>
+        </div>
+      )}
+
+      {isIdentical && !hasInsufficientBranches && (
         <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-500 rounded-xl text-xs flex items-center gap-2">
           <ShieldAlert size={14} className="shrink-0" />
           <span>Source and target branches cannot be identical.</span>
@@ -115,7 +124,7 @@ export const PRForm: React.FC<PRFormProps> = ({ onExecute, onSubmit, onClose }) 
       )}
 
       <button 
-        type="submit" disabled={!title.trim() || isIdentical}
+        type="submit" disabled={!title.trim() || isIdentical || hasInsufficientBranches}
         className="w-full bg-success text-white font-semibold text-sm py-3 rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-4 cursor-pointer"
       >
         <Check size={16} strokeWidth={3} /> {isDraft ? 'Open Draft PR' : 'Open Pull Request'}

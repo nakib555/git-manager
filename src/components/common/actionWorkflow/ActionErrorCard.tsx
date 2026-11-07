@@ -1,5 +1,6 @@
 import React from 'react';
-import { AlertCircle, RotateCcw, ArrowLeft } from 'lucide-react';
+import { AlertCircle, RotateCcw, ArrowLeft, KeyRound } from 'lucide-react';
+import { useAppContext } from '../../../AppContext';
 
 interface ActionErrorCardProps {
   errorMsg: string;
@@ -12,6 +13,9 @@ export const ActionErrorCard: React.FC<ActionErrorCardProps> = ({
   onRetry,
   onBackToEdit,
 }) => {
+  const { connectGitHub } = useAppContext();
+  const isAuthError = /401|authentication|re-authenticate|credentials|unauthorized|expired|token/i.test(errorMsg);
+
   return (
     <div className="py-3 space-y-4">
       <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-2xl flex items-start gap-3.5">
@@ -27,7 +31,7 @@ export const ActionErrorCard: React.FC<ActionErrorCardProps> = ({
         </div>
       </div>
 
-      <div className="flex items-center justify-end gap-2.5 pt-1">
+      <div className="flex flex-wrap items-center justify-end gap-2.5 pt-1">
         <button
           type="button"
           onClick={onBackToEdit}
@@ -36,6 +40,17 @@ export const ActionErrorCard: React.FC<ActionErrorCardProps> = ({
           <ArrowLeft size={13} />
           <span>Edit Form</span>
         </button>
+
+        {isAuthError && (
+          <button
+            type="button"
+            onClick={connectGitHub}
+            className="h-10 px-4 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
+          >
+            <KeyRound size={13} />
+            <span>Re-authenticate GitHub</span>
+          </button>
+        )}
 
         {onRetry && (
           <button

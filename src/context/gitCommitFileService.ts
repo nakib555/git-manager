@@ -1,3 +1,5 @@
+import { getGitHubAuthHeader } from './gitMutationServices';
+
 export const pushFileToGitHub = async (
   owner: string,
   repo: string,
@@ -8,7 +10,7 @@ export const pushFileToGitHub = async (
   token: string
 ) => {
   const headers: Record<string, string> = {
-    Authorization: token.startsWith('Bearer ') || token.startsWith('token ') ? token : `token ${token}`,
+    Authorization: getGitHubAuthHeader(token),
     "Content-Type": "application/json",
     Accept: "application/vnd.github.v3+json",
   };
@@ -37,18 +39,16 @@ export const pushFileToGitHub = async (
     {
       method: "PUT",
       headers,
-      body: JSON.stringify({
-        message,
-        content: b64Content,
-        sha,
-        branch,
-      }),
+      body: JSON.stringify({ message, content: b64Content, sha, branch }),
     }
   );
 
   if (!commitRes.ok) {
     const errData = await commitRes.json().catch(() => ({}));
-    throw new Error(errData.message || `Status ${commitRes.status}`);
+    let msg = errData.message || `Status ${commitRes.status}`;
+    if (commitRes.status === 401) msg = "GitHub authentication failed (401). Please re-authenticate.";
+    if (commitRes.status === 404) msg = `Repository '${owner}/${repo}' or branch '${branch}' not found on GitHub.`;
+    throw new Error(msg);
   }
   return commitRes.json();
 };
@@ -61,15 +61,12 @@ export const deleteRemoteHeadCommit = async (
   token: string
 ) => {
   const headers: Record<string, string> = {
-    Authorization: token.startsWith('Bearer ') || token.startsWith('token ') ? token : `token ${token}`,
+    Authorization: getGitHubAuthHeader(token),
     "Content-Type": "application/json",
     Accept: "application/vnd.github.v3+json",
   };
 
-  const commitRes = await fetch(
-    `https://api.github.com/repos/${owner}/${repo}/git/commits/${hash}`,
-    { headers }
-  );
+  const commitRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/commits/${hash}`, { headers });
   if (!commitRes.ok) throw new Error("Failed to fetch commit details from GitHub");
   const commitData = await commitRes.json();
   if (!commitData.parents || commitData.parents.length === 0) {
@@ -77,14 +74,11 @@ export const deleteRemoteHeadCommit = async (
   }
   const parentSha = commitData.parents[0].sha;
 
-  const refRes = await fetch(
-    `https://api.github.com/repos/${owner}/${repo}/git/refs/heads/${branch}`,
-    {
-      method: "PATCH",
-      headers,
-      body: JSON.stringify({ sha: parentSha, force: true }),
-    }
-  );
+  const refRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/refs/heads/${branch}`, {
+    method: "PATCH",
+    headers,
+    body: JSON.stringify({ sha: parentSha, force: true }),
+  });
   if (!refRes.ok) throw new Error("Failed to update branch reference on GitHub");
   return parentSha;
 };
@@ -99,7 +93,7 @@ export const revertRemoteCommit = async (
   token: string
 ) => {
   const headers: Record<string, string> = {
-    Authorization: token.startsWith('Bearer ') || token.startsWith('token ') ? token : `token ${token}`,
+    Authorization: getGitHubAuthHeader(token),
     "Content-Type": "application/json",
     Accept: "application/vnd.github.v3+json",
   };
@@ -126,11 +120,7 @@ export const revertRemoteCommit = async (
   const newCommitRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/commits`, {
     method: "POST",
     headers,
-    body: JSON.stringify({
-      message: `${revertTitle}\n\n${revertDesc}`,
-      tree: treeToUse,
-      parents: [currentHeadSha],
-    }),
+    body: JSON.stringify({ message: `${revertTitle}\n\n${revertDesc}`, tree: treeToUse, parents: [currentHeadSha] }),
   });
   if (!newCommitRes.ok) throw new Error("Failed to create revert commit on GitHub");
   const newCommit = await newCommitRes.json();
