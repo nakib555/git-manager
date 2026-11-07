@@ -95,14 +95,12 @@ export const useAuthSlice = ({
   };
 
   const disconnectGitHub = () => {
-    localStorage.removeItem("githubToken");
-    localStorage.removeItem("githubUser");
-    localStorage.removeItem("currentRepo");
-    localStorage.removeItem("currentRepoOwner");
-    localStorage.removeItem("currentBranch");
+    ['githubToken', 'githubUser', 'githubScopes', 'currentRepo', 'currentRepoOwner', 'currentBranch'].forEach((k) => localStorage.removeItem(k));
     setState((prev) => ({
       ...prev,
       githubToken: null,
+      tokenScopes: [],
+      hasDeleteRepoScope: false,
       githubUser: DEMO_USER,
       githubRepos: DEMO_REPOSITORIES,
       currentRepo: "nexus-web-engine",
@@ -120,9 +118,12 @@ export const useAuthSlice = ({
 
   const setManualToken = (token: string) => {
     localStorage.setItem("githubToken", token);
+    const scopes: string[] = JSON.parse(localStorage.getItem("githubScopes") || "[]");
     setState((prev) => ({
       ...prev,
       githubToken: token,
+      tokenScopes: scopes,
+      hasDeleteRepoScope: scopes.includes("delete_repo"),
       currentRepo: null,
       currentRepoOwner: null,
       currentBranch: null,

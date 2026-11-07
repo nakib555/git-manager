@@ -42,6 +42,8 @@ export interface AppState {
   lastSyncTimestamp: number;
   isAutoSyncing: boolean;
   isZipSyncOpen: boolean;
+  tokenScopes: string[];
+  hasDeleteRepoScope: boolean;
 }
 
 export type AppContextType = AppState & {

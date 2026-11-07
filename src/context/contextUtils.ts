@@ -105,5 +105,7 @@ export const getInitialDefaultState = (): AppState => {
     lastSyncTimestamp: Date.now(),
     isAutoSyncing: false,
     isZipSyncOpen: false,
+    tokenScopes: [],
+    hasDeleteRepoScope: false,
   };
 };

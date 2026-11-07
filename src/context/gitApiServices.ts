@@ -8,6 +8,11 @@ export const fetchUserProfile = async (token: string): Promise<GitHubUser | null
   };
   const userRes = await fetch("https://api.github.com/user", { headers });
   if (userRes.ok) {
+    const rawScopes = userRes.headers.get("x-oauth-scopes") || "";
+    const scopes = rawScopes.split(",").map(s => s.trim()).filter(Boolean);
+    if (scopes.length > 0) {
+      localStorage.setItem("githubScopes", JSON.stringify(scopes));
+    }
     const userData = await userRes.json();
     const sanitized = sanitizeGitHubUser(userData);
     if (sanitized) {

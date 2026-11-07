@@ -1,6 +1,6 @@
 {
-  "summary":  "Engineering plan to refactor modal unmounting lifecycle in AppContext, CreateModals, and useActionWorkflow to verify mounted state before invoking cleanup functions after failed API requests, preventing 'Node cannot be found' errors.",
-  "updatedAt":  "2026-11-07T06:53:33.565512401Z",
+  "summary":  "Engineering plan to configure complete, full administrative control for GitHub OAuth, expand PAT permissions, and add real-time token scope diagnostics.",
+  "updatedAt":  "2026-11-07T09:04:32.633315799Z",
   "requestFeedback":  true,
   "userFacing":  true
 }

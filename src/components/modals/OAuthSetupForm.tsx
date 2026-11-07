@@ -23,6 +23,11 @@ export const OAuthSetupForm: React.FC = () => {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.message || 'Invalid GitHub token. Please verify scopes.');
       }
+      const rawScopes = res.headers.get('x-oauth-scopes') || '';
+      const scopes = rawScopes.split(',').map((s) => s.trim()).filter(Boolean);
+      if (scopes.length > 0) {
+        localStorage.setItem('githubScopes', JSON.stringify(scopes));
+      }
       setManualToken(cleanToken);
       closeModal();
     } catch (err: any) {
@@ -58,18 +63,18 @@ export const OAuthSetupForm: React.FC = () => {
       {tab === 'pat' ? (
         <form onSubmit={handlePatSubmit} className="space-y-3.5">
           <div className="p-3 bg-primary/5 rounded-xl border border-primary/20 text-xs text-text-main leading-relaxed space-y-1">
-            <p className="font-semibold text-primary">Fast & Secure Connection</p>
-            <p className="text-text-muted text-[11px]">Connect your account in seconds using a Personal Access Token (PAT). Tokens are kept safely in your browser session and never sent to third parties.</p>
+            <p className="font-semibold text-primary">Fast & Secure Full Admin Connection</p>
+            <p className="text-text-muted text-[11px]">Connect your account with full administrative authority (commits, branches, pull requests, and repository deletion).</p>
           </div>
 
           <div>
             <a 
-              href="https://github.com/settings/tokens/new?scopes=repo,delete_repo,user,read:org&description=Git%20Manager%20App"
+              href="https://github.com/settings/tokens/new?scopes=repo,delete_repo,admin:repo_hook,admin:org,admin:public_key,admin:org_hook,user,workflow,write:discussion,project&description=Git%20Manager%20Full%20Admin"
               target="_blank"
               rel="noreferrer"
               className="w-full bg-hover border border-border hover:border-primary/50 text-text-main font-semibold text-xs py-2.5 px-3 rounded-xl transition-all flex items-center justify-center gap-2 text-center"
             >
-              <span>Generate New Token on GitHub</span>
+              <span>Generate Full-Admin Token on GitHub</span>
               <ExternalLink size={14} className="text-primary" />
             </a>
           </div>
@@ -130,11 +135,7 @@ export const OAuthSetupForm: React.FC = () => {
               Add <code className="text-text-main font-mono bg-hover px-1 rounded">GITHUB_CLIENT_ID</code> and <code className="text-text-main font-mono bg-hover px-1 rounded">GITHUB_CLIENT_SECRET</code> to your <code className="text-text-main font-mono bg-hover px-1 rounded">.env</code> file or host environment.
             </p>
           </div>
-          <button 
-            type="button" 
-            onClick={() => setTab('pat')}
-            className="w-full bg-hover hover:bg-border text-text-main font-semibold text-xs py-2.5 rounded-xl transition-all mt-2 cursor-pointer"
-          >
+          <button type="button" onClick={() => setTab('pat')} className="w-full bg-hover hover:bg-border text-text-main font-semibold text-xs py-2.5 rounded-xl transition-all mt-2 cursor-pointer">
             Use Personal Access Token Instead
           </button>
         </div>
