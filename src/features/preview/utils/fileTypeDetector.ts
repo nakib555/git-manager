@@ -171,3 +171,286 @@ export function detectFileType(filePath: string): FileFormatInfo {
     canSearch: !ext,
   };
 }
+
+/**
+ * Checks if a byte buffer exhibits binary characteristics (null bytes or excessive control characters).
+ * Uses the standard heuristic found in Git and POSIX `file` command.
+ */
+export function isBinaryBuffer(buffer: Uint8Array, maxBytesToCheck = 1024): boolean {
+  if (!buffer || buffer.length === 0) return false;
+  const checkLen = Math.min(buffer.length, maxBytesToCheck);
+  let nonPrintableCount = 0;
+
+  for (let i = 0; i < checkLen; i++) {
+    const byte = buffer[i];
+    // Immediate binary signature: Null byte
+    if (byte === 0x00) {
+      return true;
+    }
+    // Control characters other than tab (9), newline (10), carriage return (13)
+    if ((byte < 0x09 || (byte > 0x0D && byte < 0x20) || byte === 0x7F) && byte !== 0x1B) {
+      nonPrintableCount++;
+    }
+  }
+
+  // If more than 10% of tested bytes are control chars, treat as binary
+  return (nonPrintableCount / checkLen) > 0.1;
+}
+
+export interface MagicByteMatch {
+  category: PreviewCategory;
+  mimeType: string;
+  displayName: string;
+  isBinary: boolean;
+  signature: string;
+  renderer: 'image' | 'pdf' | 'document' | 'spreadsheet' | 'code' | 'markdown' | 'data' | 'archive' | 'audio' | 'video' | 'font' | '3d' | 'sqlite' | 'hex';
+}
+
+/**
+ * Inspects leading magic bytes of a Uint8Array buffer to identify accurate binary formats.
+ */
+export function detectMagicBytes(buffer: Uint8Array): MagicByteMatch | null {
+  if (!buffer || buffer.length < 4) return null;
+
+  const b0 = buffer[0];
+  const b1 = buffer[1];
+  const b2 = buffer[2];
+  const b3 = buffer[3];
+
+  // PNG: 89 50 4E 47 (\x89PNG)
+  if (b0 === 0x89 && b1 === 0x50 && b2 === 0x4E && b3 === 0x47) {
+    return {
+      category: 'image',
+      mimeType: 'image/png',
+      displayName: 'PNG Image',
+      isBinary: true,
+      signature: 'PNG (89 50 4E 47)',
+      renderer: 'image',
+    };
+  }
+
+  // JPEG: FF D8 FF
+  if (b0 === 0xFF && b1 === 0xD8 && b2 === 0xFF) {
+    return {
+      category: 'image',
+      mimeType: 'image/jpeg',
+      displayName: 'JPEG Image',
+      isBinary: true,
+      signature: 'JPEG (FF D8 FF)',
+      renderer: 'image',
+    };
+  }
+
+  // GIF: 47 49 46 38 ("GIF8")
+  if (b0 === 0x47 && b1 === 0x49 && b2 === 0x46 && b3 === 0x38) {
+    return {
+      category: 'image',
+      mimeType: 'image/gif',
+      displayName: 'GIF Animation',
+      isBinary: true,
+      signature: 'GIF (GIF8)',
+      renderer: 'image',
+    };
+  }
+
+  // PDF: 25 50 44 46 ("%PDF")
+  if (b0 === 0x25 && b1 === 0x50 && b2 === 0x44 && b3 === 0x46) {
+    return {
+      category: 'pdf',
+      mimeType: 'application/pdf',
+      displayName: 'PDF Document',
+      isBinary: true,
+      signature: 'PDF (%PDF)',
+      renderer: 'pdf',
+    };
+  }
+
+  // WebP / RIFF container: 52 49 46 46 ("RIFF") + byte 8-11: "WEBP" or "WAVE"
+  if (b0 === 0x52 && b1 === 0x49 && b2 === 0x46 && b3 === 0x46 && buffer.length >= 12) {
+    const s8_11 = String.fromCharCode(buffer[8], buffer[9], buffer[10], buffer[11]);
+    if (s8_11 === 'WEBP') {
+      return {
+        category: 'image',
+        mimeType: 'image/webp',
+        displayName: 'WebP Image',
+        isBinary: true,
+        signature: 'RIFF/WEBP',
+        renderer: 'image',
+      };
+    }
+    if (s8_11 === 'WAVE') {
+      return {
+        category: 'audio',
+        mimeType: 'audio/wav',
+        displayName: 'WAV Audio',
+        isBinary: true,
+        signature: 'RIFF/WAVE',
+        renderer: 'audio',
+      };
+    }
+  }
+
+  // ZIP / PKZIP / Office OpenXML: 50 4B 03 04 ("PK\x03\x04")
+  if (b0 === 0x50 && b1 === 0x4B && b2 === 0x03 && b3 === 0x04) {
+    return {
+      category: 'archive',
+      mimeType: 'application/zip',
+      displayName: 'ZIP Archive',
+      isBinary: true,
+      signature: 'ZIP (PK 03 04)',
+      renderer: 'archive',
+    };
+  }
+
+  // GZIP: 1F 8B
+  if (b0 === 0x1F && b1 === 0x8B) {
+    return {
+      category: 'archive',
+      mimeType: 'application/gzip',
+      displayName: 'GZip Compressed Archive',
+      isBinary: true,
+      signature: 'GZIP (1F 8B)',
+      renderer: 'archive',
+    };
+  }
+
+  // SQLite: "SQLite format 3\0" (first 16 bytes)
+  if (buffer.length >= 16) {
+    const headerStr = String.fromCharCode(...Array.from(buffer.subarray(0, 15)));
+    if (headerStr === 'SQLite format 3') {
+      return {
+        category: 'sqlite',
+        mimeType: 'application/vnd.sqlite3',
+        displayName: 'SQLite Database',
+        isBinary: true,
+        signature: 'SQLite format 3',
+        renderer: 'sqlite',
+      };
+    }
+  }
+
+  // MP3: ID3 tag ("ID3")
+  if (b0 === 0x49 && b1 === 0x44 && b2 === 0x33) {
+    return {
+      category: 'audio',
+      mimeType: 'audio/mpeg',
+      displayName: 'MP3 Audio',
+      isBinary: true,
+      signature: 'MP3 (ID3)',
+      renderer: 'audio',
+    };
+  }
+
+  // OGG: "OggS"
+  if (b0 === 0x4F && b1 === 0x67 && b2 === 0x67 && b3 === 0x53) {
+    return {
+      category: 'audio',
+      mimeType: 'audio/ogg',
+      displayName: 'OGG Vorbis Audio',
+      isBinary: true,
+      signature: 'OGG (OggS)',
+      renderer: 'audio',
+    };
+  }
+
+  // FLAC: "fLaC"
+  if (b0 === 0x66 && b1 === 0x4C && b2 === 0x61 && b3 === 0x43) {
+    return {
+      category: 'audio',
+      mimeType: 'audio/flac',
+      displayName: 'FLAC Lossless Audio',
+      isBinary: true,
+      signature: 'FLAC (fLaC)',
+      renderer: 'audio',
+    };
+  }
+
+  // MP4 / MOV: Bytes 4-7 are "ftyp"
+  if (buffer.length >= 8 && buffer[4] === 0x66 && buffer[5] === 0x74 && buffer[6] === 0x79 && buffer[7] === 0x70) {
+    return {
+      category: 'video',
+      mimeType: 'video/mp4',
+      displayName: 'MP4 / QuickTime Video',
+      isBinary: true,
+      signature: 'MP4/MOV (ftyp)',
+      renderer: 'video',
+    };
+  }
+
+  // WebM / MKV: 1A 45 DF A3
+  if (b0 === 0x1A && b1 === 0x45 && b2 === 0xDF && b3 === 0xA3) {
+    return {
+      category: 'video',
+      mimeType: 'video/webm',
+      displayName: 'WebM / Matroska Video',
+      isBinary: true,
+      signature: 'EBML/WebM',
+      renderer: 'video',
+    };
+  }
+
+  // WebAssembly Binary: 00 61 73 6D ("\0asm")
+  if (b0 === 0x00 && b1 === 0x61 && b2 === 0x73 && b3 === 0x6D) {
+    return {
+      category: 'binary',
+      mimeType: 'application/wasm',
+      displayName: 'WebAssembly Binary',
+      isBinary: true,
+      signature: 'WASM (00 61 73 6D)',
+      renderer: 'hex',
+    };
+  }
+
+  // Windows PE Executable / DLL: 4D 5A ("MZ")
+  if (b0 === 0x4D && b1 === 0x5A) {
+    return {
+      category: 'binary',
+      mimeType: 'application/x-msdownload',
+      displayName: 'Windows Executable/DLL',
+      isBinary: true,
+      signature: 'PE Executable (MZ)',
+      renderer: 'hex',
+    };
+  }
+
+  // Linux ELF Executable / Object: 7F 45 4C 46 ("\x7FELF")
+  if (b0 === 0x7F && b1 === 0x45 && b2 === 0x4C && b3 === 0x46) {
+    return {
+      category: 'binary',
+      mimeType: 'application/x-executable',
+      displayName: 'Linux ELF Executable',
+      isBinary: true,
+      signature: 'ELF Executable (7F 45 4C 46)',
+      renderer: 'hex',
+    };
+  }
+
+  // Java Class / Mach-O universal fat binary: CA FE BA BE
+  if (b0 === 0xCA && b1 === 0xFE && b2 === 0xBA && b3 === 0xBE) {
+    return {
+      category: 'binary',
+      mimeType: 'application/java-vm',
+      displayName: 'Java Class / Mach-O Fat Binary',
+      isBinary: true,
+      signature: 'CA FE BA BE',
+      renderer: 'hex',
+    };
+  }
+
+  // Mach-O 64-bit: CF FA ED FE
+  if (b0 === 0xCF && b1 === 0xFA && b2 === 0xED && b3 === 0xFE) {
+    return {
+      category: 'binary',
+      mimeType: 'application/x-mach-binary',
+      displayName: 'Mach-O 64-bit Binary',
+      isBinary: true,
+      signature: 'Mach-O 64-bit',
+      renderer: 'hex',
+    };
+  }
+
+  return null;
+}
+
+export { useFileTypeDetector } from '../hooks/useFileTypeDetector';
+

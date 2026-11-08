@@ -15,6 +15,23 @@ export type PreviewCategory =
   | 'binary'
   | 'unsupported';
 
+export type PreviewRendererType =
+  | 'image'
+  | 'pdf'
+  | 'document'
+  | 'spreadsheet'
+  | 'code'
+  | 'markdown'
+  | 'data'
+  | 'archive'
+  | 'audio'
+  | 'video'
+  | 'font'
+  | '3d'
+  | 'sqlite'
+  | 'hex'
+  | 'unsupported';
+
 export interface FileFormatInfo {
   category: PreviewCategory;
   mimeType: string;
@@ -23,6 +40,28 @@ export interface FileFormatInfo {
   isBinary: boolean;
   canCopyText: boolean;
   canSearch: boolean;
+  isTextCandidate?: boolean;
+}
+
+export interface FileTypeDetectorOptions {
+  filePath: string;
+  fileName?: string;
+  fileSizeBytes?: number;
+  mimeType?: string;
+  rawBuffer?: Uint8Array;
+  content?: string;
+  metadata?: Record<string, any>;
+}
+
+export interface FileTypeDetectorResult {
+  formatInfo: FileFormatInfo;
+  renderer: PreviewRendererType;
+  isUnknownType: boolean;
+  isFallbackToHex: boolean;
+  isBinary: boolean;
+  detectedVia: 'magic_bytes' | 'extension' | 'mime' | 'heuristic' | 'fallback';
+  confidence: 'high' | 'medium' | 'low';
+  magicSignature?: string;
 }
 
 export interface FilePreviewMetadata {

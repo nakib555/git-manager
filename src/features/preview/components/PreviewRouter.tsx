@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileFormatInfo, FileBinaryPayload } from '../types/previewTypes';
+import { FileFormatInfo, FileBinaryPayload, PreviewRendererType } from '../types/previewTypes';
 import { ImagePreview } from '../renderers/image/ImagePreview';
 import { AudioPreview } from '../renderers/media/AudioPreview';
 import { VideoPreview } from '../renderers/media/VideoPreview';
@@ -15,13 +15,15 @@ import { FontPreview } from '../renderers/specialized/FontPreview';
 import { Model3dPreview } from '../renderers/specialized/Model3dPreview';
 import { SqlitePreview } from '../renderers/specialized/SqlitePreview';
 import { HexDumpPreview } from '../renderers/fallback/HexDumpPreview';
-import { UnsupportedFallback } from '../renderers/fallback/UnsupportedFallback';
 
 interface PreviewRouterProps {
   formatInfo: FileFormatInfo;
   payload: FileBinaryPayload;
   fileName: string;
   viewMode: 'preview' | 'hex';
+  renderer?: PreviewRendererType;
+  isUnknownType?: boolean;
+  isFallbackToHex?: boolean;
   onDownload: () => void;
   onOpenHex: () => void;
 }
@@ -31,11 +33,23 @@ export const PreviewRouter: React.FC<PreviewRouterProps> = ({
   payload,
   fileName,
   viewMode,
+  renderer,
+  isUnknownType,
+  isFallbackToHex,
   onDownload,
   onOpenHex,
 }) => {
-  if (viewMode === 'hex') {
-    return <HexDumpPreview rawBuffer={payload.rawBuffer} fileName={fileName} />;
+  // If user selected Hex mode, or the type detector routed to hex as a fallback for unknown/binary files
+  if (viewMode === 'hex' || renderer === 'hex') {
+    return (
+      <HexDumpPreview
+        rawBuffer={payload.rawBuffer}
+        textFallback={payload.text}
+        fileName={fileName}
+        isUnknownFallback={isFallbackToHex || isUnknownType}
+        onDownload={onDownload}
+      />
+    );
   }
 
   const { category, extension, mimeType } = formatInfo;
@@ -108,7 +122,7 @@ export const PreviewRouter: React.FC<PreviewRouterProps> = ({
 
     case 'data':
       if (extension === 'json' || extension === 'jsonc') {
-        return <JsonTreePreview content={payload.text || ''} />;
+        return <JsonTreePreview content={payload.text || ''} fileName={fileName} />;
       }
       return <CodeFilePreview content={payload.text || ''} language={extension} fileName={fileName} />;
 
@@ -130,13 +144,14 @@ export const PreviewRouter: React.FC<PreviewRouterProps> = ({
     case 'binary':
     case 'unsupported':
     default:
+      // Fallback to secure hexadecimal inspection
       return (
-        <UnsupportedFallback
+        <HexDumpPreview
+          rawBuffer={payload.rawBuffer}
+          textFallback={payload.text}
           fileName={fileName}
-          sizeBytes={payload.sizeBytes}
-          mimeType={mimeType}
+          isUnknownFallback={true}
           onDownload={onDownload}
-          onOpenHex={onOpenHex}
         />
       );
   }

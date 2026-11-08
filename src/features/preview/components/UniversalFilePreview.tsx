@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { UniversalPreviewProps, FileBinaryPayload } from '../types/previewTypes';
-import { detectFileType } from '../utils/fileTypeDetector';
+import { useFileTypeDetector } from '../hooks/useFileTypeDetector';
 import { createManagedBlobUrl, safeTextDecode } from '../utils/binaryLoader';
 import { fetchFileBinarySafe } from '../../../mobile/utils/api/gitFileContentApi';
 import { PreviewMetadataHeader } from './PreviewMetadataHeader';
@@ -28,10 +28,23 @@ export const UniversalFilePreview: React.FC<UniversalPreviewProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState(false);
-  const [payload, setPayload] = useState<FileBinaryPayload>({ sizeBytes: 0 });
+  const [payload, setPayload] = useState<FileBinaryPayload>({
+    text: initialContent,
+    sizeBytes: fileSizeBytes || (initialContent ? initialContent.length : 0),
+  });
 
   const revokeRef = useRef<(() => void) | null>(null);
-  const formatInfo = detectFileType(filePath || fileName);
+
+  // Hook analyzing file extensions, metadata, magic byte signatures, and binary buffer characteristics
+  const detector = useFileTypeDetector({
+    filePath,
+    fileName,
+    fileSizeBytes: payload.sizeBytes || fileSizeBytes,
+    rawBuffer: payload.rawBuffer,
+    content: payload.text,
+  });
+
+  const { formatInfo, renderer, isUnknownType, isFallbackToHex } = detector;
 
   useEffect(() => {
     if (!filePath) return;
@@ -68,7 +81,7 @@ export const UniversalFilePreview: React.FC<UniversalPreviewProps> = ({
           text,
           base64: res.base64,
           blobUrl,
-          sizeBytes: res.sizeBytes || fileSizeBytes || rawBuffer?.length || 0,
+          sizeBytes: res.sizeBytes || fileSizeBytes || rawBuffer?.length || (text ? text.length : 0),
         });
       })
       .catch((err) => {
@@ -96,8 +109,8 @@ export const UniversalFilePreview: React.FC<UniversalPreviewProps> = ({
 
   const handleDownload = () => {
     const blob = payload.rawBuffer
-      ? new Blob([payload.rawBuffer], { type: formatInfo.mimeType })
-      : new Blob([payload.text || ''], { type: 'text/plain' });
+      ? new Blob([payload.rawBuffer], { type: formatInfo.mimeType || 'application/octet-stream' })
+      : new Blob([payload.text || ''], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -118,7 +131,7 @@ export const UniversalFilePreview: React.FC<UniversalPreviewProps> = ({
           isOwner={isOwner}
         />
         <PreviewToolbar
-          viewMode={viewMode}
+          viewMode={isFallbackToHex && viewMode !== 'hex' ? 'hex' : viewMode}
           onToggleViewMode={() => setViewMode((prev) => (prev === 'preview' ? 'hex' : 'preview'))}
           canCopy={formatInfo.canCopyText || !!payload.text}
           isCopied={isCopied}
@@ -136,7 +149,7 @@ export const UniversalFilePreview: React.FC<UniversalPreviewProps> = ({
         {isLoading ? (
           <div className="w-full h-full flex flex-col items-center justify-center p-8 text-text-secondary">
             <div className="w-7 h-7 border-2 border-accent border-t-transparent rounded-full animate-spin mb-3" />
-            <p className="text-xs font-mono">Loading {formatInfo.displayName}...</p>
+            <p className="text-xs font-mono">Analyzing & Loading {formatInfo.displayName}...</p>
           </div>
         ) : error ? (
           <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center text-text-secondary">
@@ -150,6 +163,9 @@ export const UniversalFilePreview: React.FC<UniversalPreviewProps> = ({
             payload={payload}
             fileName={fileName || filePath.split('/').pop() || ''}
             viewMode={viewMode}
+            renderer={renderer}
+            isUnknownType={isUnknownType}
+            isFallbackToHex={isFallbackToHex}
             onDownload={handleDownload}
             onOpenHex={() => setViewMode('hex')}
           />
