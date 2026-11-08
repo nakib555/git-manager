@@ -1,6 +1,0 @@
-{
-  "summary": "Master Engineering Planning Specification for: (1) inline lazy/progress loading states during Delete and Restore actions with verified success/failure dialog states and automatic data refreshing, and (2) converting the Transfer to Mobile QR Code modal into a center-floating dialog on all viewports.",
-  "updatedAt": "2026-11-07T02:51:53.050373734Z",
-  "requestFeedback": true,
-  "userFacing": true
-}
