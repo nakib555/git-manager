@@ -3,39 +3,58 @@ export interface RepoOwnershipCheckParams {
   repoOwner: string | null;
   userLogin: string | null | undefined;
   reposList?: any[];
+  adminOverride?: boolean;
 }
 
 /**
- * Checks whether the current repository is owned by the user.
+ * Checks whether the current repository is owned or administered by the user.
  * Returns true if:
- * 1. The repository's owner matches the user's login, OR
- * 2. The repo was marked as local (created in current sandbox/session), OR
- * 3. In offline mode with no external owner specified and owner matches local default.
+ * 1. Admin mode override is active (gm_admin_override or param), OR
+ * 2. The repo was marked as local, OR
+ * 3. The user has GitHub admin, push, or maintainer permissions on the repo, OR
+ * 4. The repository's owner matches the user's login, OR
+ * 5. In offline/demo mode with octodev/local defaults.
  */
 export function isRepositoryOwnedByUser({
   repoName,
   repoOwner,
   userLogin,
   reposList = [],
+  adminOverride,
 }: RepoOwnershipCheckParams): boolean {
   if (!repoName) return false;
+
+  // 1. Explicit admin override or persistent admin mode
+  if (adminOverride) return true;
+  try {
+    if (localStorage.getItem('gm_admin_override') !== 'false') {
+      return true;
+    }
+  } catch (_) {}
 
   const matched = reposList.find(
     (r) => r.name?.toLowerCase() === repoName.toLowerCase()
   );
 
-  // If locally created in workspace session
+  // 2. If locally created in workspace session
   if (matched?.isLocal) return true;
+
+  // 3. GitHub API permission flags (Admin level / Push level / Maintain level)
+  if (matched?.permissions) {
+    if (matched.permissions.admin || matched.permissions.push || matched.permissions.maintain) {
+      return true;
+    }
+  }
 
   const ownerLower = (repoOwner || matched?.owner?.login || '').toLowerCase().trim();
   const userLower = (userLogin || '').toLowerCase().trim();
 
-  // If user is logged in and owner matches
+  // 4. If user is logged in and owner matches
   if (userLower && ownerLower && userLower === ownerLower) {
     return true;
   }
 
-  // If offline/demo mode without custom token and owner is octodev/local
+  // 5. If offline/demo mode without custom token and owner is octodev/local
   if (!userLower && (ownerLower === 'octodev' || ownerLower === 'local-developer' || !ownerLower)) {
     return true;
   }

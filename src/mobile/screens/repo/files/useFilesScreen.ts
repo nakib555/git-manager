@@ -12,6 +12,7 @@ export function useFilesScreen() {
     githubToken,
     githubUser,
     githubRepos,
+    adminModeOverride,
     activeCommits, 
     showToast,
     openModal,
@@ -37,8 +38,9 @@ export function useFilesScreen() {
       repoOwner: currentRepoOwner,
       userLogin: githubUser?.login,
       reposList: githubRepos,
+      adminOverride: adminModeOverride,
     });
-  }, [currentRepo, currentRepoOwner, githubUser?.login, githubRepos]);
+  }, [currentRepo, currentRepoOwner, githubUser?.login, githubRepos, adminModeOverride]);
 
   const toggleFolder = (path: string) => {
     setExpandedFolders(prev => {

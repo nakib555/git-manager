@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { User, Github, KeySquare, ChevronRight, Moon, Sun, Sliders } from 'lucide-react';
+import { User, Github, KeySquare, ChevronRight, Moon, Sun, Sliders, ShieldCheck } from 'lucide-react';
 import { useAppContext } from '../../../AppContext';
 
 export const DesktopSettings: React.FC = () => {
-  const { theme, toggleTheme, githubUser, githubToken, connectGitHub, disconnectGitHub, setManualToken, showToast } = useAppContext();
+  const { theme, toggleTheme, githubUser, githubToken, connectGitHub, disconnectGitHub, setManualToken, showToast, adminModeOverride, toggleAdminMode } = useAppContext();
   const [showTokenForm, setShowTokenForm] = useState(false);
   const [tempToken, setTempToken] = useState('');
 
@@ -123,6 +123,28 @@ export const DesktopSettings: React.FC = () => {
             </div>
             <div className="w-12 h-6 rounded-full bg-border relative transition-colors duration-200 cursor-pointer">
               <div className={`w-4 h-4 bg-primary rounded-full absolute top-1 transition-all duration-200 ${theme === 'dark' ? 'left-7' : theme === 'slate' ? 'left-4' : 'left-1'}`} />
+            </div>
+          </div>
+
+          <div className="p-5 flex items-center justify-between hover:bg-hover/10 transition-colors cursor-pointer group" onClick={toggleAdminMode}>
+            <div className="flex gap-4 items-center">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${adminModeOverride ? 'bg-emerald-500/15 text-emerald-400' : 'bg-hover text-text-muted'}`}>
+                <ShieldCheck size={20} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="block text-xs font-bold text-text-main">Admin Level Authority Mode</span>
+                  <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-semibold ${adminModeOverride ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-surface-2 text-text-muted border border-border'}`}>
+                    {adminModeOverride ? 'ACTIVE' : 'OFF'}
+                  </span>
+                </div>
+                <span className="block text-[10px] text-text-muted mt-0.5">
+                  Elevate all Git operations, folder and file deletion, and branch controls to admin authority
+                </span>
+              </div>
+            </div>
+            <div className={`w-12 h-6 rounded-full relative transition-colors duration-200 cursor-pointer ${adminModeOverride ? 'bg-emerald-500' : 'bg-border'}`}>
+              <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all duration-200 ${adminModeOverride ? 'left-7' : 'left-1'}`} />
             </div>
           </div>
 

@@ -1,136 +1,189 @@
-# Master Engineering Plan: Full Admin-Level Authority & Admin Commands
-
-## User Review & Critical Decisions
-
-> [!IMPORTANT]
-> The goal of this specification is to make all actions, permissions, and commands operate at **Admin Level**:
-> 1. **Permission Authority Condition ("cnd")**: Elevate repository permission checks (`isRepositoryOwnedByUser`) beyond username string-matching to recognize GitHub App and OAuth admin/push permissions (`permissions.admin`, `permissions.push`), organization memberships, and an Admin Authority Override. This unlocks editing, file/folder deletion, branch deletion, and repository deletion across all administered repositories.
-> 2. **Admin-Level Commands ("cmd")**: Enrich the Command Palette (`useCommandPaletteItems.ts`) with dedicated administrative commands: Delete Repository, Delete Active File/Folder, Force Reset Branch, Amend Commit, Create Protected Tag, and Purge Storage Caches.
-> 3. **Admin Visual Hierarchy**: Replace restrictive "Read-only" warnings with clear "Admin Authority" indicators whenever admin permissions are detected.
+# Master Engineering Specification: Ascending Sorting for Repositories & Commit History
 
 ---
 
-## 1. Objective
+## 1. Verified Facts, Assumptions & Missing Information
+
+### Verified Facts
+1. **Repository Sorting Architecture**:
+   - `src/context/contextUtils.ts` currently initializes `repoSortDirection: 'desc'`.
+   - `src/mobile/utils/sortRepos.ts` contains `filterAndSortRepos` which supports `sortDirection: 'asc' | 'desc'`. When `'asc'`, it negates the comparison (`-comparison`), correctly sorting names A-Z and updated dates oldest-first.
+   - `src/features/desktop/screens/DesktopRepositories.tsx` currently bypasses `filterAndSortRepos`, performing only a raw un-sorted filter on `githubRepos`.
+   - `src/mobile/screens/repositories/useRepositoriesState.ts` already calls `filterAndSortRepos`, but inherits the default `'desc'` direction.
+   - `src/mobile/screens/repositories/RepoSortSheet.tsx` offers ascending/descending toggle options, but defaults to descending.
+
+2. **Commit History Architecture**:
+   - `src/hooks/useCommits.ts` explicitly sorts fetched and cached commits in descending order at lines 60-64 (`tB - tA`).
+   - `src/mobile/screens/repo/CommitsScreen.tsx` displays `filteredCommits` using `activeCommits`, which are ordered descending by default without a sort direction toggle.
+   - `src/components/commit/CommitList.tsx` renders commits via `useCommits`, inheriting the descending order.
+   - `src/features/desktop/screens/DesktopCommitsView.tsx` defines `isHead` as `commitToInspect === activeCommits[0]`, which assumes the first element is the newest commit.
+   - `src/components/commit/GitGraph.tsx` renders the D3 DAG layout based on the commit array order.
+
+### Assumptions
+1. When sorting repository listings in an **ascending manner**, the default sort direction becomes `asc` (e.g., A to Z alphabetically by repository name, or oldest updated date first when sorted by activity), with users retaining the capability to toggle to `desc`.
+2. When sorting commit history in an **ascending manner**, commits should appear in chronological order (oldest commit at the top/start progressing forward in time to the newest commit/HEAD at the end), matching chronological timeline reading, with an explicit Sort Direction toggle (Ascending / Descending) available in both desktop and mobile header toolbars.
+
+### Missing Information
+- None. All components, hooks, utilities, and state interfaces are fully accessible and verified in the codebase.
+
+---
+
+## 2. Complexity Classification
+- **Level 3: Large Feature / Cross-Cutting Workflow**
+  - Spans global state management (`AppState`, `AppContext`, `contextUtils`), multiple screens (`DesktopRepositories`, `DesktopCommitsView`, `CommitsScreen`, `CommitList`), shared utilities (`sortRepos.ts`, `commitFilterUtils.ts`, `useCommits.ts`), and D3 visualization layouts.
+
+---
+
+## 3. Objective
 
 ### Purpose
-To unlock full administrative control across the Git Manager workbench so that every file, commit, branch, pull request, and repository management action executes with full admin authority without being artificially blocked by client-side single-owner name checks.
+To reconfigure the Git Manager repository and commit history views to list items in an **ascending manner** by default, providing chronological commit tracking (from initial commit toward HEAD) and ascending repository organization, with interactive controls allowing instant switching between ascending and descending perspectives.
 
-### Problem
-- `isRepositoryOwnedByUser` currently compares `repoOwner === userLogin`. For organization repositories (e.g., `my-org/my-repo`) or collaborator repositories where the user has administrative or push rights (`permissions.admin === true` or `permissions.push === true`), the app incorrectly classifies the repository as "Read-only (Global)", blocking file edits, file deletions, and branch operations.
-- GitHub Apps and PATs with fine-grained admin permissions don't always populate the legacy `x-oauth-scopes` header with `delete_repo`, causing repository deletion checks to fail even when the user has administration authority.
-- The Command Palette lacks quick administrative actions (e.g. direct delete commands, branch resets, cache purges).
-
-### Business & Technical Value
-- **Enterprise Collaboration**: Enables seamless administration of team and organization repositories.
-- **Power User Experience**: Direct keyboard-driven administrative actions via Command Palette (`Ctrl/Cmd + K`).
-- **Security & Integrity**: Accurately respects real GitHub API permission flags (`permissions.admin`, `permissions.push`) rather than naive string matching.
+### Problem Statement
+- Repositories default to descending order (`repoSortDirection: 'desc'`), and the desktop repository explorer does not apply sorting at all.
+- Commits are hardcoded to sort descending (`tB - tA`), preventing chronological timeline exploration and making it difficult to follow a repository's evolution from inception forward.
+- Neither desktop nor mobile commit headers offer a sort direction toggle.
 
 ### Success & Acceptance Criteria
-- [ ] `isRepositoryOwnedByUser` evaluates true if `permissions.admin === true`, `permissions.push === true`, `repo.isLocal === true`, or `repoOwner === userLogin`.
-- [ ] Added global `adminModeOverride` state toggle in `AppContext` allowing power users to force administrative authority.
-- [ ] Repositories with admin rights display `Admin Authority` badge instead of `Read-only (Global)`.
-- [ ] Command Palette features a dedicated **Admin** category with commands:
-  - `Admin: Delete Current Repository`
-  - `Admin: Delete Current File / Folder`
-  - `Admin: Reset Branch to Commit`
-  - `Admin: Amend Latest Commit`
-  - `Admin: Purge Local Storage & Caches`
-  - `Admin: Toggle Admin Mode Override`
-- [ ] All file editing, file/folder batch deletion, and branch deletion operations work smoothly across both personal and organization-owned repositories.
+- [ ] `repoSortDirection` in `getInitialDefaultState()` defaults to `'asc'`.
+- [ ] `DesktopRepositories.tsx` utilizes `filterAndSortRepos` and includes an Ascending/Descending sort direction toggle button.
+- [ ] `useCommits.ts` accepts `sortDirection?: 'asc' | 'desc'` in `CommitFilter` (defaulting to `'asc'`), sorting items chronologically (`tA - tB`).
+- [ ] `DesktopCommitsView.tsx` and `CommitListHeader.tsx` feature an interactive Sort Direction button (Ascending ⬆️ / Descending ⬇️) with visual indicator.
+- [ ] `CommitsScreen.tsx` (Mobile) and `CommitsFilterDrawer.tsx` support ascending order by default with a quick-toggle chip in `CommitsQuickChips.tsx`.
+- [ ] `isHead` logic in `DesktopCommitsView.tsx` and `CommitDetailActions.tsx` accurately identifies the actual HEAD commit regardless of list sort direction.
+- [ ] D3 `GitGraph.tsx` renders smoothly in ascending chronological layout.
 
 ---
 
-## 2. Existing System Analysis
+## 4. Existing System Analysis
 
-### Architecture & Components
-- **`src/mobile/utils/repoOwnership.ts`**: Currently only returns true if `userLower === ownerLower`. Completely ignores `matched.permissions.admin` and `matched.permissions.push` returned by GitHub REST API (`GET /user/repos` or `GET /repos/{owner}/{repo}`).
-- **`src/context/slices/useRepoSlice.ts`**: Blocks repo deletion if `!state.hasDeleteRepoScope`, which fails for GitHub Apps that use fine-grained Administration Read/Write permissions instead of legacy OAuth scopes.
-- **`src/features/desktop/screens/DesktopFilesView.tsx` & `src/mobile/screens/repo/FilesScreen.tsx`**: Uses `isOwner` to disable file editing and deletion triggers.
-- **`src/components/palette/useCommandPaletteItems.ts`**: Only offers generic navigation, new repo, and theme toggle actions.
-
----
-
-## 3. Architecture Design
-
-### ASCII Architecture
-
+### Current Commit Sorting Pipeline
 ```
-┌────────────────────────────────────────────────────────────────────────┐
-│                   GitHub API / App Token / PAT                         │
-│   (Returns repo object with permissions: { admin: true, push: true })   │
-└───────────────────────────────────┬────────────────────────────────────┘
-                                    │
-                                    ▼
-┌────────────────────────────────────────────────────────────────────────┐
-│                   Admin Authority Resolver                             │
-│   ┌────────────────────────────────────────────────────────────────┐   │
-│   │   isRepositoryOwnedByUser(repo, user, reposList)               │   │
-│   │   - Owner matches userLogin?                        --> ADMIN  │   │
-│   │   - repo.permissions.admin === true?                --> ADMIN  │   │
-│   │   - repo.permissions.push === true?                 --> ADMIN  │   │
-│   │   - adminModeOverride === true?                     --> ADMIN  │   │
-│   │   - repo.isLocal === true?                          --> ADMIN  │   │
-│   └────────────────────────────────┬───────────────────────────────┘   │
-└────────────────────────────────────┼───────────────────────────────────┘
-                                     │
-           ┌─────────────────────────┴─────────────────────────┐
-           ▼                                                   ▼
-┌──────────────────────────────────────┐   ┌───────────────────────────────────┐
-│     Workbench UI & Workspaces        │   │       Command Palette (Cmd+K)     │
-│ - "Admin Authority" Badge            │   │ - Admin: Delete Repository        │
-│ - Unrestricted File/Folder Deletion  │   │ - Admin: Delete Current File/Dir  │
-│ - Full Branch Deletion & Commits     │   │ - Admin: Reset Branch to Commit   │
-│ - Repository Administration Dialog   │   │ - Admin: Purge Storage Caches     │
-└──────────────────────────────────────┘   └───────────────────────────────────┘
+Remote / Local Commits
+       │
+       ▼
+useCommits.ts (hardcoded: items.sort((a,b) => tB - tA) [DESCENDING])
+       │
+       ▼
+CommitList.tsx / DesktopCommitsView.tsx / CommitsScreen.tsx (Newest First)
 ```
 
-### Key Changes
-1. **`src/mobile/utils/repoOwnership.ts`**:
-   - Upgrade `isRepositoryOwnedByUser` to inspect `matched?.permissions?.admin` and `matched?.permissions?.push`.
-   - Support `adminOverride?: boolean` parameter.
-2. **`src/types/appTypes.ts` & `src/AppContext.tsx`**:
-   - Add `adminModeOverride: boolean` and `toggleAdminMode: () => void`.
-3. **`src/components/palette/useCommandPaletteItems.ts`**:
-   - Add the full suite of **Admin Commands**.
-4. **`src/features/desktop/screens/DesktopFilesView.tsx` & `src/mobile/screens/repo/files/FileViewerModalHeader.tsx`**:
-   - Render `Admin Authority` badge for admin/push repositories.
-5. **`src/context/slices/useRepoSlice.ts`**:
-   - Allow repo deletion if user has `permissions.admin === true` or is the repo owner or has admin override.
+### Current Repository Sorting Pipeline
+```
+contextUtils.ts (repoSortDirection: 'desc')
+       │
+       ├─► Mobile: useRepositoriesState.ts -> filterAndSortRepos(..., sortDirection: 'desc')
+       └─► Desktop: DesktopRepositories.tsx -> raw unsorted filter
+```
 
 ---
 
-## 4. Implementation Breakdown
+## 5. Architectural Design
 
-### Phase 1: Permission Engine Upgrade
-- Update `src/mobile/utils/repoOwnership.ts` to check GitHub repository permission flags (`admin`, `push`, `maintain`) and optional admin override.
-- Update `useRepoSlice.ts` to recognize GitHub App admin permissions for repository operations.
+### Unified Ascending Pipeline
+```
+┌─────────────────────────────────────────────────────────────┐
+│                       Global State                          │
+│  - repoSortDirection: 'asc' (default)                       │
+│  - commitSortDirection: 'asc' (default)                     │
+└──────────────┬──────────────────────────────┬───────────────┘
+               │                              │
+               ▼                              ▼
+┌──────────────────────────────┐┌─────────────────────────────┐
+│    Repository Exploration    ││    Commit History Timeline   │
+│ - DesktopRepositories:       ││ - useCommits:               │
+│   Uses filterAndSortRepos    ││   Sorts tA - tB when 'asc'  │
+│   Asc/Desc Toggle in Bar     ││ - CommitsScreen:            │
+│ - Mobile Repositories:       ││   Sorts chronological 'asc' │
+│   RepoSortSheet defaults     ││ - CommitListHeader:         │
+│   to Ascending               ││   Asc/Desc Toggle Button    │
+└──────────────────────────────┘└─────────────────────────────┘
+```
 
-### Phase 2: Global Admin State & Toggle
-- Add `adminModeOverride` state to `useUISlice.ts` and expose it through `AppContext`.
-- Add an Admin Mode toggle in Desktop and Mobile Settings.
-
-### Phase 3: Admin Commands in Command Palette
-- Add admin actions to `src/components/palette/useCommandPaletteItems.ts`:
-  - Delete repo, delete file, reset branch, amend commit, purge cache, toggle admin mode.
-
-### Phase 4: UI Admin Indicators & Polish
-- Update `DesktopFilesView.tsx` and `FileViewerModalHeader.tsx` to display an `Admin Authority` badge.
+### Key Technical Decisions
+1. **Dynamic HEAD Resolution**:
+   - Rather than assuming `activeCommits[0]` is HEAD, compute `headCommit` by inspecting the commit with the latest timestamp or matching the branch reference tip. This guarantees commit inspection, HEAD deletion dialogs, and parent diff comparisons function correctly whether sorted ascending or descending.
+2. **Persistence**:
+   - Maintain sort direction preferences in state and sync with local storage if desired (`gm_repo_sort_dir`, `gm_commit_sort_dir`).
+3. **Graph Consistency**:
+   - `computeGitGraphLayout` handles commit chains based on parent-child hashes. Passing the ascending array or ensuring root-to-leaf topological consistency ensures edge rendering remains crisp.
 
 ---
 
-## 5. Execution Checklist
+## 6. Implementation Breakdown (Phased)
 
-- [ ] **Step 1**: Upgrade `repoOwnership.ts` to evaluate `permissions.admin` and `permissions.push`.
-- [ ] **Step 2**: Add `adminModeOverride` and `toggleAdminMode` in `useUISlice.ts` and `AppContext.tsx`.
-- [ ] **Step 3**: Update `useRepoSlice.ts` repo deletion guard to allow admin-level deletions.
-- [ ] **Step 4**: Inject Admin Commands into `useCommandPaletteItems.ts`.
-- [ ] **Step 5**: Display `Admin Authority` badge in `DesktopFilesView.tsx` and `FileViewerModalHeader.tsx`.
-- [ ] **Step 6**: Verify with `compile_applet` and `lint_applet`.
-- [ ] **Step 7**: Dev server verification and console inspection.
+### Phase 1: Repository Ascending Pipeline
+- **Files**:
+  - `src/context/contextUtils.ts`: Update default `repoSortDirection: 'asc'`.
+  - `src/features/desktop/screens/DesktopRepositories.tsx`: Connect `filterAndSortRepos`, add `repoSortDirection` and `setRepoSortDirection`, add sort toggle button in the filter bar.
+  - `src/mobile/screens/repositories/RepoSortSheet.tsx`: Ensure 'asc' is the active default option.
+
+### Phase 2: Commit Sorting Engine & Types
+- **Files**:
+  - `src/features/commit/utils/commitFilterUtils.ts`: Add `sortDirection?: 'asc' | 'desc'` to `CommitFilter`. Update `filterLocalCommits` to sort by `sortDirection` (default `'asc'`).
+  - `src/hooks/useCommits.ts`: Sort items chronologically based on `filters.sortDirection || 'asc'`.
+
+### Phase 3: Desktop Commit View & Header Controls
+- **Files**:
+  - `src/features/commit/components/CommitListHeader.tsx`: Add Ascending/Descending sort direction button with icon and label.
+  - `src/components/commit/CommitList.tsx`: Wire `sortDirection` into `filters` and state.
+  - `src/features/desktop/screens/DesktopCommitsView.tsx`: Dynamically resolve `headCommit` and `parentCommit` using timestamp comparison so HEAD deletion and diff viewers remain rock solid.
+
+### Phase 4: Mobile Commits Screen & Drawers
+- **Files**:
+  - `src/mobile/screens/repo/CommitsScreen.tsx`: Add `sortDirection` state (default `'asc'`), apply ascending sort to `filteredCommits`, update HEAD detection.
+  - `src/mobile/screens/repo/commits/CommitsQuickChips.tsx`: Add quick sort toggle button (`Oldest First (Asc)` / `Newest First (Desc)`).
+  - `src/mobile/screens/repo/commits/CommitsFilterDrawer.tsx`: Add explicit Sort Direction radio/button selector.
 
 ---
 
-## 6. Approval Gate
+## 7. Responsive Experience Specification
 
-Following the Master Engineering Protocol:
-**STOP.** No implementation code has been modified. Awaiting your explicit approval (`Approved`, `Proceed`, or `Implement`) to execute this plan.
+### Desktop Experience
+- **Repository View**: A clear Sort Order toggle button (`A-Z / Ascending` / `Z-A / Descending`) beside the type filter segment.
+- **Commit History**: A sort toggle button in `CommitListHeader` showing an arrow up/down icon (`ArrowUpAZ`, `ArrowDownZA`, or `ArrowUp` with `Ascending` tooltip). Clicking reverses the timeline seamlessly without reloading.
+
+### Tablet Experience
+- Fluid toolbar layout where sort toggles collapse into icon buttons with clear tooltips. Touch targets maintained at 44px minimum.
+
+### Mobile Experience
+- Quick Chip row in `CommitsScreen` features a dedicated sort toggle pill.
+- Filter drawer contains a high-contrast segmented control: `Chronological (Asc)` vs `Reverse Chronological (Desc)`.
+
+---
+
+## 8. Performance, Accessibility & Security
+
+- **Performance**: Sorting is performed via native array sorts with numeric timestamp caches; negligible overhead on lists up to 10,000 items. Memoized via `useMemo`.
+- **Accessibility**: All sort buttons include proper `aria-label`, `title`, and `aria-pressed` attributes. Focus rings comply with WCAG 2.1 AA.
+- **Security**: Pure client-side array sorting; no input injection or eval vectors.
+
+---
+
+## 9. Risks & Mitigations
+
+| Risk | Likelihood | Impact | Mitigation |
+| :--- | :--- | :--- | :--- |
+| `activeCommits[0]` assumed to be HEAD in commit detail/delete views | Medium | High | Replace hardcoded `[0]` index with dynamic `headCommit` locator: `[...activeCommits].sort((a,b) => tB - tA)[0]`. |
+| Git Graph edge inversions | Low | Medium | Verify `computeGitGraphLayout` handles chronologically ascending lists cleanly; reverse internally for DAG top-down layout if needed. |
+
+---
+
+## 10. Execution Checklist (No code execution until approval)
+
+1. [ ] Update initial state in `contextUtils.ts` to set `repoSortDirection: 'asc'`.
+2. [ ] Integrate `filterAndSortRepos` and an interactive sort direction toggle in `DesktopRepositories.tsx`.
+3. [ ] Extend `CommitFilter` with `sortDirection: 'asc' | 'desc'` in `commitFilterUtils.ts` and update `filterLocalCommits`.
+4. [ ] Update `useCommits.ts` to respect `sortDirection` (defaulting to `'asc'`).
+5. [ ] Add sort toggle button to `CommitListHeader.tsx` and wire through `CommitList.tsx`.
+6. [ ] Update HEAD resolution in `DesktopCommitsView.tsx` and `CommitDetailActions.tsx` to be direction-agnostic.
+7. [ ] Add sort controls to mobile `CommitsScreen.tsx`, `CommitsQuickChips.tsx`, and `CommitsFilterDrawer.tsx`.
+8. [ ] Execute `compile_applet` and `lint_applet` together, restart dev server, wait 10s and test console/HTTP status.
+
+---
+
+## 11. Approval Gate
+
+> [!CAUTION]
+> **Awaiting explicit user approval before performing any code generation or modifications.**
+> Please reply with **Approved**, **Proceed**, or **Implement** to start implementation.

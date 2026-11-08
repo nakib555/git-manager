@@ -1,4 +1,4 @@
-import { X, Maximize2, Minimize2, FileCode, Clock, Info, Edit3, Copy, Check, Download, Lock, Trash2 } from 'lucide-react';
+import { X, Maximize2, Minimize2, FileCode, Clock, Info, Edit3, Copy, Check, Download, Lock, Trash2, ShieldCheck } from 'lucide-react';
 import { formatBytes } from '../../../utils/formatters';
 import { getCodeLanguage } from './fileLanguageUtils';
 
@@ -55,9 +55,15 @@ export const FileViewerModalHeader: React.FC<FileViewerModalHeaderProps> = ({
             <span aria-hidden="true">·</span>
             <span className="tabular-nums">{formatBytes(fileSizeEst)}</span>
             <span aria-hidden="true">·</span>
-            <span className={`font-semibold ${isOwner ? 'text-text-muted' : 'text-amber-400'}`}>
-              {isOwner ? 'Own Repo' : 'Read-Only'}
-            </span>
+            {isOwner ? (
+              <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                <ShieldCheck size={10} className="text-emerald-400" /> Admin Authority
+              </span>
+            ) : (
+              <span className="text-amber-400 font-semibold flex items-center gap-1">
+                <Lock size={10} /> Read-Only
+              </span>
+            )}
           </div>
         </div>
 

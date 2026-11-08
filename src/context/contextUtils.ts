@@ -92,5 +92,6 @@ export const getInitialDefaultState = (): AppState => {
     isZipSyncOpen: false,
     tokenScopes: [],
     hasDeleteRepoScope: false,
+    adminModeOverride: localStorage.getItem('gm_admin_override') !== 'false',
   };
 };

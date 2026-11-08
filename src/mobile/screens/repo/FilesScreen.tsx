@@ -61,6 +61,7 @@ export const FilesScreen: React.FC = () => {
         currentRepo={currentRepo || ''}
         filesCount={activeFiles.length}
         searchQuery={searchQuery}
+        isOwner={isOwner}
         onSearchChange={setSearchQuery}
         onZipSync={openZipSync}
       />

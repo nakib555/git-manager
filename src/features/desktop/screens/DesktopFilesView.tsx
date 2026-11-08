@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '../../../AppContext';
-import { Search, Home, Copy, Check, Lock, Trash2 } from 'lucide-react';
+import { Search, Home, Copy, Check, Lock, Trash2, ShieldCheck } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus, vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { fetchFileContentSafe } from '../../../mobile/utils/gitApi';
@@ -10,7 +10,7 @@ import { DesktopFileTreeItem, DesktopTreeNode } from './DesktopFileTreeItem';
 import { DeleteFileConfirmModal } from '../../../components/modals/DeleteFileConfirmModal';
 
 export const DesktopFilesView: React.FC = () => {
-  const { currentRepo, currentRepoOwner, currentBranch, activeFiles, githubToken, githubUser, githubRepos, deleteFileOrFolder, showToast, theme } = useAppContext();
+  const { currentRepo, currentRepoOwner, currentBranch, activeFiles, githubToken, githubUser, githubRepos, adminModeOverride, deleteFileOrFolder, showToast, theme } = useAppContext();
   const [selectedFile, setSelectedFile] = useState<any | null>(null);
   const [fileContent, setFileContent] = useState<string>('');
   const [isLoadingFile, setIsLoadingFile] = useState<boolean>(false);
@@ -24,8 +24,9 @@ export const DesktopFilesView: React.FC = () => {
       repoOwner: currentRepoOwner,
       userLogin: githubUser?.login,
       reposList: githubRepos,
+      adminOverride: adminModeOverride,
     });
-  }, [currentRepo, currentRepoOwner, githubUser?.login, githubRepos]);
+  }, [currentRepo, currentRepoOwner, githubUser?.login, githubRepos, adminModeOverride]);
 
   const treeNodes = useMemo(() => {
     const list = activeFiles || [];
@@ -113,7 +114,9 @@ export const DesktopFilesView: React.FC = () => {
             <span className="font-mono text-primary truncate">{activePath}</span>
             <span className="text-border">·</span>
             {isOwner ? (
-              <span className="text-[10px] text-text-muted font-mono">Own Repo</span>
+              <span className="text-[10px] text-emerald-400 font-mono bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-md font-semibold flex items-center gap-1">
+                <ShieldCheck size={11} className="text-emerald-400" /> Admin Authority
+              </span>
             ) : (
               <span className="text-[10px] text-amber-400 font-mono flex items-center gap-1">
                 <Lock size={10} /> Read-only (Global)

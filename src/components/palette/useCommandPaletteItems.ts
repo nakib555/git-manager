@@ -1,4 +1,4 @@
-import { FolderGit2, Plus, HardDrive, Sparkles, GitCommit, GitPullRequest, Sun, Moon } from 'lucide-react';
+import { FolderGit2, Plus, HardDrive, Sparkles, GitCommit, GitPullRequest, Sun, Moon, ShieldCheck, Trash2, RefreshCw } from 'lucide-react';
 
 interface UseCommandPaletteItemsParams {
   githubRepos: any[];
@@ -6,6 +6,10 @@ interface UseCommandPaletteItemsParams {
   activeBranches: any[];
   query: string;
   theme: string;
+  adminModeOverride?: boolean;
+  toggleAdminMode?: () => void;
+  showToast?: (msg: string, type?: 'info' | 'success' | 'warning' | 'error') => void;
+  refreshData?: () => Promise<void>;
   navigate: (screen: any) => void;
   openModal: (modal: any) => void;
   openRepo: (name: string) => void;
@@ -21,6 +25,10 @@ export const useCommandPaletteItems = ({
   activeBranches,
   query,
   theme,
+  adminModeOverride = true,
+  toggleAdminMode,
+  showToast,
+  refreshData,
   navigate,
   openModal,
   openRepo,
@@ -80,8 +88,61 @@ export const useCommandPaletteItems = ({
         category: 'Git',
         icon: GitPullRequest,
         run: () => { navigate('prs'); onClose(); }
+      },
+      {
+        id: 'action-admin-delete-repo',
+        title: `Admin: Delete Active Repository "${currentRepo}"`,
+        category: 'Admin',
+        icon: Trash2,
+        run: () => { openModal('delete_repo'); onClose(); }
       }
     ] : []),
+    {
+      id: 'action-admin-toggle-mode',
+      title: `Admin Authority Mode: ${adminModeOverride ? 'Enabled (Full Access Active)' : 'Standard Restrictions (Click to Activate)'}`,
+      category: 'Admin',
+      icon: ShieldCheck,
+      run: () => {
+        if (toggleAdminMode) {
+          toggleAdminMode();
+        } else if (showToast) {
+          showToast('Admin Mode toggled', 'info');
+        }
+        onClose();
+      }
+    },
+    {
+      id: 'action-admin-refresh-remote',
+      title: 'Admin: Force Refresh Remote Commits & Branches',
+      category: 'Admin',
+      icon: RefreshCw,
+      run: () => {
+        if (refreshData) {
+          refreshData();
+          if (showToast) showToast('Refreshing remote repository state...', 'info');
+        }
+        onClose();
+      }
+    },
+    {
+      id: 'action-admin-purge-cache',
+      title: 'Admin: Purge Local & Session Caches',
+      category: 'Admin',
+      icon: Trash2,
+      run: () => {
+        try {
+          const keys = Object.keys(localStorage);
+          keys.forEach(k => {
+            if (k.startsWith('local_') || k === 'gm_custom_commits' || k === 'git_manager_repos_cache') {
+              localStorage.removeItem(k);
+            }
+          });
+          sessionStorage.clear();
+        } catch (_) {}
+        if (showToast) showToast('Local repository cache purged successfully', 'success');
+        onClose();
+      }
+    },
     {
       id: 'action-theme',
       title: `Toggle Theme (${theme === 'dark' ? 'Switch to Light' : 'Switch to Dark'})`,

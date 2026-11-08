@@ -13,7 +13,8 @@ interface CommandPaletteProps {
 export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose }) => {
   const { 
     githubRepos, currentRepo, openRepo, navigate, 
-    activeBranches, switchBranch, openModal, theme, toggleTheme, openZipSync
+    activeBranches, switchBranch, openModal, theme, toggleTheme, openZipSync,
+    adminModeOverride, toggleAdminMode, showToast, refreshData,
   } = useAppContext();
 
   const [query, setQuery] = useState('');
@@ -42,6 +43,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
 
   const { matchedRepos, matchedBranches, actions, items } = useCommandPaletteItems({
     githubRepos, currentRepo, activeBranches, query, theme,
+    adminModeOverride, toggleAdminMode, showToast, refreshData,
     navigate, openModal, openRepo, switchBranch, toggleTheme, openZipSync, onClose,
   });
 

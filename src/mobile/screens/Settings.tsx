@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAppContext } from '../../AppContext';
-import { Trash2 } from 'lucide-react';
+import { Trash2, ShieldCheck } from 'lucide-react';
 import { SettingsAuthCard } from './settings/SettingsAuthCard';
 import { SettingsThemeList } from './settings/SettingsThemeList';
 
@@ -11,6 +11,8 @@ export const Settings: React.FC = () => {
     disconnectGitHub, 
     theme, 
     setTheme, 
+    adminModeOverride,
+    toggleAdminMode,
     showToast
   } = useAppContext();
 
@@ -46,6 +48,38 @@ export const Settings: React.FC = () => {
         theme={theme}
         onThemeSelect={setTheme}
       />
+
+      <div className="bg-surface-1 border border-border rounded-xl p-4 space-y-3 shadow-2xs">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary block">
+            Security & Authority
+          </span>
+          <span className={`text-[9px] font-mono px-2 py-0.5 rounded-full font-bold ${adminModeOverride ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-surface-2 text-text-tertiary border border-border'}`}>
+            {adminModeOverride ? 'ADMIN ON' : 'RESTRICTED'}
+          </span>
+        </div>
+        <p className="text-xs text-text-secondary leading-relaxed">
+          Enable Admin Authority to unlock unrestricted file and folder deletion, full repository commands, and organization administrative authority.
+        </p>
+
+        <button
+          type="button"
+          onClick={toggleAdminMode}
+          className={`w-full h-11 px-4 rounded-xl border flex items-center justify-between text-xs font-semibold active:scale-[0.98] transition-all cursor-pointer ${
+            adminModeOverride 
+              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' 
+              : 'bg-surface-2 border-border text-text-primary hover:bg-surface-3'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <ShieldCheck size={16} className={adminModeOverride ? 'text-emerald-400' : 'text-text-tertiary'} />
+            <span>Admin Level Authority Mode</span>
+          </div>
+          <div className={`w-9 h-5 rounded-full relative transition-colors duration-200 ${adminModeOverride ? 'bg-emerald-500' : 'bg-border'}`}>
+            <div className={`w-3.5 h-3.5 bg-white rounded-full absolute top-[3px] transition-all duration-200 ${adminModeOverride ? 'left-5' : 'left-1'}`} />
+          </div>
+        </button>
+      </div>
 
       <div className="bg-surface-1 border border-border rounded-xl p-4 space-y-3 shadow-2xs">
         <span className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary block">

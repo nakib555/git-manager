@@ -44,6 +44,7 @@ export interface AppState {
   isZipSyncOpen: boolean;
   tokenScopes: string[];
   hasDeleteRepoScope: boolean;
+  adminModeOverride: boolean;
 }
 
 export type AppContextType = AppState & {
@@ -69,6 +70,7 @@ export type AppContextType = AppState & {
   connectGitHub: () => void;
   disconnectGitHub: () => void;
   setManualToken: (token: string) => void;
+  toggleAdminMode: () => void;
   refreshData: () => Promise<void>;
   
   // Details and local creation actions

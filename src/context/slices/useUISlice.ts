@@ -94,6 +94,17 @@ export const useUISlice = ({ state, setState }: UseUISliceParams) => {
   const setRepoTypeFilter = (filter: RepoTypeFilter) => setState((prev) => ({ ...prev, repoTypeFilter: filter, repoPage: 1 }));
   const setRepoLanguageFilter = (lang: string) => setState((prev) => ({ ...prev, repoLanguageFilter: lang, repoPage: 1 }));
 
+  const toggleAdminMode = () => {
+    setState((prev) => {
+      const next = !prev.adminModeOverride;
+      try {
+        localStorage.setItem("gm_admin_override", String(next));
+      } catch (_) {}
+      showToast(next ? "Admin Level Authority Enabled" : "Standard Authority Mode Enabled", "info");
+      return { ...prev, adminModeOverride: next };
+    });
+  };
+
   return {
     navigate,
     openActionSheet,
@@ -106,6 +117,7 @@ export const useUISlice = ({ state, setState }: UseUISliceParams) => {
     showToast,
     setTheme,
     toggleTheme,
+    toggleAdminMode,
     setSearchFocus,
     openCommandPalette,
     closeCommandPalette,
