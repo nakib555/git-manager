@@ -1,6 +1,0 @@
-{
-  "summary":  "Comprehensive engineering plan for fixing theme color matching and removing dark themes across the Git Manager application. Establishes a unified, cohesive light engineering surface, eliminates legacy dark and slate themes, replaces hardcoded dark colors with semantic CSS tokens, aligns diff viewers and modals, and updates theme controls in desktop and mobile settings.",
-  "updatedAt":  "2026-11-08T09:50:05.526236534Z",
-  "requestFeedback":  true,
-  "userFacing":  true
-}

@@ -1,6 +1,0 @@
-{
-  "summary":  "Master Engineering Specification & Architectural Implementation Blueprint for the comprehensive UI/AI Animation & Anti-Slop Overhaul across ProDoc Git Manager.\nEnforces all 20 Animation Best Practices (ease-out entrances, 150-250ms dropdowns, 30ms list row staggers, active 0.97 press scaling, 20% faster dismissals, popover 0.95 scale origins, zero everyday utilitarian bounce) and all 20 Anti-Slop Principles (stripping filler badges, nested card math r_inner = r_outer - padding, tabular numerals, WCAG AA contrast, unitalicized roman typography, headline balance, and prefers-reduced-motion accessibility).",
-  "updatedAt":  "2026-11-08T15:26:03.717458299Z",
-  "requestFeedback":  true,
-  "userFacing":  true
-}
