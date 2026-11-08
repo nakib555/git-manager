@@ -20,7 +20,17 @@ export const useCommits = (filters: CommitFilter) => {
       const selectedPageSize = filters.pageSize === -1 ? 100 : (filters.pageSize || 10);
 
       const getFallbackResult = () => {
-        const filtered = filterLocalCommits(activeCommits || [], filters);
+        let repoSpecificCommits = activeCommits || [];
+        if (currentRepo) {
+          try {
+            const raw = localStorage.getItem(`local_details_${currentRepo}_commits`);
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              if (Array.isArray(parsed)) repoSpecificCommits = parsed;
+            }
+          } catch (_) {}
+        }
+        const filtered = filterLocalCommits(repoSpecificCommits, { ...filters, sortDirection: filters.sortDirection || 'desc' });
         const pageSize = filters.pageSize === -1 ? Math.max(1, filtered.length) : (filters.pageSize || 10);
         const startIndex = ((filters.page || 1) - 1) * pageSize;
         const pageItems = filtered.slice(startIndex, startIndex + pageSize);
@@ -48,8 +58,16 @@ export const useCommits = (filters: CommitFilter) => {
         let totalCount = remoteCount;
 
         if ((!filters.page || filters.page === 1) && activeCommits && activeCommits.length > 0) {
+          let repoSpecificLocalCommits: any[] = [];
+          try {
+            const raw = localStorage.getItem(`local_details_${currentRepo}_commits`);
+            if (raw) repoSpecificLocalCommits = JSON.parse(raw);
+          } catch (_) {}
+
           const localOnly = activeCommits.filter(
-            (lc: any) => !items.some((it: any) => it.hash === lc.hash || it.fullHash === lc.fullHash)
+            (lc: any) =>
+              repoSpecificLocalCommits.some((rsc: any) => rsc.hash === lc.hash || rsc.fullHash === lc.fullHash) &&
+              !items.some((it: any) => it.hash === lc.hash || it.fullHash === lc.fullHash)
           );
           if (localOnly.length > 0) {
             items = [...localOnly, ...items];
@@ -57,10 +75,11 @@ export const useCommits = (filters: CommitFilter) => {
           }
         }
 
+        const direction = filters.sortDirection || 'desc';
         items.sort((a: any, b: any) => {
           const tA = new Date(a.timestamp || a.date || 0).getTime();
           const tB = new Date(b.timestamp || b.date || 0).getTime();
-          return tB - tA;
+          return direction === 'desc' ? tB - tA : tA - tB;
         });
 
         return {

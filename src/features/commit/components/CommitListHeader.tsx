@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Filter, RefreshCw, GitGraph as GitGraphIcon, List, Columns } from 'lucide-react';
+import { Search, Filter, RefreshCw, GitGraph as GitGraphIcon, List, Columns, ArrowUpNarrowWide, ArrowDownWideNarrow } from 'lucide-react';
 
 interface CommitListHeaderProps {
   searchInput: string;
@@ -9,6 +9,9 @@ interface CommitListHeaderProps {
   activeFilterCount: number;
   viewMode: 'list' | 'graph' | 'split';
   setViewMode: (mode: 'list' | 'graph' | 'split') => void;
+  sortDirection?: 'asc' | 'desc';
+  onSetSortDirection?: (dir: 'asc' | 'desc') => void;
+  onToggleSortDirection?: () => void;
   isDesktop?: boolean;
   isFetching?: boolean;
   onRefresh?: () => void;
@@ -22,6 +25,9 @@ export const CommitListHeader: React.FC<CommitListHeaderProps> = ({
   activeFilterCount,
   viewMode,
   setViewMode,
+  sortDirection = 'desc',
+  onSetSortDirection,
+  onToggleSortDirection,
   isDesktop,
   isFetching,
   onRefresh,
@@ -74,6 +80,36 @@ export const CommitListHeader: React.FC<CommitListHeaderProps> = ({
             <Columns size={14} />
           </button>
         )}
+      </div>
+
+      {/* Dual Descending & Ascending Horizontal Buttons */}
+      <div className="flex items-center bg-card border border-border rounded-xl p-0.5 shrink-0 text-xs font-semibold">
+        <button
+          type="button"
+          onClick={() => onSetSortDirection ? onSetSortDirection('desc') : onToggleSortDirection && onToggleSortDirection()}
+          className={`px-2 py-1.5 rounded-lg flex items-center gap-1 transition-all cursor-pointer ${
+            sortDirection === 'desc'
+              ? 'bg-primary text-white shadow-xs font-bold'
+              : 'text-text-muted hover:text-text-main'
+          }`}
+          title="Descending (Newest first - Default)"
+        >
+          <ArrowDownWideNarrow size={13} />
+          <span className="hidden sm:inline">Desc</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => onSetSortDirection ? onSetSortDirection('asc') : onToggleSortDirection && onToggleSortDirection()}
+          className={`px-2 py-1.5 rounded-lg flex items-center gap-1 transition-all cursor-pointer ${
+            sortDirection === 'asc'
+              ? 'bg-primary text-white shadow-xs font-bold'
+              : 'text-text-muted hover:text-text-main'
+          }`}
+          title="Ascending (Oldest first / Chronological)"
+        >
+          <ArrowUpNarrowWide size={13} />
+          <span className="hidden sm:inline">Asc</span>
+        </button>
       </div>
 
       <button

@@ -99,3 +99,28 @@ export function formatCompactNumber(num: number): string {
   if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
   return num.toString();
 }
+
+/** Formats date to 'DD/MM/YYYY, HH:mm:ss' to match Git mobile commit inspection screenshot */
+export function formatCommitDateTime(dateInput?: string | number | Date | null): string {
+  if (!dateInput) return '—';
+  let date: Date;
+  if (dateInput instanceof Date) {
+    date = dateInput;
+  } else if (typeof dateInput === 'number') {
+    date = new Date(dateInput > 1e11 ? dateInput : dateInput * 1000);
+  } else {
+    const trimmed = String(dateInput).trim();
+    const num = parseInt(trimmed, 10);
+    date = !isNaN(num) && /^\d+$/.test(trimmed) ? new Date(num > 1e11 ? num : num * 1000) : new Date(trimmed);
+  }
+  if (isNaN(date.getTime())) return String(dateInput);
+
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  const d = pad(date.getDate());
+  const m = pad(date.getMonth() + 1);
+  const y = date.getFullYear();
+  const hh = pad(date.getHours());
+  const mm = pad(date.getMinutes());
+  const ss = pad(date.getSeconds());
+  return `${d}/${m}/${y},  ${hh}:${mm}:${ss}`;
+}

@@ -24,6 +24,7 @@ export const CommitsScreen: React.FC = () => {
   const [dateRangeFilter, setDateRangeFilter] = useState<'all' | 'today' | '7d' | '30d' | 'custom'>('all');
   const [ciStatusFilter, setCiStatusFilter] = useState<'all' | 'passing' | 'failing'>('all');
   const [mergesOnly, setMergesOnly] = useState(false);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [activeQuickChip, setActiveQuickChip] = useState<'all' | 'my' | 'week' | 'merges' | 'ci'>('all');
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
 
@@ -32,10 +33,39 @@ export const CommitsScreen: React.FC = () => {
   const activeFilterCount = (searchQuery ? 1 : 0) + (dateRangeFilter !== 'all' ? 1 : 0) + (authorFilter !== 'all' ? 1 : 0) + (mergesOnly ? 1 : 0);
 
   const filteredCommits = useMemo(() => {
-    let list = filterLocalCommits(activeCommits || [], { query: searchQuery, author: authorFilter !== 'all' ? authorFilter : undefined });
+    let list = filterLocalCommits(activeCommits || [], {
+      query: searchQuery,
+      author: authorFilter !== 'all' ? authorFilter : undefined,
+      sortDirection,
+    });
     if (mergesOnly) list = list.filter((c: any) => c.parents && c.parents.length > 1);
     return list;
-  }, [activeCommits, searchQuery, authorFilter, mergesOnly]);
+  }, [activeCommits, searchQuery, authorFilter, mergesOnly, sortDirection]);
+
+  // Dynamically resolve actual HEAD commit (newest timestamp)
+  const actualHeadCommit = useMemo(() => {
+    if (!activeCommits || activeCommits.length === 0) return null;
+    return [...activeCommits].sort((a, b) => {
+      const tA = new Date(a.timestamp || a.date || 0).getTime();
+      const tB = new Date(b.timestamp || b.date || 0).getTime();
+      return tB - tA;
+    })[0];
+  }, [activeCommits]);
+
+  const parentCommit = useMemo(() => {
+    if (!commitToDeleteHead) return undefined;
+    if (commitToDeleteHead.parents && commitToDeleteHead.parents.length > 0) {
+      const pSha = commitToDeleteHead.parents[0].sha || commitToDeleteHead.parents[0];
+      const match = activeCommits.find(c => c.hash === pSha || c.fullHash === pSha);
+      if (match) return match;
+    }
+    const cTime = new Date(commitToDeleteHead.timestamp || commitToDeleteHead.date || 0).getTime();
+    const earlier = activeCommits
+      .filter(c => (c.hash !== commitToDeleteHead.hash && c.fullHash !== commitToDeleteHead.fullHash))
+      .filter(c => new Date(c.timestamp || c.date || 0).getTime() <= cTime)
+      .sort((a, b) => new Date(b.timestamp || b.date || 0).getTime() - new Date(a.timestamp || a.date || 0).getTime());
+    return earlier[0];
+  }, [commitToDeleteHead, activeCommits]);
 
   const totalPages = Math.max(1, Math.ceil(filteredCommits.length / pageSize));
   const paginatedCommits = filteredCommits.slice((currentPage - 1) * pageSize, currentPage * pageSize);
@@ -70,7 +100,11 @@ export const CommitsScreen: React.FC = () => {
       <CommitsQuickChips
         activeQuickChip={activeQuickChip}
         onSelectChip={(t) => { setActiveQuickChip(t); setCurrentPage(1); if (t === 'my') setAuthorFilter(githubUser?.login || 'user'); else if (t === 'merges') setMergesOnly(true); else { setAuthorFilter('all'); setMergesOnly(false); } }}
-        activeFilterCount={activeFilterCount} onOpenFilterSheet={() => setIsFilterSheetOpen(true)}
+        activeFilterCount={activeFilterCount}
+        onOpenFilterSheet={() => setIsFilterSheetOpen(true)}
+        sortDirection={sortDirection}
+        onSetSortDirection={(dir) => { setSortDirection(dir); setCurrentPage(1); }}
+        onToggleSortDirection={() => { setSortDirection(p => p === 'asc' ? 'desc' : 'asc'); setCurrentPage(1); }}
       />
 
       <div className="space-y-2.5 flex-1 min-h-0">
@@ -78,7 +112,7 @@ export const CommitsScreen: React.FC = () => {
           <CommitCard
             key={commit.fullHash || commit.hash || idx}
             commit={commit}
-            isLatest={currentPage === 1 && idx === 0}
+            isLatest={actualHeadCommit ? (commit.hash === actualHeadCommit.hash || commit.fullHash === actualHeadCommit.fullHash) : (currentPage === 1 && idx === 0)}
             onClick={() => setSelectedCommit(commit)}
             onRestoreClick={() => setSelectedCommitForRestore(commit)}
             onDeleteHeadClick={() => setCommitToDeleteHead(commit)}
@@ -97,7 +131,7 @@ export const CommitsScreen: React.FC = () => {
       <CommitRestoreSheet isOpen={!!selectedCommitForRestore} commit={selectedCommitForRestore} onClose={() => setSelectedCommitForRestore(null)} />
       <CommitsDeleteHeadDialog
         commit={commitToDeleteHead}
-        parentCommit={activeCommits[1]}
+        parentCommit={parentCommit}
         branchName={currentBranch || 'main'}
         isOpen={!!commitToDeleteHead}
         isDeleting={isDeletingHead}
@@ -108,7 +142,8 @@ export const CommitsScreen: React.FC = () => {
         isOpen={isFilterSheetOpen} onClose={() => setIsFilterSheetOpen(false)} authors={distinctAuthors}
         selectedAuthor={authorFilter} setSelectedAuthor={setAuthorFilter} dateRange={dateRangeFilter} setDateRange={setDateRangeFilter}
         ciStatus={ciStatusFilter} setCiStatus={setCiStatusFilter} mergesOnly={mergesOnly} setMergesOnly={setMergesOnly}
-        onReset={() => { setAuthorFilter('all'); setDateRangeFilter('all'); setCiStatusFilter('all'); setMergesOnly(false); }}
+        sortDirection={sortDirection} setSortDirection={(dir) => { setSortDirection(dir); setCurrentPage(1); }}
+        onReset={() => { setAuthorFilter('all'); setDateRangeFilter('all'); setCiStatusFilter('all'); setMergesOnly(false); setSortDirection('desc'); }}
         onApply={() => { setIsFilterSheetOpen(false); setCurrentPage(1); }}
       />
     </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '../../../AppContext';
 import { CommitList } from '../../../components/commit/CommitList';
 import { DiffViewer } from '../../../components/commit/DiffViewer';
@@ -19,9 +19,19 @@ export const DesktopCommitsView: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
   const [isDeletingHead, setIsDeletingHead] = useState<boolean>(false);
 
+  // Dynamically determine true HEAD commit (most recent timestamp)
+  const actualHeadCommit = useMemo(() => {
+    if (!activeCommits || activeCommits.length === 0) return null;
+    return [...activeCommits].sort((a, b) => {
+      const tA = new Date(a.timestamp || a.date || 0).getTime();
+      const tB = new Date(b.timestamp || b.date || 0).getTime();
+      return tB - tA;
+    })[0];
+  }, [activeCommits]);
+
   useEffect(() => {
-    if (activeCommits.length > 0 && !selectedCommit) setSelectedCommit(activeCommits[0]);
-  }, [activeCommits, selectedCommit]);
+    if (activeCommits.length > 0 && !selectedCommit) setSelectedCommit(actualHeadCommit || activeCommits[0]);
+  }, [activeCommits, selectedCommit, actualHeadCommit]);
 
   useEffect(() => {
     if (!selectedCommit) return setCommitDetailData(null);
@@ -40,8 +50,24 @@ export const DesktopCommitsView: React.FC = () => {
     } else setCommitDetailData(null);
   }, [selectedCommit?.hash, selectedCommit?.fullHash, githubToken, currentRepoOwner, currentRepo]);
 
-  const commitToInspect = activeCommits.find(c => c.hash === selectedCommit?.hash) || activeCommits[0];
-  const isHead = activeCommits.length > 0 && (commitToInspect?.hash === activeCommits[0].hash || commitToInspect?.fullHash === activeCommits[0].fullHash);
+  const commitToInspect = activeCommits.find(c => c.hash === selectedCommit?.hash) || actualHeadCommit || activeCommits[0];
+  const isHead = !!actualHeadCommit && (commitToInspect?.hash === actualHeadCommit.hash || commitToInspect?.fullHash === actualHeadCommit.fullHash);
+
+  const parentCommit = useMemo(() => {
+    if (!commitToInspect) return undefined;
+    if (commitToInspect.parents && commitToInspect.parents.length > 0) {
+      const pRaw: any = commitToInspect.parents[0];
+      const pSha = typeof pRaw === 'string' ? pRaw : (pRaw?.sha || '');
+      const match = activeCommits.find(c => c.hash === pSha || c.fullHash === pSha);
+      if (match) return match;
+    }
+    const cTime = new Date(commitToInspect.timestamp || commitToInspect.date || 0).getTime();
+    const earlier = activeCommits
+      .filter(c => (c.hash !== commitToInspect.hash && c.fullHash !== commitToInspect.fullHash))
+      .filter(c => new Date(c.timestamp || c.date || 0).getTime() <= cTime)
+      .sort((a, b) => new Date(b.timestamp || b.date || 0).getTime() - new Date(a.timestamp || a.date || 0).getTime());
+    return earlier[0];
+  }, [commitToInspect, activeCommits]);
 
   const handleDeleteConfirm = async () => {
     if (!commitToInspect) return;
@@ -50,7 +76,7 @@ export const DesktopCommitsView: React.FC = () => {
       await deleteCommit(commitToInspect.fullHash || commitToInspect.hash);
       showToast('HEAD commit deleted from history!');
       setShowDeleteModal(false);
-      if (activeCommits.length > 1) setSelectedCommit(activeCommits[1]);
+      if (parentCommit) setSelectedCommit(parentCommit);
     } catch (e: any) {
       showToast(e.message || 'Delete failed', 'error');
     } finally {
@@ -136,7 +162,7 @@ export const DesktopCommitsView: React.FC = () => {
 
       <CommitRestoreSheet isOpen={showRestoreModal} commit={commitToInspect} onClose={() => setShowRestoreModal(false)} />
       <CommitsDeleteHeadDialog
-        commit={commitToInspect} parentCommit={activeCommits[1]} branchName={currentBranch || 'main'}
+        commit={commitToInspect} parentCommit={parentCommit} branchName={currentBranch || 'main'}
         isOpen={showDeleteModal} isDeleting={isDeletingHead} onClose={() => setShowDeleteModal(false)} onConfirm={handleDeleteConfirm}
       />
     </div>

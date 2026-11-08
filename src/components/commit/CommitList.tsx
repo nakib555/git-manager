@@ -16,7 +16,7 @@ export const CommitList: React.FC<any> = ({
   const { activeCommits } = useAppContext();
   const [viewMode, setViewMode] = useState<'list' | 'graph' | 'split'>(isDesktop ? 'split' : 'list');
   const [filters, setFilters] = useState<CommitFilter>({
-    query: '', branch: '', author: '', since: '', until: '', datePreset: 'all', page: 1, pageSize: 10,
+    query: '', branch: '', author: '', since: '', until: '', datePreset: 'all', sortDirection: 'desc', page: 1, pageSize: 10,
   });
   const [searchInput, setSearchInput] = useState('');
   const [authorInput, setAuthorInput] = useState('');
@@ -39,7 +39,7 @@ export const CommitList: React.FC<any> = ({
 
   const handleClearAll = () => {
     setSearchInput(''); setAuthorInput(''); setBranchInput('');
-    setFilters({ query: '', branch: '', author: '', since: '', until: '', datePreset: 'all', page: 1, pageSize: 10 });
+    setFilters({ query: '', branch: '', author: '', since: '', until: '', datePreset: 'all', sortDirection: 'desc', page: 1, pageSize: 10 });
   };
 
   const handleApplyPreset = (preset: DatePreset) => {
@@ -64,6 +64,9 @@ export const CommitList: React.FC<any> = ({
         searchInput={searchInput} setSearchInput={setSearchInput}
         showFilters={showFilters} setShowFilters={setShowFilters}
         activeFilterCount={activeFilterCount} viewMode={viewMode} setViewMode={setViewMode}
+        sortDirection={filters.sortDirection || 'desc'}
+        onSetSortDirection={(dir) => setFilters(prev => ({ ...prev, sortDirection: dir, page: 1 }))}
+        onToggleSortDirection={() => setFilters(prev => ({ ...prev, sortDirection: prev.sortDirection === 'desc' ? 'asc' : 'desc', page: 1 }))}
         isDesktop={isDesktop} isFetching={isFetching} onRefresh={() => refetch()}
       />
 

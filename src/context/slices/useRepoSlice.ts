@@ -49,7 +49,25 @@ export const useRepoSlice = ({ state, setState, showToast }: UseRepoSliceParams)
       localStorage.setItem("currentRepoOwner", actualOwner);
       localStorage.removeItem("currentBranch");
       localStorage.setItem("currentScreen", "files");
-      return { ...prev, currentRepo: repoName, currentRepoOwner: actualOwner, currentBranch: "", currentScreen: "files" };
+
+      // Strictly isolate to the opened repository's own commits and tree
+      const repoCommits = getLocalRepoDetails(repoName, "commits");
+      const repoBranches = getLocalRepoDetails(repoName, "branches");
+      const repoPRs = getLocalRepoDetails(repoName, "prs");
+      const repoFiles = getLocalRepoDetails(repoName, "files");
+
+      return {
+        ...prev,
+        currentRepo: repoName,
+        currentRepoOwner: actualOwner,
+        currentBranch: "",
+        currentScreen: "files",
+        activeCommits: repoCommits,
+        activeBranches: repoBranches,
+        activePRs: repoPRs,
+        activeFiles: repoFiles,
+        isLoadingRepoDetails: true,
+      };
     });
   };
 

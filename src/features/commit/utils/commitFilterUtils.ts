@@ -7,6 +7,7 @@ export interface CommitFilter {
   since: string;
   until: string;
   datePreset?: DatePreset;
+  sortDirection?: 'asc' | 'desc';
   page: number;
   pageSize?: number;
 }
@@ -40,7 +41,7 @@ export const filterLocalCommits = (commits: any[], filters: Partial<CommitFilter
   const sinceTime = sinceDate ? sinceDate.getTime() : null;
   const untilTime = untilDate ? untilDate.getTime() : null;
 
-  return commits.filter((c: any) => {
+  const matched = commits.filter((c: any) => {
     if (q) {
       const msgMatch = (c.msg || '').toLowerCase().includes(q);
       const hashMatch = (c.hash || '').toLowerCase().includes(q);
@@ -65,5 +66,12 @@ export const filterLocalCommits = (commits: any[], filters: Partial<CommitFilter
       }
     }
     return true;
+  });
+
+  const direction = filters.sortDirection || 'desc';
+  return matched.sort((a: any, b: any) => {
+    const tA = new Date(a.timestamp || a.date || 0).getTime();
+    const tB = new Date(b.timestamp || b.date || 0).getTime();
+    return direction === 'desc' ? tB - tA : tA - tB;
   });
 };

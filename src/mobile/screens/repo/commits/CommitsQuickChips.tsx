@@ -1,11 +1,14 @@
 import React from 'react';
-import { Filter } from 'lucide-react';
+import { Filter, ArrowUpNarrowWide, ArrowDownWideNarrow } from 'lucide-react';
 
 interface CommitsQuickChipsProps {
   activeQuickChip: 'all' | 'my' | 'week' | 'merges' | 'ci';
   onSelectChip: (type: 'all' | 'my' | 'week' | 'merges' | 'ci') => void;
   activeFilterCount: number;
   onOpenFilterSheet: () => void;
+  sortDirection?: 'asc' | 'desc';
+  onSetSortDirection?: (dir: 'asc' | 'desc') => void;
+  onToggleSortDirection?: () => void;
 }
 
 export const CommitsQuickChips: React.FC<CommitsQuickChipsProps> = ({
@@ -13,6 +16,9 @@ export const CommitsQuickChips: React.FC<CommitsQuickChipsProps> = ({
   onSelectChip,
   activeFilterCount,
   onOpenFilterSheet,
+  sortDirection = 'desc',
+  onSetSortDirection,
+  onToggleSortDirection,
 }) => {
   const chips: { id: 'all' | 'my' | 'week' | 'merges' | 'ci'; label: string }[] = [
     { id: 'all', label: 'All Commits' },
@@ -21,6 +27,14 @@ export const CommitsQuickChips: React.FC<CommitsQuickChipsProps> = ({
     { id: 'merges', label: 'Merges Only' },
     { id: 'ci', label: 'Failing CI' },
   ];
+
+  const handleSetDirection = (dir: 'asc' | 'desc') => {
+    if (onSetSortDirection) {
+      onSetSortDirection(dir);
+    } else if (onToggleSortDirection && sortDirection !== dir) {
+      onToggleSortDirection();
+    }
+  };
 
   return (
     <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
@@ -40,6 +54,35 @@ export const CommitsQuickChips: React.FC<CommitsQuickChipsProps> = ({
             {activeFilterCount}
           </span>
         )}
+      </button>
+
+      {/* Both Descending and Ascending in horizontal list */}
+      <button
+        type="button"
+        onClick={() => handleSetDirection('desc')}
+        className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-all cursor-pointer ${
+          sortDirection === 'desc'
+            ? 'bg-primary text-white border-primary shadow-xs font-bold'
+            : 'bg-card border-border text-text-muted hover:text-text-main'
+        }`}
+        title="Show newest commits first (Default)"
+      >
+        <ArrowDownWideNarrow size={13} />
+        <span>Descending</span>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => handleSetDirection('asc')}
+        className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-all cursor-pointer ${
+          sortDirection === 'asc'
+            ? 'bg-primary text-white border-primary shadow-xs font-bold'
+            : 'bg-card border-border text-text-muted hover:text-text-main'
+        }`}
+        title="Show oldest commits first (Chronological)"
+      >
+        <ArrowUpNarrowWide size={13} />
+        <span>Ascending</span>
       </button>
 
       {chips.map((chip) => {

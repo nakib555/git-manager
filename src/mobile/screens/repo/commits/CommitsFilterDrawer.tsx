@@ -14,6 +14,8 @@ interface CommitsFilterDrawerProps {
   setCiStatus: (s: 'all' | 'passing' | 'failing') => void;
   mergesOnly: boolean;
   setMergesOnly: (m: boolean) => void;
+  sortDirection?: 'asc' | 'desc';
+  setSortDirection?: (dir: 'asc' | 'desc') => void;
   onReset: () => void;
   onApply: () => void;
 }
@@ -30,6 +32,8 @@ export const CommitsFilterDrawer: React.FC<CommitsFilterDrawerProps> = ({
   setCiStatus,
   mergesOnly,
   setMergesOnly,
+  sortDirection = 'asc',
+  setSortDirection,
   onReset,
   onApply,
 }) => {
@@ -126,6 +130,36 @@ export const CommitsFilterDrawer: React.FC<CommitsFilterDrawerProps> = ({
           />
           <span>Show merge commits only</span>
         </label>
+
+        {setSortDirection && (
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold text-text-muted uppercase">Sort Direction</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setSortDirection('asc')}
+                className={`py-2 text-xs font-semibold rounded-xl border transition-all cursor-pointer ${
+                  sortDirection === 'asc'
+                    ? 'bg-primary text-white border-primary shadow-xs font-bold'
+                    : 'bg-main border-border text-text-muted hover:text-text-main'
+                }`}
+              >
+                Ascending (Oldest First)
+              </button>
+              <button
+                type="button"
+                onClick={() => setSortDirection('desc')}
+                className={`py-2 text-xs font-semibold rounded-xl border transition-all cursor-pointer ${
+                  sortDirection === 'desc'
+                    ? 'bg-primary text-white border-primary shadow-xs font-bold'
+                    : 'bg-main border-border text-text-muted hover:text-text-main'
+                }`}
+              >
+                Descending (Newest First)
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="flex gap-2 pt-3 border-t border-border">
           <button

@@ -26,23 +26,38 @@ export const sanitizeGitHubUser = (user: any): GitHubUser | null => {
   };
 };
 
-import { getCatalogOrDefault } from '../data/demoRepoCatalog';
+import { getCatalogOrDefault, isDemoCatalogRepo } from '../data/demoRepoCatalog';
 
 export const getLocalRepoDetails = (
   repoId: string,
   type: "commits" | "branches" | "prs" | "files",
 ) => {
+  if (!repoId) return [];
   const key = `local_details_${repoId}_${type}`;
   const local = localStorage.getItem(key);
   if (local) {
     try {
       const parsed = JSON.parse(local);
-      if (parsed && parsed.length > 0) return parsed;
+      if (parsed && Array.isArray(parsed) && parsed.length > 0) {
+        if (type === 'commits' && repoId !== 'nexus-web-engine' && !isDemoCatalogRepo(repoId)) {
+          const cleaned = parsed.filter(
+            (c: any) => !DEMO_COMMITS.some((dc: any) => dc.hash === c.hash || dc.fullHash === c.fullHash)
+          );
+          if (cleaned.length !== parsed.length) {
+            try { localStorage.setItem(key, JSON.stringify(cleaned)); } catch (_) {}
+          }
+          return cleaned;
+        }
+        return parsed;
+      }
     } catch (e) {}
   }
   
-  const catalog = getCatalogOrDefault(repoId);
-  return catalog[type] || [];
+  if (isDemoCatalogRepo(repoId)) {
+    const catalog = getCatalogOrDefault(repoId);
+    return catalog[type] || [];
+  }
+  return [];
 };
 
 export const getInitialDefaultState = (): AppState => {

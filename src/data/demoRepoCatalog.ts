@@ -149,5 +149,18 @@ Raft-consensus distributed key-value storage engine with zero-copy snapshot seri
 };
 
 export const getCatalogOrDefault = (repoName: string): RepoDetailsPackage => {
-  return DEMO_CATALOG[repoName] || DEMO_CATALOG['nexus-web-engine'];
+  if (DEMO_CATALOG[repoName]) {
+    return DEMO_CATALOG[repoName];
+  }
+  return {
+    files: [],
+    commits: [],
+    branches: [{ name: 'main', isDefault: true, isProtected: false }],
+    prs: [],
+    languages: {},
+  };
+};
+
+export const isDemoCatalogRepo = (repoName: string): boolean => {
+  return Boolean(DEMO_CATALOG[repoName]);
 };

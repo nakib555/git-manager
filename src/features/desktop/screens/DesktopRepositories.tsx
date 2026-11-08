@@ -1,14 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../../../AppContext';
-import { Search, FolderGit2, Plus } from 'lucide-react';
+import { Search, FolderGit2, Plus, ArrowUpAZ, ArrowDownZA } from 'lucide-react';
 import { DesktopRepoCard } from './DesktopRepoCard';
 import { DeleteRepoModal } from '../../../components/DeleteRepoModal';
 import { PaginationControls } from '../../../components/common/PaginationControls';
+import { filterAndSortRepos } from '../../../mobile/utils/sortRepos';
 
 export const DesktopRepositories: React.FC<{ globalSearch?: string }> = ({ globalSearch = '' }) => {
   const {
     githubRepos, currentRepo, openRepo, openModal,
     repoTypeFilter, setRepoTypeFilter, repoSortBy, setRepoSortBy,
+    repoSortDirection, setRepoSortDirection,
     repoPage, setRepoPage, repoPerPage,
   } = useAppContext();
 
@@ -18,20 +20,14 @@ export const DesktopRepositories: React.FC<{ globalSearch?: string }> = ({ globa
   const activeQuery = localSearch || globalSearch;
 
   const filteredRepos = useMemo(() => {
-    return (githubRepos || []).filter(r => {
-      if (activeQuery.trim()) {
-        const q = activeQuery.toLowerCase();
-        const matchName = r.name.toLowerCase().includes(q);
-        const matchDesc = r.description ? r.description.toLowerCase().includes(q) : false;
-        if (!matchName && !matchDesc) return false;
-      }
-      if (repoTypeFilter === 'public') return !r.private;
-      if (repoTypeFilter === 'private') return r.private;
-      if (repoTypeFilter === 'forks') return r.fork;
-      if (repoTypeFilter === 'sources') return !r.fork;
-      return true;
+    return filterAndSortRepos(githubRepos || [], {
+      searchQuery: activeQuery,
+      scope: 'personal',
+      typeFilter: repoTypeFilter,
+      sortBy: repoSortBy,
+      sortDirection: repoSortDirection,
     });
-  }, [githubRepos, activeQuery, repoTypeFilter]);
+  }, [githubRepos, activeQuery, repoTypeFilter, repoSortBy, repoSortDirection]);
 
   const totalPages = Math.max(1, Math.ceil(filteredRepos.length / repoPerPage));
   const paginatedRepos = filteredRepos.slice((repoPage - 1) * repoPerPage, repoPage * repoPerPage);
@@ -57,6 +53,49 @@ export const DesktopRepositories: React.FC<{ globalSearch?: string }> = ({ globa
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Sort By Field */}
+          <select
+            value={repoSortBy}
+            onChange={(e) => { setRepoSortBy(e.target.value as any); setRepoPage(1); }}
+            className="bg-card border border-border text-text-main text-xs rounded-xl px-2.5 py-1.5 outline-none focus:border-primary transition-colors font-medium cursor-pointer"
+            aria-label="Sort repositories by"
+          >
+            <option value="updated">Recently Updated</option>
+            <option value="name">Name (Alphabetical)</option>
+            <option value="stars">Stars</option>
+            <option value="forks">Forks</option>
+          </select>
+
+          {/* Dual Descending & Ascending Horizontal Buttons */}
+          <div className="flex items-center bg-card border border-border rounded-xl p-0.5 text-xs font-semibold">
+            <button
+              type="button"
+              onClick={() => { setRepoSortDirection('desc'); setRepoPage(1); }}
+              className={`px-2 py-1 rounded-lg flex items-center gap-1 transition-all cursor-pointer ${
+                repoSortDirection === 'desc'
+                  ? 'bg-primary text-white shadow-xs font-bold'
+                  : 'text-text-muted hover:text-text-main'
+              }`}
+              title="Descending: Show newest/highest first (Default)"
+            >
+              <ArrowDownZA size={13} />
+              <span className="hidden sm:inline">Desc</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => { setRepoSortDirection('asc'); setRepoPage(1); }}
+              className={`px-2 py-1 rounded-lg flex items-center gap-1 transition-all cursor-pointer ${
+                repoSortDirection === 'asc'
+                  ? 'bg-primary text-white shadow-xs font-bold'
+                  : 'text-text-muted hover:text-text-main'
+              }`}
+              title="Ascending: Show oldest/A-Z first"
+            >
+              <ArrowUpAZ size={13} />
+              <span className="hidden sm:inline">Asc</span>
+            </button>
+          </div>
+
           <div className="flex bg-card border border-border rounded-xl p-1 text-xs">
             {(['all', 'public', 'private', 'forks'] as const).map(f => (
               <button

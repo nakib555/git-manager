@@ -1,7 +1,7 @@
 import { AppState, GitHubRepo } from '../../types';
 import { DEMO_COMMITS, DEMO_BRANCHES, DEMO_PRS, DEMO_FILES } from '../../data/demoData';
 import { getLocalRepos, getLocalRepoDetails } from '../contextUtils';
-import { getCatalogOrDefault } from '../../data/demoRepoCatalog';
+import { getCatalogOrDefault, isDemoCatalogRepo } from '../../data/demoRepoCatalog';
 import { fetchUserProfile, fetchUserRepos, searchGlobalRepositories, ensureWebhookInstalled } from '../gitApiServices';
 import { fetchRemoteCommits, fetchRemoteBranches, fetchRemotePRs, fetchRemoteFilesTree } from '../gitRepoDetailServices';
 
@@ -80,7 +80,8 @@ export async function executeFetchRepoDetails(
   const headers: Record<string, string> = { Accept: "application/vnd.github.v3+json" };
   if (token) headers["Authorization"] = token.startsWith('Bearer ') || token.startsWith('token ') ? token : `Bearer ${token}`;
 
-  if (!token || owner === 'octodev' || repoName === 'nexus-web-engine') {
+  // Only apply demo catalog fixtures if repo is a genuine demo catalog entry
+  if (isDemoCatalogRepo(repoName) || (!token && (owner === 'octodev' || repoName === 'nexus-web-engine'))) {
     const catalog = getCatalogOrDefault(repoName);
     const localCommits = getLocalRepoDetails(repoName, "commits");
     const uniqueLocal = localCommits.filter((lc: any) => !catalog.commits.some((gc: any) => gc.hash === lc.hash));
@@ -94,6 +95,21 @@ export async function executeFetchRepoDetails(
       activePRs: localPRs.length > 0 ? localPRs : catalog.prs,
       activeFiles: localFiles.length > 0 ? localFiles : catalog.files,
       activeLanguages: catalog.languages,
+    };
+  }
+
+  if (!token) {
+    const localCommits = getLocalRepoDetails(repoName, "commits");
+    const localFiles = getLocalRepoDetails(repoName, "files");
+    const localBranches = getLocalRepoDetails(repoName, "branches");
+    const localPRs = getLocalRepoDetails(repoName, "prs");
+    return {
+      currentBranch: branchOverride || "main",
+      activeCommits: localCommits,
+      activeBranches: localBranches.length > 0 ? localBranches : [{ name: 'main', isDefault: true, isProtected: false }],
+      activePRs: localPRs,
+      activeFiles: localFiles,
+      activeLanguages: {},
     };
   }
 
