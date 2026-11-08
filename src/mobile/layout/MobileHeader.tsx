@@ -49,7 +49,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
         {/* Left: Hamburger menu icon (Account / Notifications Drawer) */}
         <button
           onClick={onOpenDrawer}
-          className="w-10 h-10 flex items-center justify-center rounded-xl text-text-secondary hover:text-text-primary hover:bg-surface-2 active:scale-95 transition-all cursor-pointer"
+          className="w-10 h-10 flex items-center justify-center rounded-xl text-text-secondary hover:text-text-primary hover:bg-surface-2 btn-tactile transition-all cursor-pointer"
           aria-label="Open Navigation Drawer"
         >
           <Menu size={20} strokeWidth={2.2} />
@@ -61,7 +61,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
             <div className="relative">
               <button
                 onClick={() => setIsBranchDropdownOpen(!isBranchDropdownOpen)}
-                className="h-8 px-3 max-w-[200px] sm:max-w-xs bg-surface-2 border border-border hover:border-text-primary/40 rounded-xl flex items-center gap-1.5 text-xs font-semibold text-text-primary transition-all cursor-pointer shadow-2xs active:scale-95"
+                className="h-8 px-3 max-w-[200px] sm:max-w-xs bg-surface-2 border border-border hover:border-text-primary/40 rounded-xl flex items-center gap-1.5 text-xs font-semibold text-text-primary transition-all cursor-pointer shadow-2xs btn-tactile"
                 aria-expanded={isBranchDropdownOpen}
                 aria-label="Select branch"
               >
@@ -79,10 +79,10 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
                       onClick={() => setIsBranchDropdownOpen(false)} 
                     />
                     <motion.div
-                      initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                      initial={{ opacity: 0, y: -4, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -4, scale: 0.98 }}
-                      transition={{ duration: 0.15 }}
+                      exit={{ opacity: 0, y: -4, scale: 0.95 }}
+                      transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
                       className="absolute left-1/2 -translate-x-1/2 top-10 z-50 w-64 bg-surface-1 border border-border rounded-xl shadow-2xl p-1.5 max-h-60 overflow-y-auto no-scrollbar"
                     >
                       <div className="px-2.5 py-1.5 text-[10px] font-bold text-text-tertiary uppercase tracking-wider">
@@ -95,7 +95,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
                             switchBranch(branch.name);
                             setIsBranchDropdownOpen(false);
                           }}
-                          className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-lg transition-colors cursor-pointer ${
+                          className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-lg transition-colors cursor-pointer btn-tactile ${
                             branch.name === currentBranch
                               ? 'bg-accent/15 text-accent font-semibold'
                               : 'text-text-primary hover:bg-surface-2'
@@ -126,14 +126,14 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
         <div className="flex items-center gap-1.5">
           <button
             onClick={openCommandPalette}
-            className="w-10 h-10 flex items-center justify-center rounded-xl text-text-secondary hover:text-text-primary hover:bg-surface-2 active:scale-95 transition-all cursor-pointer"
+            className="w-10 h-10 flex items-center justify-center rounded-xl text-text-secondary hover:text-text-primary hover:bg-surface-2 btn-tactile transition-all cursor-pointer"
             aria-label="Search Workspace (Cmd+K)"
           >
             <Search size={18} strokeWidth={2.2} />
           </button>
           <button
             onClick={onOpenActionSheet}
-            className="w-9 h-9 flex items-center justify-center rounded-xl text-background bg-text-primary hover:opacity-90 shadow-xs active:scale-95 transition-all cursor-pointer"
+            className="w-9 h-9 flex items-center justify-center rounded-xl text-background bg-text-primary hover:opacity-90 shadow-xs btn-tactile transition-all cursor-pointer"
             aria-label="Create New Action"
           >
             <Plus size={18} strokeWidth={2.5} />

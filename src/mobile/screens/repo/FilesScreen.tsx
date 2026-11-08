@@ -17,7 +17,9 @@ export const FilesScreen: React.FC = () => {
   const {
     activeFiles,
     currentRepo,
+    currentRepoOwner,
     currentBranch,
+    githubToken,
     activeFilePath,
     activeFileContent,
     activeFileLoading,
@@ -100,6 +102,9 @@ export const FilesScreen: React.FC = () => {
           <FileViewerModal
             selectedFile={selectedFileForModal}
             currentRepo={currentRepo || ''}
+            currentRepoOwner={currentRepoOwner}
+            currentBranch={currentBranch || 'main'}
+            githubToken={githubToken}
             activeFileContent={activeFileContent}
             activeFileLoading={activeFileLoading}
             fileContentError={fileContentError}

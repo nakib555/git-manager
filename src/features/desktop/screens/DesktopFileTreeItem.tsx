@@ -76,9 +76,9 @@ export const DesktopFileTreeItem: React.FC<{
     <div
       onClick={() => onSelect(item)}
       style={{ paddingLeft: `${depth * 14 + 22}px` }}
-      className={`group/item flex items-center justify-between py-1.5 pr-2 rounded-lg text-xs cursor-pointer select-none transition-colors ${
+      className={`group/item flex items-center justify-between py-1.5 pr-2 rounded-lg text-xs cursor-pointer select-none btn-tactile ${
         isSelected
-          ? 'bg-primary/10 text-primary font-bold border border-primary/20'
+          ? 'bg-primary/10 text-primary font-semibold border border-primary/20'
           : 'text-text-muted hover:text-text-main hover:bg-hover/30 border border-transparent'
       }`}
     >
@@ -88,7 +88,7 @@ export const DesktopFileTreeItem: React.FC<{
       </div>
       <div className="flex items-center gap-1.5 shrink-0 ml-1">
         {typeof item.size === 'number' && item.size > 0 && (
-          <span className="text-[10px] font-mono text-text-muted/70 group-hover/item:hidden">
+          <span className="text-[10px] font-mono text-text-muted/70 group-hover/item:hidden tabular-nums">
             {formatBytes(item.size)}
           </span>
         )}
@@ -99,7 +99,7 @@ export const DesktopFileTreeItem: React.FC<{
               e.stopPropagation();
               onDelete(item);
             }}
-            className="opacity-0 group-hover/item:opacity-100 p-1 text-text-muted hover:text-rose-400 hover:bg-rose-500/10 rounded transition-opacity cursor-pointer"
+            className="opacity-0 group-hover/item:opacity-100 p-1 text-text-muted hover:text-rose-400 hover:bg-rose-500/10 rounded btn-tactile cursor-pointer"
             title={`Delete file '${item.name}'`}
           >
             <Trash2 size={12} />

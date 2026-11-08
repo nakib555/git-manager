@@ -34,16 +34,16 @@ export const ActionSheet: React.FC<ActionSheetProps> = ({ isOpen, onClose, onDel
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
-            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
             className="relative w-full bg-surface-1 border-t border-x border-border rounded-t-3xl pb-[calc(env(safe-area-inset-bottom,0px)+16px)] pt-3 px-4 shadow-2xl z-10 max-h-[85vh] overflow-y-auto no-scrollbar"
           >
             <div className="w-10 h-1 bg-border rounded-full mx-auto mb-3" />
 
             <div className="flex items-center justify-between pb-3 border-b border-border min-h-[44px]">
-              <h3 className="text-sm font-semibold text-text-primary">Quick Actions</h3>
+              <h3 className="text-sm font-semibold text-text-primary headline-balance">Quick Actions</h3>
               <button
                 onClick={onClose}
-                className="w-11 h-11 flex items-center justify-center text-text-tertiary hover:text-text-primary rounded-xl hover:bg-surface-2 transition-colors cursor-pointer"
+                className="w-11 h-11 flex items-center justify-center text-text-tertiary hover:text-text-primary rounded-xl hover:bg-surface-2 transition-colors cursor-pointer btn-tactile"
                 aria-label="Close action sheet"
               >
                 <X size={18} />
@@ -53,7 +53,7 @@ export const ActionSheet: React.FC<ActionSheetProps> = ({ isOpen, onClose, onDel
             <div className="py-2 space-y-2">
               <button
                 onClick={() => handleAction(() => openModal('repo'))}
-                className="w-full min-h-[48px] h-12 px-3 rounded-xl flex items-center gap-4 hover:bg-surface-2 transition-colors text-left text-xs font-semibold text-text-primary cursor-pointer active:scale-98"
+                className="w-full min-h-[48px] h-12 px-3 rounded-xl flex items-center gap-4 hover:bg-surface-2 transition-colors text-left text-xs font-semibold text-text-primary cursor-pointer btn-tactile"
               >
                 <div className="w-8 h-8 rounded-lg bg-surface-2 border border-border text-text-primary flex items-center justify-center shrink-0">
                   <FolderPlus size={17} />
@@ -66,7 +66,7 @@ export const ActionSheet: React.FC<ActionSheetProps> = ({ isOpen, onClose, onDel
 
               <button
                 onClick={() => handleAction(() => navigate('clone'))}
-                className="w-full min-h-[48px] h-12 px-3 rounded-xl flex items-center gap-4 hover:bg-surface-2 transition-colors text-left text-xs font-semibold text-text-primary cursor-pointer active:scale-98"
+                className="w-full min-h-[48px] h-12 px-3 rounded-xl flex items-center gap-4 hover:bg-surface-2 transition-colors text-left text-xs font-semibold text-text-primary cursor-pointer btn-tactile"
               >
                 <div className="w-8 h-8 rounded-lg bg-surface-2 border border-border text-text-primary flex items-center justify-center shrink-0">
                   <Download size={17} />

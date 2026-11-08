@@ -28,10 +28,10 @@ export const BottomNav: React.FC = () => {
             <button
               key={tab.id}
               onClick={() => navigate(tab.id as any)}
-              className={`flex-1 flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all cursor-pointer min-h-[48px] h-full ${
+              className={`flex-1 flex flex-col items-center justify-center py-1 px-1 rounded-xl btn-tactile cursor-pointer min-h-[48px] h-full ${
                 active 
                   ? 'text-text-primary' 
-                  : 'text-text-tertiary hover:text-text-secondary active:scale-95'
+                  : 'text-text-tertiary hover:text-text-secondary'
               }`}
               aria-label={tab.label}
               aria-current={active ? 'page' : undefined}

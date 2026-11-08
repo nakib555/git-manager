@@ -55,10 +55,10 @@ export const CreateModals: React.FC = () => {
           />
 
           <motion.div
-            initial={{ opacity: 0, scale: 0.94, y: 8 }}
+            initial={{ opacity: 0, scale: 0.95, y: 6 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.94, y: 8 }}
-            transition={{ type: 'spring', damping: 26, stiffness: 320 }}
+            exit={{ opacity: 0, scale: 0.95, y: 6 }}
+            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
             role="dialog"
             aria-modal="true"
             className="relative w-full max-w-md max-h-[88vh] overflow-y-auto bg-surface-1 rounded-2xl border border-border p-5 sm:p-6 shadow-2xl z-10 flex flex-col"

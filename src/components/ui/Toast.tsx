@@ -35,9 +35,9 @@ export const Toast: React.FC = () => {
 
   return (
     <div 
-      className={`fixed top-16 left-1/2 -translate-x-1/2 max-w-[90vw] sm:max-w-md border px-3.5 py-2 min-h-[36px] rounded-md text-xs font-medium transition-all duration-200 z-[300] flex items-center gap-2.5 pointer-events-none ${getVariantStyles()} ${
-        toastMessage ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-3 scale-95'
-      }`}
+      className={`fixed top-16 left-1/2 -translate-x-1/2 max-w-[90vw] sm:max-w-md border px-4 py-2.5 min-h-[40px] rounded-xl text-xs font-medium transition-all duration-180 ease-[cubic-bezier(0.16,1,0.3,1)] z-[300] flex items-center gap-2.5 pointer-events-none shadow-medium ${getVariantStyles()} ${
+        toastMessage ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-3 scale-95 duration-140'
+      } ${toastMessage && toastType === 'success' ? 'animate-success-pulse' : ''}`}
     >
       {getIcon()}
       <span className="truncate">{toastMessage}</span>

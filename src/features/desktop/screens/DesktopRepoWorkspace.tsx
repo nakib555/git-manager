@@ -21,8 +21,8 @@ export const DesktopRepoWorkspace: React.FC = () => {
       ) : (
         <div className="flex-1 min-h-0 flex flex-col relative">
           {isAutoSyncing && (
-            <div className="absolute top-2 right-4 z-30 pointer-events-none flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-card/90 backdrop-blur-xs border border-emerald-500/30 text-[10px] font-medium text-emerald-400 shadow-xs animate-fade-in">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+            <div className="absolute top-2 right-4 z-30 pointer-events-none flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-card/90 backdrop-blur-xs border border-emerald-500/30 text-[10px] font-medium text-emerald-400 shadow-xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
               <span>Syncing workspace...</span>
             </div>
           )}

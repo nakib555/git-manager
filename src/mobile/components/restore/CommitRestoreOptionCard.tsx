@@ -24,7 +24,7 @@ export const CommitRestoreOptionCard: React.FC<CommitRestoreOptionCardProps> = (
         onClick={() => !isSubmitting && onSelectMode('revert')}
         role="button"
         tabIndex={0}
-        className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-start gap-3 select-none ${
+        className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-start gap-3 select-none btn-tactile ${
           selectedMode === 'revert'
             ? 'bg-accent/10 border-accent text-text-primary ring-1 ring-accent/30 shadow-xs'
             : 'bg-surface-2/40 border-border/80 text-text-secondary hover:bg-surface-2/70 hover:border-border'
@@ -51,7 +51,7 @@ export const CommitRestoreOptionCard: React.FC<CommitRestoreOptionCardProps> = (
               <span>Revert This Commit</span>
             </div>
             {isSubmitting && selectedMode === 'revert' ? (
-              <span className="text-[10px] font-bold text-accent bg-accent/20 px-2 py-0.5 rounded-md flex items-center gap-1 animate-pulse">
+              <span className="text-[10px] font-bold text-accent bg-accent/20 px-2 py-0.5 rounded-md flex items-center gap-1">
                 <Loader2 size={10} className="animate-spin" />
                 Reverting...
               </span>
@@ -80,7 +80,7 @@ export const CommitRestoreOptionCard: React.FC<CommitRestoreOptionCardProps> = (
         onClick={() => !isSubmitting && onSelectMode('snapshot')}
         role="button"
         tabIndex={0}
-        className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-start gap-3 select-none ${
+        className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-start gap-3 select-none btn-tactile ${
           selectedMode === 'snapshot'
             ? 'bg-accent/10 border-accent text-text-primary ring-1 ring-accent/30 shadow-xs'
             : 'bg-surface-2/40 border-border/80 text-text-secondary hover:bg-surface-2/70 hover:border-border'
@@ -107,7 +107,7 @@ export const CommitRestoreOptionCard: React.FC<CommitRestoreOptionCardProps> = (
               <span>Restore Snapshot (Entire Tree)</span>
             </div>
             {isSubmitting && selectedMode === 'snapshot' ? (
-              <span className="text-[10px] font-bold text-accent bg-accent/20 px-2 py-0.5 rounded-md flex items-center gap-1 animate-pulse">
+              <span className="text-[10px] font-bold text-accent bg-accent/20 px-2 py-0.5 rounded-md flex items-center gap-1">
                 <Loader2 size={10} className="animate-spin" />
                 Restoring...
               </span>

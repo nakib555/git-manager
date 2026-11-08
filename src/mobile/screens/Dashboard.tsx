@@ -55,7 +55,7 @@ export const Dashboard: React.FC = () => {
         <button
           type="button"
           onClick={() => openModal('repo')}
-          className="h-12 px-4 rounded-xl bg-text-primary hover:opacity-90 text-background font-bold text-xs flex items-center justify-center gap-2 shadow-xs active:scale-95 transition-all cursor-pointer"
+          className="h-12 px-4 rounded-xl bg-text-primary hover:opacity-90 text-background font-bold text-xs flex items-center justify-center gap-2 shadow-xs btn-tactile transition-all cursor-pointer"
         >
           <Plus size={16} strokeWidth={2.4} />
           <span>New Repository</span>
@@ -64,7 +64,7 @@ export const Dashboard: React.FC = () => {
         <button
           type="button"
           onClick={() => navigate('clone')}
-          className="h-12 px-4 rounded-xl bg-surface-2 border border-border hover:bg-surface-3 text-text-primary font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer shadow-xs"
+          className="h-12 px-4 rounded-xl bg-surface-2 border border-border hover:bg-surface-3 text-text-primary font-bold text-xs flex items-center justify-center gap-2 btn-tactile transition-all cursor-pointer shadow-xs"
         >
           <Download size={16} strokeWidth={2.4} className="text-text-secondary" />
           <span>Clone Repo</span>

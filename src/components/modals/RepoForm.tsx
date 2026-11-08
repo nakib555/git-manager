@@ -113,8 +113,8 @@ export const RepoForm: React.FC<RepoFormProps> = ({ onExecute, onSubmit, onClose
         <div>
           <label className="block text-xs font-semibold text-text-muted mb-2 uppercase tracking-wider">Visibility</label>
           <div className="flex gap-2">
-            <button type="button" onClick={() => setIsPrivate(false)} className={`flex-1 h-10 text-xs font-semibold rounded-xl border transition-all cursor-pointer ${!isPrivate ? 'bg-primary/10 text-primary border-primary/40' : 'bg-main border-border text-text-muted'}`}>Public</button>
-            <button type="button" onClick={() => setIsPrivate(true)} className={`flex-1 h-10 text-xs font-semibold rounded-xl border transition-all cursor-pointer ${isPrivate ? 'bg-primary/10 text-primary border-primary/40' : 'bg-main border-border text-text-muted'}`}>Private</button>
+            <button type="button" onClick={() => setIsPrivate(false)} className={`flex-1 h-10 text-xs font-semibold rounded-xl border transition-all cursor-pointer btn-tactile ${!isPrivate ? 'bg-primary/10 text-primary border-primary/40' : 'bg-main border-border text-text-muted'}`}>Public</button>
+            <button type="button" onClick={() => setIsPrivate(true)} className={`flex-1 h-10 text-xs font-semibold rounded-xl border transition-all cursor-pointer btn-tactile ${isPrivate ? 'bg-primary/10 text-primary border-primary/40' : 'bg-main border-border text-text-muted'}`}>Private</button>
           </div>
         </div>
       </div>
@@ -122,7 +122,7 @@ export const RepoForm: React.FC<RepoFormProps> = ({ onExecute, onSubmit, onClose
       <button 
         type="submit" 
         disabled={!name.trim()}
-        className="w-full h-12 bg-primary hover:bg-primary-hover text-white font-semibold text-sm rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-4 cursor-pointer"
+        className="w-full h-12 bg-primary hover:bg-primary-hover text-white font-semibold text-sm rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-4 cursor-pointer btn-tactile"
       >
         <Check size={16} strokeWidth={3} /> Create Repository
       </button>

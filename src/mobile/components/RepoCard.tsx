@@ -30,7 +30,7 @@ export const RepoCard: React.FC<RepoCardProps> = ({
           onClick();
         }
       }}
-      className={`group relative w-full p-4 rounded-2xl bg-surface-1 border transition-all duration-150 cursor-pointer select-none active:scale-[0.99] shadow-xs flex flex-col justify-between gap-3 ${
+      className={`group relative w-full p-4 rounded-2xl bg-surface-1 border transition-all duration-150 cursor-pointer select-none btn-tactile shadow-xs flex flex-col justify-between gap-3 ${
         isActive
           ? 'border-accent/70 ring-2 ring-accent/30 bg-surface-1 shadow-sm'
           : 'border-border/80 hover:border-accent/50 hover:bg-surface-2/40'
@@ -76,14 +76,14 @@ export const RepoCard: React.FC<RepoCardProps> = ({
                 e.stopPropagation();
                 onDelete(repo);
               }}
-              className="p-1 rounded-md text-text-tertiary hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+              className="p-1.5 rounded-md text-text-tertiary hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer btn-tactile"
               title={`Delete ${repo.name}`}
               aria-label={`Delete repository ${repo.name}`}
             >
               <Trash2 size={13} />
             </button>
           )}
-          <ChevronRight size={15} className="text-text-tertiary group-hover:text-text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
+          <ChevronRight size={15} className="text-text-tertiary group-hover:text-text-primary transition-colors shrink-0" />
         </div>
       </div>
 

@@ -9,15 +9,15 @@ export const CommitItem = memo(({ commit, isSelected, isLatest, onSelect, onActi
     <motion.div
       style={style}
       layout
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
+      exit={{ opacity: 0, transition: { duration: 0.14 } }}
+      transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
       className="pr-2"
     >
       <div
         onClick={() => onSelect(commit)}
-        className={`relative group/commit p-3 border rounded-xl transition-all ${
+        className={`relative group/commit p-3 border rounded-xl btn-tactile ${
           isSelected 
             ? 'bg-primary/5 border-primary/45 cursor-default' 
             : 'border-transparent bg-hover/10 hover:bg-hover/30 cursor-pointer'

@@ -123,7 +123,7 @@ export const CommitForm: React.FC<CommitFormProps> = ({ onExecute, onSubmit, onC
 
       <button 
         type="submit" disabled={!msg.trim()}
-        className="w-full bg-accent hover:opacity-90 text-white font-medium text-xs py-2.5 rounded-lg border border-accent/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-2 cursor-pointer"
+        className="w-full bg-accent hover:opacity-90 text-white font-medium text-xs py-2.5 rounded-lg border border-accent/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-2 cursor-pointer btn-tactile"
       >
         <Check size={16} strokeWidth={3} /> {isRealGitHub ? 'Push Real Commit to GitHub' : 'Commit to branch'}
       </button>

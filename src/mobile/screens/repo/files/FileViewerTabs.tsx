@@ -6,6 +6,7 @@ import { EmptyState } from '../../../components/EmptyState';
 import { InlineErrorCard } from '../../../components/InlineErrorCard';
 import { formatBytes, formatRelativeTime } from '../../../utils/formatters';
 import { getCodeLanguage } from './fileLanguageUtils';
+import { UniversalFilePreview } from '../../../../features/preview/components/UniversalFilePreview';
 
 interface FileViewerTabsProps {
   contentTab: 'code' | 'history' | 'info';
@@ -14,6 +15,11 @@ interface FileViewerTabsProps {
   activeFileLoading: boolean;
   fileContentError: string | null;
   fileHistory: any[];
+  currentRepo?: string;
+  currentRepoOwner?: string;
+  currentBranch?: string;
+  githubToken?: string | null;
+  isOwner?: boolean;
   onRetry: () => void;
 }
 
@@ -24,45 +30,28 @@ export const FileViewerTabs: React.FC<FileViewerTabsProps> = ({
   activeFileLoading,
   fileContentError,
   fileHistory,
+  currentRepo = '',
+  currentRepoOwner = '',
+  currentBranch = 'main',
+  githubToken,
+  isOwner = true,
   onRetry,
 }) => {
   const lineCount = activeFileContent ? activeFileContent.split('\n').length : 0;
   const characterCount = activeFileContent ? activeFileContent.length : 0;
 
-  if (activeFileLoading) {
-    return (
-      <div className="p-12 text-center text-xs text-text-tertiary flex flex-col items-center justify-center gap-3">
-        <span className="w-6 h-6 rounded-full border-2 border-accent border-t-transparent animate-spin" />
-        <span>Streaming file contents from repository...</span>
-      </div>
-    );
-  }
-
   if (contentTab === 'code') {
-    if (fileContentError) {
-      return (
-        <div className="p-6">
-          <InlineErrorCard title="Failed to Load File" message={fileContentError} onRetry={onRetry} />
-        </div>
-      );
-    }
-    if (!activeFileContent) {
-      return (
-        <div className="p-8">
-          <EmptyState icon={FileText} title="Empty file content" description="This file contains no text lines or represents binary content." compact />
-        </div>
-      );
-    }
     return (
-      <SyntaxHighlighter
-        language={getCodeLanguage(selectedFile)}
-        style={vs}
-        customStyle={{ margin: 0, padding: '14px', background: 'transparent', fontSize: '11px', lineHeight: '1.6' }}
-        showLineNumbers={true}
-        wrapLines={false}
-      >
-        {activeFileContent}
-      </SyntaxHighlighter>
+      <UniversalFilePreview
+        filePath={selectedFile}
+        fileName={selectedFile.split('/').pop() || selectedFile}
+        repoName={currentRepo}
+        owner={currentRepoOwner}
+        branch={currentBranch}
+        token={githubToken}
+        isOwner={isOwner}
+        className="h-full border-none rounded-none"
+      />
     );
   }
 

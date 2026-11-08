@@ -25,7 +25,7 @@ export const DesktopBranchesView: React.FC = () => {
         </div>
         <button 
           onClick={() => openModal('branch')}
-          className="bg-info hover:bg-info/80 text-white text-xs font-bold px-4 py-2.5 rounded-xl active:scale-95 transition-all shadow-sm shadow-info/15 flex items-center gap-1.5 cursor-pointer"
+          className="bg-info hover:bg-info/80 text-white text-xs font-bold px-4 py-2.5 rounded-xl btn-tactile transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
         >
           <GitBranch size={14} />
           <span>New Branch</span>
@@ -33,23 +33,24 @@ export const DesktopBranchesView: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 overflow-y-auto pr-1">
-        {filtered.map(branch => {
+        {filtered.map((branch, idx) => {
           const isActive = branch.name === (currentBranch || 'main');
           const isDefault = branch.isDefault;
+          const staggerClass = `stagger-${Math.min(idx + 1, 8)}`;
 
           return (
             <div 
               key={branch.name}
               onClick={() => switchBranch(branch.name)}
-              className={`bg-card p-5 rounded-2xl border flex items-center justify-between gap-4 transition-all relative group cursor-pointer ${
+              className={`bg-card p-5 rounded-2xl border flex items-center justify-between gap-4 transition-all relative group cursor-pointer btn-tactile ${staggerClass} ${
                 isActive 
-                  ? 'border-primary ring-2 ring-primary/10 shadow-sm bg-primary/5' 
+                  ? 'border-primary ring-2 ring-primary/10 shadow-xs bg-primary/5' 
                   : 'border-border hover:border-primary/40'
               }`}
             >
               <div className="space-y-1.5 truncate flex-1">
                 <span className="text-sm font-bold text-text-main flex items-center gap-2 truncate">
-                  <GitBranch size={14} className={isActive ? "text-primary shrink-0 animate-pulse" : "text-text-muted shrink-0"} />
+                  <GitBranch size={14} className={isActive ? "text-primary shrink-0" : "text-text-muted shrink-0"} />
                   <span className="truncate">{branch.name}</span>
                 </span>
                 <p className="text-xs text-text-muted truncate">{branch.desc || 'Active branch'}</p>
@@ -72,7 +73,7 @@ export const DesktopBranchesView: React.FC = () => {
                       e.stopPropagation();
                       setBranchToDelete(branch.name);
                     }}
-                    className="p-2 bg-error/10 text-error hover:bg-error/25 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shrink-0"
+                    className="p-2 bg-error/10 text-error hover:bg-error/25 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shrink-0 btn-tactile"
                     title="Delete Branch"
                   >
                     <Trash2 size={14} />

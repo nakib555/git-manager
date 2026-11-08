@@ -19,7 +19,7 @@ export const DesktopRepoCard: React.FC<DesktopRepoCardProps> = ({
   return (
     <div
       onClick={onOpen}
-      className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between group relative ${
+      className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between group relative btn-tactile ${
         isActive 
           ? 'bg-primary/5 border-primary/40 shadow-xs' 
           : 'bg-card border-border hover:border-primary/30 hover:bg-hover/20'
@@ -52,7 +52,7 @@ export const DesktopRepoCard: React.FC<DesktopRepoCardProps> = ({
                 onDelete();
               }}
               title="Delete repository"
-              className="w-7 h-7 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-danger/10 text-text-muted hover:text-danger flex items-center justify-center transition-all cursor-pointer"
+              className="w-7 h-7 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-danger/10 text-text-muted hover:text-danger flex items-center justify-center transition-all cursor-pointer btn-tactile"
             >
               <Trash2 size={13} />
             </button>
@@ -72,11 +72,11 @@ export const DesktopRepoCard: React.FC<DesktopRepoCardProps> = ({
               {repo.language}
             </span>
           )}
-          <span className="flex items-center gap-1 font-mono text-[10px]">
+          <span className="flex items-center gap-1 font-mono text-[10px] tabular-nums">
             <Star size={11} className="text-amber-400" />
             {repo.stargazers_count || 0}
           </span>
-          <span className="flex items-center gap-1 font-mono text-[10px]">
+          <span className="flex items-center gap-1 font-mono text-[10px] tabular-nums">
             <GitFork size={11} />
             {repo.forks_count || 0}
           </span>

@@ -110,7 +110,9 @@ export function useFilesScreen() {
   return {
     activeFiles,
     currentRepo,
+    currentRepoOwner,
     currentBranch,
+    githubToken,
     activeFilePath,
     activeFileContent,
     activeFileLoading,

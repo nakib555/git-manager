@@ -79,7 +79,7 @@ export const ModalHeader: React.FC<ModalHeaderProps> = ({ activeModal, onClose }
       </div>
       <button 
         onClick={onClose}
-        className="text-text-muted hover:text-text-main w-9 h-9 rounded-xl flex items-center justify-center bg-hover transition-colors cursor-pointer"
+        className="text-text-muted hover:text-text-main w-9 h-9 rounded-xl flex items-center justify-center bg-hover transition-colors cursor-pointer btn-tactile"
         aria-label="Close modal"
       >
         <X size={17} />

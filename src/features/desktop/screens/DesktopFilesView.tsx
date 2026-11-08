@@ -9,13 +9,13 @@ import { getCodeLanguage } from '../utils/desktopUtils';
 import { DesktopFileTreeItem, DesktopTreeNode } from './DesktopFileTreeItem';
 import { DeleteFileConfirmModal } from '../../../components/modals/DeleteFileConfirmModal';
 
+import { UniversalFilePreview } from '../../preview/components/UniversalFilePreview';
+
 export const DesktopFilesView: React.FC = () => {
-  const { currentRepo, currentRepoOwner, currentBranch, activeFiles, githubToken, githubUser, githubRepos, adminModeOverride, deleteFileOrFolder, showToast, theme } = useAppContext();
+  const { currentRepo, currentRepoOwner, currentBranch, activeFiles, githubToken, githubUser, githubRepos, adminModeOverride, deleteFileOrFolder, showToast } = useAppContext();
   const [selectedFile, setSelectedFile] = useState<any | null>(null);
-  const [fileContent, setFileContent] = useState<string>('');
-  const [isLoadingFile, setIsLoadingFile] = useState<boolean>(false);
   const [fileSearch, setFileSearch] = useState<string>('');
-  const [isCopied, setIsCopied] = useState<boolean>(false);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [deleteTarget, setDeleteTarget] = useState<{ path: string; isFolder: boolean } | null>(null);
 
   const isOwner = useMemo(() => {
@@ -59,25 +59,10 @@ export const DesktopFilesView: React.FC = () => {
   }, [activeFiles]);
 
   const activePath = selectedFile?.path || activeFiles.find((f: any) => f.type === 'file')?.name || '';
-
-  useEffect(() => {
-    if (!activePath) return;
-    setIsLoadingFile(true);
-    fetchFileContentSafe({
-      filePath: activePath,
-      repoName: currentRepo || '',
-      owner: currentRepoOwner || '',
-      branch: currentBranch || 'main',
-      token: githubToken,
-    }).then(content => {
-      setFileContent(content || '// File empty');
-    }).finally(() => setIsLoadingFile(false));
-  }, [activePath, currentRepo, currentRepoOwner, currentBranch, githubToken]);
-
-  const language = getCodeLanguage(activePath);
+  const activeFileName = activePath.split('/').pop() || activePath;
 
   return (
-    <div className="flex w-full h-full gap-4 min-h-0 overflow-hidden">
+    <div className="flex w-full h-full gap-4 min-h-0 overflow-hidden relative">
       <div className="w-64 bg-card border border-border rounded-2xl p-3 flex flex-col shrink-0 min-h-0 shadow-xs">
         <div className="relative mb-3">
           <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted" />
@@ -104,70 +89,45 @@ export const DesktopFilesView: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex-1 bg-card border border-border rounded-2xl overflow-hidden flex flex-col h-full shadow-xs min-h-0">
-        <div className="px-5 py-3 border-b border-border bg-hover/10 flex justify-between items-center shrink-0">
-          <div className="flex items-center gap-2 text-xs text-text-muted font-medium truncate pr-4">
-            <Home size={13} className="text-primary shrink-0" />
-            <span className="text-border">/</span>
-            <span className="font-semibold text-text-main">{currentRepo}</span>
-            <span className="text-border">/</span>
-            <span className="font-mono text-primary truncate">{activePath}</span>
-            <span className="text-border">·</span>
-            {isOwner ? (
-              <span className="text-[10px] text-emerald-400 font-mono bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-md font-semibold flex items-center gap-1">
-                <ShieldCheck size={11} className="text-emerald-400" /> Admin Authority
-              </span>
-            ) : (
-              <span className="text-[10px] text-amber-400 font-mono flex items-center gap-1">
-                <Lock size={10} /> Read-only (Global)
-              </span>
-            )}
+      <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+        {activePath ? (
+          <UniversalFilePreview
+            filePath={activePath}
+            fileName={activeFileName}
+            repoName={currentRepo || ''}
+            owner={currentRepoOwner}
+            branch={currentBranch || 'main'}
+            token={githubToken}
+            isOwner={isOwner}
+            isFullscreen={isFullscreen}
+            onToggleFullscreen={() => setIsFullscreen(!isFullscreen)}
+            className="h-full"
+          />
+        ) : (
+          <div className="flex-1 bg-card border border-border rounded-2xl flex items-center justify-center text-text-muted text-xs">
+            Select a file from the repository tree to preview
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {isOwner && activePath && (
-              <button
-                type="button"
-                onClick={() => setDeleteTarget({ path: activePath, isFolder: false })}
-                className="flex items-center gap-1.5 h-8 px-2.5 bg-card hover:bg-rose-500/10 border border-border hover:border-rose-500/30 text-text-muted hover:text-rose-400 rounded-lg text-xs font-medium transition-colors cursor-pointer"
-                title={`Delete ${activePath}`}
-              >
-                <Trash2 size={13} />
-                <span>Delete</span>
-              </button>
-            )}
-            <button
-              onClick={() => {
-                navigator.clipboard.writeText(fileContent);
-                setIsCopied(true);
-                showToast('Code copied to clipboard!');
-                setTimeout(() => setIsCopied(false), 2000);
-              }}
-              className="flex items-center justify-center w-8 h-8 bg-card hover:bg-hover border border-border rounded-lg text-text-main transition-colors cursor-pointer"
-            >
-              {isCopied ? <Check size={14} className="text-success" /> : <Copy size={14} className="text-text-muted" />}
-            </button>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-auto bg-main select-text relative">
-          {isLoadingFile ? (
-            <div className="h-full flex items-center justify-center text-text-muted gap-2.5 text-xs">
-              <span className="w-5 h-5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-              <span>Fetching file content stream...</span>
-            </div>
-          ) : (
-            <SyntaxHighlighter
-              language={language}
-              style={vs}
-              showLineNumbers={true}
-              wrapLines={false}
-              customStyle={{ margin: 0, padding: '1.25rem', background: 'transparent', fontSize: '12px' }}
-            >
-              {fileContent || '// Empty file'}
-            </SyntaxHighlighter>
-          )}
-        </div>
+        )}
       </div>
+
+      {isFullscreen && activePath && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs p-6 flex flex-col">
+          <UniversalFilePreview
+            filePath={activePath}
+            fileName={activeFileName}
+            repoName={currentRepo || ''}
+            owner={currentRepoOwner}
+            branch={currentBranch || 'main'}
+            token={githubToken}
+            isOwner={isOwner}
+            isFullscreen={true}
+            onToggleFullscreen={() => setIsFullscreen(false)}
+            onClose={() => setIsFullscreen(false)}
+            className="h-full w-full shadow-2xl"
+          />
+        </div>
+      )}
+
 
       {deleteTarget && (
         <DeleteFileConfirmModal
@@ -187,7 +147,6 @@ export const DesktopFilesView: React.FC = () => {
             });
             if (success && selectedFile?.path === targetPath) {
               setSelectedFile(null);
-              setFileContent('');
             }
             return success;
           }}

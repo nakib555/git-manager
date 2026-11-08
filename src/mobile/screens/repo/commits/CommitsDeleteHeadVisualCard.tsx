@@ -48,8 +48,8 @@ export const CommitsDeleteHeadVisualCard: React.FC<CommitsDeleteHeadVisualCardPr
         </div>
 
         {/* Directional arrow */}
-        <div className="flex items-center justify-center gap-1 text-[11px] text-text-tertiary font-medium py-0.5">
-          <ArrowDown size={13} className="text-accent animate-bounce" />
+        <div className="flex items-center justify-center gap-1.5 text-[11px] text-text-tertiary font-medium py-1">
+          <ArrowDown size={13} className="text-accent" />
           <span>Branch rewinds to previous commit</span>
         </div>
 

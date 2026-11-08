@@ -6,6 +6,9 @@ import { FileViewerModalHeader } from './FileViewerModalHeader';
 interface FileViewerModalProps {
   selectedFile: string;
   currentRepo: string;
+  currentRepoOwner?: string;
+  currentBranch?: string;
+  githubToken?: string | null;
   activeFileContent: string;
   activeFileLoading: boolean;
   fileContentError: string | null;
@@ -27,6 +30,9 @@ interface FileViewerModalProps {
 export const FileViewerModal: React.FC<FileViewerModalProps> = ({
   selectedFile,
   currentRepo,
+  currentRepoOwner,
+  currentBranch,
+  githubToken,
   activeFileContent,
   activeFileLoading,
   fileContentError,
@@ -95,6 +101,11 @@ export const FileViewerModal: React.FC<FileViewerModalProps> = ({
             activeFileLoading={activeFileLoading}
             fileContentError={fileContentError}
             fileHistory={fileHistory}
+            currentRepo={currentRepo}
+            currentRepoOwner={currentRepoOwner}
+            currentBranch={currentBranch}
+            githubToken={githubToken}
+            isOwner={isOwner}
             onRetry={onRetry}
           />
         </div>

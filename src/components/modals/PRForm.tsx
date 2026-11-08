@@ -125,7 +125,7 @@ export const PRForm: React.FC<PRFormProps> = ({ onExecute, onSubmit, onClose }) 
 
       <button 
         type="submit" disabled={!title.trim() || isIdentical || hasInsufficientBranches}
-        className="w-full bg-success text-white font-semibold text-sm py-3 rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-4 cursor-pointer"
+        className="w-full bg-success text-white font-semibold text-sm py-3 rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-4 cursor-pointer btn-tactile"
       >
         <Check size={16} strokeWidth={3} /> {isDraft ? 'Open Draft PR' : 'Open Pull Request'}
       </button>

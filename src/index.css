@@ -220,3 +220,111 @@ body {
 .head-glow {
   animation: pulseGlow 2.5s infinite ease-in-out;
 }
+
+/* ─────────────────────────────────────────────
+   20 WAYS TO MAKE BEAUTIFUL UI/AI ANIMATIONS
+   & 20 WAYS TO UNSLOP AI DESIGNS
+───────────────────────────────────────────── */
+
+/* 1. Tactile Press (Rule 4: Scale to 0.97 on press) */
+.btn-tactile {
+  transition: transform 0.12s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+  will-change: transform;
+}
+.btn-tactile:active {
+  transform: scale(0.97) !important;
+}
+
+/* 2. Squash and Stretch Knob (Rule 5: Stretch moving knobs 12%) */
+.knob-stretch {
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.knob-stretch:active {
+  transform: scaleX(1.12) scaleY(0.92);
+}
+
+/* 3. Popovers Start at 0.95 (Rule 10 & 15: Exits 20% shorter) */
+.popover-enter {
+  animation: popoverEnter 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: top center;
+}
+.popover-exit {
+  animation: popoverExit 0.14s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes popoverEnter {
+  from { opacity: 0; transform: scale(0.95) translateY(-4px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes popoverExit {
+  from { opacity: 1; transform: scale(1) translateY(0); }
+  to { opacity: 0; transform: scale(0.96) translateY(-2px); }
+}
+
+/* 4. Stagger List Rows by 30ms (Rule 3) */
+.cascade-item {
+  animation: cascadeEntrance 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes cascadeEntrance {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.stagger-1 { animation-delay: 30ms; }
+.stagger-2 { animation-delay: 60ms; }
+.stagger-3 { animation-delay: 90ms; }
+.stagger-4 { animation-delay: 120ms; }
+.stagger-5 { animation-delay: 150ms; }
+.stagger-6 { animation-delay: 180ms; }
+.stagger-7 { animation-delay: 210ms; }
+.stagger-8 { animation-delay: 240ms; }
+
+/* 5. Pulse to Confirm Success (Rule 8) */
+@keyframes successPulse {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+.animate-success-pulse {
+  animation: successPulse 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 6. Unslop Headline Balancing (Anti-Slop Rule 16) */
+.headline-balance {
+  text-wrap: balance;
+}
+
+/* 7. Mathematical Radius Discipline (Anti-Slop Rule 14: r_inner = r_outer - padding) */
+/* Container 16px (rounded-2xl) with 8px padding -> child 8px (rounded-lg) */
+.card-outer-2xl {
+  border-radius: 16px;
+  padding: 8px;
+}
+.card-inner-lg {
+  border-radius: 8px;
+}
+
+/* Container 24px (rounded-3xl) with 12px padding -> child 12px (rounded-xl) */
+.card-outer-3xl {
+  border-radius: 24px;
+  padding: 12px;
+}
+.card-inner-xl {
+  border-radius: 12px;
+}
+
+/* 8. Full Accessibility & Reduced Motion Compliance */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+    transform: none !important;
+  }
+  .btn-tactile:active, .knob-stretch:active {
+    transform: none !important;
+  }
+}
+

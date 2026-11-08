@@ -64,8 +64,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4">
-      <div className="fixed inset-0 bg-black/60 transition-opacity" onClick={onClose} />
-      <div className="relative w-full max-w-2xl bg-card border border-border rounded-xl shadow-2xl overflow-hidden z-10 animate-[fadeUp_0.15s_ease-out]" onKeyDown={handleKeyDown}>
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity duration-150" onClick={onClose} />
+      <div className="relative w-full max-w-2xl bg-card border border-border rounded-2xl shadow-2xl overflow-hidden z-10 popover-enter" onKeyDown={handleKeyDown}>
         <div className="flex items-center px-4 h-14 border-b border-border bg-card">
           <Search size={18} className="text-primary shrink-0 mr-4" />
           <input 

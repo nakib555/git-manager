@@ -68,15 +68,19 @@ export const Repositories: React.FC = () => {
           />
         ) : (
           <div className="space-y-3.5 pb-6">
-            {paginatedRepos.map((repo) => (
-              <RepoCard
-                key={repo.name}
-                repo={repo}
-                isActive={currentRepo === repo.name}
-                onClick={() => openRepo(repo.name, (repo as any).owner?.login)}
-                onDelete={(r) => setRepoToDelete(r)}
-              />
-            ))}
+            {paginatedRepos.map((repo, idx) => {
+              const staggerClass = `stagger-${Math.min(idx + 1, 8)}`;
+              return (
+                <div key={repo.name} className={staggerClass}>
+                  <RepoCard
+                    repo={repo}
+                    isActive={currentRepo === repo.name}
+                    onClick={() => openRepo(repo.name, (repo as any).owner?.login)}
+                    onDelete={(r) => setRepoToDelete(r)}
+                  />
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

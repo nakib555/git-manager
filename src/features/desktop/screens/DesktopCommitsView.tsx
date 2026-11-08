@@ -89,13 +89,14 @@ export const DesktopCommitsView: React.FC = () => {
       {/* Commits Timeline List Pane */}
       <div className="w-[380px] lg:w-[440px] flex flex-col shrink-0 min-h-0 bg-surface-1 border border-border rounded-2xl p-4 shadow-xs">
         <div className="flex items-center justify-between pb-3 border-b border-border mb-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-text-primary">Commits Timeline</span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-surface-2 text-text-secondary border border-border">
+          <div className="flex items-center gap-2 text-xs font-semibold text-text-primary">
+            <span>Commits Timeline</span>
+            <span className="text-border">·</span>
+            <span className="text-[11px] font-mono text-text-secondary tabular-nums">
               {activeCommits.length}
             </span>
           </div>
-          <button onClick={() => openModal('commit')} className="text-xs font-bold text-accent hover:underline cursor-pointer">
+          <button onClick={() => openModal('commit')} className="text-xs font-semibold text-accent hover:underline btn-tactile cursor-pointer">
             + New Commit
           </button>
         </div>
@@ -114,7 +115,7 @@ export const DesktopCommitsView: React.FC = () => {
             <div className="flex items-center gap-2 shrink-0 border-t md:border-t-0 md:border-l border-border pt-2 md:pt-0 md:pl-3">
               <button
                 type="button" onClick={() => setShowRestoreModal(true)}
-                className="px-3 py-1.5 rounded-xl border border-border bg-surface-2 hover:bg-surface-3 text-xs font-bold text-text-primary flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+                className="px-3 py-1.5 rounded-xl border border-border bg-surface-2 hover:bg-surface-3 text-xs font-semibold text-text-primary flex items-center gap-1.5 btn-tactile cursor-pointer shadow-2xs"
               >
                 <RotateCcw size={13} className="text-accent" />
                 <span>Restore / Revert</span>
@@ -122,7 +123,7 @@ export const DesktopCommitsView: React.FC = () => {
               {isHead && (
                 <button
                   type="button" onClick={() => setShowDeleteModal(true)}
-                  className="px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/25 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+                  className="px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/25 text-xs font-semibold flex items-center gap-1.5 btn-tactile cursor-pointer shadow-2xs"
                 >
                   <Trash2 size={13} />
                   <span>Delete HEAD</span>

@@ -71,7 +71,7 @@ export const DesktopRepositories: React.FC<{ globalSearch?: string }> = ({ globa
             <button
               type="button"
               onClick={() => { setRepoSortDirection('desc'); setRepoPage(1); }}
-              className={`px-2 py-1 rounded-lg flex items-center gap-1 transition-all cursor-pointer ${
+              className={`px-2 py-1 rounded-lg flex items-center gap-1 transition-all cursor-pointer btn-tactile ${
                 repoSortDirection === 'desc'
                   ? 'bg-primary text-white shadow-xs font-bold'
                   : 'text-text-muted hover:text-text-main'
@@ -84,7 +84,7 @@ export const DesktopRepositories: React.FC<{ globalSearch?: string }> = ({ globa
             <button
               type="button"
               onClick={() => { setRepoSortDirection('asc'); setRepoPage(1); }}
-              className={`px-2 py-1 rounded-lg flex items-center gap-1 transition-all cursor-pointer ${
+              className={`px-2 py-1 rounded-lg flex items-center gap-1 transition-all cursor-pointer btn-tactile ${
                 repoSortDirection === 'asc'
                   ? 'bg-primary text-white shadow-xs font-bold'
                   : 'text-text-muted hover:text-text-main'
@@ -101,7 +101,7 @@ export const DesktopRepositories: React.FC<{ globalSearch?: string }> = ({ globa
               <button
                 key={f}
                 onClick={() => { setRepoTypeFilter(f); setRepoPage(1); }}
-                className={`px-2.5 py-1 rounded-lg capitalize font-medium transition-colors cursor-pointer ${
+                className={`px-2.5 py-1 rounded-lg capitalize font-medium transition-colors cursor-pointer btn-tactile ${
                   repoTypeFilter === f ? 'bg-primary text-white shadow-xs' : 'text-text-muted hover:text-text-main'
                 }`}
               >
@@ -112,7 +112,7 @@ export const DesktopRepositories: React.FC<{ globalSearch?: string }> = ({ globa
 
           <button
             onClick={() => openModal('repo')}
-            className="bg-primary hover:bg-primary-hover text-white text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 cursor-pointer shadow-sm shadow-primary/20 shrink-0"
+            className="bg-primary hover:bg-primary-hover text-white text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs shrink-0 btn-tactile"
           >
             <Plus size={14} />
             <span>New</span>
@@ -132,15 +132,19 @@ export const DesktopRepositories: React.FC<{ globalSearch?: string }> = ({ globa
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 pb-4">
-            {paginatedRepos.map(repo => (
-              <DesktopRepoCard
-                key={repo.name}
-                repo={repo}
-                isActive={currentRepo === repo.name}
-                onOpen={() => openRepo(repo.name)}
-                onDelete={() => setRepoToDelete({ name: repo.name, owner: (repo as any).owner?.login })}
-              />
-            ))}
+            {paginatedRepos.map((repo, idx) => {
+              const staggerClass = `stagger-${Math.min(idx + 1, 8)}`;
+              return (
+                <div key={repo.name} className={staggerClass}>
+                  <DesktopRepoCard
+                    repo={repo}
+                    isActive={currentRepo === repo.name}
+                    onOpen={() => openRepo(repo.name)}
+                    onDelete={() => setRepoToDelete({ name: repo.name, owner: (repo as any).owner?.login })}
+                  />
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

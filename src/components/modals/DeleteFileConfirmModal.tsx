@@ -68,7 +68,7 @@ export const DeleteFileConfirmModal: React.FC<DeleteFileConfirmModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs select-none">
       <div 
-        className="w-full max-w-lg bg-surface-1 border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-[scaleIn_0.15s_ease-out]"
+        className="w-full max-w-lg bg-surface-1 border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] popover-enter"
         role="dialog"
         aria-modal="true"
         aria-labelledby="delete-dialog-title"
@@ -80,7 +80,7 @@ export const DeleteFileConfirmModal: React.FC<DeleteFileConfirmModalProps> = ({
               <Trash2 size={16} />
             </div>
             <div>
-              <h3 id="delete-dialog-title" className="text-sm font-bold text-text-primary">
+              <h3 id="delete-dialog-title" className="text-sm font-bold text-text-primary headline-balance">
                 {isFolder ? 'Delete Directory' : 'Delete File'}
               </h3>
               <p className="text-[11px] text-text-tertiary">
@@ -90,7 +90,7 @@ export const DeleteFileConfirmModal: React.FC<DeleteFileConfirmModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg border border-border bg-surface-1 text-text-tertiary hover:text-text-primary hover:bg-surface-2 flex items-center justify-center transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-lg border border-border bg-surface-1 text-text-tertiary hover:text-text-primary hover:bg-surface-2 flex items-center justify-center btn-tactile cursor-pointer"
             aria-label="Close dialog"
           >
             <X size={15} />
@@ -193,7 +193,7 @@ export const DeleteFileConfirmModal: React.FC<DeleteFileConfirmModalProps> = ({
             type="button"
             disabled={isDeleting}
             onClick={onClose}
-            className="h-11 px-4 rounded-xl border border-border bg-surface-1 text-text-secondary hover:text-text-primary hover:bg-surface-2 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
+            className="h-11 px-4 rounded-xl border border-border bg-surface-1 text-text-secondary hover:text-text-primary hover:bg-surface-2 text-xs font-semibold btn-tactile cursor-pointer disabled:opacity-50"
           >
             Cancel
           </button>

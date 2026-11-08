@@ -64,16 +64,16 @@ export const DesktopSidebarUserCard: React.FC<DesktopSidebarUserCardProps> = ({
         {githubToken ? (
           <button 
             onClick={disconnectGitHub}
-            className="flex-1 bg-danger/10 hover:bg-danger/20 border border-danger/25 text-danger h-8 px-3 rounded-xl text-[10px] font-bold transition-all cursor-pointer text-center flex items-center justify-center"
+            className="flex-1 bg-danger/10 hover:bg-danger/20 border border-danger/25 text-danger h-8 px-3 rounded-xl text-[11px] font-medium btn-tactile cursor-pointer text-center flex items-center justify-center"
           >
             Disconnect
           </button>
         ) : (
           <button 
             onClick={connectGitHub}
-            className="flex-1 bg-primary hover:bg-primary-hover text-white h-8 px-3 rounded-xl text-[10px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm shadow-primary/15"
+            className="flex-1 bg-primary hover:bg-primary-hover text-white h-8 px-3 rounded-xl text-[11px] font-medium btn-tactile cursor-pointer flex items-center justify-center gap-1.5 shadow-sm shadow-primary/15"
           >
-            <Github size={11} /> Connect GitHub
+            <Github size={12} /> Connect GitHub
           </button>
         )}
       </div>

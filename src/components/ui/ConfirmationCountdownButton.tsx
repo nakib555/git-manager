@@ -96,7 +96,7 @@ export const ConfirmationCountdownButton: React.FC<ConfirmationCountdownButtonPr
         type="button"
         disabled={disabled || isExecuting}
         onClick={isCounting ? cancelCountdown : startCountdown}
-        className={`relative overflow-hidden w-full h-11 px-4 rounded-xl text-white text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 select-none shadow-md ${bgColors[variant]}`}
+        className={`relative overflow-hidden w-full h-11 px-4 rounded-xl text-white text-xs font-semibold btn-tactile flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 select-none shadow-sm ${bgColors[variant]}`}
       >
         {/* Animated Progress Fill */}
         {isCounting && (

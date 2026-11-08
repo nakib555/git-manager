@@ -56,7 +56,7 @@ export const CommandPaletteResults: React.FC<CommandPaletteResultsProps> = ({
             key={repo.name}
             onClick={() => { openRepo(repo.name); onClose(); }}
             onMouseEnter={() => setSelectedIndex(itemIndex)}
-            className={`flex items-center justify-between px-3 h-10 rounded-lg cursor-pointer text-xs transition-colors ${
+            className={`flex items-center justify-between px-3 h-10 rounded-lg cursor-pointer text-xs btn-tactile transition-colors ${
               isSelected ? 'bg-primary/10 text-primary border border-primary/20' : 'text-text-main hover:bg-hover'
             }`}
           >
@@ -64,14 +64,14 @@ export const CommandPaletteResults: React.FC<CommandPaletteResultsProps> = ({
               <FolderGit2 size={16} className={isSelected ? 'text-primary' : 'text-text-muted'} />
               <span className="font-semibold truncate">{repo.name}</span>
               {repo.language && (
-                <span className="text-[10px] text-text-muted font-mono bg-hover px-1.5 py-0.5 rounded">{repo.language}</span>
+                <span className="text-[10px] text-text-muted font-mono">{repo.language}</span>
               )}
             </div>
             <div className="flex items-center gap-2 text-text-muted text-[11px]">
               {currentRepo === repo.name ? (
-                <span className="text-primary text-[10px] font-semibold bg-primary/10 px-2 py-0.5 rounded">Active</span>
+                <span className="text-primary text-[10px] font-semibold">Active</span>
               ) : (
-                <span className="text-[10px] font-mono">Jump to repo</span>
+                <span className="text-[10px] font-mono text-text-tertiary">Jump to repo</span>
               )}
               <ArrowRight size={13} />
             </div>
@@ -90,7 +90,7 @@ export const CommandPaletteResults: React.FC<CommandPaletteResultsProps> = ({
             key={branch.name}
             onClick={() => { switchBranch(branch.name); onClose(); }}
             onMouseEnter={() => setSelectedIndex(itemIndex)}
-            className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer text-xs transition-colors ${
+            className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer text-xs btn-tactile transition-colors ${
               isSelected ? 'bg-primary/10 text-primary border border-primary/20' : 'text-text-main hover:bg-hover'
             }`}
           >
@@ -115,7 +115,7 @@ export const CommandPaletteResults: React.FC<CommandPaletteResultsProps> = ({
             key={action.id}
             onClick={action.run}
             onMouseEnter={() => setSelectedIndex(itemIndex)}
-            className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer text-xs transition-colors ${
+            className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer text-xs btn-tactile transition-colors ${
               isSelected ? 'bg-primary/10 text-primary border border-primary/20' : 'text-text-main hover:bg-hover'
             }`}
           >

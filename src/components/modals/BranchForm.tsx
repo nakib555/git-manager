@@ -101,7 +101,7 @@ export const BranchForm: React.FC<BranchFormProps> = ({ onExecute, onSubmit, onC
       <button 
         type="submit" 
         disabled={!name.trim()}
-        className="w-full bg-info text-white font-semibold text-sm py-3 rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-2 cursor-pointer"
+        className="w-full bg-info text-white font-semibold text-sm py-3 rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-2 cursor-pointer btn-tactile"
       >
         <Check size={16} strokeWidth={3} /> Create Branch
       </button>
