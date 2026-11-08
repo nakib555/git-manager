@@ -105,13 +105,12 @@ export const DesktopTopBar: React.FC<DesktopTopBarProps> = ({ isRepoScreen }) =>
           <span>+ New Repo</span>
         </button>
 
-        <button 
-          onClick={toggleTheme}
-          className="w-9 h-9 border border-border bg-card rounded-xl flex items-center justify-center text-text-muted hover:text-text-main hover:border-primary/30 transition-all cursor-pointer shrink-0"
-          title="Toggle theme"
+        <div 
+          className="w-9 h-9 border border-border bg-surface-1 rounded-xl flex items-center justify-center text-accent shrink-0 shadow-2xs"
+          title="Light Theme Active"
         >
-          {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
-        </button>
+          <Sun size={15} />
+        </div>
       </div>
     </header>
   );

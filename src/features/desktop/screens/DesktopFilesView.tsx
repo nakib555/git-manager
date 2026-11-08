@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '../../../AppContext';
 import { Search, Home, Copy, Check, Lock, Trash2, ShieldCheck } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus, vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { fetchFileContentSafe } from '../../../mobile/utils/gitApi';
 import { isRepositoryOwnedByUser } from '../../../mobile/utils/repoOwnership';
 import { getCodeLanguage } from '../utils/desktopUtils';
@@ -158,7 +158,7 @@ export const DesktopFilesView: React.FC = () => {
           ) : (
             <SyntaxHighlighter
               language={language}
-              style={theme === 'dark' ? vscDarkPlus : vs}
+              style={vs}
               showLineNumbers={true}
               wrapLines={false}
               customStyle={{ margin: 0, padding: '1.25rem', background: 'transparent', fontSize: '12px' }}

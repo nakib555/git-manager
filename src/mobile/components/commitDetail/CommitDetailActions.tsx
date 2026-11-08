@@ -124,28 +124,28 @@ export const CommitDetailActions: React.FC<CommitDetailActionsProps> = ({ commit
 
   return (
     <div className="pt-2 space-y-3">
-      {/* 2x2 ACTION BUTTON GRID - Matching Screenshot */}
+      {/* 2x2 ACTION BUTTON GRID - High-contrast Light Theme */}
       <div className="grid grid-cols-2 gap-2.5">
         {/* Top-Left: Restore Button */}
         <button
           type="button"
           onClick={() => setShowRestoreSheet(true)}
-          className="h-12 rounded-xl bg-surface-2 hover:bg-surface-3 border border-border/80 text-text-primary text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 shadow-2xs"
+          className="h-12 rounded-xl bg-surface-2 hover:bg-surface-3 border border-border text-text-primary text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 shadow-2xs"
         >
-          <RotateCcw size={14} className="text-blue-400" />
+          <RotateCcw size={14} className="text-accent" />
           <span>Restore</span>
         </button>
 
-        {/* Top-Right: High-Contrast White Branch Button */}
+        {/* Top-Right: Prominent Accent Branch Button */}
         <button
           type="button"
           onClick={() => {
             setBranchName(`branch-${shortSha}`);
             setShowBranchDialog(true);
           }}
-          className="h-12 rounded-xl bg-white hover:bg-slate-100 text-slate-950 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 shadow-md"
+          className="h-12 rounded-xl bg-accent hover:bg-accent/90 text-white text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 shadow-xs"
         >
-          <GitBranch size={14} className="text-slate-950 stroke-[2.2]" />
+          <GitBranch size={14} className="text-white stroke-[2.2]" />
           <span>Branch</span>
         </button>
 
@@ -153,13 +153,13 @@ export const CommitDetailActions: React.FC<CommitDetailActionsProps> = ({ commit
         <button
           type="button"
           onClick={handleCopySha}
-          className="h-12 rounded-xl bg-surface-2 hover:bg-surface-3 border border-border/80 text-text-primary text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 font-mono shadow-2xs"
+          className="h-12 rounded-xl bg-surface-2 hover:bg-surface-3 border border-border text-text-primary text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 font-mono shadow-2xs"
           title="Click to copy full commit SHA"
         >
           {copiedSha ? (
             <>
-              <Check size={14} className="text-emerald-400" />
-              <span className="text-emerald-400">{shortSha}</span>
+              <Check size={14} className="text-emerald-600" />
+              <span className="text-emerald-600">{shortSha}</span>
             </>
           ) : (
             <>
@@ -176,7 +176,7 @@ export const CommitDetailActions: React.FC<CommitDetailActionsProps> = ({ commit
             setTagName('v1.0.0');
             setShowTagDialog(true);
           }}
-          className="h-12 rounded-xl bg-surface-2 hover:bg-surface-3 border border-border/80 text-text-primary text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 shadow-2xs"
+          className="h-12 rounded-xl bg-surface-2 hover:bg-surface-3 border border-border text-text-primary text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 shadow-2xs"
         >
           <Tag size={14} className="text-text-secondary" />
           <span>Tag</span>
@@ -188,7 +188,7 @@ export const CommitDetailActions: React.FC<CommitDetailActionsProps> = ({ commit
         <button
           type="button"
           onClick={() => setShowDeleteDialog(true)}
-          className="w-full h-11 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/30 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 shadow-2xs mt-1"
+          className="w-full h-11 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 border border-rose-500/30 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 shadow-2xs mt-1"
         >
           <Trash2 size={14} />
           <span>Delete HEAD Commit</span>
@@ -197,17 +197,17 @@ export const CommitDetailActions: React.FC<CommitDetailActionsProps> = ({ commit
 
       {/* Branch Creation Prompt Dialog */}
       {showBranchDialog && (
-        <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-surface-1 border border-border rounded-2xl p-5 w-full max-w-sm shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-border/50">
+        <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+          <div className="bg-surface-1 border border-border rounded-2xl p-5 w-full max-w-sm shadow-xl space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-border">
               <div className="flex items-center gap-2">
-                <GitBranch size={16} className="text-blue-400" />
+                <GitBranch size={16} className="text-accent" />
                 <h4 className="text-sm font-bold text-text-primary">Create Branch at {shortSha}</h4>
               </div>
               <button
                 type="button"
                 onClick={() => setShowBranchDialog(false)}
-                className="text-text-tertiary hover:text-text-primary p-1"
+                className="text-text-tertiary hover:text-text-primary p-1 cursor-pointer"
               >
                 <X size={15} />
               </button>
@@ -223,7 +223,7 @@ export const CommitDetailActions: React.FC<CommitDetailActionsProps> = ({ commit
                   value={branchName}
                   onChange={(e) => setBranchName(e.target.value)}
                   placeholder="e.g. feature/my-patch"
-                  className="w-full bg-surface-2 border border-border rounded-xl px-3 py-2 text-xs font-mono text-text-primary outline-none focus:border-blue-500"
+                  className="w-full bg-surface-2 border border-border rounded-xl px-3 py-2 text-xs font-mono text-text-primary outline-none focus:border-accent"
                 />
               </div>
               <div className="flex items-center gap-2 pt-1">
@@ -237,7 +237,7 @@ export const CommitDetailActions: React.FC<CommitDetailActionsProps> = ({ commit
                 <button
                   type="submit"
                   disabled={!branchName.trim() || isCreatingBranch}
-                  className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-xs font-bold text-white transition cursor-pointer"
+                  className="flex-1 py-2.5 rounded-xl bg-accent hover:bg-accent/90 disabled:opacity-40 text-xs font-bold text-white transition cursor-pointer shadow-xs"
                 >
                   {isCreatingBranch ? 'Creating...' : 'Create Branch'}
                 </button>
@@ -249,17 +249,17 @@ export const CommitDetailActions: React.FC<CommitDetailActionsProps> = ({ commit
 
       {/* Tag Creation Prompt Dialog */}
       {showTagDialog && (
-        <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-surface-1 border border-border rounded-2xl p-5 w-full max-w-sm shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-border/50">
+        <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+          <div className="bg-surface-1 border border-border rounded-2xl p-5 w-full max-w-sm shadow-xl space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-border">
               <div className="flex items-center gap-2">
-                <Tag size={16} className="text-amber-400" />
+                <Tag size={16} className="text-warning" />
                 <h4 className="text-sm font-bold text-text-primary">Create Tag at {shortSha}</h4>
               </div>
               <button
                 type="button"
                 onClick={() => setShowTagDialog(false)}
-                className="text-text-tertiary hover:text-text-primary p-1"
+                className="text-text-tertiary hover:text-text-primary p-1 cursor-pointer"
               >
                 <X size={15} />
               </button>
@@ -275,7 +275,7 @@ export const CommitDetailActions: React.FC<CommitDetailActionsProps> = ({ commit
                   value={tagName}
                   onChange={(e) => setTagName(e.target.value)}
                   placeholder="e.g. v1.2.0"
-                  className="w-full bg-surface-2 border border-border rounded-xl px-3 py-2 text-xs font-mono text-text-primary outline-none focus:border-amber-500"
+                  className="w-full bg-surface-2 border border-border rounded-xl px-3 py-2 text-xs font-mono text-text-primary outline-none focus:border-warning"
                 />
               </div>
               <div className="flex items-center gap-2 pt-1">
@@ -289,7 +289,7 @@ export const CommitDetailActions: React.FC<CommitDetailActionsProps> = ({ commit
                 <button
                   type="submit"
                   disabled={!tagName.trim() || isCreatingTag}
-                  className="flex-1 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-xs font-bold text-white transition cursor-pointer"
+                  className="flex-1 py-2.5 rounded-xl bg-warning hover:bg-warning/90 disabled:opacity-40 text-xs font-bold text-white transition cursor-pointer shadow-xs"
                 >
                   {isCreatingTag ? 'Creating...' : 'Create Tag'}
                 </button>

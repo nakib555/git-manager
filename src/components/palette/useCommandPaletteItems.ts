@@ -145,9 +145,9 @@ export const useCommandPaletteItems = ({
     },
     {
       id: 'action-theme',
-      title: `Toggle Theme (${theme === 'dark' ? 'Switch to Light' : 'Switch to Dark'})`,
+      title: 'Theme: Clean Light Workstation',
       category: 'Preferences',
-      icon: theme === 'dark' ? Sun : Moon,
+      icon: Sun,
       run: () => { toggleTheme(); onClose(); }
     }
   ].filter(a => a.title.toLowerCase().includes(query.toLowerCase()) || a.category.toLowerCase().includes(query.toLowerCase()));

@@ -38,65 +38,10 @@
 }
 
 /* ─────────────────────────────────────────────
-   THEME 1: Git Manager Pro Dark (8-Point Spatial Workstation)
-   Deep Canvas #0B0F19, Surfaces #131B2E / #1C263E / #263454, Borders #212E4A / #31446E
+   UNIVERSAL THEME: High-Contrast Light Engineering Workstation
+   Canvas: #F7F7F5, Surfaces: #FFFFFF / #EFEFED / #E5E5E2, Border: #DEDDD8, Accent: #3E5670
 ───────────────────────────────────────────── */
 :root,
-[data-theme="dark"] {
-  --color-background: #0B0F19;
-  --color-surface-1: #131B2E;
-  --color-surface-2: #1C263E;
-  --color-surface-3: #263454;
-  --color-border: #212E4A;
-  --color-border-subtle: #212E4A;
-  --color-border-accent: #31446E;
-
-  --color-text-primary: #F1F5F9;
-  --color-text-secondary: #94A3B8;
-  --color-text-tertiary: #64748B;
-
-  --color-accent: #58A6FF;
-  --color-accent-soft: rgba(88, 166, 255, 0.14);
-
-  --color-success: #3FB950;
-  --color-danger: #F85149;
-  --color-warning: #D29922;
-  --color-merged: #A371F7;
-  --color-closed: #F85149;
-  --color-addition: #3FB950;
-  --color-deletion: #F85149;
-
-  --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.35);
-  --shadow-medium: 0 4px 14px rgba(0, 0, 0, 0.45);
-
-  /* Legacy variable mirrors */
-  --main: #0B0F19;
-  --card: #131B2E;
-  --hover: #1C263E;
-  --surface-1: #131B2E;
-  --surface-2: #1C263E;
-  --surface-3: #263454;
-  --border: #212E4A;
-  --text-main: #F1F5F9;
-  --text-muted: #94A3B8;
-  --text-tertiary: #64748B;
-  --primary: #58A6FF;
-  --primary-hover: #388BFD;
-  --accent: #58A6FF;
-  --success: #3FB950;
-  --danger: #F85149;
-  --warning: #D29922;
-  --info: #58A6FF;
-
-  background-color: var(--color-background);
-  color: var(--color-text-primary);
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* ─────────────────────────────────────────────
-   THEME 2: Warm Off-White (Clean Light)
-   Warm Canvas: #F7F7F5, Surfaces #FFFFFF/#EFEFED/#E5E5E2, Border #DEDDD8, Accent #3E5670
-───────────────────────────────────────────── */
 [data-theme="light"],
 .light-theme {
   --color-background: #F7F7F5;
@@ -104,6 +49,8 @@
   --color-surface-2: #EFEFED;
   --color-surface-3: #E5E5E2;
   --color-border: #DEDDD8;
+  --color-border-subtle: #E8E8E5;
+  --color-border-accent: #3E5670;
 
   --color-text-primary: #1C1D21;
   --color-text-secondary: #5C5E67;
@@ -123,7 +70,7 @@
   --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.06);
   --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.08);
 
-  /* Legacy mirrors */
+  /* Legacy variable mirrors */
   --main: #F7F7F5;
   --card: #FFFFFF;
   --hover: #EFEFED;
@@ -144,55 +91,7 @@
 
   background-color: var(--color-background);
   color: var(--color-text-primary);
-}
-
-/* ─────────────────────────────────────────────
-   THEME 3: Deep Slate / Graphite (Midnight Workstation)
-   Deep Canvas: #141619, Surfaces #1B1E22/#23272D/#2C3138, Border #353B44, Accent #667C8F
-───────────────────────────────────────────── */
-[data-theme="slate"],
-[data-theme="fantasy"] {
-  --color-background: #141619;
-  --color-surface-1: #1B1E22;
-  --color-surface-2: #23272D;
-  --color-surface-3: #2C3138;
-  --color-border: #353B44;
-
-  --color-text-primary: #E4E7EB;
-  --color-text-secondary: #9BA3AF;
-  --color-text-tertiary: #68717D;
-
-  --color-accent: #667C8F;
-  --color-accent-soft: rgba(102, 124, 143, 0.14);
-
-  --color-success: #3E7E55;
-  --color-danger: #A24B49;
-  --color-warning: #9C7436;
-
-  --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --shadow-medium: 0 4px 14px rgba(0, 0, 0, 0.4);
-
-  /* Legacy mirrors */
-  --main: #141619;
-  --card: #1B1E22;
-  --hover: #23272D;
-  --surface-1: #1B1E22;
-  --surface-2: #23272D;
-  --surface-3: #2C3138;
-  --border: #353B44;
-  --text-main: #E4E7EB;
-  --text-muted: #9BA3AF;
-  --text-tertiary: #68717D;
-  --primary: #667C8F;
-  --primary-hover: #55697A;
-  --accent: #667C8F;
-  --success: #3E7E55;
-  --danger: #A24B49;
-  --warning: #9C7436;
-  --info: #667C8F;
-
-  background-color: var(--color-background);
-  color: var(--color-text-primary);
+  -webkit-tap-highlight-color: transparent;
 }
 
 html, body, #root {
@@ -260,12 +159,7 @@ body {
   content: '';
 }
 
-.dark-theme .header-action-btn {
-  background-color: #18181b !important;
-  border: 1px solid #27272a !important;
-}
-
-:root:not(.dark-theme) .header-action-btn {
+.header-action-btn {
   background-color: #ffffff !important;
   border: 1px solid #e2e8f0 !important;
 }

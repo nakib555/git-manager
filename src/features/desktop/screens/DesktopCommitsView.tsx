@@ -137,7 +137,7 @@ export const DesktopCommitsView: React.FC = () => {
             commitDetailData?.files && commitDetailData.files.length > 0 ? (
               <div className="space-y-4 overflow-y-auto max-h-[500px]">
                 {commitDetailData.files.map((file: any, fIdx: number) => (
-                  <DiffViewer key={fIdx} patch={file.patch} filename={file.filename} isDark={theme === 'dark'} />
+                  <DiffViewer key={fIdx} patch={file.patch} filename={file.filename} isDark={false} />
                 ))}
               </div>
             ) : (

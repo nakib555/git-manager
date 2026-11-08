@@ -60,7 +60,7 @@ export const CommitDetailOverview: React.FC<CommitDetailOverviewProps> = ({
   return (
     <div className="space-y-4">
       {/* 1. MESSAGE CARD */}
-      <div className="bg-[#0b1325]/90 border border-blue-900/30 rounded-2xl p-4 sm:p-5 shadow-xs">
+      <div className="bg-surface-1 border border-border rounded-2xl p-4 sm:p-5 shadow-xs">
         <div className="flex items-center justify-between pb-2.5">
           <span className="text-[11px] font-semibold tracking-wider text-text-tertiary uppercase">
             MESSAGE
@@ -73,8 +73,8 @@ export const CommitDetailOverview: React.FC<CommitDetailOverviewProps> = ({
           >
             {copiedMessage ? (
               <>
-                <Check size={13} className="text-emerald-400" />
-                <span className="text-emerald-400 font-medium">Copied</span>
+                <Check size={13} className="text-emerald-600" />
+                <span className="text-emerald-600 font-semibold">Copied</span>
               </>
             ) : (
               <>
@@ -107,12 +107,12 @@ export const CommitDetailOverview: React.FC<CommitDetailOverviewProps> = ({
       </div>
 
       {/* 2. METADATA KEY-VALUE CARD */}
-      <div className="bg-[#0b1325]/90 border border-blue-900/30 rounded-2xl divide-y divide-border/30 overflow-hidden shadow-xs">
+      <div className="bg-surface-1 border border-border rounded-2xl divide-y divide-border/60 overflow-hidden shadow-xs">
         {/* Author Row */}
         <div className="px-4 py-3 flex items-center justify-between gap-3 text-xs">
           <span className="text-text-tertiary font-medium">Author</span>
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-[10px] shrink-0">
+            <div className="w-5 h-5 rounded-full bg-accent text-white flex items-center justify-center font-bold text-[10px] shrink-0">
               {authorInitial}
             </div>
             <span className="font-semibold text-text-primary truncate">{authorName}</span>
@@ -137,7 +137,7 @@ export const CommitDetailOverview: React.FC<CommitDetailOverviewProps> = ({
             title="Click to copy Full SHA"
           >
             <span>{truncatedFullSha}</span>
-            {copiedSha && <Check size={11} className="text-emerald-400 shrink-0" />}
+            {copiedSha && <Check size={11} className="text-emerald-600 shrink-0" />}
           </button>
         </div>
 
@@ -148,7 +148,7 @@ export const CommitDetailOverview: React.FC<CommitDetailOverviewProps> = ({
             <button
               type="button"
               onClick={() => onSelectParentCommit?.(parentSha)}
-              className="font-mono text-xs px-2.5 py-0.5 rounded-lg bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 border border-blue-500/30 font-semibold transition-colors cursor-pointer active:scale-95"
+              className="font-mono text-xs px-2.5 py-0.5 rounded-lg bg-accent/10 text-accent hover:bg-accent/20 border border-accent/25 font-semibold transition-colors cursor-pointer active:scale-95"
               title={`View parent commit ${parentShortSha}`}
             >
               {parentShortSha}

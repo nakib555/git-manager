@@ -111,19 +111,19 @@ export const DesktopSettings: React.FC = () => {
             </div>
           )}
 
-          <div className="p-5 flex items-center justify-between hover:bg-hover/10 transition-colors cursor-pointer group" onClick={toggleTheme}>
+          <div className="p-5 flex items-center justify-between transition-colors">
             <div className="flex gap-4 items-center">
-              <div className="w-10 h-10 rounded-xl bg-hover text-text-muted group-hover:text-primary transition-colors flex items-center justify-center">
-                {theme === 'dark' ? <Moon size={18} /> : <Sun size={18} />}
+              <div className="w-10 h-10 rounded-xl bg-accent/10 text-accent flex items-center justify-center">
+                <Sun size={18} />
               </div>
               <div>
-                <span className="block text-xs font-bold text-text-main">Appearance Mode</span>
-                <span className="block text-[10px] text-text-muted mt-0.5">{theme === 'dark' ? 'Dark Charcoal' : theme === 'light' ? 'Warm Linen' : 'Deep Slate'}</span>
+                <span className="block text-xs font-bold text-text-primary">Appearance Mode</span>
+                <span className="block text-[10px] text-text-secondary mt-0.5">Clean Light (Active & Calibrated)</span>
               </div>
             </div>
-            <div className="w-12 h-6 rounded-full bg-border relative transition-colors duration-200 cursor-pointer">
-              <div className={`w-4 h-4 bg-primary rounded-full absolute top-1 transition-all duration-200 ${theme === 'dark' ? 'left-7' : theme === 'slate' ? 'left-4' : 'left-1'}`} />
-            </div>
+            <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-md bg-accent/10 text-accent border border-accent/20">
+              LIGHT
+            </span>
           </div>
 
           <div className="p-5 flex items-center justify-between hover:bg-hover/10 transition-colors cursor-pointer group" onClick={toggleAdminMode}>

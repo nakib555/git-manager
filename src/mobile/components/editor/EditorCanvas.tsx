@@ -1,6 +1,6 @@
 import React from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { getCodeLanguage } from '../../screens/repo/files/fileLanguageUtils';
 
 interface EditorCanvasProps {
@@ -66,7 +66,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       </div>
       <SyntaxHighlighter
         language={getCodeLanguage(filePath)}
-        style={vscDarkPlus}
+        style={vs}
         showLineNumbers={true}
         wrapLines={wrapLines}
         customStyle={{

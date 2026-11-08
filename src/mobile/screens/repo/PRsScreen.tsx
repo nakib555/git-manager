@@ -101,7 +101,7 @@ export const PRsScreen: React.FC = () => {
           />
         )}
         {detailTab === 'commits' && <PRDetailCommits commits={prCommits} isLoading={isLoadingDetails} />}
-        {detailTab === 'files' && <PRDetailFiles files={prFiles} isDark={theme === 'dark'} isLoading={isLoadingDetails} />}
+        {detailTab === 'files' && <PRDetailFiles files={prFiles} isDark={false} isLoading={isLoadingDetails} />}
       </div>
     );
   }

@@ -76,7 +76,7 @@ export const getInitialDefaultState = (): AppState => {
     toastMessage: null,
     toastType: 'info',
     isSearchFocused: false,
-    theme: ((localStorage.getItem("theme") as "dark" | "light" | "slate" | "fantasy") === "fantasy" ? "slate" : (localStorage.getItem("theme") as "dark" | "light" | "slate") || "dark"),
+    theme: 'light',
     githubToken: storedToken || null,
     githubUser: storedToken
       ? (localStorage.getItem("githubUser") ? sanitizeGitHubUser(JSON.parse(localStorage.getItem("githubUser")!)) : null)

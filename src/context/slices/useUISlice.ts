@@ -8,34 +8,22 @@ interface UseUISliceParams {
 
 export const useUISlice = ({ state, setState }: UseUISliceParams) => {
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', state.theme);
-    if (state.theme === "dark" || state.theme === "slate" || state.theme === "fantasy") {
-      document.documentElement.classList.add("dark-theme");
-      document.body.classList.add("dark-theme");
-    } else {
-      document.documentElement.classList.remove("dark-theme");
-      document.body.classList.remove("dark-theme");
-    }
+    document.documentElement.setAttribute('data-theme', 'light');
+    document.documentElement.classList.remove('dark-theme', 'dark');
+    document.body.classList.remove('dark-theme', 'dark');
+    try {
+      localStorage.setItem('theme', 'light');
+    } catch (_) {}
   }, [state.theme]);
 
-  const setTheme = (newTheme: 'dark' | 'light' | 'slate' | 'fantasy') => {
-    const resolvedTheme = newTheme === 'fantasy' ? 'slate' : newTheme;
-    localStorage.setItem("theme", resolvedTheme);
-    setState((prev) => ({ ...prev, theme: resolvedTheme }));
+  const setTheme = (_newTheme: 'dark' | 'light' | 'slate' | 'fantasy' = 'light') => {
+    localStorage.setItem("theme", "light");
+    setState((prev) => ({ ...prev, theme: 'light' }));
   };
 
   const toggleTheme = () => {
-    setState((prev) => {
-      const cycle: Record<string, 'dark' | 'light' | 'slate'> = {
-        dark: 'light',
-        light: 'slate',
-        slate: 'dark',
-        fantasy: 'dark',
-      };
-      const newTheme = cycle[prev.theme] || 'dark';
-      localStorage.setItem("theme", newTheme);
-      return { ...prev, theme: newTheme };
-    });
+    localStorage.setItem("theme", "light");
+    setState((prev) => ({ ...prev, theme: 'light' }));
   };
 
   const showToast = (msg: string, type: 'info' | 'success' | 'warning' | 'error' = 'info') => {

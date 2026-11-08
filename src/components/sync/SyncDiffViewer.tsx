@@ -70,7 +70,7 @@ export const SyncDiffViewer: React.FC<SyncDiffViewerProps> = ({ file }) => {
                 <div
                   key={idx}
                   className={`flex leading-5 transition-colors ${
-                    isAdd ? 'bg-emerald-500/15 text-emerald-300' : isDel ? 'bg-rose-500/15 text-rose-300' : 'text-text-secondary hover:bg-surface-2/30'
+                    isAdd ? 'bg-emerald-500/15 text-emerald-700' : isDel ? 'bg-rose-500/15 text-rose-700' : 'text-text-secondary hover:bg-surface-2/60'
                   }`}
                 >
                   <span className="w-10 text-right pr-2 text-[10px] text-text-tertiary select-none opacity-50 shrink-0 tabular-nums">

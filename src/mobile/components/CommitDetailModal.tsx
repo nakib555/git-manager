@@ -14,7 +14,7 @@ export const CommitDetailModal: React.FC<{ commit: any | null; onClose: () => vo
   commit,
   onClose,
 }) => {
-  const { currentRepo, currentRepoOwner, githubToken, githubUser, theme, activeCommits } = useAppContext();
+  const { currentRepo, currentRepoOwner, githubToken, githubUser, activeCommits } = useAppContext();
   const [activeCommit, setActiveCommit] = useState<any | null>(commit);
   const [detail, setDetail] = useState<DetailedCommitInfo | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -87,7 +87,7 @@ export const CommitDetailModal: React.FC<{ commit: any | null; onClose: () => vo
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/75 backdrop-blur-xs cursor-pointer"
+            className="absolute inset-0 bg-black/40 backdrop-blur-xs cursor-pointer"
             aria-hidden="true"
           />
 
@@ -99,54 +99,54 @@ export const CommitDetailModal: React.FC<{ commit: any | null; onClose: () => vo
             transition={{ type: 'spring', damping: 28, stiffness: 300 }}
             role="dialog"
             aria-modal="true"
-            className="relative bg-[#070d18] border-t sm:border border-border/80 rounded-t-3xl sm:rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[88vh] z-10 pb-[env(safe-area-inset-bottom,0px)]"
+            className="relative bg-surface-1 border-t sm:border border-border rounded-t-3xl sm:rounded-3xl w-full max-w-lg overflow-hidden shadow-xl flex flex-col max-h-[92vh] sm:max-h-[88vh] z-10 pb-[env(safe-area-inset-bottom,0px)]"
           >
             {/* Mobile Sheet Drag Handle */}
             <div className="pt-2.5 pb-0.5 flex justify-center shrink-0 sm:hidden">
-              <div className="w-10 h-1 bg-border/80 rounded-full" />
+              <div className="w-10 h-1 bg-border rounded-full" />
             </div>
 
-            {/* Header matching screenshot */}
+            {/* Header with semantic theme colors */}
             <CommitDetailHeader commit={activeCommit} onClose={onClose} />
 
-            {/* Segmented Pill Tabs matching screenshot */}
-            <div className="flex items-center gap-2 px-5 py-3 border-b border-border/40 shrink-0 overflow-x-auto no-scrollbar">
+            {/* Segmented Pill Tabs with semantic theme colors */}
+            <div className="flex items-center gap-2 px-5 py-3 border-b border-border/60 shrink-0 overflow-x-auto no-scrollbar bg-surface-2/30">
               <button
                 type="button"
                 onClick={() => setActiveTab('overview')}
-                className={`px-3.5 py-1.5 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-all cursor-pointer ${
+                className={`px-3.5 py-1.5 text-xs rounded-xl flex items-center gap-1.5 transition-all cursor-pointer ${
                   activeTab === 'overview'
-                    ? 'bg-blue-600/20 text-blue-400 border border-blue-500/35 shadow-inner'
-                    : 'bg-surface-2/60 hover:bg-surface-3 text-text-secondary border border-border/60 hover:text-text-primary'
+                    ? 'bg-accent/10 text-accent border border-accent/30 font-bold shadow-2xs'
+                    : 'bg-surface-2 hover:bg-surface-3 text-text-secondary border border-border/80 hover:text-text-primary font-medium'
                 }`}
               >
-                <GitCommitHorizontal size={14} className={activeTab === 'overview' ? 'text-blue-400' : 'text-text-tertiary'} />
+                <GitCommitHorizontal size={14} className={activeTab === 'overview' ? 'text-accent' : 'text-text-tertiary'} />
                 <span>Overview</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setActiveTab('diffs')}
-                className={`px-3.5 py-1.5 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-all cursor-pointer ${
+                className={`px-3.5 py-1.5 text-xs rounded-xl flex items-center gap-1.5 transition-all cursor-pointer ${
                   activeTab === 'diffs'
-                    ? 'bg-blue-600/20 text-blue-400 border border-blue-500/35 shadow-inner'
-                    : 'bg-surface-2/60 hover:bg-surface-3 text-text-secondary border border-border/60 hover:text-text-primary'
+                    ? 'bg-accent/10 text-accent border border-accent/30 font-bold shadow-2xs'
+                    : 'bg-surface-2 hover:bg-surface-3 text-text-secondary border border-border/80 hover:text-text-primary font-medium'
                 }`}
               >
-                <FileText size={13} className={activeTab === 'diffs' ? 'text-blue-400' : 'text-text-tertiary'} />
+                <FileText size={13} className={activeTab === 'diffs' ? 'text-accent' : 'text-text-tertiary'} />
                 <span>Diffs ({diffsCount})</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setActiveTab('cicd')}
-                className={`px-3.5 py-1.5 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-all cursor-pointer ${
+                className={`px-3.5 py-1.5 text-xs rounded-xl flex items-center gap-1.5 transition-all cursor-pointer ${
                   activeTab === 'cicd'
-                    ? 'bg-blue-600/20 text-blue-400 border border-blue-500/35 shadow-inner'
-                    : 'bg-surface-2/60 hover:bg-surface-3 text-text-secondary border border-border/60 hover:text-text-primary'
+                    ? 'bg-accent/10 text-accent border border-accent/30 font-bold shadow-2xs'
+                    : 'bg-surface-2 hover:bg-surface-3 text-text-secondary border border-border/80 hover:text-text-primary font-medium'
                 }`}
               >
-                <span className={`w-2 h-2 rounded-full inline-block ${isCiPassing ? 'bg-emerald-400' : 'bg-rose-500'}`} />
+                <span className={`w-2 h-2 rounded-full inline-block ${isCiPassing ? 'bg-emerald-600' : 'bg-rose-500'}`} />
                 <span>CI/CD ({cicdCount})</span>
               </button>
             </div>
@@ -168,7 +168,7 @@ export const CommitDetailModal: React.FC<{ commit: any | null; onClose: () => vo
                     />
                   )}
                   {activeTab === 'diffs' && (
-                    <CommitDetailDiffs files={detail?.files || []} isDark={theme === 'dark'} />
+                    <CommitDetailDiffs files={detail?.files || []} isDark={false} />
                   )}
                   {activeTab === 'cicd' && (
                     <CommitDetailCiCd commitSha={sha} />

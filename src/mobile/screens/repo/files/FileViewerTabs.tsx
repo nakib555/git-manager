@@ -1,7 +1,7 @@
 import React from 'react';
 import { FileText, History } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { EmptyState } from '../../../components/EmptyState';
 import { InlineErrorCard } from '../../../components/InlineErrorCard';
 import { formatBytes, formatRelativeTime } from '../../../utils/formatters';
@@ -56,7 +56,7 @@ export const FileViewerTabs: React.FC<FileViewerTabsProps> = ({
     return (
       <SyntaxHighlighter
         language={getCodeLanguage(selectedFile)}
-        style={vscDarkPlus}
+        style={vs}
         customStyle={{ margin: 0, padding: '14px', background: 'transparent', fontSize: '11px', lineHeight: '1.6' }}
         showLineNumbers={true}
         wrapLines={false}

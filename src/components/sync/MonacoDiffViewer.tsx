@@ -88,20 +88,20 @@ export const MonacoDiffViewer: React.FC<MonacoDiffViewerProps> = ({
 
   if (!file) {
     return (
-      <div className="h-full flex flex-col items-center justify-center p-8 text-center bg-[#1E1E1E] text-slate-400 rounded-2xl border border-[#2D2D2D]">
-        <FileCode size={40} className="opacity-30 mb-3 text-slate-500" />
-        <span className="text-sm font-semibold text-slate-200">No File Selected</span>
-        <p className="text-xs text-slate-500 mt-1 max-w-xs">Select a file from the conflict list to inspect diffs.</p>
+      <div className="h-full flex flex-col items-center justify-center p-8 text-center bg-surface-1 text-text-secondary rounded-2xl border border-border">
+        <FileCode size={40} className="opacity-30 mb-3 text-text-tertiary" />
+        <span className="text-sm font-semibold text-text-primary">No File Selected</span>
+        <p className="text-xs text-text-tertiary mt-1 max-w-xs">Select a file from the conflict list to inspect diffs.</p>
       </div>
     );
   }
 
   if (file.isBinary) {
     return (
-      <div className="h-full flex flex-col items-center justify-center p-8 text-center bg-[#1E1E1E] text-slate-400 rounded-2xl border border-[#2D2D2D]">
-        <div className="w-14 h-14 rounded-2xl bg-sky-500/10 text-sky-400 flex items-center justify-center mb-4"><FileCheck2 size={28} /></div>
-        <span className="text-sm font-bold text-slate-200">{file.path}</span>
-        <span className="text-xs text-slate-400 mt-1">Binary file asset</span>
+      <div className="h-full flex flex-col items-center justify-center p-8 text-center bg-surface-1 text-text-secondary rounded-2xl border border-border">
+        <div className="w-14 h-14 rounded-2xl bg-accent/10 text-accent flex items-center justify-center mb-4"><FileCheck2 size={28} /></div>
+        <span className="text-sm font-bold text-text-primary">{file.path}</span>
+        <span className="text-xs text-text-tertiary mt-1">Binary file asset</span>
       </div>
     );
   }
@@ -110,16 +110,16 @@ export const MonacoDiffViewer: React.FC<MonacoDiffViewerProps> = ({
   const newLines = (file.newContent || '').split('\n');
 
   return (
-    <div onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} className="h-full flex flex-col bg-[#1E1E1E] text-[#D4D4D4] rounded-2xl border border-[#2D2D2D] overflow-hidden shadow-xl">
+    <div onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} className="h-full flex flex-col bg-surface-1 text-text-primary rounded-2xl border border-border overflow-hidden shadow-xs">
       <MonacoDiffTitleBar file={file} viewMode={viewMode} onViewModeChange={setViewMode} onCopy={handleCopy} isCopied={isCopied} onBack={onBack} />
-      <div className="flex-1 overflow-auto font-mono text-[12px] leading-5 select-text bg-[#1E1E1E]">
+      <div className="flex-1 overflow-auto font-mono text-[12px] leading-5 select-text bg-surface-1">
         <MonacoDiffMobileView mobileTab={mobileTab} onTabChange={setMobileTab} diffLines={diffData.lines} oldLines={oldLines} newLines={newLines} />
         <MonacoDiffSplitView viewMode={viewMode} splitRows={splitRows} diffLines={diffData.lines} oldLinesCount={oldLines.length} newLinesCount={newLines.length} />
       </div>
       {onResolve && file && <MonacoDiffResolutionBar file={file} resolution={resolution} onResolve={onResolve} />}
-      <div className="hidden sm:flex h-8 px-4 border-t border-[#2D2D2D] bg-[#007ACC] text-white items-center justify-between text-[11px] font-sans shrink-0 select-none">
+      <div className="hidden sm:flex h-8 px-4 border-t border-border bg-accent text-white items-center justify-between text-[11px] font-sans shrink-0 select-none">
         <div className="flex items-center gap-3">
-          <span className="font-semibold">Monaco Diff Inspector</span>
+          <span className="font-semibold">Diff Inspector</span>
           <span className="opacity-75">·</span>
           <span>{Math.max(oldLines.length, newLines.length)} lines</span>
           <span className="opacity-75">·</span>
