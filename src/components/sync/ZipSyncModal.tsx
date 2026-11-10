@@ -104,18 +104,18 @@ export const ZipSyncModal: React.FC<{ isOpen: boolean; onClose: () => void }> = 
         initial={{ y: '100%', opacity: 0.8 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: '100%', opacity: 0 }}
-        transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+        transition={{ type: 'spring', damping: 28, stiffness: 320, mass: 0.8 }}
         role="dialog"
         aria-modal="true"
-        className="relative bg-surface-1 border-t sm:border border-border rounded-t-3xl sm:rounded-2xl w-full max-w-4xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh] z-10 pb-[env(safe-area-inset-bottom,0px)]"
+        className="relative bg-surface-1 border-t sm:border border-border rounded-t-3xl sm:rounded-2xl w-full max-w-4xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh] z-10 pb-[env(safe-area-inset-bottom,0px)] sm:-translate-y-4 affordance-card"
       >
         <div className="w-10 h-1 bg-border rounded-full mx-auto mt-2.5 -mb-1 sm:hidden shrink-0" />
         <div className="p-4 border-b border-border flex items-center justify-between shrink-0">
           <div>
-            <h2 className="font-bold text-sm text-text-primary leading-tight">AI Studio ZIP Synchronization Wizard</h2>
-            <p className="text-[11px] text-text-tertiary mt-0.5">3-step wizard to align, review diffs, and commit updates from AI Studio</p>
+            <h2 className="font-bold text-sm text-text-primary leading-tight text-balance">AI Studio ZIP Synchronization Wizard</h2>
+            <p className="text-[11px] text-text-tertiary mt-0.5 text-pretty leading-relaxed">3-step wizard to align, review diffs, and commit updates from AI Studio</p>
           </div>
-          <button type="button" onClick={onClose} className="p-1.5 rounded-lg hover:bg-surface-2 text-text-tertiary hover:text-text-primary cursor-pointer"><X size={16} /></button>
+          <button type="button" onClick={onClose} aria-label="Close dialog" className="touch-target-44 rounded-xl hover:bg-surface-2 text-text-tertiary hover:text-text-primary btn-tactile cursor-pointer"><X size={16} /></button>
         </div>
         {!commitSuccess && (
           <ZipSyncStepper currentStep={currentStep} onSelectStep={setCurrentStep} canNavigateToStep2={zipExtractedFiles.length > 0} canNavigateToStep3={zipExtractedFiles.length > 0} />

@@ -40,7 +40,7 @@ export const FilesTreeNodeItem: React.FC<FilesTreeNodeItemProps> = ({
       <div
         onClick={() => (isFolder ? onToggleFolder(node.path) : onSelectFile(node.path))}
         style={{ paddingLeft: `${Math.max(16, depth * 16 + 16)}px` }}
-        className={`min-h-[44px] h-11 pr-4 flex items-center justify-between text-[13px] transition-colors cursor-pointer border-l-2 ${
+        className={`min-h-[44px] h-11 pr-4 flex items-center justify-between text-[13px] transition-colors cursor-pointer border-l-2 btn-tactile ${
           isSelected && !isFolder
             ? 'bg-accent/10 text-accent border-accent font-semibold'
             : 'border-transparent text-text-secondary hover:text-text-primary hover:bg-surface-2/60'
@@ -71,11 +71,11 @@ export const FilesTreeNodeItem: React.FC<FilesTreeNodeItemProps> = ({
               className="hidden sm:flex items-center gap-1.5 text-[11px] text-text-tertiary font-mono tabular-nums select-none"
               title={`${(node.lines ?? 42).toLocaleString()} lines • ${formatBytes(node.size ?? 1024)}`}
             >
-              <span className="text-text-secondary font-medium">
+              <span className="text-text-secondary font-medium tabular-nums">
                 {(node.lines ?? 42).toLocaleString()} lines
               </span>
               <span aria-hidden="true" className="text-border">·</span>
-              <span className="text-text-tertiary">
+              <span className="text-text-tertiary tabular-nums">
                 {formatBytes(node.size ?? 1024)}
               </span>
             </div>
@@ -88,7 +88,8 @@ export const FilesTreeNodeItem: React.FC<FilesTreeNodeItemProps> = ({
                 e.stopPropagation();
                 onDelete(node);
               }}
-              className="w-8 h-8 flex items-center justify-center text-text-tertiary hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
+              aria-label={isFolder ? `Delete folder ${node.name}` : `Delete file ${node.name}`}
+              className="touch-target-44 w-9 h-9 flex items-center justify-center text-text-tertiary hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-colors btn-tactile cursor-pointer"
               title={isFolder ? `Delete folder '${node.name}'` : `Delete file '${node.name}'`}
             >
               <Trash2 size={13} />

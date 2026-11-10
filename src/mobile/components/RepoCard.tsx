@@ -30,7 +30,7 @@ export const RepoCard: React.FC<RepoCardProps> = ({
           onClick();
         }
       }}
-      className={`group relative w-full p-4 rounded-2xl bg-surface-1 border transition-all duration-150 cursor-pointer select-none btn-tactile shadow-xs flex flex-col justify-between gap-3 ${
+      className={`group relative w-full p-4 rounded-2xl bg-surface-1 border transition-all duration-150 cursor-pointer select-none btn-tactile affordance-card flex flex-col justify-between gap-3 ${
         isActive
           ? 'border-accent/70 ring-2 ring-accent/30 bg-surface-1 shadow-sm'
           : 'border-border/80 hover:border-accent/50 hover:bg-surface-2/40'
@@ -44,7 +44,7 @@ export const RepoCard: React.FC<RepoCardProps> = ({
 
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h3 className="font-bold text-xs text-text-primary truncate tracking-tight group-hover:text-accent transition-colors font-sans">
+              <h3 className="font-bold text-xs text-text-primary truncate tracking-tight group-hover:text-accent transition-colors font-sans text-balance">
                 {displayName}
               </h3>
               {isActive && (
@@ -53,7 +53,7 @@ export const RepoCard: React.FC<RepoCardProps> = ({
             </div>
 
             {repo.description ? (
-              <p className="text-[11px] text-text-secondary line-clamp-2 leading-relaxed mt-1 font-sans">
+              <p className="text-[11px] text-text-secondary line-clamp-2 leading-relaxed mt-1 font-sans text-pretty">
                 {repo.description}
               </p>
             ) : (
@@ -76,7 +76,7 @@ export const RepoCard: React.FC<RepoCardProps> = ({
                 e.stopPropagation();
                 onDelete(repo);
               }}
-              className="p-1.5 rounded-md text-text-tertiary hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer btn-tactile"
+              className="touch-target-44 w-9 h-9 rounded-lg flex items-center justify-center text-text-tertiary hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer btn-tactile"
               title={`Delete ${repo.name}`}
               aria-label={`Delete repository ${repo.name}`}
             >

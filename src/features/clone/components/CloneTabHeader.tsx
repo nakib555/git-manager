@@ -20,8 +20,8 @@ export const CloneTabHeader: React.FC<CloneTabHeaderProps> = ({
         <button
           type="button"
           onClick={() => setActiveTab('clone_archive')}
-          className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-            activeTab === 'clone_archive' ? 'bg-primary text-white shadow-xs' : 'text-text-muted hover:text-text-main'
+          className={`text-xs font-bold px-3.5 py-2 rounded-xl transition-all btn-tactile cursor-pointer ${
+            activeTab === 'clone_archive' ? 'bg-primary text-white shadow-xs' : 'text-text-muted hover:text-text-main hover:bg-hover'
           }`}
         >
           Clone & Archive
@@ -29,8 +29,8 @@ export const CloneTabHeader: React.FC<CloneTabHeaderProps> = ({
         <button
           type="button"
           onClick={() => setActiveTab('selective')}
-          className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-            activeTab === 'selective' ? 'bg-primary text-white shadow-xs' : 'text-text-muted hover:text-text-main'
+          className={`text-xs font-bold px-3.5 py-2 rounded-xl transition-all btn-tactile cursor-pointer ${
+            activeTab === 'selective' ? 'bg-primary text-white shadow-xs' : 'text-text-muted hover:text-text-main hover:bg-hover'
           }`}
         >
           Selective Download
@@ -40,7 +40,8 @@ export const CloneTabHeader: React.FC<CloneTabHeaderProps> = ({
         <button
           type="button"
           onClick={onClose}
-          className="p-1 rounded-lg hover:bg-hover text-text-muted hover:text-text-main cursor-pointer"
+          aria-label="Close dialog"
+          className="touch-target-44 rounded-xl hover:bg-hover text-text-muted hover:text-text-main btn-tactile cursor-pointer"
         >
           <X size={16} />
         </button>

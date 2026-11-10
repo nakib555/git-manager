@@ -63,20 +63,29 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4">
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity duration-150" onClick={onClose} />
-      <div className="relative w-full max-w-2xl bg-card border border-border rounded-2xl shadow-2xl overflow-hidden z-10 popover-enter" onKeyDown={handleKeyDown}>
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh] px-4">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity duration-150 cursor-pointer" onClick={onClose} aria-hidden="true" />
+      <div className="relative w-full max-w-2xl bg-card border border-border rounded-2xl shadow-2xl overflow-hidden z-10 popover-enter affordance-card" onKeyDown={handleKeyDown}>
         <div className="flex items-center px-4 h-14 border-b border-border bg-card">
           <Search size={18} className="text-primary shrink-0 mr-4" />
           <input 
             ref={inputRef}
             type="text"
+            role="combobox"
+            aria-expanded="true"
+            aria-autocomplete="list"
+            aria-label="Command palette and repository search"
             value={query}
             onChange={(e) => { setQuery(e.target.value); setSelectedIndex(0); }}
             placeholder="Type a command, repository name, or branch..."
             className="w-full bg-transparent border-none text-sm text-text-main placeholder:text-text-muted outline-none font-medium"
           />
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-text-muted hover:text-text-main hover:bg-hover rounded-lg transition-colors cursor-pointer">
+          <button 
+            type="button" 
+            onClick={onClose} 
+            aria-label="Close command palette"
+            className="touch-target-44 w-9 h-9 flex items-center justify-center text-text-muted hover:text-text-main hover:bg-hover rounded-xl transition-colors btn-tactile cursor-pointer"
+          >
             <X size={16} />
           </button>
         </div>

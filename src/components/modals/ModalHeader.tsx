@@ -16,8 +16,8 @@ export const ModalHeader: React.FC<ModalHeaderProps> = ({ activeModal, onClose }
               <Folder size={18} />
             </div>
             <div>
-              <h2 className="font-bold text-text-main text-base leading-tight">Create Repository</h2>
-              <p className="text-[11px] text-text-muted mt-0.5">Initialize a new Git repository with project metadata</p>
+              <h2 className="font-bold text-text-main text-base leading-tight text-balance">Create Repository</h2>
+              <p className="text-[11px] text-text-muted mt-0.5 text-pretty leading-relaxed">Initialize a new Git repository with project metadata</p>
             </div>
           </>
         )}
@@ -27,8 +27,8 @@ export const ModalHeader: React.FC<ModalHeaderProps> = ({ activeModal, onClose }
               <GitBranch size={18} />
             </div>
             <div>
-              <h2 className="font-bold text-text-main text-base leading-tight">Create Branch</h2>
-              <p className="text-[11px] text-text-muted mt-0.5">Start an isolated branch for safe feature development</p>
+              <h2 className="font-bold text-text-main text-base leading-tight text-balance">Create Branch</h2>
+              <p className="text-[11px] text-text-muted mt-0.5 text-pretty leading-relaxed">Start an isolated branch for safe feature development</p>
             </div>
           </>
         )}
@@ -38,8 +38,8 @@ export const ModalHeader: React.FC<ModalHeaderProps> = ({ activeModal, onClose }
               <GitPullRequest size={18} />
             </div>
             <div>
-              <h2 className="font-bold text-text-main text-base leading-tight">New Pull Request</h2>
-              <p className="text-[11px] text-text-muted mt-0.5">Compare and propose branch changes for code review</p>
+              <h2 className="font-bold text-text-main text-base leading-tight text-balance">New Pull Request</h2>
+              <p className="text-[11px] text-text-muted mt-0.5 text-pretty leading-relaxed">Compare and propose branch changes for code review</p>
             </div>
           </>
         )}
@@ -49,8 +49,8 @@ export const ModalHeader: React.FC<ModalHeaderProps> = ({ activeModal, onClose }
               <GitCommit size={18} />
             </div>
             <div>
-              <h2 className="font-bold text-text-main text-base leading-tight">Commit Changes</h2>
-              <p className="text-[11px] text-text-muted mt-0.5">Record working directory modifications to branch history</p>
+              <h2 className="font-bold text-text-main text-base leading-tight text-balance">Commit Changes</h2>
+              <p className="text-[11px] text-text-muted mt-0.5 text-pretty leading-relaxed">Record working directory modifications to branch history</p>
             </div>
           </>
         )}
@@ -60,8 +60,8 @@ export const ModalHeader: React.FC<ModalHeaderProps> = ({ activeModal, onClose }
               <Key size={18} />
             </div>
             <div>
-              <h2 className="font-bold text-text-main text-base leading-tight">Connect GitHub</h2>
-              <p className="text-[11px] text-text-muted mt-0.5">Link your account to sync repositories and push commits</p>
+              <h2 className="font-bold text-text-main text-base leading-tight text-balance">Connect GitHub</h2>
+              <p className="text-[11px] text-text-muted mt-0.5 text-pretty leading-relaxed">Link your account to sync repositories and push commits</p>
             </div>
           </>
         )}
@@ -71,15 +71,16 @@ export const ModalHeader: React.FC<ModalHeaderProps> = ({ activeModal, onClose }
               <HardDrive size={18} />
             </div>
             <div>
-              <h2 className="font-bold text-text-main text-base leading-tight">Clone Repository</h2>
-              <p className="text-[11px] text-text-muted mt-0.5">Download a remote Git repository to your local studio</p>
+              <h2 className="font-bold text-text-main text-base leading-tight text-balance">Clone Repository</h2>
+              <p className="text-[11px] text-text-muted mt-0.5 text-pretty leading-relaxed">Download a remote Git repository to your local studio</p>
             </div>
           </>
         )}
       </div>
       <button 
+        type="button"
         onClick={onClose}
-        className="text-text-muted hover:text-text-main w-9 h-9 rounded-xl flex items-center justify-center bg-hover transition-colors cursor-pointer btn-tactile"
+        className="text-text-muted hover:text-text-main touch-target-44 w-10 h-10 rounded-xl flex items-center justify-center bg-hover transition-colors cursor-pointer btn-tactile"
         aria-label="Close modal"
       >
         <X size={17} />

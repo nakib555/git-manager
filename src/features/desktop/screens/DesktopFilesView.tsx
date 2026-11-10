@@ -123,8 +123,9 @@ export const DesktopFilesView: React.FC = () => {
             className="h-full"
           />
         ) : (
-          <div className="flex-1 bg-card border border-border rounded-2xl flex items-center justify-center text-text-muted text-xs">
-            Select a file from the repository tree to preview
+          <div className="flex-1 bg-card border border-border rounded-2xl flex flex-col items-center justify-center text-text-muted text-xs optical-center-box affordance-card p-6">
+            <p className="text-balance text-text-secondary font-medium">Select a file from the repository tree to preview</p>
+            <p className="text-[11px] text-text-tertiary mt-1 text-pretty">Source code, diffs, hex inspection, and rich media</p>
           </div>
         )}
       </div>

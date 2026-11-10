@@ -98,10 +98,10 @@ export const MonacoDiffViewer: React.FC<MonacoDiffViewerProps> = ({
 
   if (file.isBinary) {
     return (
-      <div className="h-full flex flex-col items-center justify-center p-8 text-center bg-surface-1 text-text-secondary rounded-2xl border border-border">
+      <div className="h-full flex flex-col items-center justify-center p-8 text-center bg-surface-1 text-text-secondary rounded-2xl border border-border optical-center-box affordance-card">
         <div className="w-14 h-14 rounded-2xl bg-accent/10 text-accent flex items-center justify-center mb-4"><FileCheck2 size={28} /></div>
-        <span className="text-sm font-bold text-text-primary">{file.path}</span>
-        <span className="text-xs text-text-tertiary mt-1">Binary file asset</span>
+        <span className="text-sm font-bold text-text-primary text-balance">{file.path}</span>
+        <span className="text-xs text-text-tertiary mt-1 text-pretty">Binary file asset</span>
       </div>
     );
   }
@@ -110,9 +110,9 @@ export const MonacoDiffViewer: React.FC<MonacoDiffViewerProps> = ({
   const newLines = (file.newContent || '').split('\n');
 
   return (
-    <div onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} className="h-full flex flex-col bg-surface-1 text-text-primary rounded-2xl border border-border overflow-hidden shadow-xs">
+    <div onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} className="h-full flex flex-col bg-surface-1 text-text-primary rounded-2xl border border-border overflow-hidden shadow-xs affordance-card">
       <MonacoDiffTitleBar file={file} viewMode={viewMode} onViewModeChange={setViewMode} onCopy={handleCopy} isCopied={isCopied} onBack={onBack} />
-      <div className="flex-1 overflow-auto font-mono text-[12px] leading-5 select-text bg-surface-1">
+      <div className="flex-1 overflow-auto font-mono text-[12px] leading-5 select-text bg-surface-1 tabular-nums">
         <MonacoDiffMobileView mobileTab={mobileTab} onTabChange={setMobileTab} diffLines={diffData.lines} oldLines={oldLines} newLines={newLines} />
         <MonacoDiffSplitView viewMode={viewMode} splitRows={splitRows} diffLines={diffData.lines} oldLinesCount={oldLines.length} newLinesCount={newLines.length} />
       </div>
@@ -121,11 +121,11 @@ export const MonacoDiffViewer: React.FC<MonacoDiffViewerProps> = ({
         <div className="flex items-center gap-3">
           <span className="font-semibold">Diff Inspector</span>
           <span className="opacity-75">·</span>
-          <span>{Math.max(oldLines.length, newLines.length)} lines</span>
+          <span className="tabular-nums">{Math.max(oldLines.length, newLines.length)} lines</span>
           <span className="opacity-75">·</span>
           <span>UTF-8</span>
         </div>
-        <span className="font-bold uppercase tracking-wider text-[10px] bg-white/20 px-2 py-0.5 rounded">{resolution.replace('_', ' ')}</span>
+        <span className="font-bold uppercase tracking-micro text-[10px] bg-white/20 px-2 py-0.5 rounded">{resolution.replace('_', ' ')}</span>
       </div>
     </div>
   );

@@ -67,6 +67,13 @@
   --color-addition: #1A7F37;
   --color-deletion: #CF222E;
 
+  /* Perceptually uniform OKLCH color tokens */
+  --color-accent-oklch: oklch(0.46 0.08 242);
+  --color-addition-oklch: oklch(0.60 0.18 145);
+  --color-deletion-oklch: oklch(0.58 0.21 26);
+  --color-warning-oklch: oklch(0.65 0.16 75);
+  --color-merged-oklch: oklch(0.55 0.18 295);
+
   --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.06);
   --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.08);
 
@@ -92,6 +99,10 @@
   background-color: var(--color-background);
   color: var(--color-text-primary);
   -webkit-tap-highlight-color: transparent;
+
+  /* Principle 1: Kerning & OpenType typography */
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+  text-rendering: optimizeLegibility;
 }
 
 html, body, #root {
@@ -104,7 +115,9 @@ html, body, #root {
 
 body {
   box-sizing: border-box;
-  font-family: var(--font-geist);
+  /* Principle 7: x-height legibility font stack */
+  font-family: var(--font-sans);
+  line-height: 1.5;
 }
 
 /* Custom scrollbar hiding */
@@ -327,4 +340,192 @@ body {
     transform: none !important;
   }
 }
+
+/* ─────────────────────────────────────────────
+   20 CORE DESIGN SYSTEM PRINCIPLES UTILITIES
+   ───────────────────────────────────────────── */
+
+/* Principle 1: Kerning */
+.kern-precise {
+  font-feature-settings: "kern" 1, "liga" 1;
+  text-rendering: optimizeLegibility;
+}
+
+/* Principle 2: Optical Centre
+   Aligns visually slightly above the geometric center (-4% to -6%) */
+.optical-center {
+  transform: translateY(-4%);
+}
+.optical-center-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 5vh;
+}
+
+/* Principle 3: Tabular Numbers (Uniform width for dynamic counters & tables) */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Principle 4: Layout Shift Prevention (Strict height reservation) */
+.cls-stable {
+  contain: layout paint;
+  min-height: 40px;
+}
+.cls-stable-sm {
+  contain: layout paint;
+  min-height: 32px;
+}
+
+/* Principle 5: Tracking (Uniform letter spacing per semantic context) */
+.tracking-micro {
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.tracking-title {
+  letter-spacing: -0.022em;
+}
+.tracking-mono {
+  letter-spacing: -0.01em;
+}
+
+/* Principle 6: Optimistic Update state indicators */
+.optimistic-pending {
+  opacity: 0.82;
+  transition: opacity 0.2s ease;
+}
+.optimistic-pulse {
+  animation: optimisticPulse 1.2s ease-in-out infinite;
+}
+@keyframes optimisticPulse {
+  0%, 100% { opacity: 0.75; }
+  50% { opacity: 1; }
+}
+
+/* Principle 7: x-Height readability */
+.font-legible {
+  font-family: var(--font-sans);
+  letter-spacing: -0.011em;
+}
+
+/* Principle 8: Touch Target (WCAG >= 44x44px ergonomic tap zone) */
+.touch-target-44 {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.touch-target-expand {
+  position: relative;
+}
+.touch-target-expand::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  min-height: 44px;
+  width: 100%;
+  height: 100%;
+}
+
+/* Principle 9: Leading (Line-height discipline) */
+.leading-prose {
+  line-height: 1.625;
+}
+.leading-compact {
+  line-height: 1.25;
+}
+.leading-dense {
+  line-height: 1.15;
+}
+
+/* Principle 10: Origin-aware animation (Transforms from trigger source) */
+.origin-click-center {
+  transform-origin: center center;
+}
+.origin-click-top {
+  transform-origin: top center;
+}
+
+/* Principle 11: OKLCH Perceptual Colors */
+.text-addition-oklch {
+  color: var(--color-addition-oklch);
+}
+.bg-addition-oklch-subtle {
+  background-color: oklch(0.60 0.18 145 / 0.10);
+  border-color: oklch(0.60 0.18 145 / 0.25);
+}
+.text-deletion-oklch {
+  color: var(--color-deletion-oklch);
+}
+.bg-deletion-oklch-subtle {
+  background-color: oklch(0.58 0.21 26 / 0.10);
+  border-color: oklch(0.58 0.21 26 / 0.25);
+}
+
+/* Principle 12: Widow & Orphan Prevention */
+.text-balance {
+  text-wrap: balance;
+}
+.text-pretty {
+  text-wrap: pretty;
+}
+
+/* Principle 13: Safe Area insets for modern mobile/tablets */
+.safe-bottom {
+  padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
+}
+.safe-top {
+  padding-top: max(12px, env(safe-area-inset-top, 12px));
+}
+.safe-x {
+  padding-left: max(16px, env(safe-area-inset-left, 16px));
+  padding-right: max(16px, env(safe-area-inset-right, 16px));
+}
+
+/* Principle 15: Line Length measure (Ideal reading width: 45-70ch) */
+.prose-measure {
+  max-width: 68ch;
+}
+.code-measure {
+  max-width: 90ch;
+}
+
+/* Principle 16: Affordance Signifiers */
+.affordance-card {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(0, 0, 0, 0.06);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
+}
+.affordance-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+.affordance-card:active {
+  transform: translateY(0);
+}
+
+/* Principle 17: Combobox aesthetics */
+.combobox-active-item {
+  background-color: var(--color-surface-2);
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+/* Principle 18: Interruptible physics transition values */
+:root {
+  --spring-interruptible: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Principle 19: Progressive disclosure */
+.disclosure-content {
+  overflow: hidden;
+  transition: max-height 0.24s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+}
+
 

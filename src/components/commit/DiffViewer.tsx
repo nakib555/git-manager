@@ -6,11 +6,11 @@ export const DiffViewer = ({ patch, filename }: { patch: string; filename: strin
   if (!patch) return <div className="text-text-muted italic pl-2 p-2">Binary or empty file change.</div>;
 
   return (
-    <div className="w-full text-[12px] md:text-sm font-mono relative overflow-hidden rounded-2xl border border-border bg-card">
+    <div className="w-full text-[12px] md:text-sm font-mono relative overflow-hidden rounded-2xl border border-border bg-card code-measure">
       <div className="bg-surface-2 border-b border-border px-4 py-3 min-h-[48px] flex items-center justify-between text-text-secondary">
-        <span className="font-semibold text-text-primary text-xs">{filename}</span>
+        <span className="font-semibold text-text-primary text-xs tracking-mono">{filename}</span>
       </div>
-      <div className="w-full overflow-x-auto bg-surface-1">
+      <div className="w-full overflow-x-auto bg-surface-1 tabular-nums">
         <SyntaxHighlighter
           language="diff"
           style={vs}
@@ -22,17 +22,17 @@ export const DiffViewer = ({ patch, filename }: { patch: string; filename: strin
             const style: React.CSSProperties = { display: 'block' };
             if (line) {
               if (line.startsWith('+')) {
-                style.backgroundColor = 'rgba(26, 127, 55, 0.12)';
-                style.color = '#1A7F37';
-                style.borderLeft = '3px solid #1A7F37';
+                style.backgroundColor = 'oklch(0.60 0.18 145 / 0.12)';
+                style.color = 'var(--color-addition-oklch)';
+                style.borderLeft = '3px solid var(--color-addition-oklch)';
               } else if (line.startsWith('-')) {
-                style.backgroundColor = 'rgba(207, 34, 46, 0.12)';
-                style.color = '#CF222E';
-                style.borderLeft = '3px solid #CF222E';
+                style.backgroundColor = 'oklch(0.58 0.21 26 / 0.12)';
+                style.color = 'var(--color-deletion-oklch)';
+                style.borderLeft = '3px solid var(--color-deletion-oklch)';
               } else if (line.startsWith('@@')) {
-                style.color = '#0969DA';
-                style.backgroundColor = 'rgba(9, 105, 218, 0.08)';
-                style.borderLeft = '3px solid #0969DA';
+                style.color = 'var(--color-accent-oklch)';
+                style.backgroundColor = 'oklch(0.46 0.08 242 / 0.08)';
+                style.borderLeft = '3px solid var(--color-accent-oklch)';
                 style.fontWeight = '600';
               }
             }

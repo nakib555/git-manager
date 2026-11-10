@@ -80,8 +80,8 @@ export const DeleteRepoModal: React.FC<DeleteRepoModalProps> = ({
 
           <motion.div
             initial={{ opacity: 0, scale: 0.94, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.94, y: 8 }}
-            transition={{ type: 'spring', damping: 26, stiffness: 320 }}
-            className="relative w-full max-w-md sm:max-w-lg bg-card border border-danger/40 rounded-2xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[90vh] overflow-y-auto min-w-0"
+            transition={{ type: 'spring', damping: 28, stiffness: 350, mass: 0.8 }}
+            className="relative w-full max-w-md sm:max-w-lg bg-card border border-danger/40 rounded-2xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[90vh] overflow-y-auto min-w-0 sm:-translate-y-4 affordance-card"
             onClick={(e) => e.stopPropagation()}
           >
             <DeleteRepoHeader onClose={handleModalClose} isDeleting={workflow.isBusy} />
@@ -101,17 +101,17 @@ export const DeleteRepoModal: React.FC<DeleteRepoModalProps> = ({
               ) : (
                 <>
                   <div className="p-3.5 bg-danger/10 border border-danger/25 rounded-xl space-y-2 text-xs min-w-0">
-                    <div className="flex items-center gap-1.5 font-bold text-danger text-[11px] uppercase tracking-wider">
+                    <div className="flex items-center gap-1.5 font-bold text-danger text-[11px] uppercase tracking-micro">
                       <ShieldAlert size={14} className="shrink-0" /> <span>Permanent Data Removal</span>
                     </div>
-                    <ul className="text-text-muted space-y-1 list-disc list-inside text-[11px] leading-relaxed break-words">
+                    <ul className="text-text-muted space-y-1 list-disc list-inside text-[11px] leading-relaxed break-words text-pretty">
                       <li>Repository workspace, commit history, and branches</li>
                       <li>Local uncommitted changes and staging cache</li>
                       <li>Pull requests, tags, and cloud sync tracking</li>
                     </ul>
                   </div>
 
-                  <div className="text-xs text-text-muted leading-relaxed break-words">
+                  <div className="text-xs text-text-muted leading-relaxed break-words text-pretty">
                     This action <strong className="text-danger font-semibold">cannot be reversed</strong>. Confirm repository name:
                   </div>
 
@@ -123,7 +123,7 @@ export const DeleteRepoModal: React.FC<DeleteRepoModalProps> = ({
                   />
 
                   <div className="flex items-center gap-3 pt-1">
-                    <button type="button" onClick={handleModalClose} disabled={workflow.isBusy} className="w-1/3 py-2.5 px-4 bg-hover text-text-muted hover:text-text-main font-semibold rounded-xl text-xs transition cursor-pointer disabled:opacity-40 border border-border">
+                    <button type="button" onClick={handleModalClose} disabled={workflow.isBusy} className="w-1/3 min-h-[44px] py-2.5 px-4 bg-hover text-text-muted hover:text-text-main font-semibold rounded-xl text-xs transition btn-tactile cursor-pointer disabled:opacity-40 border border-border">
                       Cancel
                     </button>
                     <div className="flex-1">

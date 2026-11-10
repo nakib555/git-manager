@@ -58,10 +58,10 @@ export const CreateModals: React.FC = () => {
             initial={{ opacity: 0, scale: 0.95, y: 6 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 6 }}
-            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ type: 'spring', damping: 28, stiffness: 350, mass: 0.8 }}
             role="dialog"
             aria-modal="true"
-            className="relative w-full max-w-md max-h-[88vh] overflow-y-auto bg-surface-1 rounded-2xl border border-border p-5 sm:p-6 shadow-2xl z-10 flex flex-col"
+            className="relative w-full max-w-md max-h-[88vh] overflow-y-auto bg-surface-1 rounded-2xl border border-border p-5 sm:p-6 shadow-2xl z-10 flex flex-col sm:-translate-y-4 affordance-card"
           >
             <ModalHeader activeModal={activeModal} onClose={handleSafeClose} />
 

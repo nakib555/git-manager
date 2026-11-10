@@ -71,7 +71,7 @@ export const Repositories: React.FC = () => {
             {paginatedRepos.map((repo, idx) => {
               const staggerClass = `stagger-${Math.min(idx + 1, 8)}`;
               return (
-                <div key={repo.name} className={staggerClass}>
+                <div key={repo.name} className={`${staggerClass} cascade-item`}>
                   <RepoCard
                     repo={repo}
                     isActive={currentRepo === repo.name}
