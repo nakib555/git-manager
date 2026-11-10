@@ -1,8 +1,5 @@
 import React from 'react';
 import { CloneFormInputs } from '../../features/clone/components/CloneFormInputs';
-import { CloneProgressView } from '../../features/clone/components/CloneProgressView';
-import { CloneSuccessView } from '../../features/clone/components/CloneSuccessView';
-import { CloneArchiveTab } from '../../features/clone/components/CloneArchiveTab';
 import { CloneSelectiveTab } from '../../features/clone/components/CloneSelectiveTab';
 import { CloneTabHeader } from '../../features/clone/components/CloneTabHeader';
 import { CloneBrowseSection } from '../../features/clone/components/CloneBrowseSection';
@@ -13,38 +10,33 @@ export const Clone: React.FC = () => {
   const {
     activeTab,
     setActiveTab,
+    archiveFormat,
+    setArchiveFormat,
+    isDownloadingArchive,
+    handleDownloadArchive,
     intakeMode,
     setIntakeMode,
     browseCategory,
     setBrowseCategory,
     url,
     urlMode,
-    dest,
     branch,
     setBranch,
     availableBranches,
     isLoadingBranches,
     depth,
     setDepth,
-    step,
-    setStep,
     isQrOpen,
     setIsQrOpen,
     repoSearch,
     setRepoSearch,
     parsedRepoInfo,
-    progressInfo,
     activeBrowseList,
     myGitHubReposCount,
     recentCount,
     handleProtocolChange,
     handleUrlChange,
-    handleDestChange,
-    handlePickDirectory,
     handleSelectRepo,
-    handleStartClone,
-    handleCancelClone,
-    handleOpenWorkspace,
   } = useCloneWorkbench();
 
   return (
@@ -52,7 +44,7 @@ export const Clone: React.FC = () => {
       <CloneTabHeader activeTab={activeTab} setActiveTab={setActiveTab} />
 
       <div className="bg-card border border-border rounded-2xl p-4 shadow-xs">
-        {activeTab === 'clone' && step === 'config' && (
+        {activeTab === 'clone_archive' && (
           <div className="space-y-4">
             <div className="flex bg-main p-1 rounded-xl border border-border">
               <button
@@ -83,15 +75,15 @@ export const Clone: React.FC = () => {
                 setBranch={setBranch}
                 availableBranches={availableBranches}
                 isLoadingBranches={isLoadingBranches}
-                dest={dest}
-                setDest={handleDestChange}
                 urlMode={urlMode}
                 setUrlMode={handleProtocolChange}
                 depth={depth}
                 setDepth={setDepth}
+                archiveFormat={archiveFormat}
+                setArchiveFormat={setArchiveFormat}
                 onOpenQr={() => setIsQrOpen(true)}
-                onSubmit={handleStartClone}
-                onPickDirectory={handlePickDirectory}
+                onDownloadArchive={handleDownloadArchive}
+                isDownloadingArchive={isDownloadingArchive}
               />
             ) : (
               <CloneBrowseSection
@@ -106,27 +98,6 @@ export const Clone: React.FC = () => {
               />
             )}
           </div>
-        )}
-
-        {activeTab === 'clone' && step === 'progress' && (
-          <CloneProgressView progressInfo={progressInfo} onCancel={handleCancelClone} />
-        )}
-
-        {activeTab === 'clone' && step === 'success' && (
-          <CloneSuccessView
-            repoName={parsedRepoInfo.repo}
-            repoOwner={parsedRepoInfo.owner}
-            destPath={dest}
-            onOpenRepo={handleOpenWorkspace}
-            onCloneAnother={() => setStep('config')}
-          />
-        )}
-
-        {activeTab === 'archive' && (
-          <CloneArchiveTab
-            repoName={parsedRepoInfo.repo}
-            repoOwner={parsedRepoInfo.owner}
-          />
         )}
 
         {activeTab === 'selective' && (

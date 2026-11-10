@@ -1,9 +1,11 @@
 import React from 'react';
 import { X } from 'lucide-react';
 
+import { CloneTab } from '../types';
+
 interface CloneTabHeaderProps {
-  activeTab: 'clone' | 'archive' | 'selective';
-  setActiveTab: (tab: 'clone' | 'archive' | 'selective') => void;
+  activeTab: CloneTab;
+  setActiveTab: (tab: CloneTab) => void;
   onClose?: () => void;
 }
 
@@ -13,31 +15,22 @@ export const CloneTabHeader: React.FC<CloneTabHeaderProps> = ({
   onClose,
 }) => {
   return (
-    <div className="p-5 border-b border-border flex items-center justify-between shrink-0">
-      <div className="flex items-center gap-2">
+    <div className="p-4 sm:p-5 border-b border-border flex items-center justify-between shrink-0">
+      <div className="flex items-center gap-1.5 sm:gap-2">
         <button
           type="button"
-          onClick={() => setActiveTab('clone')}
+          onClick={() => setActiveTab('clone_archive')}
           className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-            activeTab === 'clone' ? 'bg-primary text-white' : 'text-text-muted hover:text-text-main'
+            activeTab === 'clone_archive' ? 'bg-primary text-white shadow-xs' : 'text-text-muted hover:text-text-main'
           }`}
         >
-          Clone & Sync
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('archive')}
-          className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-            activeTab === 'archive' ? 'bg-primary text-white' : 'text-text-muted hover:text-text-main'
-          }`}
-        >
-          Export Archive
+          Clone & Archive
         </button>
         <button
           type="button"
           onClick={() => setActiveTab('selective')}
           className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-            activeTab === 'selective' ? 'bg-primary text-white' : 'text-text-muted hover:text-text-main'
+            activeTab === 'selective' ? 'bg-primary text-white shadow-xs' : 'text-text-muted hover:text-text-main'
           }`}
         >
           Selective Download

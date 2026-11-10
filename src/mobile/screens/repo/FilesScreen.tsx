@@ -10,9 +10,10 @@ import { FileViewerModal } from './files/FileViewerModal';
 import { useFilesScreen } from './files/useFilesScreen';
 import { useAppContext } from '../../../AppContext';
 import { DeleteFileConfirmModal } from '../../../components/modals/DeleteFileConfirmModal';
+import { FileTreeSkeleton } from '../../components/skeleton/ScreenSkeletons';
 
 export const FilesScreen: React.FC = () => {
-  const { showToast, deleteFileOrFolder } = useAppContext();
+  const { showToast, deleteFileOrFolder, isLoadingRepoDetails } = useAppContext();
   const [deleteTarget, setDeleteTarget] = React.useState<{ path: string; isFolder: boolean } | null>(null);
   const {
     activeFiles,
@@ -69,7 +70,11 @@ export const FilesScreen: React.FC = () => {
       />
 
       <div className="p-4">
-        {activeFiles.length === 0 ? (
+        {isLoadingRepoDetails && activeFiles.length === 0 ? (
+          <div className="bg-surface-1 border border-border rounded-xl p-2 overflow-hidden shadow-xs">
+            <FileTreeSkeleton />
+          </div>
+        ) : activeFiles.length === 0 ? (
           <EmptyState
             icon={FolderTree}
             title="No files in repository"

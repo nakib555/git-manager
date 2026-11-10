@@ -2,6 +2,7 @@ import { LocalDeviceRepoSync } from '../../mobile/utils/deviceSync';
 
 export type CloneProtocol = 'https' | 'ssh' | 'cli';
 export type CloneStep = 'config' | 'progress' | 'success';
+export type CloneTab = 'clone_archive' | 'selective';
 
 export interface CloneProgressInfo {
   pct: number;

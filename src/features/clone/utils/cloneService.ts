@@ -155,8 +155,7 @@ export const fetchRemoteBranches = async (
   token?: string | null,
   signal?: AbortSignal
 ): Promise<string[]> => {
-  const defaultBranches = ['main', 'master', 'develop', 'dev'];
-  if (!owner || !repo) return defaultBranches;
+  if (!owner || !repo) return [];
 
   try {
     const headers: Record<string, string> = { Accept: 'application/vnd.github.v3+json' };
@@ -166,16 +165,27 @@ export const fetchRemoteBranches = async (
         : `token ${token}`;
     }
 
-    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/branches?per_page=30`, { headers, signal });
-    if (!res.ok) return defaultBranches;
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/branches?per_page=100`, { headers, signal });
+    if (!res.ok) {
+      // If fetching branches list is restricted or 404, check repo metadata for default_branch
+      try {
+        const repoRes = await fetch(`https://api.github.com/repos/${owner}/${repo}`, { headers, signal });
+        if (repoRes.ok) {
+          const repoData = await repoRes.json();
+          if (repoData.default_branch) return [repoData.default_branch];
+        }
+      } catch (_) {}
+      return [];
+    }
+
     const data = await res.json();
     if (Array.isArray(data)) {
       const names = data.map((b: any) => b.name).filter(Boolean);
-      return names.length > 0 ? names : defaultBranches;
+      return names;
     }
-    return defaultBranches;
+    return [];
   } catch (_) {
-    return defaultBranches;
+    return [];
   }
 };
 

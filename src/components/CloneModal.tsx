@@ -2,9 +2,6 @@ import React from 'react';
 import { useAppContext } from '../AppContext';
 import { motion } from 'motion/react';
 import { CloneFormInputs } from '../features/clone/components/CloneFormInputs';
-import { CloneProgressView } from '../features/clone/components/CloneProgressView';
-import { CloneSuccessView } from '../features/clone/components/CloneSuccessView';
-import { CloneArchiveTab } from '../features/clone/components/CloneArchiveTab';
 import { CloneSelectiveTab } from '../features/clone/components/CloneSelectiveTab';
 import { CloneTabHeader } from '../features/clone/components/CloneTabHeader';
 import { CloneBrowseSection } from '../features/clone/components/CloneBrowseSection';
@@ -17,38 +14,33 @@ export const CloneModal = () => {
   const {
     activeTab,
     setActiveTab,
+    archiveFormat,
+    setArchiveFormat,
+    isDownloadingArchive,
+    handleDownloadArchive,
     intakeMode,
     setIntakeMode,
     browseCategory,
     setBrowseCategory,
     url,
     urlMode,
-    dest,
     branch,
     setBranch,
     availableBranches,
     isLoadingBranches,
     depth,
     setDepth,
-    step,
-    setStep,
     isQrOpen,
     setIsQrOpen,
     repoSearch,
     setRepoSearch,
     parsedRepoInfo,
-    progressInfo,
     activeBrowseList,
     myGitHubReposCount,
     recentCount,
     handleProtocolChange,
     handleUrlChange,
-    handleDestChange,
-    handlePickDirectory,
     handleSelectRepo,
-    handleStartClone,
-    handleCancelClone,
-    handleOpenWorkspace,
   } = useCloneWorkbench({ isModal: true, onCloseModal: closeModal });
 
   return (
@@ -73,8 +65,8 @@ export const CloneModal = () => {
         <div className="w-10 h-1 bg-border rounded-full mx-auto mt-2.5 -mb-1 sm:hidden shrink-0" />
         <CloneTabHeader activeTab={activeTab} setActiveTab={setActiveTab} onClose={closeModal} />
 
-        <div className="p-6 pb-[calc(env(safe-area-inset-bottom,0px)+24px)] overflow-y-auto flex-1 no-scrollbar">
-          {activeTab === 'clone' && step === 'config' && (
+        <div className="p-5 sm:p-6 pb-[calc(env(safe-area-inset-bottom,0px)+24px)] overflow-y-auto flex-1 no-scrollbar">
+          {activeTab === 'clone_archive' && (
             <div className="space-y-4">
               <div className="flex bg-main p-1 rounded-xl border border-border">
                 <button
@@ -105,15 +97,15 @@ export const CloneModal = () => {
                   setBranch={setBranch}
                   availableBranches={availableBranches}
                   isLoadingBranches={isLoadingBranches}
-                  dest={dest}
-                  setDest={handleDestChange}
                   urlMode={urlMode}
                   setUrlMode={handleProtocolChange}
                   depth={depth}
                   setDepth={setDepth}
+                  archiveFormat={archiveFormat}
+                  setArchiveFormat={setArchiveFormat}
                   onOpenQr={() => setIsQrOpen(true)}
-                  onSubmit={handleStartClone}
-                  onPickDirectory={handlePickDirectory}
+                  onDownloadArchive={handleDownloadArchive}
+                  isDownloadingArchive={isDownloadingArchive}
                 />
               ) : (
                 <CloneBrowseSection
@@ -128,27 +120,6 @@ export const CloneModal = () => {
                 />
               )}
             </div>
-          )}
-
-          {activeTab === 'clone' && step === 'progress' && (
-            <CloneProgressView progressInfo={progressInfo} onCancel={handleCancelClone} />
-          )}
-
-          {activeTab === 'clone' && step === 'success' && (
-            <CloneSuccessView
-              repoName={parsedRepoInfo.repo}
-              repoOwner={parsedRepoInfo.owner}
-              destPath={dest}
-              onOpenRepo={handleOpenWorkspace}
-              onCloneAnother={() => setStep('config')}
-            />
-          )}
-
-          {activeTab === 'archive' && (
-            <CloneArchiveTab
-              repoName={parsedRepoInfo.repo}
-              repoOwner={parsedRepoInfo.owner}
-            />
           )}
 
           {activeTab === 'selective' && (

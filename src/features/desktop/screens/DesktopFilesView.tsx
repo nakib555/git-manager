@@ -8,11 +8,12 @@ import { isRepositoryOwnedByUser } from '../../../mobile/utils/repoOwnership';
 import { getCodeLanguage } from '../utils/desktopUtils';
 import { DesktopFileTreeItem, DesktopTreeNode } from './DesktopFileTreeItem';
 import { DeleteFileConfirmModal } from '../../../components/modals/DeleteFileConfirmModal';
+import { FileTreeSkeleton, CodeViewerSkeleton } from '../../../mobile/components/skeleton/ScreenSkeletons';
 
 import { UniversalFilePreview } from '../../preview/components/UniversalFilePreview';
 
 export const DesktopFilesView: React.FC = () => {
-  const { currentRepo, currentRepoOwner, currentBranch, activeFiles, githubToken, githubUser, githubRepos, adminModeOverride, deleteFileOrFolder, showToast } = useAppContext();
+  const { currentRepo, currentRepoOwner, currentBranch, activeFiles, isLoadingRepoDetails, githubToken, githubUser, githubRepos, adminModeOverride, deleteFileOrFolder, showToast } = useAppContext();
   const [selectedFile, setSelectedFile] = useState<any | null>(null);
   const [fileSearch, setFileSearch] = useState<string>('');
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
@@ -75,22 +76,40 @@ export const DesktopFilesView: React.FC = () => {
           />
         </div>
         <div className="flex-1 overflow-y-auto pr-1 no-scrollbar space-y-0.5">
-          {treeNodes.map(node => (
-            <DesktopFileTreeItem
-              key={node.path}
-              item={node}
-              depth={0}
-              activeFileName={activePath}
-              isOwner={isOwner}
-              onSelect={setSelectedFile}
-              onDelete={(item: DesktopTreeNode) => setDeleteTarget({ path: item.path, isFolder: item.type === 'dir' })}
-            />
-          ))}
+          {isLoadingRepoDetails && activeFiles.length === 0 ? (
+            <FileTreeSkeleton />
+          ) : treeNodes.length === 0 ? (
+            <div className="py-8 text-center text-xs text-text-muted">
+              No files in repository
+            </div>
+          ) : (
+            treeNodes.map(node => (
+              <DesktopFileTreeItem
+                key={node.path}
+                item={node}
+                depth={0}
+                activeFileName={activePath}
+                isOwner={isOwner}
+                onSelect={setSelectedFile}
+                onDelete={(item: DesktopTreeNode) => setDeleteTarget({ path: item.path, isFolder: item.type === 'dir' })}
+              />
+            ))
+          )}
         </div>
       </div>
 
       <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-        {activePath ? (
+        {isLoadingRepoDetails && activeFiles.length === 0 ? (
+          <div className="flex-1 bg-card border border-border rounded-2xl overflow-hidden shadow-xs flex flex-col">
+            <div className="h-11 border-b border-border px-4 flex items-center justify-between bg-main/40">
+              <div className="w-36 h-3 rounded bg-surface-3 animate-pulse" />
+              <div className="w-20 h-3 rounded bg-surface-3 animate-pulse" />
+            </div>
+            <div className="flex-1 overflow-hidden p-2">
+              <CodeViewerSkeleton />
+            </div>
+          </div>
+        ) : activePath ? (
           <UniversalFilePreview
             filePath={activePath}
             fileName={activeFileName}

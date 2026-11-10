@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useAppContext } from '../../../AppContext';
-import { CloneProtocol, CloneStep, CloneProgressInfo, UnifiedRepoItem } from '../types';
+import { CloneProtocol, CloneStep, CloneProgressInfo, UnifiedRepoItem, CloneTab } from '../types';
 import { parseGitUrl, formatGitUrl } from '../utils/gitUrlParser';
 import { executeCloneWorkflow } from '../utils/cloneWorkflow';
 import { fetchRemoteBranches } from '../utils/cloneService';
@@ -23,7 +23,9 @@ export function useCloneWorkbench(options: UseCloneWorkbenchOptions = {}) {
     navigate,
   } = useAppContext();
 
-  const [activeTab, setActiveTab] = useState<'clone' | 'archive' | 'selective'>('clone');
+  const [activeTab, setActiveTab] = useState<CloneTab>('clone_archive');
+  const [archiveFormat, setArchiveFormat] = useState<'zip' | 'tar'>('zip');
+  const [isDownloadingArchive, setIsDownloadingArchive] = useState(false);
   const [intakeMode, setIntakeMode] = useState<'url' | 'browse'>('url');
   const [browseCategory, setBrowseCategory] = useState<'user' | 'recent' | 'starters'>('user');
 
@@ -39,8 +41,8 @@ export function useCloneWorkbench(options: UseCloneWorkbenchOptions = {}) {
   const hasUserCustomizedDest = useRef(false);
 
   const [branch, setBranch] = useState('main');
-  const [availableBranches, setAvailableBranches] = useState<string[]>(['main']);
-  const [isLoadingBranches, setIsLoadingBranches] = useState(false);
+  const [availableBranches, setAvailableBranches] = useState<string[]>([]);
+  const [isLoadingBranches, setIsLoadingBranches] = useState(true);
 
   const [depth, setDepth] = useState<'full' | 'shallow'>('shallow');
   const [step, setStep] = useState<CloneStep>('config');
@@ -75,29 +77,46 @@ export function useCloneWorkbench(options: UseCloneWorkbenchOptions = {}) {
   useEffect(() => {
     let isCancelled = false;
     const fetchBranches = async () => {
-      if (!parsedRepoInfo.owner || !parsedRepoInfo.repo) return;
+      if (!parsedRepoInfo.owner || !parsedRepoInfo.repo) {
+        setIsLoadingBranches(false);
+        return;
+      }
       setIsLoadingBranches(true);
       try {
         const branches = await fetchRemoteBranches(parsedRepoInfo.owner, parsedRepoInfo.repo, githubToken);
-        if (!isCancelled && branches.length > 0) {
-          setAvailableBranches(branches);
-          if (!branches.includes(branch)) {
-            setBranch(branches.includes('main') ? 'main' : branches[0]);
+        if (!isCancelled) {
+          if (branches.length > 0) {
+            setAvailableBranches(branches);
+            if (!branches.includes(branch)) {
+              setBranch(branches.includes('main') ? 'main' : branches[0]);
+            }
+          } else {
+            // Check if current user repo list has this repo's default branch
+            const matchedRepo: any = (githubRepos || []).find(
+              (r: any) => r.name?.toLowerCase() === parsedRepoInfo.repo?.toLowerCase()
+            );
+            if (matchedRepo?.default_branch) {
+              setAvailableBranches([matchedRepo.default_branch]);
+              setBranch(matchedRepo.default_branch);
+            } else {
+              setAvailableBranches([]);
+            }
           }
         }
       } catch (_) {
-        if (!isCancelled) setAvailableBranches(['main', 'master', 'develop']);
+        if (!isCancelled) setAvailableBranches([]);
       } finally {
         if (!isCancelled) setIsLoadingBranches(false);
       }
     };
 
-    const timer = setTimeout(fetchBranches, 300);
+    setIsLoadingBranches(true);
+    const timer = setTimeout(fetchBranches, 250);
     return () => {
       isCancelled = true;
       clearTimeout(timer);
     };
-  }, [parsedRepoInfo.owner, parsedRepoInfo.repo, githubToken]);
+  }, [parsedRepoInfo.owner, parsedRepoInfo.repo, githubToken, githubRepos]);
 
   // Handle switching protocol tab (HTTPS <-> SSH <-> CLI)
   const handleProtocolChange = useCallback((mode: CloneProtocol) => {
@@ -293,9 +312,65 @@ export function useCloneWorkbench(options: UseCloneWorkbenchOptions = {}) {
     }
   }, [parsedRepoInfo, openRepo, navigate, options]);
 
+  // Handle Complete Archive Download
+  const handleDownloadArchive = useCallback(async () => {
+    const repoOwner = parsedRepoInfo.owner || initialRepoOwner;
+    const repoName = parsedRepoInfo.repo || initialRepoName;
+    const ref = branch.trim() || 'main';
+
+    setIsDownloadingArchive(true);
+    try {
+      const tokenParam = githubToken ? `&token=${encodeURIComponent(githubToken)}` : '';
+      const downloadUrl = `/api/github/download?owner=${encodeURIComponent(repoOwner)}&repo=${encodeURIComponent(repoName)}&ref=${encodeURIComponent(ref)}${tokenParam}`;
+
+      let res: Response | null = null;
+      try {
+        res = await fetch(downloadUrl);
+      } catch (_) {
+        res = null;
+      }
+
+      if (!res || !res.ok) {
+        // Fallback to direct public GitHub archive URL
+        const ext = archiveFormat === 'tar' ? 'tar.gz' : 'zip';
+        const directUrl = `https://github.com/${repoOwner}/${repoName}/archive/refs/heads/${ref}.${ext}`;
+        const link = document.createElement('a');
+        link.href = directUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.download = `${repoName}-${ref}.${ext}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast(`Started direct archive download for ${repoName} (${ref})`, 'success');
+        return;
+      }
+
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `${repoName}-${ref}.${archiveFormat === 'tar' ? 'tar.gz' : 'zip'}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+
+      showToast(`Archive ${repoName}-${ref}.${archiveFormat === 'tar' ? 'tar.gz' : 'zip'} downloaded!`, 'success');
+    } catch (err: any) {
+      showToast(`Download error: ${err.message || 'Failed to download archive'}`, 'error');
+    } finally {
+      setIsDownloadingArchive(false);
+    }
+  }, [parsedRepoInfo, initialRepoOwner, initialRepoName, branch, archiveFormat, githubToken, showToast]);
+
   return {
     activeTab,
     setActiveTab,
+    archiveFormat,
+    setArchiveFormat,
+    isDownloadingArchive,
+    handleDownloadArchive,
     intakeMode,
     setIntakeMode,
     browseCategory,

@@ -1,5 +1,5 @@
 import React from 'react';
-import { GitBranch, HardDrive, Loader2 } from 'lucide-react';
+import { GitBranch, HardDrive, Loader2, ChevronDown } from 'lucide-react';
 
 interface CloneBranchDepthInputsProps {
   branch: string;
@@ -18,36 +18,87 @@ export const CloneBranchDepthInputs: React.FC<CloneBranchDepthInputsProps> = ({
   availableBranches = ['main'],
   isLoadingBranches = false,
 }) => {
+  const branchCount = availableBranches.length;
+  const hasMultipleBranches = branchCount > 1;
+  const currentBranchName = branch || (availableBranches[0] || 'main');
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
       <div className="space-y-1.5">
         <label className="text-[11px] font-bold text-text-muted uppercase tracking-wider flex items-center justify-between">
           <span className="flex items-center gap-1.5">
-            <GitBranch size={12} />
-            <span>Target Branch / Ref</span>
+            <GitBranch size={12} className={hasMultipleBranches ? 'text-primary' : 'text-text-tertiary'} />
+            <span>Target Branch</span>
           </span>
-          {isLoadingBranches && (
+          {isLoadingBranches ? (
             <span className="flex items-center gap-1 text-[10px] text-primary lowercase font-normal">
               <Loader2 size={10} className="animate-spin" />
-              <span>fetching...</span>
+              <span>checking...</span>
             </span>
-          )}
+          ) : hasMultipleBranches ? (
+            <span className="text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.2 rounded-md font-mono">
+              {branchCount} branches
+            </span>
+          ) : null}
         </label>
-        <div className="relative">
-          <input
-            type="text"
-            list="clone-available-branches"
-            value={branch}
-            onChange={(e) => setBranch(e.target.value)}
-            placeholder="main"
-            className="w-full bg-main border border-border rounded-xl px-3 py-2 text-xs text-text-main outline-none focus:border-primary font-mono"
-          />
-          <datalist id="clone-available-branches">
-            {availableBranches.map((b) => (
-              <option key={b} value={b} />
-            ))}
-          </datalist>
-        </div>
+
+        {isLoadingBranches ? (
+          /* Skeleton loader in branch option when checking */
+          <div
+            className="w-full h-[38px] rounded-xl bg-surface-2 border border-border/60 px-3 flex items-center justify-between animate-pulse select-none"
+            aria-busy="true"
+            aria-label="Checking repository branches..."
+          >
+            <div className="flex items-center gap-2">
+              <div className="w-3.5 h-3.5 rounded-full bg-surface-3 shrink-0" />
+              <div className="w-24 h-3 rounded bg-surface-3" />
+            </div>
+            <div className="w-16 h-3 rounded-md bg-surface-3/80 shrink-0" />
+          </div>
+        ) : hasMultipleBranches ? (
+          /* Beautiful dropdown when repo has multiple branches */
+          <div className="relative group">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-primary">
+              <GitBranch size={13} />
+            </div>
+            <select
+              value={branch}
+              onChange={(e) => setBranch(e.target.value)}
+              className="w-full bg-main hover:bg-card border border-border focus:border-primary rounded-xl pl-8 pr-8 py-2 text-xs font-mono text-text-main outline-none cursor-pointer appearance-none transition-colors shadow-xs"
+            >
+              {availableBranches.map((b) => (
+                <option key={b} value={b} className="bg-surface-1 text-text-main py-1">
+                  {b} {b === 'main' || b === 'master' ? '(default)' : ''}
+                </option>
+              ))}
+              {!availableBranches.includes(branch) && branch.trim() && (
+                <option value={branch} className="bg-surface-1 text-text-main py-1">
+                  {branch}
+                </option>
+              )}
+            </select>
+            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-text-muted group-hover:text-text-main transition-colors">
+              <ChevronDown size={14} />
+            </div>
+          </div>
+        ) : (
+          /* Non-clickable professional light gray display when single branch */
+          <div
+            className="w-full bg-surface-2/80 border border-border/80 rounded-xl px-3 py-2 flex items-center justify-between select-none cursor-default pointer-events-none transition-colors"
+            aria-disabled="true"
+            title="Single repository branch (non-clickable)"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <GitBranch size={13} className="text-text-tertiary shrink-0" />
+              <span className="text-xs font-mono font-medium text-text-secondary truncate">
+                {currentBranchName}
+              </span>
+            </div>
+            <span className="text-[10px] font-sans font-medium text-text-tertiary bg-surface-3/80 px-2 py-0.5 rounded-md border border-border/50 shrink-0">
+              Single branch
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="space-y-1.5">
@@ -55,14 +106,19 @@ export const CloneBranchDepthInputs: React.FC<CloneBranchDepthInputsProps> = ({
           <HardDrive size={12} />
           <span>Clone Depth</span>
         </label>
-        <select
-          value={depth}
-          onChange={(e) => setDepth(e.target.value as 'full' | 'shallow')}
-          className="w-full bg-main border border-border rounded-xl px-3 py-2 text-xs text-text-main outline-none focus:border-primary cursor-pointer"
-        >
-          <option value="shallow">Shallow (Depth 1 — Fast download)</option>
-          <option value="full">Full History (All commits & tags)</option>
-        </select>
+        <div className="relative">
+          <select
+            value={depth}
+            onChange={(e) => setDepth(e.target.value as 'full' | 'shallow')}
+            className="w-full bg-main hover:bg-card border border-border focus:border-primary rounded-xl px-3 pr-8 py-2 text-xs text-text-main outline-none cursor-pointer appearance-none transition-colors shadow-xs"
+          >
+            <option value="shallow">Shallow (Depth 1 — Fast snapshot)</option>
+            <option value="full">Full History (All commits & tags)</option>
+          </select>
+          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-text-muted">
+            <ChevronDown size={14} />
+          </div>
+        </div>
       </div>
     </div>
   );
