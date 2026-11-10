@@ -6,7 +6,6 @@ import { BottomNav } from './BottomNav';
 import { PullToRefresh } from '../components/PullToRefresh';
 import { ActionSheet } from '../components/ActionSheet';
 import { MobileDrawer } from '../components/MobileDrawer';
-import { Toast } from '../components/Toast';
 
 // Canonical Mobile Screens
 import { Dashboard } from '../screens/Dashboard';
@@ -76,9 +75,6 @@ export const MobileShell: React.FC = () => {
         repoName={currentRepo || ''}
         onClose={() => setIsDeleteModalOpen(false)}
       />
-
-      {/* 7. Floating Top Toast */}
-      <Toast />
     </div>
   );
 };

@@ -44,11 +44,18 @@ export const useAuthSlice = ({
       }
       if (event.data?.type === "OAUTH_AUTH_SUCCESS") {
         const token = event.data.token;
+        const incomingUser = event.data.user;
         if (token && token !== "undefined" && token !== "null") {
           localStorage.setItem("githubToken", token);
+          if (incomingUser) {
+            try {
+              localStorage.setItem("githubUser", JSON.stringify(incomingUser));
+            } catch (_) {}
+          }
           setState((prev) => ({
             ...prev,
             githubToken: token,
+            githubUser: incomingUser || prev.githubUser,
             currentRepo: null,
             currentRepoOwner: null,
             currentBranch: null,
@@ -133,11 +140,18 @@ export const useAuthSlice = ({
   const setManualToken = (token: string) => {
     localStorage.setItem("githubToken", token);
     const scopes: string[] = JSON.parse(localStorage.getItem("githubScopes") || "[]");
+    let cachedUser = null;
+    try {
+      const raw = localStorage.getItem("githubUser");
+      if (raw) cachedUser = JSON.parse(raw);
+    } catch (_) {}
+
     setState((prev) => ({
       ...prev,
       githubToken: token,
       tokenScopes: scopes,
       hasDeleteRepoScope: scopes.includes("delete_repo"),
+      githubUser: prev.githubUser || cachedUser,
       currentRepo: null,
       currentRepoOwner: null,
       currentBranch: null,

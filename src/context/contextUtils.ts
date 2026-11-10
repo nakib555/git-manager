@@ -75,6 +75,7 @@ export const getInitialDefaultState = (): AppState => {
     isDrawerOpen: false,
     toastMessage: null,
     toastType: 'info',
+    toasts: [],
     isSearchFocused: false,
     theme: 'light',
     githubToken: storedToken || null,

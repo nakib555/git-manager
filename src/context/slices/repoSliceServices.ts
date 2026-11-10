@@ -42,6 +42,32 @@ export async function executeFetchGitHubData(
     totalPages = Math.max(1, Math.ceil(reposData.length / perPage));
   }
 
+  // Self-healing: If user profile could not be fetched from /user, synthesize from owned repository payload
+  if (!sanitizedUser && reposData.length > 0) {
+    const ownedRepo = reposData.find(r => r.owner?.login) || reposData[0];
+    if (ownedRepo && ownedRepo.owner?.login) {
+      sanitizedUser = {
+        login: ownedRepo.owner.login,
+        name: ownedRepo.owner.login,
+        avatar_url: ownedRepo.owner.avatar_url || '',
+        bio: '',
+        followers: 0,
+        following: 0,
+      };
+      try {
+        localStorage.setItem("githubUser", JSON.stringify(sanitizedUser));
+      } catch (_) {}
+    }
+  }
+
+  // Secondary Fallback: Check persistent localStorage cache
+  if (!sanitizedUser) {
+    try {
+      const cached = localStorage.getItem("githubUser");
+      if (cached) sanitizedUser = JSON.parse(cached);
+    } catch (_) {}
+  }
+
   const localRepos = getLocalRepos();
   const mergedRepos = [...reposData];
   for (const local of localRepos) {

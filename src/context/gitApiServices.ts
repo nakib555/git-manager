@@ -2,30 +2,73 @@ import { GitHubRepo, GitHubUser, RepoSortBy, RepoSortDirection } from '../types'
 import { sanitizeGitHubUser } from './contextUtils';
 
 export const fetchUserProfile = async (token: string): Promise<GitHubUser | null> => {
-  const headers = {
-    Authorization: `Bearer ${token}`,
-    Accept: "application/vnd.github.v3+json",
+  if (!token) return null;
+
+  const authHeader = token.startsWith('Bearer ') || token.startsWith('token ')
+    ? token
+    : (token.startsWith('ghp_') || token.startsWith('github_pat_') ? `token ${token}` : `Bearer ${token}`);
+
+  const tryFetchUser = async (headerVal: string) => {
+    try {
+      return await fetch("https://api.github.com/user", {
+        headers: {
+          Authorization: headerVal,
+          Accept: "application/vnd.github.v3+json",
+        },
+      });
+    } catch (_) {
+      return null;
+    }
   };
-  const userRes = await fetch("https://api.github.com/user", { headers });
-  if (userRes.ok) {
-    const rawScopes = userRes.headers.get("x-oauth-scopes") || "";
-    const scopes = rawScopes.split(",").map(s => s.trim()).filter(Boolean);
-    if (scopes.length > 0) {
-      localStorage.setItem("githubScopes", JSON.stringify(scopes));
+
+  let userRes = await tryFetchUser(authHeader);
+
+  // If initial header returned 401, retry with alternative header scheme
+  if (!userRes || userRes.status === 401) {
+    const alternativeHeader = authHeader.startsWith('Bearer ')
+      ? `token ${token.replace(/^Bearer\s+/, '')}`
+      : `Bearer ${token.replace(/^token\s+/, '')}`;
+    const retryRes = await tryFetchUser(alternativeHeader);
+    if (retryRes && retryRes.ok) {
+      userRes = retryRes;
     }
-    const userData = await userRes.json();
-    const sanitized = sanitizeGitHubUser(userData);
-    if (sanitized) {
-      localStorage.setItem("githubUser", JSON.stringify(sanitized));
-    }
-    return sanitized;
   }
+
+  if (userRes && userRes.ok) {
+    try {
+      const rawScopes = userRes.headers.get("x-oauth-scopes") || "";
+      const scopes = rawScopes.split(",").map(s => s.trim()).filter(Boolean);
+      if (scopes.length > 0) {
+        localStorage.setItem("githubScopes", JSON.stringify(scopes));
+      }
+      const userData = await userRes.json();
+      const sanitized = sanitizeGitHubUser(userData);
+      if (sanitized) {
+        localStorage.setItem("githubUser", JSON.stringify(sanitized));
+        return sanitized;
+      }
+    } catch (_) {}
+  }
+
+  // Fallback: If network / rate-limiting failed, read persistent local storage cache
+  try {
+    const cached = localStorage.getItem("githubUser");
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      const sanitizedCached = sanitizeGitHubUser(parsed);
+      if (sanitizedCached) return sanitizedCached;
+    }
+  } catch (_) {}
+
   return null;
 };
 
 export const fetchUserRepos = async (token: string): Promise<GitHubRepo[]> => {
+  const authHeader = token.startsWith('Bearer ') || token.startsWith('token ')
+    ? token
+    : (token.startsWith('ghp_') || token.startsWith('github_pat_') ? `token ${token}` : `Bearer ${token}`);
   const headers = {
-    Authorization: `Bearer ${token}`,
+    Authorization: authHeader,
     Accept: "application/vnd.github.v3+json",
   };
   let allUserRepos: GitHubRepo[] = [];

@@ -92,13 +92,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, [state.currentRepo, state.githubToken, state.currentRepoOwner, state.currentBranch, refreshTrigger]);
 
-  // Toast Auto-dismiss
-  useEffect(() => {
-    if (state.toastMessage) {
-      const timer = setTimeout(() => setState(prev => ({ ...prev, toastMessage: null })), 2500);
-      return () => clearTimeout(timer);
-    }
-  }, [state.toastMessage]);
 
   const refreshData = async () => {
     setState(prev => ({ ...prev, isLoadingRepoDetails: true }));

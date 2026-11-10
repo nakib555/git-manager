@@ -3,6 +3,21 @@ import { GitCommitNode, CommitCreationPayload, SaveAndCommitFileParams } from '.
 
 export type Screen = 'dash' | 'repos' | 'commits' | 'prs' | 'branches' | 'files' | 'insights' | 'settings' | 'clone' | 'activity';
 
+export type ToastType = 'info' | 'success' | 'warning' | 'error';
+
+export interface ToastItem {
+  id: string;
+  message: string;
+  type: ToastType;
+  title?: string;
+  duration?: number;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
+  createdAt: number;
+}
+
 export interface AppState {
   currentScreen: Screen;
   currentRepo: string | null;
@@ -11,7 +26,8 @@ export interface AppState {
   isActionSheetOpen: boolean;
   isDrawerOpen: boolean;
   toastMessage: string | null;
-  toastType: 'info' | 'success' | 'warning' | 'error';
+  toastType: ToastType;
+  toasts: ToastItem[];
   isSearchFocused: boolean;
   theme: 'dark' | 'light' | 'slate' | 'fantasy';
   githubToken: string | null;
@@ -57,7 +73,12 @@ export type AppContextType = AppState & {
   closeActionSheet: () => void;
   openDrawer: () => void;
   closeDrawer: () => void;
-  showToast: (msg: string, type?: 'info' | 'success' | 'warning' | 'error') => void;
+  showToast: (
+    msg: string,
+    type?: ToastType,
+    options?: { duration?: number; title?: string; action?: { label: string; onClick: () => void } }
+  ) => void;
+  dismissToast: (id: string) => void;
   setRepoSearchScope: (scope: RepoSearchScope) => void;
   setRepoSortBy: (sortBy: RepoSortBy) => void;
   setRepoSortDirection: (dir: RepoSortDirection) => void;

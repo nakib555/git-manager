@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { AppState, Screen, RepoSearchScope, RepoSortBy, RepoSortDirection, RepoTypeFilter } from '../../types';
+import { useEffect, useRef, useCallback } from 'react';
+import { AppState, Screen, RepoSearchScope, RepoSortBy, RepoSortDirection, RepoTypeFilter, ToastItem, ToastType } from '../../types';
 
 interface UseUISliceParams {
   state: AppState;
@@ -26,9 +26,69 @@ export const useUISlice = ({ state, setState }: UseUISliceParams) => {
     setState((prev) => ({ ...prev, theme: 'light' }));
   };
 
-  const showToast = (msg: string, type: 'info' | 'success' | 'warning' | 'error' = 'info') => {
-    setState((prev) => ({ ...prev, toastMessage: msg, toastType: type }));
-  };
+  const toastTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+
+  const dismissToast = useCallback((id: string) => {
+    const timer = toastTimersRef.current.get(id);
+    if (timer) {
+      clearTimeout(timer);
+      toastTimersRef.current.delete(id);
+    }
+    setState((prev) => {
+      const remaining = (prev.toasts || []).filter((t) => t.id !== id);
+      const latest = remaining[remaining.length - 1];
+      return {
+        ...prev,
+        toasts: remaining,
+        toastMessage: latest ? latest.message : null,
+        toastType: latest ? latest.type : 'info',
+      };
+    });
+  }, [setState]);
+
+  const showToast = useCallback((
+    msg: string,
+    type: ToastType = 'info',
+    options?: { duration?: number; title?: string; action?: { label: string; onClick: () => void } }
+  ) => {
+    const defaultDurations: Record<ToastType, number> = {
+      error: 5000,
+      warning: 4500,
+      success: 3000,
+      info: 3000,
+    };
+    const duration = options?.duration ?? defaultDurations[type];
+    const id = `toast_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+
+    const newToast: ToastItem = {
+      id,
+      message: msg,
+      type,
+      title: options?.title,
+      duration,
+      action: options?.action,
+      createdAt: Date.now(),
+    };
+
+    setState((prev) => {
+      const currentList = prev.toasts || [];
+      // Keep maximum 4 active toasts (FIFO eviction)
+      const updatedList = [...currentList, newToast].slice(-4);
+      return {
+        ...prev,
+        toasts: updatedList,
+        toastMessage: msg,
+        toastType: type,
+      };
+    });
+
+    if (duration > 0) {
+      const timer = setTimeout(() => {
+        dismissToast(id);
+      }, duration);
+      toastTimersRef.current.set(id, timer);
+    }
+  }, [dismissToast, setState]);
 
   const navigate = (screen: Screen) => {
     localStorage.setItem("currentScreen", screen);
@@ -103,6 +163,7 @@ export const useUISlice = ({ state, setState }: UseUISliceParams) => {
     closeModal,
     closeModals,
     showToast,
+    dismissToast,
     setTheme,
     toggleTheme,
     toggleAdminMode,

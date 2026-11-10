@@ -10,6 +10,7 @@ import { MobileShell } from './mobile/layout/MobileShell';
 
 import { ZipSyncModal } from './components/sync/ZipSyncModal';
 import { UnauthenticatedState } from './components/UnauthenticatedState';
+import { GlobalToastContainer } from './components/ui/GlobalToastContainer';
 
 const queryClient = new QueryClient();
 
@@ -52,6 +53,7 @@ export default function App() {
           ) : (
             <MainApp />
           )}
+          <GlobalToastContainer />
         </div>
       </AppProvider>
     </QueryClientProvider>

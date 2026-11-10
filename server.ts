@@ -171,13 +171,46 @@ async function startServer() {
         throw new Error("Failed to get access token: " + JSON.stringify(tokenData));
       }
 
+      let userJsonString = 'null';
+      try {
+        const userRes = await fetch('https://api.github.com/user', {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'User-Agent': 'GitManager-App',
+            'Accept': 'application/vnd.github.v3+json',
+          },
+        });
+        if (userRes.ok) {
+          const rawUser = await userRes.json();
+          const sanitized = {
+            id: rawUser.id,
+            login: rawUser.login || 'github-user',
+            name: rawUser.name || rawUser.login || 'GitHub User',
+            avatar_url: rawUser.avatar_url || '',
+            bio: rawUser.bio || '',
+            followers: rawUser.followers || 0,
+            following: rawUser.following || 0,
+            public_repos: rawUser.public_repos || 0,
+            html_url: rawUser.html_url || `https://github.com/${rawUser.login}`,
+          };
+          userJsonString = JSON.stringify(sanitized);
+        }
+      } catch (userErr) {
+        console.warn('Failed to prefetch user during OAuth callback:', userErr);
+      }
+
       res.send(`
         <html>
           <body>
             <script>
-              localStorage.setItem('githubToken', '${accessToken}');
+              const token = '${accessToken}';
+              const userObj = ${userJsonString};
+              localStorage.setItem('githubToken', token);
+              if (userObj) {
+                localStorage.setItem('githubUser', JSON.stringify(userObj));
+              }
               if (window.opener) {
-                window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS', token: '${accessToken}' }, '*');
+                window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS', token, user: userObj }, '*');
                 window.close();
               } else {
                 window.location.href = '/';

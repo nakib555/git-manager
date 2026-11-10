@@ -15,10 +15,21 @@ export const useRepoSlice = ({ state, setState, showToast }: UseRepoSliceParams)
     if (!isBackground) setState(prev => ({ ...prev, isFetchingRepos: true }));
     try {
       const data = await executeFetchGitHubData(token, state, pageOverride, searchOverride);
+      const fallbackUser = data.sanitizedUser || state.githubUser || (() => {
+        try {
+          const raw = localStorage.getItem("githubUser");
+          return raw ? JSON.parse(raw) : null;
+        } catch (_) { return null; }
+      })();
+
       setState(prev => ({
-        ...prev, githubUser: data.sanitizedUser, githubRepos: data.githubRepos,
-        currentRepo: data.currentRepo, currentRepoOwner: data.currentRepoOwner,
-        repoTotalPages: data.repoTotalPages, isFetchingRepos: false,
+        ...prev,
+        githubUser: fallbackUser || prev.githubUser,
+        githubRepos: data.githubRepos,
+        currentRepo: data.currentRepo,
+        currentRepoOwner: data.currentRepoOwner,
+        repoTotalPages: data.repoTotalPages,
+        isFetchingRepos: false,
       }));
     } catch (error: any) {
       if (!isBackground) showToast(`Error loading GitHub data: ${error.message || error}`, 'error');
@@ -31,8 +42,9 @@ export const useRepoSlice = ({ state, setState, showToast }: UseRepoSliceParams)
     try {
       const details = await executeFetchRepoDetails(repoName, owner, state.githubToken, branchOverride);
       setState(prev => ({ ...prev, ...details, isLoadingRepoDetails: false }));
-    } catch (_) {
+    } catch (err: any) {
       if (!isBackground) {
+        showToast(`Error fetching repo '${owner}/${repoName}': ${err?.message || 'Failed to retrieve repository data'}`, 'error');
         setState(prev => ({
           ...prev, activeCommits: getLocalRepoDetails(repoName, "commits"), activeBranches: getLocalRepoDetails(repoName, "branches"),
           activePRs: getLocalRepoDetails(repoName, "prs"), activeFiles: getLocalRepoDetails(repoName, "files"), isLoadingRepoDetails: false,
@@ -122,7 +134,7 @@ export const useRepoSlice = ({ state, setState, showToast }: UseRepoSliceParams)
       localStorage.setItem("localRepos", JSON.stringify(newRepos));
       return { ...prev, githubRepos: newRepos };
     });
-    showToast(`Repository ${name} cloned successfully`);
+    showToast(`Clone success: Repository '${owner}/${name}' cloned successfully!`, 'success');
   };
 
   const createLocalRepo = async (repo: { name: string; desc: string; isPrivate: boolean; lang: string }) => {

@@ -264,7 +264,7 @@ export function useCloneWorkbench(options: UseCloneWorkbenchOptions = {}) {
       if (err.name === 'AbortError' || controller.signal.aborted) {
         showToast('Clone cancelled', 'info');
       } else {
-        showToast(err.message || 'Clone failed', 'error');
+        showToast(`Error cloning repo '${parsedRepoInfo.owner}/${parsedRepoInfo.repo}': ${err.message || 'Clone failed'}`, 'error');
       }
       setStep('config');
     } finally {
