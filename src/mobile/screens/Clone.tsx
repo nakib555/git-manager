@@ -1,6 +1,4 @@
-import React, { useState, useMemo } from 'react';
-import { useAppContext } from '../../AppContext';
-import { CloneProtocol, CloneStep, CloneProgressInfo, UnifiedRepoItem } from '../../features/clone/types';
+import React from 'react';
 import { CloneFormInputs } from '../../features/clone/components/CloneFormInputs';
 import { CloneProgressView } from '../../features/clone/components/CloneProgressView';
 import { CloneSuccessView } from '../../features/clone/components/CloneSuccessView';
@@ -9,67 +7,48 @@ import { CloneSelectiveTab } from '../../features/clone/components/CloneSelectiv
 import { CloneTabHeader } from '../../features/clone/components/CloneTabHeader';
 import { CloneBrowseSection } from '../../features/clone/components/CloneBrowseSection';
 import { CloneQrCodeModal } from '../../features/clone/components/CloneQrCodeModal';
-import { executeCloneWorkflow } from '../../features/clone/utils/cloneWorkflow';
+import { useCloneWorkbench } from '../../features/clone/hooks/useCloneWorkbench';
 
 export const Clone: React.FC = () => {
-  const { cloneRepository, recentClones, openRepo, currentRepo, currentRepoOwner, githubToken, showToast } = useAppContext();
-  
-  const [activeTab, setActiveTab] = useState<'clone' | 'archive' | 'selective'>('clone');
-  const [intakeMode, setIntakeMode] = useState<'url' | 'browse'>('url');
-  const [url, setUrl] = useState(currentRepo && currentRepoOwner ? `https://github.com/${currentRepoOwner}/${currentRepo}.git` : 'https://github.com/nakib555/git-manager.git');
-  const [urlMode, setUrlMode] = useState<CloneProtocol>('https');
-  const [dest, setDest] = useState(currentRepo ? `/Projects/${currentRepo}` : '/Projects/git-manager');
-  const [branch, setBranch] = useState('main');
-  const [depth, setDepth] = useState<'full' | 'shallow'>('shallow');
-  const [step, setStep] = useState<CloneStep>('config');
-  const [isQrOpen, setIsQrOpen] = useState(false);
-  const [repoSearch, setRepoSearch] = useState('');
-
-  const [progressInfo, setProgressInfo] = useState<CloneProgressInfo>({
-    pct: 0, activity: 'Initializing clone request...', speed: '0 MB/s',
-    timeRemaining: 'Calculating...', receivedObjects: { current: 0, total: 100 },
-    resolvingDeltas: false,
-  });
-
-  const parsedRepoInfo = useMemo(() => {
-    try {
-      const clean = url.replace(/\.git$/, '');
-      const parts = clean.split('/').filter(Boolean);
-      return { owner: parts[parts.length - 2] || 'custom', repo: parts[parts.length - 1] || 'git-manager' };
-    } catch {
-      return { owner: 'nakib555', repo: 'git-manager' };
-    }
-  }, [url]);
-
-  const recentList: UnifiedRepoItem[] = useMemo(() => {
-    return (recentClones || []).map((r: any) => ({
-      name: r.name,
-      owner: r.owner || (r.url ? r.url.replace(/\.git$/, '').split('/').slice(-2)[0] : 'nakib555'),
-      url: r.url || `https://github.com/nakib555/${r.name}.git`,
-      language: r.lang || 'TypeScript',
-      stars: r.stars || 42,
-      isOnDevice: true,
-    })).filter(r => r.name.toLowerCase().includes(repoSearch.toLowerCase()));
-  }, [recentClones, repoSearch]);
-
-  const handleStartClone = async () => {
-    if (!url.trim()) return;
-    setStep('progress');
-    try {
-      await executeCloneWorkflow({
-        url, dest, branch, depth,
-        owner: parsedRepoInfo.owner, repo: parsedRepoInfo.repo,
-        token: githubToken, setProgressInfo, cloneRepository,
-      });
-      setTimeout(() => setStep('success'), 400);
-    } catch (err: any) {
-      showToast(err.message || 'Clone failed', 'error');
-      setStep('config');
-    }
-  };
+  const {
+    activeTab,
+    setActiveTab,
+    intakeMode,
+    setIntakeMode,
+    browseCategory,
+    setBrowseCategory,
+    url,
+    urlMode,
+    dest,
+    branch,
+    setBranch,
+    availableBranches,
+    isLoadingBranches,
+    depth,
+    setDepth,
+    step,
+    setStep,
+    isQrOpen,
+    setIsQrOpen,
+    repoSearch,
+    setRepoSearch,
+    parsedRepoInfo,
+    progressInfo,
+    activeBrowseList,
+    myGitHubReposCount,
+    recentCount,
+    handleProtocolChange,
+    handleUrlChange,
+    handleDestChange,
+    handlePickDirectory,
+    handleSelectRepo,
+    handleStartClone,
+    handleCancelClone,
+    handleOpenWorkspace,
+  } = useCloneWorkbench();
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 overflow-y-auto px-4 py-5 space-y-4">
+    <div className="flex-1 flex flex-col min-h-0 overflow-y-auto px-4 py-4 space-y-4 no-scrollbar pb-[calc(env(safe-area-inset-bottom,0px)+80px)]">
       <CloneTabHeader activeTab={activeTab} setActiveTab={setActiveTab} />
 
       <div className="bg-card border border-border rounded-2xl p-4 shadow-xs">
@@ -79,49 +58,84 @@ export const Clone: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIntakeMode('url')}
-                className={`flex-1 py-1.5 text-xs font-bold rounded-lg ${intakeMode === 'url' ? 'bg-card text-text-main shadow-xs' : 'text-text-muted'}`}
+                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                  intakeMode === 'url' ? 'bg-card text-text-main shadow-xs' : 'text-text-muted hover:text-text-main'
+                }`}
               >
                 URL Input
               </button>
               <button
                 type="button"
                 onClick={() => setIntakeMode('browse')}
-                className={`flex-1 py-1.5 text-xs font-bold rounded-lg ${intakeMode === 'browse' ? 'bg-card text-text-main shadow-xs' : 'text-text-muted'}`}
+                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                  intakeMode === 'browse' ? 'bg-card text-text-main shadow-xs' : 'text-text-muted hover:text-text-main'
+                }`}
               >
-                Recent
+                Browse Repos
               </button>
             </div>
 
             {intakeMode === 'url' ? (
               <CloneFormInputs
-                url={url} setUrl={setUrl} branch={branch} setBranch={setBranch}
-                dest={dest} setDest={setDest} urlMode={urlMode} setUrlMode={setUrlMode}
-                depth={depth} setDepth={setDepth} onOpenQr={() => setIsQrOpen(true)}
+                url={url}
+                setUrl={handleUrlChange}
+                branch={branch}
+                setBranch={setBranch}
+                availableBranches={availableBranches}
+                isLoadingBranches={isLoadingBranches}
+                dest={dest}
+                setDest={handleDestChange}
+                urlMode={urlMode}
+                setUrlMode={handleProtocolChange}
+                depth={depth}
+                setDepth={setDepth}
+                onOpenQr={() => setIsQrOpen(true)}
                 onSubmit={handleStartClone}
+                onPickDirectory={handlePickDirectory}
               />
             ) : (
               <CloneBrowseSection
-                repoSearch={repoSearch} setRepoSearch={setRepoSearch}
-                recentList={recentList} onSelectRepo={(r) => { setUrl(r.url); setIntakeMode('url'); }}
+                repoSearch={repoSearch}
+                setRepoSearch={setRepoSearch}
+                browseCategory={browseCategory}
+                setBrowseCategory={setBrowseCategory}
+                recentList={activeBrowseList}
+                myReposCount={myGitHubReposCount}
+                recentCount={recentCount}
+                onSelectRepo={handleSelectRepo}
               />
             )}
           </div>
         )}
 
         {activeTab === 'clone' && step === 'progress' && (
-          <CloneProgressView progressInfo={progressInfo} onCancel={() => setStep('config')} />
+          <CloneProgressView progressInfo={progressInfo} onCancel={handleCancelClone} />
         )}
 
         {activeTab === 'clone' && step === 'success' && (
           <CloneSuccessView
-            repoName={parsedRepoInfo.repo} destPath={dest}
-            onOpenRepo={() => openRepo(parsedRepoInfo.repo, parsedRepoInfo.owner)}
+            repoName={parsedRepoInfo.repo}
+            repoOwner={parsedRepoInfo.owner}
+            destPath={dest}
+            onOpenRepo={handleOpenWorkspace}
             onCloneAnother={() => setStep('config')}
           />
         )}
 
-        {activeTab === 'archive' && <CloneArchiveTab repoName={parsedRepoInfo.repo} repoOwner={parsedRepoInfo.owner} />}
-        {activeTab === 'selective' && <CloneSelectiveTab repoName={parsedRepoInfo.repo} />}
+        {activeTab === 'archive' && (
+          <CloneArchiveTab
+            repoName={parsedRepoInfo.repo}
+            repoOwner={parsedRepoInfo.owner}
+          />
+        )}
+
+        {activeTab === 'selective' && (
+          <CloneSelectiveTab
+            repoName={parsedRepoInfo.repo}
+            repoOwner={parsedRepoInfo.owner}
+            branch={branch}
+          />
+        )}
       </div>
 
       <CloneQrCodeModal isOpen={isQrOpen} onClose={() => setIsQrOpen(false)} url={url} />

@@ -20,7 +20,7 @@ export default defineConfig(() => {
         includeAssets: ['git-manager-logo.png', 'icon.svg'],
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
-          maximumFileSizeToCacheInBytes: 5000000,
+          maximumFileSizeToCacheInBytes: 15000000,
           navigateFallbackDenylist: [/^\/auth\/callback/, /^\/api\//],
           cleanupOutdatedCaches: true,
           clientsClaim: true,

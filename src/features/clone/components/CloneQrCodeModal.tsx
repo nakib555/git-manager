@@ -1,7 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Copy, Check } from 'lucide-react';
+import { X, Copy, Check, Smartphone, GitBranch } from 'lucide-react';
 
 interface CloneQrCodeModalProps {
   isOpen: boolean;
@@ -14,7 +14,8 @@ export const CloneQrCodeModal: React.FC<CloneQrCodeModalProps> = ({
   onClose,
   url,
 }) => {
-  const [copied, setCopied] = React.useState(false);
+  const [copied, setCopied] = useState(false);
+  const [qrMode, setQrMode] = useState<'app' | 'git'>('app');
 
   useEffect(() => {
     if (!isOpen) return;
@@ -25,8 +26,19 @@ export const CloneQrCodeModal: React.FC<CloneQrCodeModalProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
+  // Compute deep link to open app with pre-filled repo
+  const targetQrValue = useMemo(() => {
+    if (qrMode === 'git') return url;
+    try {
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      return `${origin}/?cloneUrl=${encodeURIComponent(url)}`;
+    } catch (_) {
+      return url;
+    }
+  }, [url, qrMode]);
+
   const handleCopy = () => {
-    navigator.clipboard.writeText(url);
+    navigator.clipboard.writeText(targetQrValue);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -35,7 +47,6 @@ export const CloneQrCodeModal: React.FC<CloneQrCodeModalProps> = ({
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[220] flex items-center justify-center p-4 sm:p-6">
-          {/* Backdrop with tap-to-dismiss */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -56,7 +67,7 @@ export const CloneQrCodeModal: React.FC<CloneQrCodeModalProps> = ({
             <div className="flex items-center justify-between pb-3 border-b border-border">
               <div>
                 <h2 className="font-bold text-sm text-text-primary leading-tight">Transfer to Mobile</h2>
-                <p className="text-[11px] text-text-tertiary mt-0.5">Scan QR code to open or clone this repo</p>
+                <p className="text-[11px] text-text-tertiary mt-0.5">Scan to open or clone this repository</p>
               </div>
               <button
                 type="button"
@@ -67,16 +78,42 @@ export const CloneQrCodeModal: React.FC<CloneQrCodeModalProps> = ({
               </button>
             </div>
 
-            <div className="flex justify-center p-4 bg-white rounded-xl shadow-xs">
-              <QRCodeSVG value={url} size={180} level="M" />
+            {/* Mode Selector */}
+            <div className="flex bg-main p-0.5 rounded-xl border border-border text-[11px] font-bold">
+              <button
+                type="button"
+                onClick={() => setQrMode('app')}
+                className={`flex-1 py-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  qrMode === 'app' ? 'bg-card text-text-main shadow-xs' : 'text-text-muted hover:text-text-main'
+                }`}
+              >
+                <Smartphone size={13} className={qrMode === 'app' ? 'text-primary' : 'text-text-muted'} />
+                <span>Web App Link</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setQrMode('git')}
+                className={`flex-1 py-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  qrMode === 'git' ? 'bg-card text-text-main shadow-xs' : 'text-text-muted hover:text-text-main'
+                }`}
+              >
+                <GitBranch size={13} className={qrMode === 'git' ? 'text-primary' : 'text-text-muted'} />
+                <span>Raw Git URL</span>
+              </button>
+            </div>
+
+            <div className="flex justify-center p-4 bg-white rounded-xl shadow-xs border border-border/40">
+              <QRCodeSVG value={targetQrValue} size={180} level="M" />
             </div>
 
             <p className="text-xs text-text-tertiary text-center leading-relaxed">
-              Scan with your mobile camera to open and clone this repository on your device.
+              {qrMode === 'app'
+                ? 'Scan with your smartphone camera to open this app and load this repo immediately.'
+                : 'Scan with your git terminal or mobile git client to copy the repository URL.'}
             </p>
 
             <div className="flex items-center gap-2 bg-surface-2 border border-border rounded-xl px-3 py-2">
-              <span className="text-xs font-mono text-text-secondary truncate flex-1">{url}</span>
+              <span className="text-xs font-mono text-text-secondary truncate flex-1">{targetQrValue}</span>
               <button
                 type="button"
                 onClick={handleCopy}
