@@ -51,19 +51,7 @@ export const FileViewerModalHeader: React.FC<FileViewerModalHeaderProps> = ({
           <div className="flex items-center gap-2 mt-0.5 text-[10px] text-text-tertiary font-mono">
             <span className="text-accent uppercase font-bold">{getCodeLanguage(selectedFile)}</span>
             <span aria-hidden="true">·</span>
-            <span className="tabular-nums">{lineCount} lines</span>
-            <span aria-hidden="true">·</span>
             <span className="tabular-nums">{formatBytes(fileSizeEst)}</span>
-            <span aria-hidden="true">·</span>
-            {isOwner ? (
-              <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                <ShieldCheck size={10} className="text-emerald-400" /> Admin Authority
-              </span>
-            ) : (
-              <span className="text-amber-400 font-semibold flex items-center gap-1">
-                <Lock size={10} /> Read-Only
-              </span>
-            )}
           </div>
         </div>
 

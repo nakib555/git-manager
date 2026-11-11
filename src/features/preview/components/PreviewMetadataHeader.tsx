@@ -52,16 +52,6 @@ export const PreviewMetadataHeader: React.FC<PreviewMetadataHeaderProps> = ({
           </span>
         </>
       )}
-      <span className="text-border hidden sm:inline">·</span>
-      {isOwner ? (
-        <span className="hidden sm:flex text-[10px] text-emerald-700 font-mono bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded font-semibold items-center gap-1 shrink-0">
-          <ShieldCheck size={11} className="text-emerald-600" /> Admin
-        </span>
-      ) : (
-        <span className="hidden sm:flex text-[10px] text-text-tertiary font-mono items-center gap-1 shrink-0">
-          <Lock size={10} /> Read-only
-        </span>
-      )}
     </div>
   );
 };

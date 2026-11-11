@@ -69,6 +69,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         style={vs}
         showLineNumbers={true}
         wrapLines={wrapLines}
+        wrapLongLines={wrapLines}
         customStyle={{
           margin: 0,
           padding: '12px',
@@ -76,6 +77,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           fontSize: '11px',
           lineHeight: '1.6',
           fontFamily: 'monospace',
+          whiteSpace: wrapLines ? 'pre-wrap' : 'pre',
+          wordBreak: wrapLines ? 'break-word' : 'normal',
         }}
         lineNumberStyle={{
           color: '#64748b',

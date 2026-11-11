@@ -8,7 +8,6 @@ import {
   ChevronDown,
   ChevronUp,
   WrapText,
-  Type,
   FileCode,
   FileText,
   AlignLeft,
@@ -81,7 +80,7 @@ export const CodeFilePreview: React.FC<CodeFilePreviewProps> = ({
 }) => {
   const [copied, setCopied] = useState(false);
   const [search, setSearch] = useState('');
-  const [fontSize, setFontSize] = useState<number>(13);
+  const fontSize = 13;
   const [wrapLines, setWrapLines] = useState<boolean>(true);
   const [activeMatchIndex, setActiveMatchIndex] = useState<number>(0);
   const [mode, setMode] = useState<'standard' | 'reader'>('standard');
@@ -132,31 +131,31 @@ export const CodeFilePreview: React.FC<CodeFilePreviewProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const cycleFontSize = () => {
-    const sizes = [11, 12, 13, 14, 16];
-    const nextIdx = (sizes.indexOf(fontSize) + 1) % sizes.length;
-    setFontSize(sizes[nextIdx]);
-  };
-
-  // Custom high-contrast clean styling for Prism to avoid harsh colors
-  const cleanPrismStyle = useMemo(() => {
+  // Custom high-contrast clean styling for Prism with full line wrap support
+  const cleanPrismStyle = useMemo((): { [key: string]: React.CSSProperties } => {
     return {
-      ...vs,
+      ...(vs as Record<string, React.CSSProperties>),
       'code[class*="language-"]': {
-        ...vs['code[class*="language-"]'],
+        ...(vs['code[class*="language-"]'] as React.CSSProperties),
         fontFamily: "'JetBrains Mono', 'Geist Mono', ui-monospace, SFMono-Regular, monospace",
         fontSize: `${fontSize}px`,
         lineHeight: `${Math.round(fontSize * 1.65)}px`,
         color: '#1C1D21',
+        whiteSpace: wrapLines ? 'pre-wrap' : 'pre',
+        wordBreak: wrapLines ? 'break-word' : 'normal',
+        overflowWrap: wrapLines ? 'anywhere' : 'normal',
       },
       'pre[class*="language-"]': {
-        ...vs['pre[class*="language-"]'],
+        ...(vs['pre[class*="language-"]'] as React.CSSProperties),
         fontFamily: "'JetBrains Mono', 'Geist Mono', ui-monospace, SFMono-Regular, monospace",
         fontSize: `${fontSize}px`,
         lineHeight: `${Math.round(fontSize * 1.65)}px`,
         background: 'transparent',
         margin: 0,
         padding: '16px 20px',
+        whiteSpace: wrapLines ? 'pre-wrap' : 'pre',
+        wordBreak: wrapLines ? 'break-word' : 'normal',
+        overflowWrap: wrapLines ? 'anywhere' : 'normal',
       },
       keyword: { color: '#0969DA', fontWeight: '600' },
       string: { color: '#0A3069' },
@@ -170,7 +169,7 @@ export const CodeFilePreview: React.FC<CodeFilePreviewProps> = ({
       'attr-name': { color: '#0550AE' },
       'attr-value': { color: '#0A3069' },
     };
-  }, [fontSize]);
+  }, [wrapLines]);
 
   return (
     <div className="w-full h-full flex flex-col bg-surface-1 overflow-hidden select-text text-text-primary">
@@ -257,17 +256,6 @@ export const CodeFilePreview: React.FC<CodeFilePreviewProps> = ({
             <span className="hidden sm:inline">{wrapLines ? 'Wrap' : 'No Wrap'}</span>
           </button>
 
-          {/* Font Size Toggle */}
-          <button
-            type="button"
-            onClick={cycleFontSize}
-            className="flex items-center gap-1 h-7 px-2 bg-surface-1 hover:bg-surface-2 border border-border text-text-secondary hover:text-text-primary rounded-md text-[11px] font-medium transition-colors cursor-pointer"
-            title="Cycle text font size"
-          >
-            <Type size={12} />
-            <span className="tabular-nums">{fontSize}px</span>
-          </button>
-
           {/* Copy Button */}
           <button
             type="button"
@@ -297,18 +285,19 @@ export const CodeFilePreview: React.FC<CodeFilePreviewProps> = ({
               <span className="font-semibold text-text-primary">{fileName}</span>
               <span>{lineCount} lines · {formatBytes(byteSize)}</span>
             </div>
-            <div className="whitespace-pre-wrap font-mono text-[13px] leading-6 select-text text-text-primary/95 bg-surface-2/20 p-6 rounded-xl border border-border/60">
+            <div className="whitespace-pre-wrap font-mono text-[13px] leading-6 select-text text-text-primary/95 bg-surface-2/20 p-6 rounded-xl border border-border/60 break-words">
               {content || '(Empty document)'}
             </div>
           </div>
         ) : (
-          /* High-Definition Syntax Highlighting with Precision Line Numbers */
-          <div className="w-full min-w-full inline-block">
+          /* High-Definition Syntax Highlighting with Precision Line Numbers & Robust Line Wrapping */
+          <div className={`w-full ${wrapLines ? 'max-w-full overflow-hidden' : 'min-w-full inline-block'}`}>
             <SyntaxHighlighter
               language={normalizedLang}
               style={cleanPrismStyle}
               showLineNumbers
               wrapLines={wrapLines}
+              wrapLongLines={wrapLines}
               customStyle={{
                 margin: 0,
                 padding: '16px 20px',
@@ -317,6 +306,20 @@ export const CodeFilePreview: React.FC<CodeFilePreviewProps> = ({
                 lineHeight: `${Math.round(fontSize * 1.65)}px`,
                 fontFamily: "'JetBrains Mono', 'Geist Mono', ui-monospace, SFMono-Regular, monospace",
                 minWidth: '100%',
+                maxWidth: '100%',
+                whiteSpace: wrapLines ? 'pre-wrap' : 'pre',
+                wordBreak: wrapLines ? 'break-word' : 'normal',
+                overflowWrap: wrapLines ? 'anywhere' : 'normal',
+              }}
+              codeTagProps={{
+                style: {
+                  fontFamily: "'JetBrains Mono', 'Geist Mono', ui-monospace, SFMono-Regular, monospace",
+                  fontSize: `${fontSize}px`,
+                  lineHeight: `${Math.round(fontSize * 1.65)}px`,
+                  whiteSpace: wrapLines ? 'pre-wrap' : 'pre',
+                  wordBreak: wrapLines ? 'break-word' : 'normal',
+                  overflowWrap: wrapLines ? 'anywhere' : 'normal',
+                },
               }}
               lineNumberStyle={{
                 minWidth: '3.6em',
@@ -327,7 +330,15 @@ export const CodeFilePreview: React.FC<CodeFilePreviewProps> = ({
                 userSelect: 'none',
                 textAlign: 'right',
                 display: 'inline-block',
+                verticalAlign: 'top',
               }}
+              lineProps={() => ({
+                style: {
+                  whiteSpace: wrapLines ? 'pre-wrap' : 'pre',
+                  wordBreak: wrapLines ? 'break-word' : 'normal',
+                  overflowWrap: wrapLines ? 'anywhere' : 'normal',
+                },
+              })}
             >
               {content || '// Empty file'}
             </SyntaxHighlighter>
@@ -354,8 +365,6 @@ export const CodeFilePreview: React.FC<CodeFilePreviewProps> = ({
           <span className="hidden sm:inline">UTF-8</span>
           <span className="text-border hidden sm:inline">·</span>
           <span className="hidden sm:inline">LF</span>
-          <span className="text-border hidden sm:inline">·</span>
-          <span className="tabular-nums">{fontSize}px</span>
         </div>
       </div>
     </div>

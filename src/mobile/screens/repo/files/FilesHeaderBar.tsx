@@ -25,11 +25,6 @@ export const FilesHeaderBar: React.FC<FilesHeaderBarProps> = ({
           <Home size={14} className="text-text-tertiary shrink-0" />
           <span>/</span>
           <span className="text-text-primary font-bold truncate">{currentRepo}</span>
-          {isOwner && (
-            <span className="ml-1 text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-semibold flex items-center gap-1">
-              <ShieldCheck size={10} className="text-emerald-400" /> Admin
-            </span>
-          )}
         </div>
         <div className="flex items-center gap-2">
           <button

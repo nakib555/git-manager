@@ -44,20 +44,6 @@ export const PreviewToolbar: React.FC<PreviewToolbarProps> = ({
         <span>{viewMode === 'hex' ? 'Hex View' : 'Hex'}</span>
       </button>
 
-      {canCopy && (
-        <button
-          type="button"
-          onClick={onCopy}
-          className={`flex items-center gap-1 h-7 px-2 bg-surface-1 hover:bg-surface-2 border border-border text-text-secondary hover:text-text-primary rounded-md text-[11px] font-medium btn-tactile cursor-pointer ${
-            isCopied ? 'border-emerald-500/50 text-emerald-700 bg-emerald-500/10 animate-success-pulse' : ''
-          }`}
-          title="Copy to clipboard"
-        >
-          {isCopied ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
-          <span>{isCopied ? 'Copied' : 'Copy'}</span>
-        </button>
-      )}
-
       {onEdit && isOwner && (
         <button
           type="button"
@@ -69,16 +55,6 @@ export const PreviewToolbar: React.FC<PreviewToolbarProps> = ({
           <span>Edit</span>
         </button>
       )}
-
-      <button
-        type="button"
-        onClick={onDownload}
-        className="flex items-center gap-1 h-7 px-2 bg-surface-1 hover:bg-surface-2 border border-border text-text-secondary hover:text-text-primary rounded-md text-[11px] font-medium btn-tactile cursor-pointer"
-        title="Download file"
-      >
-        <Download size={12} />
-        <span>Raw</span>
-      </button>
 
       {onToggleFullscreen && (
         <button
