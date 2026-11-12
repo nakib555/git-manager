@@ -13,6 +13,7 @@ interface FileViewerModalProps {
   activeFileLoading: boolean;
   fileContentError: string | null;
   fileHistory: any[];
+  isFileHistoryLoading?: boolean;
   contentTab: 'code' | 'history' | 'info';
   isFullscreen: boolean;
   isCopied: boolean;
@@ -37,6 +38,7 @@ export const FileViewerModal: React.FC<FileViewerModalProps> = ({
   activeFileLoading,
   fileContentError,
   fileHistory,
+  isFileHistoryLoading = false,
   contentTab,
   isFullscreen,
   isCopied,
@@ -101,12 +103,14 @@ export const FileViewerModal: React.FC<FileViewerModalProps> = ({
             activeFileLoading={activeFileLoading}
             fileContentError={fileContentError}
             fileHistory={fileHistory}
+            isFileHistoryLoading={isFileHistoryLoading}
             currentRepo={currentRepo}
             currentRepoOwner={currentRepoOwner}
             currentBranch={currentBranch}
             githubToken={githubToken}
             isOwner={isOwner}
             onRetry={onRetry}
+            onSetContentTab={onSetContentTab}
           />
         </div>
       </motion.div>
