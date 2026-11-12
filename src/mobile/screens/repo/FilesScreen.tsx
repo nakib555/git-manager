@@ -34,7 +34,6 @@ export const FilesScreen: React.FC = () => {
     isEditingFile,
     isOwner,
     fileHistory,
-    isFileHistoryLoading,
     setSearchQuery,
     setSelectedFileForModal,
     setContentTab,
@@ -115,7 +114,6 @@ export const FilesScreen: React.FC = () => {
             activeFileLoading={activeFileLoading}
             fileContentError={fileContentError}
             fileHistory={fileHistory}
-            isFileHistoryLoading={isFileHistoryLoading}
             contentTab={contentTab}
             isFullscreen={isFullscreen}
             isCopied={isCopied}

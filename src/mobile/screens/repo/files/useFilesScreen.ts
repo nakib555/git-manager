@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useAppContext } from '../../../../AppContext';
-import { fetchFileContentSafe, fetchFileCommitHistorySafe } from '../../../utils/gitApi';
+import { fetchFileContentSafe } from '../../../utils/gitApi';
 import { isRepositoryOwnedByUser } from '../../../utils/repoOwnership';
 
 export function useFilesScreen() {
@@ -31,8 +31,6 @@ export function useFilesScreen() {
   const [contentTab, setContentTab] = useState<'code' | 'history' | 'info'>('code');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isEditingFile, setIsEditingFile] = useState(false);
-  const [fileHistory, setFileHistory] = useState<any[]>([]);
-  const [isFileHistoryLoading, setIsFileHistoryLoading] = useState<boolean>(false);
 
   const isOwner = useMemo(() => {
     return isRepositoryOwnedByUser({
@@ -100,44 +98,14 @@ export function useFilesScreen() {
     showToast('Download started', 'info');
   };
 
-  // Fetch complete commit lineage from first to current for the selected file
-  useEffect(() => {
-    if (!selectedFileForModal) {
-      setFileHistory([]);
-      return;
-    }
-
-    let isCancelled = false;
-    setIsFileHistoryLoading(true);
-
-    fetchFileCommitHistorySafe({
-      filePath: selectedFileForModal,
-      repoName: currentRepo || '',
-      owner: currentRepoOwner || githubUser?.login || '',
-      branch: currentBranch || 'main',
-      token: githubToken,
-      fallbackCommits: activeCommits || [],
-    })
-      .then((history) => {
-        if (!isCancelled) {
-          setFileHistory(history);
-        }
-      })
-      .catch(() => {
-        if (!isCancelled) {
-          setFileHistory(activeCommits || []);
-        }
-      })
-      .finally(() => {
-        if (!isCancelled) {
-          setIsFileHistoryLoading(false);
-        }
-      });
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [selectedFileForModal, currentRepo, currentRepoOwner, currentBranch, githubToken, activeCommits, githubUser?.login]);
+  const fileHistory = useMemo(() => {
+    if (!selectedFileForModal) return [];
+    const fileNameOnly = selectedFileForModal.split('/').pop()?.toLowerCase();
+    const matched = activeCommits.filter(c => 
+      c.msg?.toLowerCase().includes(fileNameOnly || '') || c.files?.some((f: any) => f.filename?.includes(selectedFileForModal))
+    );
+    return matched.length > 0 ? matched : activeCommits.slice(0, 5);
+  }, [activeCommits, selectedFileForModal]);
 
   return {
     activeFiles,
@@ -158,7 +126,6 @@ export function useFilesScreen() {
     isEditingFile,
     isOwner,
     fileHistory,
-    isFileHistoryLoading,
     setSearchQuery,
     setSelectedFileForModal,
     setContentTab,
