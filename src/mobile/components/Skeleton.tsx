@@ -5,4 +5,7 @@ export {
   CodeViewerSkeleton,
   CommitDetailSkeleton,
   DashboardSkeleton,
+  RepoWorkspaceSkeleton,
+  ActivityFeedSkeleton,
+  PRFilesSkeleton,
 } from './skeleton/ScreenSkeletons';

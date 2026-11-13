@@ -4,7 +4,7 @@ import { User, Github, KeySquare, ChevronRight, Moon, Sun, Sliders, ShieldCheck 
 import { useAppContext } from '../../../AppContext';
 
 export const DesktopSettings: React.FC = () => {
-  const { theme, toggleTheme, githubUser, githubToken, connectGitHub, disconnectGitHub, setManualToken, showToast, adminModeOverride, toggleAdminMode } = useAppContext();
+  const { theme, setTheme, githubUser, githubToken, connectGitHub, disconnectGitHub, setManualToken, showToast, adminModeOverride, toggleAdminMode } = useAppContext();
   const [showTokenForm, setShowTokenForm] = useState(false);
   const [tempToken, setTempToken] = useState('');
 
@@ -111,19 +111,50 @@ export const DesktopSettings: React.FC = () => {
             </div>
           )}
 
-          <div className="p-5 flex items-center justify-between transition-colors">
-            <div className="flex gap-4 items-center">
-              <div className="w-10 h-10 rounded-xl bg-accent/10 text-accent flex items-center justify-center">
-                <Sun size={18} />
+          <div className="p-5 flex items-center justify-between gap-4 transition-colors">
+            <div className="flex gap-4 items-center min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-accent/10 text-accent flex items-center justify-center shrink-0">
+                {theme === 'light' ? <Sun size={18} /> : <Moon size={18} />}
               </div>
-              <div>
+              <div className="min-w-0">
                 <span className="block text-xs font-bold text-text-primary">Appearance Mode</span>
-                <span className="block text-[10px] text-text-secondary mt-0.5">Clean Light (Active & Calibrated)</span>
+                <span className="block text-[10px] text-text-secondary mt-0.5 truncate">
+                  {theme === 'light'
+                    ? 'Clean Light · High-contrast daylight studio'
+                    : 'Cloudflare Dark · Deep graphite engineering console'}
+                </span>
               </div>
             </div>
-            <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-md bg-accent/10 text-accent border border-accent/20">
-              LIGHT
-            </span>
+            <div
+              className="flex items-center p-1 rounded-xl bg-surface-2 border border-border shrink-0"
+              role="group"
+              aria-label="Select theme mode"
+            >
+              <button
+                type="button"
+                onClick={() => setTheme('dark')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer btn-tactile ${
+                  theme !== 'light'
+                    ? 'bg-surface-1 text-text-primary border border-border shadow-xs'
+                    : 'text-text-secondary hover:text-text-primary border border-transparent'
+                }`}
+              >
+                <Moon size={13} className={theme !== 'light' ? 'text-accent' : ''} />
+                <span>Dark</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTheme('light')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer btn-tactile ${
+                  theme === 'light'
+                    ? 'bg-surface-1 text-text-primary border border-border shadow-xs'
+                    : 'text-text-secondary hover:text-text-primary border border-transparent'
+                }`}
+              >
+                <Sun size={13} className={theme === 'light' ? 'text-accent' : ''} />
+                <span>Light</span>
+              </button>
+            </div>
           </div>
 
           <div className="p-5 flex items-center justify-between hover:bg-hover/10 transition-colors cursor-pointer group" onClick={toggleAdminMode}>

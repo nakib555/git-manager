@@ -45,7 +45,7 @@ export const CloneBranchDepthInputs: React.FC<CloneBranchDepthInputsProps> = ({
         {isLoadingBranches ? (
           /* Skeleton loader in branch option when checking - exact 40px height to avoid layout shift */
           <div
-            className="w-full h-[40px] rounded-xl bg-surface-2 border border-border/60 px-3 flex items-center justify-between animate-pulse select-none"
+            className="w-full h-[40px] rounded-xl bg-surface-2 border border-border/60 px-3 flex items-center justify-between ghost-shimmer select-none"
             aria-busy="true"
             aria-label="Checking repository branches..."
           >

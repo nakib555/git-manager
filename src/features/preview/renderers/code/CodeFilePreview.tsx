@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { vs, vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { useAppContext } from '../../../../AppContext';
 import {
   Copy,
   Check,
@@ -78,6 +79,8 @@ export const CodeFilePreview: React.FC<CodeFilePreviewProps> = ({
   language,
   fileName,
 }) => {
+  const { theme } = useAppContext();
+  const isDark = theme !== 'light';
   const [copied, setCopied] = useState(false);
   const [search, setSearch] = useState('');
   const fontSize = 13;
@@ -133,10 +136,51 @@ export const CodeFilePreview: React.FC<CodeFilePreviewProps> = ({
 
   // Custom high-contrast clean styling for Prism with full line wrap support
   const cleanPrismStyle = useMemo((): { [key: string]: React.CSSProperties } => {
+    const baseStyle = (isDark ? vscDarkPlus : vs) as Record<string, React.CSSProperties>;
+    if (isDark) {
+      return {
+        ...baseStyle,
+        'code[class*="language-"]': {
+          ...(baseStyle['code[class*="language-"]'] as React.CSSProperties),
+          fontFamily: "'JetBrains Mono', 'Geist Mono', ui-monospace, SFMono-Regular, monospace",
+          fontSize: `${fontSize}px`,
+          lineHeight: `${Math.round(fontSize * 1.65)}px`,
+          color: '#E6EDF3',
+          background: 'transparent',
+          whiteSpace: wrapLines ? 'pre-wrap' : 'pre',
+          wordBreak: wrapLines ? 'break-word' : 'normal',
+          overflowWrap: wrapLines ? 'anywhere' : 'normal',
+        },
+        'pre[class*="language-"]': {
+          ...(baseStyle['pre[class*="language-"]'] as React.CSSProperties),
+          fontFamily: "'JetBrains Mono', 'Geist Mono', ui-monospace, SFMono-Regular, monospace",
+          fontSize: `${fontSize}px`,
+          lineHeight: `${Math.round(fontSize * 1.65)}px`,
+          background: 'transparent',
+          margin: 0,
+          padding: '16px 20px',
+          whiteSpace: wrapLines ? 'pre-wrap' : 'pre',
+          wordBreak: wrapLines ? 'break-word' : 'normal',
+          overflowWrap: wrapLines ? 'anywhere' : 'normal',
+        },
+        keyword: { color: '#FF7B72', fontWeight: '600' },
+        string: { color: '#A5D6FF' },
+        comment: { color: '#8B949E', fontStyle: 'italic' },
+        function: { color: '#D2A8FF', fontWeight: '500' },
+        number: { color: '#79C0FF' },
+        boolean: { color: '#FF7B72', fontWeight: '600' },
+        operator: { color: '#E6EDF3' },
+        punctuation: { color: '#9DA5B4' },
+        tag: { color: '#7EE787' },
+        'attr-name': { color: '#79C0FF' },
+        'attr-value': { color: '#A5D6FF' },
+      };
+    }
+
     return {
-      ...(vs as Record<string, React.CSSProperties>),
+      ...baseStyle,
       'code[class*="language-"]': {
-        ...(vs['code[class*="language-"]'] as React.CSSProperties),
+        ...(baseStyle['code[class*="language-"]'] as React.CSSProperties),
         fontFamily: "'JetBrains Mono', 'Geist Mono', ui-monospace, SFMono-Regular, monospace",
         fontSize: `${fontSize}px`,
         lineHeight: `${Math.round(fontSize * 1.65)}px`,
@@ -146,7 +190,7 @@ export const CodeFilePreview: React.FC<CodeFilePreviewProps> = ({
         overflowWrap: wrapLines ? 'anywhere' : 'normal',
       },
       'pre[class*="language-"]': {
-        ...(vs['pre[class*="language-"]'] as React.CSSProperties),
+        ...(baseStyle['pre[class*="language-"]'] as React.CSSProperties),
         fontFamily: "'JetBrains Mono', 'Geist Mono', ui-monospace, SFMono-Regular, monospace",
         fontSize: `${fontSize}px`,
         lineHeight: `${Math.round(fontSize * 1.65)}px`,
@@ -169,7 +213,7 @@ export const CodeFilePreview: React.FC<CodeFilePreviewProps> = ({
       'attr-name': { color: '#0550AE' },
       'attr-value': { color: '#0A3069' },
     };
-  }, [wrapLines]);
+  }, [wrapLines, isDark]);
 
   return (
     <div className="w-full h-full flex flex-col bg-surface-1 overflow-hidden select-text text-text-primary">
@@ -325,8 +369,8 @@ export const CodeFilePreview: React.FC<CodeFilePreviewProps> = ({
                 minWidth: '3.6em',
                 paddingRight: '1.25em',
                 marginRight: '1em',
-                color: '#8A8D96',
-                borderRight: '1px solid #EFEFED',
+                color: 'var(--color-text-tertiary)',
+                borderRight: '1px solid var(--color-border)',
                 userSelect: 'none',
                 textAlign: 'right',
                 display: 'inline-block',

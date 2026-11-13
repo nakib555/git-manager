@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { FileCode } from 'lucide-react';
 import { DiffViewer } from '../../../components/commit/DiffViewer';
 import { PRFile } from '../types';
+import { PRFilesSkeleton } from '../../../mobile/components/skeleton/ScreenSkeletons';
 
 interface PRDetailFilesProps {
   files: PRFile[];
@@ -17,11 +18,7 @@ export const PRDetailFiles: React.FC<PRDetailFilesProps> = ({
   const [selectedIdx, setSelectedIdx] = useState(0);
 
   if (isLoading) {
-    return (
-      <div className="py-10 text-center text-xs text-text-muted">
-        Loading PR file changes...
-      </div>
-    );
+    return <PRFilesSkeleton />;
   }
 
   if (files.length === 0) {

@@ -1,8 +1,12 @@
 import React from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { vs, vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { useAppContext } from '../../AppContext';
 
-export const DiffViewer = ({ patch, filename }: { patch: string; filename: string; isDark?: boolean }) => {
+export const DiffViewer = ({ patch, filename, isDark }: { patch: string; filename: string; isDark?: boolean }) => {
+  const { theme } = useAppContext();
+  const darkActive = isDark ?? theme !== 'light';
+
   if (!patch) return <div className="text-text-muted italic pl-2 p-2">Binary or empty file change.</div>;
 
   return (
@@ -13,7 +17,7 @@ export const DiffViewer = ({ patch, filename }: { patch: string; filename: strin
       <div className="w-full overflow-x-auto bg-surface-1 tabular-nums">
         <SyntaxHighlighter
           language="diff"
-          style={vs}
+          style={darkActive ? vscDarkPlus : vs}
           customStyle={{ margin: 0, padding: '1rem', background: 'transparent' }}
           wrapLines={true}
           lineProps={(lineNumber) => {

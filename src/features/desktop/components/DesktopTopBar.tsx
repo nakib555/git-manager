@@ -64,12 +64,12 @@ export const DesktopTopBar: React.FC<DesktopTopBarProps> = ({ isRepoScreen }) =>
           onClick={() => refreshData()}
           className={`hidden md:flex items-center gap-2 h-9 px-3 rounded-xl border text-xs btn-tactile cursor-pointer shadow-xs ${
             isAutoSyncing 
-              ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-700' 
+              ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' 
               : 'border-border bg-card hover:bg-hover/40 text-text-muted hover:text-text-main'
           }`}
           title="Live background sync. Click to refresh now."
         >
-          <RefreshCw size={12} className={`transition-transform duration-500 ${isAutoSyncing ? 'animate-spin text-emerald-600' : 'text-text-muted'}`} />
+          <RefreshCw size={12} className={`transition-transform duration-500 ${isAutoSyncing ? 'animate-spin text-emerald-600 dark:text-emerald-400' : 'text-text-muted'}`} />
           <span className="font-mono text-[11px] tabular-nums">
             {isAutoSyncing ? 'Syncing...' : 'Live Sync'}
           </span>
@@ -101,12 +101,15 @@ export const DesktopTopBar: React.FC<DesktopTopBarProps> = ({ isRepoScreen }) =>
           <span>+ New Repo</span>
         </button>
 
-        <div 
-          className="w-9 h-9 border border-border bg-surface-1 rounded-xl flex items-center justify-center text-accent shrink-0 shadow-2xs"
-          title="Light Theme Active"
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="w-9 h-9 border border-border bg-surface-1 hover:bg-surface-2 hover:border-accent/40 rounded-xl flex items-center justify-center text-accent shrink-0 shadow-2xs btn-tactile cursor-pointer transition-colors"
+          title={theme === 'light' ? 'Switch to Cloudflare Dark Mode' : 'Switch to Clean Light Mode'}
+          aria-label={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
         >
-          <Sun size={15} />
-        </div>
+          {theme === 'light' ? <Sun size={15} /> : <Moon size={15} />}
+        </button>
       </div>
     </header>
   );

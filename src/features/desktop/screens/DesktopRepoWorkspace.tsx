@@ -6,6 +6,7 @@ import { DesktopBranchesView } from './DesktopBranchesView';
 import { DesktopInsightsView } from './DesktopInsightsView';
 import { DesktopPRsView } from './DesktopPRsView';
 import { DesktopCloneScreen } from './DesktopCloneScreen';
+import { RepoWorkspaceSkeleton } from '../../../mobile/components/skeleton/ScreenSkeletons';
 
 export const DesktopRepoWorkspace: React.FC = () => {
   const { currentScreen, isLoadingRepoDetails, activeCommits, activeBranches, activeFiles, isAutoSyncing } = useAppContext();
@@ -14,10 +15,7 @@ export const DesktopRepoWorkspace: React.FC = () => {
   return (
     <div className="w-full space-y-6 flex-1 flex flex-col min-h-0 relative">
       {isLoadingRepoDetails && !hasWorkspaceData && currentScreen !== 'files' ? (
-        <div className="flex-1 flex flex-col items-center justify-center gap-3">
-          <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-          <span className="text-xs text-text-muted font-bold tracking-widest uppercase">Loading repository details...</span>
-        </div>
+        <RepoWorkspaceSkeleton />
       ) : (
         <div className="flex-1 min-h-0 flex flex-col relative">
           {isAutoSyncing && (

@@ -4,6 +4,22 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('theme');
+          var t = saved === 'light' ? 'light' : 'dark';
+          document.documentElement.setAttribute('data-theme', t);
+          if (t === 'dark') {
+            document.documentElement.classList.add('dark', 'dark-theme');
+          } else {
+            document.documentElement.classList.add('light-theme');
+          }
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          document.documentElement.classList.add('dark', 'dark-theme');
+        }
+      })();
+
       // Ensure React Fast Refresh preamble hooks exist synchronously before any ESM modules evaluate
       window.$RefreshReg$ = window.$RefreshReg$ || function() {};
       window.$RefreshSig$ = window.$RefreshSig$ || function() { return function(type) { return type; }; };

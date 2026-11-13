@@ -3,7 +3,8 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { CommitItem } from '../../../components/commit/CommitItem';
 import { EmptyState } from '../../../mobile/components/EmptyState';
 import { InlineErrorCard } from '../../../mobile/components/InlineErrorCard';
-import { Loader2, GitCommit } from 'lucide-react';
+import { CommitCardSkeleton } from '../../../mobile/components/skeleton/BaseSkeleton';
+import { GitCommit } from 'lucide-react';
 
 interface CommitListVirtualScrollerProps {
   commits: any[];
@@ -35,9 +36,10 @@ export const CommitListVirtualScroller: React.FC<CommitListVirtualScrollerProps>
 
   if (isLoading && commits.length === 0) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center py-12 gap-2 text-text-muted">
-        <Loader2 size={24} className="animate-spin text-primary" />
-        <span className="text-xs font-semibold">Loading commits...</span>
+      <div className="flex-1 p-3 space-y-2.5 overflow-hidden">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <CommitCardSkeleton key={i} />
+        ))}
       </div>
     );
   }

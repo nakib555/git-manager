@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Eye, Code, CheckSquare, Square } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { vs, vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { useAppContext } from '../../../../AppContext';
 
 interface MarkdownPreviewProps {
   content: string;
@@ -9,6 +10,8 @@ interface MarkdownPreviewProps {
 }
 
 export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ content, fileName }) => {
+  const { theme } = useAppContext();
+  const isDark = theme !== 'light';
   const [viewMode, setViewMode] = useState<'preview' | 'raw'>('preview');
 
   // Simple, safe Markdown to React renderer
@@ -23,8 +26,12 @@ export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ content, fileN
       if (line.startsWith('```')) {
         if (inCodeBlock) {
           elements.push(
-            <div key={`code-${index}`} className="my-3 rounded-lg overflow-hidden border border-border text-xs">
-              <SyntaxHighlighter language={codeLang || 'text'} style={vs} customStyle={{ margin: 0, padding: '12px' }}>
+            <div key={`code-${index}`} className="my-3 rounded-lg overflow-hidden border border-border bg-surface-2/40 text-xs">
+              <SyntaxHighlighter
+                language={codeLang || 'text'}
+                style={isDark ? vscDarkPlus : vs}
+                customStyle={{ margin: 0, padding: '12px', background: 'transparent' }}
+              >
                 {codeBuffer.join('\n')}
               </SyntaxHighlighter>
             </div>

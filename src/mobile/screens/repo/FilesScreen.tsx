@@ -164,6 +164,7 @@ export const FilesScreen: React.FC = () => {
               isFolder,
               commitMessage,
               branch: currentBranch || 'main',
+              throwOnError: true,
             });
           }}
         />

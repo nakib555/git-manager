@@ -5,6 +5,7 @@ import { CommitDetailModal } from '../../../components/CommitDetailModal';
 import { formatBytes, formatRelativeTime } from '../../../utils/formatters';
 import { getCodeLanguage } from './fileLanguageUtils';
 import { UniversalFilePreview } from '../../../../features/preview/components/UniversalFilePreview';
+import { Skeleton } from '../../../components/skeleton/BaseSkeleton';
 
 interface FileViewerTabsProps {
   contentTab: 'code' | 'history' | 'info';
@@ -72,14 +73,14 @@ export const FileViewerTabs: React.FC<FileViewerTabsProps> = ({
         </span>
 
         {isFileHistoryLoading ? (
-          <div className="rounded-2xl border border-border bg-surface-1 divide-y divide-border overflow-hidden animate-pulse">
+          <div className="rounded-2xl border border-border bg-surface-1 divide-y divide-border overflow-hidden">
             {[1, 2, 3, 4, 5].map((idx) => (
-              <div key={idx} className="p-3.5 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="h-4 bg-surface-2 rounded-md w-3/5" />
-                  <div className="h-4 bg-surface-2 rounded-md w-10" />
+              <div key={idx} className="p-3.5 space-y-2 ghost-shimmer">
+                <div className="flex items-center justify-between gap-2">
+                  <Skeleton className="h-4 w-3/5" />
+                  <Skeleton className="h-4 w-10" />
                 </div>
-                <div className="h-3 bg-surface-2 rounded-md w-2/5" />
+                <Skeleton className="h-3 w-2/5" />
               </div>
             ))}
           </div>

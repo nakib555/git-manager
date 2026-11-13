@@ -118,7 +118,7 @@ export const DesktopPRsView: React.FC = () => {
                 />
               )}
               {detailTab === 'commits' && <PRDetailCommits commits={prCommits} isLoading={isLoadingDetails} />}
-              {detailTab === 'files' && <PRDetailFiles files={prFiles} isDark={false} isLoading={isLoadingDetails} />}
+              {detailTab === 'files' && <PRDetailFiles files={prFiles} isDark={theme !== 'light'} isLoading={isLoadingDetails} />}
             </div>
           ) : (
             <div className="flex-1 flex items-center justify-center text-xs text-text-muted">

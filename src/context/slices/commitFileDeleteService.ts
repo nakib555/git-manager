@@ -19,9 +19,11 @@ export const executeFileOrFolderDelete = async ({
   fetchRepoDetails,
   setRefreshTrigger,
 }: ExecuteFileOrFolderDeleteParams): Promise<boolean> => {
-  const { targetPath, isFolder, commitMessage, branch } = params;
+  const { targetPath, isFolder, commitMessage, branch, throwOnError } = params;
   if (!state.currentRepo) {
-    showToast('No repository currently selected.', 'error');
+    const msg = 'No repository currently selected.';
+    showToast(msg, 'error');
+    if (throwOnError) throw new Error(msg);
     return false;
   }
 
@@ -33,7 +35,9 @@ export const executeFileOrFolderDelete = async ({
   });
 
   if (!isOwner) {
-    showToast('Unauthorized: You can only delete files and folders in repositories you own.', 'error');
+    const msg = 'Unauthorized: You can only delete files and folders in repositories you own.';
+    showToast(msg, 'error');
+    if (throwOnError) throw new Error(msg);
     return false;
   }
 
@@ -71,7 +75,9 @@ export const executeFileOrFolderDelete = async ({
       setRefreshTrigger(p => p + 1);
       return true;
     } catch (err: any) {
-      showToast(`Failed to delete: ${err.message || err}`, 'error');
+      const msg = err?.message || String(err) || 'Failed to delete from remote repository.';
+      showToast(`Failed to delete: ${msg}`, 'error');
+      if (throwOnError) throw new Error(msg);
       return false;
     }
   }
@@ -93,7 +99,9 @@ export const executeFileOrFolderDelete = async ({
   });
 
   if (deletedCount === 0 && !isFolder) {
-    showToast(`File '${targetPath}' not found in active files.`, 'warning');
+    const msg = `File '${targetPath}' not found in active files.`;
+    showToast(msg, 'warning');
+    if (throwOnError) throw new Error(msg);
     return false;
   }
 

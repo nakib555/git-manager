@@ -7,23 +7,43 @@ interface UseUISliceParams {
 }
 
 export const useUISlice = ({ state, setState }: UseUISliceParams) => {
+  const resolveTheme = (t?: string): 'dark' | 'light' => (t === 'light' ? 'light' : 'dark');
+
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', 'light');
-    document.documentElement.classList.remove('dark-theme', 'dark');
-    document.body.classList.remove('dark-theme', 'dark');
+    const activeTheme = resolveTheme(state.theme);
+    document.documentElement.setAttribute('data-theme', activeTheme);
+    if (activeTheme === 'dark') {
+      document.documentElement.classList.add('dark', 'dark-theme');
+      document.documentElement.classList.remove('light-theme');
+      document.body.classList.add('dark', 'dark-theme');
+      document.body.classList.remove('light-theme');
+    } else {
+      document.documentElement.classList.remove('dark', 'dark-theme');
+      document.documentElement.classList.add('light-theme');
+      document.body.classList.remove('dark', 'dark-theme');
+      document.body.classList.add('light-theme');
+    }
     try {
-      localStorage.setItem('theme', 'light');
+      localStorage.setItem('theme', activeTheme);
     } catch (_) {}
   }, [state.theme]);
 
-  const setTheme = (_newTheme: 'dark' | 'light' | 'slate' | 'fantasy' = 'light') => {
-    localStorage.setItem("theme", "light");
-    setState((prev) => ({ ...prev, theme: 'light' }));
+  const setTheme = (newTheme: 'dark' | 'light' | 'slate' | 'fantasy' = 'dark') => {
+    const resolved = resolveTheme(newTheme);
+    try {
+      localStorage.setItem("theme", resolved);
+    } catch (_) {}
+    setState((prev) => ({ ...prev, theme: resolved }));
   };
 
   const toggleTheme = () => {
-    localStorage.setItem("theme", "light");
-    setState((prev) => ({ ...prev, theme: 'light' }));
+    setState((prev) => {
+      const next: 'dark' | 'light' = resolveTheme(prev.theme) === 'dark' ? 'light' : 'dark';
+      try {
+        localStorage.setItem("theme", next);
+      } catch (_) {}
+      return { ...prev, theme: next };
+    });
   };
 
   const toastTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());

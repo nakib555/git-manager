@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '../../../AppContext';
 import { Search, Home, Copy, Check, Lock, Trash2, ShieldCheck } from 'lucide-react';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { fetchFileContentSafe } from '../../../mobile/utils/gitApi';
 import { isRepositoryOwnedByUser } from '../../../mobile/utils/repoOwnership';
 import { getCodeLanguage } from '../utils/desktopUtils';
 import { DesktopFileTreeItem, DesktopTreeNode } from './DesktopFileTreeItem';
 import { DeleteFileConfirmModal } from '../../../components/modals/DeleteFileConfirmModal';
+import { Skeleton } from '../../../mobile/components/skeleton/BaseSkeleton';
 import { FileTreeSkeleton, CodeViewerSkeleton } from '../../../mobile/components/skeleton/ScreenSkeletons';
 
 import { UniversalFilePreview } from '../../preview/components/UniversalFilePreview';
@@ -102,8 +101,8 @@ export const DesktopFilesView: React.FC = () => {
         {isLoadingRepoDetails && activeFiles.length === 0 ? (
           <div className="flex-1 bg-card border border-border rounded-2xl overflow-hidden shadow-xs flex flex-col">
             <div className="h-11 border-b border-border px-4 flex items-center justify-between bg-main/40">
-              <div className="w-36 h-3 rounded bg-surface-3 animate-pulse" />
-              <div className="w-20 h-3 rounded bg-surface-3 animate-pulse" />
+              <Skeleton className="w-36 h-3" />
+              <Skeleton className="w-20 h-3" />
             </div>
             <div className="flex-1 overflow-hidden p-2">
               <CodeViewerSkeleton />
@@ -164,6 +163,7 @@ export const DesktopFilesView: React.FC = () => {
               isFolder,
               commitMessage,
               branch: currentBranch || 'main',
+              throwOnError: true,
             });
             if (success && selectedFile?.path === targetPath) {
               setSelectedFile(null);

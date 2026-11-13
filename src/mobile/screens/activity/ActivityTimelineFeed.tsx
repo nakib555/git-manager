@@ -4,6 +4,7 @@ import { EmptyState } from '../../components/EmptyState';
 import { InlineErrorCard } from '../../components/InlineErrorCard';
 import { TimelineEventItem } from '../../utils/gitApi';
 import { ActivityTimelineItem } from './ActivityTimelineItem';
+import { ActivityFeedSkeleton } from '../../components/skeleton/ScreenSkeletons';
 
 interface ActivityTimelineFeedProps {
   timelineError: string | null;
@@ -35,12 +36,7 @@ export const ActivityTimelineFeed: React.FC<ActivityTimelineFeedProps> = ({
   }
 
   if (isLoadingEvents && eventsCount === 0) {
-    return (
-      <div className="py-12 flex flex-col items-center justify-center gap-2 text-xs text-text-tertiary">
-        <span className="w-6 h-6 rounded-full border-2 border-accent border-t-transparent animate-spin" />
-        <span>Fetching live GitHub event stream...</span>
-      </div>
-    );
+    return <ActivityFeedSkeleton />;
   }
 
   if (filteredEvents.length === 0) {

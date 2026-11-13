@@ -65,6 +65,8 @@ export const getInitialDefaultState = (): AppState => {
   const initialDefaultRepo = storedToken ? (localStorage.getItem("currentRepo") || "") : null;
   const initialDefaultOwner = storedToken ? (localStorage.getItem("currentRepoOwner") || "") : null;
   const initialDefaultBranch = storedToken ? (localStorage.getItem("currentBranch") || "") : null;
+  const storedTheme = localStorage.getItem("theme");
+  const initialTheme: AppState['theme'] = storedTheme === 'light' ? 'light' : 'dark';
 
   return {
     currentScreen: (localStorage.getItem("currentScreen") as Screen) || "dash",
@@ -77,7 +79,7 @@ export const getInitialDefaultState = (): AppState => {
     toastType: 'info',
     toasts: [],
     isSearchFocused: false,
-    theme: 'light',
+    theme: initialTheme,
     githubToken: storedToken || null,
     githubUser: storedToken
       ? (localStorage.getItem("githubUser") ? sanitizeGitHubUser(JSON.parse(localStorage.getItem("githubUser")!)) : null)

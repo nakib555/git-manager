@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   --color-background: var(--color-background);
@@ -27,10 +28,10 @@
   --color-card: var(--color-surface-1);
   --color-hover: var(--color-surface-2);
   --color-primary: var(--color-accent);
-  --color-primary-hover: var(--color-accent);
+  --color-primary-hover: var(--color-primary-hover);
   --color-text-main: var(--color-text-primary);
   --color-text-muted: var(--color-text-secondary);
-  --color-info: var(--color-accent);
+  --color-info: var(--color-info);
   
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-inter: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -38,12 +39,92 @@
 }
 
 /* ─────────────────────────────────────────────
-   UNIVERSAL THEME: High-Contrast Light Engineering Workstation
-   Canvas: #F7F7F5, Surfaces: #FFFFFF / #EFEFED / #E5E5E2, Border: #DEDDD8, Accent: #3E5670
+   DEFAULT THEME: Cloudflare-Inspired Professional Dark Workstation
+   Canvas: #0D0D10, Surfaces: #141418 / #1C1C22 / #26262E, Border: #2B2B35, Accent: #F6821F
 ───────────────────────────────────────────── */
 :root,
+[data-theme="dark"],
+.dark,
+.dark-theme {
+  color-scheme: dark;
+
+  --color-background: #0D0D10;
+  --color-surface-1: #141418;
+  --color-surface-2: #1C1C22;
+  --color-surface-3: #26262E;
+  --color-border: #2B2B35;
+  --color-border-subtle: #22222A;
+  --color-border-accent: #F6821F;
+
+  --color-text-primary: #F3F4F6;
+  --color-text-secondary: #A1A6B3;
+  --color-text-tertiary: #717684;
+
+  --color-accent: #F6821F;
+  --color-primary-hover: #E07010;
+  --color-accent-soft: rgba(246, 130, 31, 0.14);
+
+  --color-success: #22C55E;
+  --color-danger: #EF4444;
+  --color-warning: #F59E0B;
+  --color-merged: #A855F7;
+  --color-closed: #EF4444;
+  --color-addition: #22C55E;
+  --color-deletion: #F43F5E;
+  --color-info: #38BDF8;
+
+  /* Perceptually uniform OKLCH color tokens */
+  --color-accent-oklch: oklch(0.72 0.17 50);
+  --color-addition-oklch: oklch(0.72 0.18 145);
+  --color-deletion-oklch: oklch(0.66 0.21 20);
+  --color-warning-oklch: oklch(0.75 0.16 75);
+  --color-merged-oklch: oklch(0.68 0.18 295);
+
+  --shadow-soft: 0 2px 6px rgba(0, 0, 0, 0.45);
+  --shadow-medium: 0 12px 32px rgba(0, 0, 0, 0.65);
+
+  /* Wave shining ghost loader tokens (dark mode) */
+  --shimmer-wave-edge: rgba(255, 255, 255, 0);
+  --shimmer-wave-soft: rgba(255, 255, 255, 0.04);
+  --shimmer-wave-peak: rgba(255, 255, 255, 0.14);
+  --shimmer-wave-warm: rgba(246, 130, 31, 0.06);
+
+  /* Legacy variable mirrors */
+  --main: #0D0D10;
+  --card: #141418;
+  --hover: #1C1C22;
+  --surface-1: #141418;
+  --surface-2: #1C1C22;
+  --surface-3: #26262E;
+  --border: #2B2B35;
+  --text-main: #F3F4F6;
+  --text-muted: #A1A6B3;
+  --text-tertiary: #717684;
+  --primary: #F6821F;
+  --primary-hover: #E07010;
+  --accent: #F6821F;
+  --success: #22C55E;
+  --danger: #EF4444;
+  --warning: #F59E0B;
+  --info: #38BDF8;
+
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  -webkit-tap-highlight-color: transparent;
+
+  /* Principle 1: Kerning & OpenType typography */
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+  text-rendering: optimizeLegibility;
+}
+
+/* ─────────────────────────────────────────────
+   LIGHT THEME: High-Contrast Light Engineering Workstation
+   Canvas: #F7F7F5, Surfaces: #FFFFFF / #EFEFED / #E5E5E2, Border: #DEDDD8, Accent: #3E5670
+───────────────────────────────────────────── */
 [data-theme="light"],
 .light-theme {
+  color-scheme: light;
+
   --color-background: #F7F7F5;
   --color-surface-1: #FFFFFF;
   --color-surface-2: #EFEFED;
@@ -57,6 +138,7 @@
   --color-text-tertiary: #8A8D96;
 
   --color-accent: #3E5670;
+  --color-primary-hover: #2F445A;
   --color-accent-soft: rgba(62, 86, 112, 0.08);
 
   --color-success: #1A7F37;
@@ -66,6 +148,7 @@
   --color-closed: #CF222E;
   --color-addition: #1A7F37;
   --color-deletion: #CF222E;
+  --color-info: #3E5670;
 
   /* Perceptually uniform OKLCH color tokens */
   --color-accent-oklch: oklch(0.46 0.08 242);
@@ -76,6 +159,12 @@
 
   --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.06);
   --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+  /* Wave shining ghost loader tokens (light mode) */
+  --shimmer-wave-edge: rgba(255, 255, 255, 0);
+  --shimmer-wave-soft: rgba(255, 255, 255, 0.35);
+  --shimmer-wave-peak: rgba(255, 255, 255, 0.78);
+  --shimmer-wave-warm: rgba(62, 86, 112, 0.06);
 
   /* Legacy variable mirrors */
   --main: #F7F7F5;
@@ -98,11 +187,6 @@
 
   background-color: var(--color-background);
   color: var(--color-text-primary);
-  -webkit-tap-highlight-color: transparent;
-
-  /* Principle 1: Kerning & OpenType typography */
-  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
-  text-rendering: optimizeLegibility;
 }
 
 html, body, #root {
@@ -111,6 +195,8 @@ html, body, #root {
   width: 100%;
   height: 100%;
   overflow: hidden;
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
 }
 
 body {
@@ -147,34 +233,42 @@ body {
   animation: fadeUp 0.3s ease forwards;
 }
 
-@keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+@keyframes waveShimmer {
+  0% {
+    transform: translate3d(-135%, 0, 0) skewX(-18deg);
+  }
+  100% {
+    transform: translate3d(135%, 0, 0) skewX(-18deg);
+  }
 }
 
 .ghost-shimmer {
   position: relative;
   overflow: hidden;
+  isolation: isolate;
 }
 
 .ghost-shimmer::after {
-  position: absolute;
-  top: 0; right: 0; bottom: 0; left: 0;
-  transform: translateX(-100%);
-  background-image: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0,
-    rgba(255, 255, 255, 0.05) 20%,
-    rgba(255, 255, 255, 0.12) 60%,
-    rgba(255, 255, 255, 0)
-  );
-  animation: shimmer 1.6s infinite;
   content: '';
+  position: absolute;
+  inset: -10% -35%;
+  pointer-events: none;
+  will-change: transform;
+  transform: translate3d(-135%, 0, 0) skewX(-18deg);
+  background: linear-gradient(
+    90deg,
+    var(--shimmer-wave-edge) 0%,
+    var(--shimmer-wave-soft) 28%,
+    var(--shimmer-wave-peak) 50%,
+    var(--shimmer-wave-warm) 66%,
+    var(--shimmer-wave-edge) 100%
+  );
+  animation: waveShimmer 1.65s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 .header-action-btn {
-  background-color: #ffffff !important;
-  border: 1px solid #e2e8f0 !important;
+  background-color: var(--color-surface-1);
+  border: 1px solid var(--color-border);
 }
 
 * {
@@ -499,11 +593,11 @@ body {
 
 /* Principle 16: Affordance Signifiers */
 .affordance-card {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-soft);
   transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
 }
 .affordance-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-medium);
   transform: translateY(-1px);
 }
 .affordance-card:active {

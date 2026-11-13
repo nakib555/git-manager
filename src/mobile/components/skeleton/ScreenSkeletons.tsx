@@ -105,3 +105,67 @@ export const DashboardSkeleton: React.FC = () => {
     </div>
   );
 };
+
+export const RepoWorkspaceSkeleton: React.FC = () => {
+  return (
+    <div className="flex-1 flex flex-col gap-4 min-h-0">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="bg-surface-1 border border-border rounded-2xl p-4 space-y-2.5 ghost-shimmer">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-6 w-28" />
+            <Skeleton className="h-3 w-36" />
+          </div>
+        ))}
+      </div>
+      <div className="flex-1 bg-surface-1 border border-border rounded-2xl p-4 space-y-3 overflow-hidden">
+        <div className="flex items-center justify-between pb-3 border-b border-border">
+          <Skeleton className="h-4 w-40" />
+          <Skeleton className="h-7 w-24 rounded-lg" />
+        </div>
+        {[1, 2, 3, 4, 5].map((i) => (
+          <CommitCardSkeleton key={i} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export const ActivityFeedSkeleton: React.FC = () => {
+  return (
+    <div className="space-y-2.5">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <div key={i} className="bg-surface-1 border border-border rounded-xl p-3.5 flex items-start gap-3 ghost-shimmer">
+          <Skeleton className="w-9 h-9 rounded-xl shrink-0" />
+          <div className="flex-1 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <Skeleton className="h-3.5 w-2/5" />
+              <Skeleton className="h-3 w-14" />
+            </div>
+            <Skeleton className="h-3 w-4/5" />
+            <Skeleton className="h-3 w-1/3" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+export const PRFilesSkeleton: React.FC = () => {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 overflow-hidden">
+        {[1, 2, 3].map((i) => (
+          <Skeleton key={i} className="h-8 w-32 rounded-lg shrink-0" />
+        ))}
+      </div>
+      <div className="bg-surface-1 border border-border rounded-xl overflow-hidden">
+        <div className="px-4 py-3 border-b border-border bg-surface-2/40 flex items-center justify-between">
+          <Skeleton className="h-3.5 w-44" />
+          <Skeleton className="h-3.5 w-16" />
+        </div>
+        <CodeViewerSkeleton />
+      </div>
+    </div>
+  );
+};

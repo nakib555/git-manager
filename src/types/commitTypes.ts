@@ -41,5 +41,6 @@ export interface DeleteFileOrFolderParams {
   isFolder: boolean;
   commitMessage: string;
   branch?: string;
+  throwOnError?: boolean;
 }
 

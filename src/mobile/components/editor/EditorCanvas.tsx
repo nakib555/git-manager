@@ -1,7 +1,8 @@
 import React from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { vs, vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { getCodeLanguage } from '../../screens/repo/files/fileLanguageUtils';
+import { useAppContext } from '../../../AppContext';
 
 interface EditorCanvasProps {
   editorMode: 'edit' | 'preview';
@@ -26,6 +27,9 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
   onChange,
   onScroll,
 }) => {
+  const { theme } = useAppContext();
+  const isDark = theme !== 'light';
+
   if (editorMode === 'edit') {
     return (
       <div className="flex-1 flex overflow-hidden relative font-mono text-xs bg-background">
@@ -66,7 +70,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       </div>
       <SyntaxHighlighter
         language={getCodeLanguage(filePath)}
-        style={vs}
+        style={isDark ? vscDarkPlus : vs}
         showLineNumbers={true}
         wrapLines={wrapLines}
         wrapLongLines={wrapLines}

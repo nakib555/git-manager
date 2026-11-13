@@ -5,13 +5,14 @@ import { DesktopRepoCard } from './DesktopRepoCard';
 import { DeleteRepoModal } from '../../../components/DeleteRepoModal';
 import { PaginationControls } from '../../../components/common/PaginationControls';
 import { filterAndSortRepos } from '../../../mobile/utils/sortRepos';
+import { RepoCardSkeleton } from '../../../mobile/components/skeleton/BaseSkeleton';
 
 export const DesktopRepositories: React.FC<{ globalSearch?: string }> = ({ globalSearch = '' }) => {
   const {
     githubRepos, currentRepo, openRepo, openModal,
     repoTypeFilter, setRepoTypeFilter, repoSortBy, setRepoSortBy,
     repoSortDirection, setRepoSortDirection,
-    repoPage, setRepoPage, repoPerPage,
+    repoPage, setRepoPage, repoPerPage, isFetchingRepos,
   } = useAppContext();
 
   const [localSearch, setLocalSearch] = useState('');
@@ -122,7 +123,13 @@ export const DesktopRepositories: React.FC<{ globalSearch?: string }> = ({ globa
 
       {/* Grid of Repos */}
       <div className="flex-1 overflow-y-auto pr-1 no-scrollbar min-h-0">
-        {paginatedRepos.length === 0 ? (
+        {isFetchingRepos && paginatedRepos.length === 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 pb-4">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <RepoCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : paginatedRepos.length === 0 ? (
           <div className="py-16 text-center flex flex-col items-center justify-center">
             <div className="w-12 h-12 rounded-2xl bg-hover border border-border flex items-center justify-center text-text-muted mb-3">
               <FolderGit2 size={24} />
