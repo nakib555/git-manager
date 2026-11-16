@@ -237,7 +237,7 @@ async function startServer() {
     const vite = await createViteServer({
       server: {
         middlewareMode: true,
-        hmr: {
+        hmr: process.env.DISABLE_HMR === 'true' ? false : {
           server,
         },
       },

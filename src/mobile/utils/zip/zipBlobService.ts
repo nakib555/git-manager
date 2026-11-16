@@ -7,7 +7,9 @@ export async function uploadGitBlob(
   repo: string,
   headers: Record<string, string>
 ): Promise<string> {
-  const zFile = zipFilesMap.get(file.path);
+  const zFile =
+    zipFilesMap.get(file.path) ||
+    (file.originalZipPath ? zipFilesMap.get(file.originalZipPath) : undefined);
   let base64Content = '';
 
   if (zFile?.binaryData) {

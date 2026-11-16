@@ -20,44 +20,42 @@ export const MonacoDiffTitleBar: React.FC<MonacoDiffTitleBarProps> = ({
   onBack,
 }) => {
   return (
-    <div className="h-12 px-3 sm:px-4 border-b border-[#2D2D2D] bg-[#252526] flex items-center justify-between gap-2.5 shrink-0">
+    <div className="h-12 px-3 sm:px-4 border-b border-border bg-surface-2/45 flex items-center justify-between gap-2.5 shrink-0">
       <div className="flex items-center gap-2 min-w-0">
         {onBack && (
           <button
             type="button"
             onClick={onBack}
-            className="lg:hidden min-h-[36px] px-2.5 bg-[#1E1E1E] hover:bg-[#2A2D2E] border border-[#3E3E42] text-slate-200 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer shrink-0"
+            className="md:hidden min-h-[34px] px-2.5 bg-surface-1 hover:bg-surface-2 border border-border text-text-primary rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer shrink-0 btn-tactile"
             title="Back to file list"
           >
             <ArrowLeft size={13} />
             <span>Files</span>
           </button>
         )}
-        <FileCode size={15} className="text-sky-400 shrink-0 hidden sm:inline" />
-        <span className="font-mono text-xs font-semibold text-slate-200 truncate" title={file.path}>
+        <FileCode size={15} className="text-accent shrink-0 hidden sm:inline" />
+        <span className="font-mono text-xs font-semibold text-text-primary truncate" title={file.path}>
           {file.path}
         </span>
-        <div className="flex items-center gap-1.5 shrink-0 ml-1">
+        <div className="flex items-center gap-1.5 shrink-0 text-[11px] font-mono tabular-nums">
           {file.additions > 0 && (
-            <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/15 px-1.5 py-0.5 rounded">
-              +{file.additions}
-            </span>
+            <span className="font-semibold text-addition">+{file.additions}</span>
           )}
           {file.deletions > 0 && (
-            <span className="text-[10px] font-mono font-bold text-rose-400 bg-rose-500/15 px-1.5 py-0.5 rounded">
-              -{file.deletions}
-            </span>
+            <span className="font-semibold text-deletion">-{file.deletions}</span>
           )}
         </div>
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
-        <div className="hidden sm:flex items-center bg-[#1E1E1E] p-0.5 rounded-lg border border-[#333333] text-xs">
+        <div className="hidden sm:flex items-center bg-surface-2 p-0.5 rounded-lg border border-border text-xs">
           <button
             type="button"
             onClick={() => onViewModeChange('split')}
-            className={`min-h-[28px] px-2.5 rounded flex items-center gap-1 font-medium transition-colors cursor-pointer ${
-              viewMode === 'split' ? 'bg-[#0E639C] text-white shadow-xs' : 'text-slate-400 hover:text-slate-200'
+            className={`min-h-[28px] px-2.5 rounded-md flex items-center gap-1 font-medium transition-colors cursor-pointer whitespace-nowrap ${
+              viewMode === 'split'
+                ? 'bg-surface-1 text-text-primary shadow-2xs font-semibold'
+                : 'text-text-secondary hover:text-text-primary'
             }`}
           >
             <Columns size={12} />
@@ -66,8 +64,10 @@ export const MonacoDiffTitleBar: React.FC<MonacoDiffTitleBarProps> = ({
           <button
             type="button"
             onClick={() => onViewModeChange('unified')}
-            className={`min-h-[28px] px-2.5 rounded flex items-center gap-1 font-medium transition-colors cursor-pointer ${
-              viewMode === 'unified' ? 'bg-[#0E639C] text-white shadow-xs' : 'text-slate-400 hover:text-slate-200'
+            className={`min-h-[28px] px-2.5 rounded-md flex items-center gap-1 font-medium transition-colors cursor-pointer whitespace-nowrap ${
+              viewMode === 'unified'
+                ? 'bg-surface-1 text-text-primary shadow-2xs font-semibold'
+                : 'text-text-secondary hover:text-text-primary'
             }`}
           >
             <AlignJustify size={12} />
@@ -78,10 +78,11 @@ export const MonacoDiffTitleBar: React.FC<MonacoDiffTitleBarProps> = ({
         <button
           type="button"
           onClick={onCopy}
-          className="min-h-[32px] min-w-[32px] px-2 rounded-lg border border-[#333333] hover:bg-[#2A2D2E] text-slate-400 hover:text-slate-200 transition-colors flex items-center justify-center cursor-pointer"
+          aria-label="Copy file content"
+          className="min-h-[32px] min-w-[32px] px-2 rounded-lg border border-border bg-surface-1 hover:bg-surface-2 text-text-secondary hover:text-text-primary transition-colors flex items-center justify-center cursor-pointer btn-tactile"
           title="Copy content"
         >
-          {isCopied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+          {isCopied ? <Check size={13} className="text-success" /> : <Copy size={13} />}
         </button>
       </div>
     </div>

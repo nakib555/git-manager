@@ -1,5 +1,6 @@
 import JSZip from 'jszip';
 import { ZipExtractedFile } from './zipTypes';
+import { sanitizeZipPath } from './zipSyncHelpers';
 
 export function isBinaryFilename(path: string): boolean {
   const binaryExtensions = [
@@ -14,11 +15,13 @@ export function isBinaryFilename(path: string): boolean {
 }
 
 export function cleanPath(p: string): string {
-  return p.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
+  return sanitizeZipPath(p);
 }
 
 export function detectCommonRoot(paths: string[]): string {
-  const filePaths = paths.filter(p => !p.endsWith('/') && p.trim().length > 0);
+  const filePaths = paths
+    .map(p => sanitizeZipPath(p))
+    .filter(p => p.length > 0 && !p.endsWith('/'));
   if (filePaths.length === 0) return '';
 
   const firstParts = filePaths[0].split('/');
@@ -35,20 +38,34 @@ export async function parseZipArchive(file: File): Promise<{
   rawPaths: string[];
 }> {
   const zip = new JSZip();
-  const zipContent = await zip.loadAsync(file);
+  let zipContent: JSZip;
+  try {
+    zipContent = await zip.loadAsync(file);
+  } catch {
+    throw new Error('Invalid or corrupted ZIP archive. Please export a valid .zip file.');
+  }
 
   const rawPaths: string[] = [];
-  zipContent.forEach((relativePath) => {
+  zipContent.forEach((relativePath, entry) => {
+    if (entry.dir) return;
     if (!relativePath.includes('__MACOSX/') && !relativePath.endsWith('.DS_Store')) {
-      rawPaths.push(relativePath);
+      const cleaned = sanitizeZipPath(relativePath);
+      if (cleaned) rawPaths.push(cleaned);
     }
   });
+
+  if (rawPaths.length === 0) {
+    throw new Error('This ZIP archive contains no syncable files.');
+  }
 
   const commonRoot = detectCommonRoot(rawPaths);
   const extractedFiles: ZipExtractedFile[] = [];
 
   for (const rawPath of rawPaths) {
-    const entry = zipContent.file(rawPath);
+    // Look up original entry from zipContent safely
+    const entry = zipContent.file(rawPath) || Object.values(zipContent.files).find(
+      (f) => !f.dir && sanitizeZipPath(f.name) === rawPath
+    );
     if (!entry || entry.dir) continue;
 
     const normalizedPath = commonRoot && rawPath.startsWith(commonRoot)
@@ -77,6 +94,10 @@ export async function parseZipArchive(file: File): Promise<{
       binaryData,
       size: binaryData ? binaryData.length : (content ? new TextEncoder().encode(content).length : 0),
     });
+  }
+
+  if (extractedFiles.length === 0) {
+    throw new Error('Could not extract any readable files from this ZIP archive.');
   }
 
   return {

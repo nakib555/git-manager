@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layers, ChevronRight, Folder, Sparkles } from 'lucide-react';
+import { Layers, ChevronRight, Folder } from 'lucide-react';
 import { RootCandidate } from '../../../mobile/utils/zipAutoDetect';
 
 interface VisualRootBreadcrumbsProps {
@@ -18,28 +18,30 @@ export const VisualRootBreadcrumbs: React.FC<VisualRootBreadcrumbsProps> = ({
   onSelectRoot,
 }) => {
   return (
-    <>
-      <div className="flex flex-col gap-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <Layers size={16} className="text-accent shrink-0" />
-          <span className="text-xs font-bold text-text-primary uppercase tracking-wider">
-            ZIP Root Alignment:
+    <div className="flex flex-col gap-3 min-w-0 flex-1">
+      <div className="flex flex-col gap-1.5 min-w-0">
+        <div className="flex items-center flex-wrap gap-2">
+          <Layers size={15} className="text-accent shrink-0" />
+          <span className="text-xs font-bold text-text-primary">
+            Root Folder Alignment
           </span>
           {activeRoot === suggestedRoot && suggestedRoot !== '' && (
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md">
-              <Sparkles size={10} />
-              <span>Auto-Detected Match</span>
-            </span>
+            <>
+              <span className="text-text-tertiary" aria-hidden="true">·</span>
+              <span className="text-xs font-medium text-success">
+                Auto-detected match
+              </span>
+            </>
           )}
         </div>
 
-        <nav aria-label="Root Breadcrumbs" className="flex items-center flex-wrap gap-1.5 text-xs font-mono mt-0.5">
+        <nav aria-label="Root Breadcrumbs" className="flex items-center flex-wrap gap-1 text-xs font-mono">
           <button
             type="button"
             onClick={() => onSelectRoot('')}
-            className={`min-h-[32px] px-2 py-1 rounded-lg transition-colors cursor-pointer ${
+            className={`min-h-[32px] px-2.5 py-1 rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
               activeRoot === ''
-                ? 'bg-accent text-white font-bold'
+                ? 'bg-accent text-white font-semibold'
                 : 'text-text-secondary hover:text-text-primary hover:bg-surface-2'
             }`}
           >
@@ -55,9 +57,9 @@ export const VisualRootBreadcrumbs: React.FC<VisualRootBreadcrumbsProps> = ({
                 <button
                   type="button"
                   onClick={() => onSelectRoot(currentSubPath)}
-                  className={`min-h-[32px] px-2 py-1 rounded-lg transition-colors cursor-pointer truncate max-w-[160px] ${
+                  className={`min-h-[32px] px-2.5 py-1 rounded-lg transition-colors cursor-pointer truncate max-w-[260px] ${
                     isCurrent
-                      ? 'bg-accent text-white font-bold'
+                      ? 'bg-accent text-white font-semibold'
                       : 'text-text-secondary hover:text-text-primary hover:bg-surface-2'
                   }`}
                 >
@@ -71,8 +73,8 @@ export const VisualRootBreadcrumbs: React.FC<VisualRootBreadcrumbsProps> = ({
 
       {candidates.length > 0 && (
         <div className="flex flex-col gap-2">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
-            Suggested Candidate Roots:
+          <span className="text-xs font-medium text-text-secondary">
+            Detected Project Roots
           </span>
           <div className="flex items-center flex-wrap gap-2">
             {candidates.map((cand) => {
@@ -82,17 +84,17 @@ export const VisualRootBreadcrumbs: React.FC<VisualRootBreadcrumbsProps> = ({
                   key={cand.path}
                   type="button"
                   onClick={() => onSelectRoot(cand.path)}
-                  className={`min-h-[40px] px-3.5 py-2 rounded-xl text-xs font-mono transition-all flex items-center gap-2 cursor-pointer border active:scale-95 ${
+                  className={`min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-mono transition-colors flex items-center gap-2 cursor-pointer border btn-tactile ${
                     isActive
-                      ? 'bg-accent text-white border-accent font-bold shadow-xs'
-                      : 'bg-surface-2/80 hover:bg-surface-3 border-border text-text-secondary hover:text-text-primary font-medium'
+                      ? 'bg-accent/15 text-text-primary border-accent font-semibold'
+                      : 'bg-surface-2/60 hover:bg-surface-2 border-border text-text-secondary hover:text-text-primary'
                   }`}
                 >
-                  <Folder size={14} className={isActive ? 'text-white' : 'text-amber-400'} />
-                  <span className="truncate max-w-[180px]">{cand.displayLabel}</span>
+                  <Folder size={13} className={isActive ? 'text-accent' : 'text-text-tertiary'} />
+                  <span className="truncate max-w-[260px]">{cand.displayLabel}</span>
                   {cand.matchedLandmarks.length > 0 && (
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-sans ${isActive ? 'bg-white/20 text-white' : 'bg-surface-1 text-text-tertiary'}`}>
-                      {cand.matchedLandmarks.slice(0, 2).join(', ')}
+                    <span className="text-[11px] font-sans text-text-tertiary tabular-nums">
+                      · {cand.matchedLandmarks.slice(0, 2).join(', ')}
                     </span>
                   )}
                 </button>
@@ -101,6 +103,6 @@ export const VisualRootBreadcrumbs: React.FC<VisualRootBreadcrumbsProps> = ({
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };

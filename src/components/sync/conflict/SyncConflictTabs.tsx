@@ -17,47 +17,43 @@ export const SyncConflictTabs: React.FC<SyncConflictTabsProps> = ({
   missingCount,
   addedCount,
 }) => {
+  const tabs: Array<{
+    id: 'all' | 'conflicts' | 'missing' | 'added';
+    label: string;
+    count: number;
+  }> = [
+    { id: 'all', label: 'All', count: totalCount },
+    { id: 'conflicts', label: 'Modified', count: conflictsCount },
+    { id: 'added', label: 'Added', count: addedCount },
+    { id: 'missing', label: 'Missing', count: missingCount },
+  ];
+
   return (
-    <div className="px-4 py-2 border-b border-border bg-surface-1/80 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0 text-xs font-medium">
-      <button
-        type="button"
-        onClick={() => onFilterChange('all')}
-        className={`min-h-[36px] px-3 rounded-xl transition-colors cursor-pointer whitespace-nowrap ${
-          filter === 'all' ? 'bg-card text-text-primary font-bold shadow-xs' : 'text-text-secondary hover:text-text-primary'
-        }`}
-      >
-        All ({totalCount})
-      </button>
-      <button
-        type="button"
-        onClick={() => onFilterChange('conflicts')}
-        className={`min-h-[36px] px-3 rounded-xl transition-colors cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-          filter === 'conflicts' ? 'bg-card text-text-primary font-bold shadow-xs' : 'text-text-secondary hover:text-text-primary'
-        }`}
-      >
-        <span className="w-2 h-2 rounded-full bg-accent" />
-        <span>Overlapping ({conflictsCount})</span>
-      </button>
-      <button
-        type="button"
-        onClick={() => onFilterChange('missing')}
-        className={`min-h-[36px] px-3 rounded-xl transition-colors cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-          filter === 'missing' ? 'bg-card text-text-primary font-bold shadow-xs' : 'text-text-secondary hover:text-text-primary'
-        }`}
-      >
-        <span className="w-2 h-2 rounded-full bg-rose-400" />
-        <span>Missing / Deletions ({missingCount})</span>
-      </button>
-      <button
-        type="button"
-        onClick={() => onFilterChange('added')}
-        className={`min-h-[36px] px-3 rounded-xl transition-colors cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-          filter === 'added' ? 'bg-card text-text-primary font-bold shadow-xs' : 'text-text-secondary hover:text-text-primary'
-        }`}
-      >
-        <span className="w-2 h-2 rounded-full bg-emerald-400" />
-        <span>New Additions ({addedCount})</span>
-      </button>
+    <div
+      role="tablist"
+      aria-label="Filter changed files by status"
+      className="px-3 py-2 border-b border-border bg-surface-2/25 flex items-center gap-1 overflow-x-auto no-scrollbar shrink-0 text-xs"
+    >
+      {tabs.map((t) => {
+        const isActive = filter === t.id;
+        return (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={isActive}
+            onClick={() => onFilterChange(t.id)}
+            className={`min-h-[32px] px-2.5 rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1.5 tabular-nums ${
+              isActive
+                ? 'bg-surface-1 text-text-primary font-semibold border border-border shadow-2xs'
+                : 'text-text-secondary hover:text-text-primary border border-transparent'
+            }`}
+          >
+            <span>{t.label}</span>
+            <span className="font-mono text-[11px] text-text-tertiary">{t.count}</span>
+          </button>
+        );
+      })}
     </div>
   );
 };

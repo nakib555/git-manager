@@ -17,12 +17,14 @@ export const MonacoDiffMobileView: React.FC<MonacoDiffMobileViewProps> = ({
 }) => {
   return (
     <div className="sm:hidden flex flex-col">
-      <div className="flex items-center bg-[#252526] border-b border-[#2D2D2D] px-2 shrink-0">
+      <div className="flex items-center bg-surface-2/40 border-b border-border px-2 shrink-0">
         <button
           type="button"
           onClick={() => onTabChange('diff')}
-          className={`flex-1 min-h-[40px] text-xs font-semibold flex items-center justify-center gap-1 border-b-2 transition-colors cursor-pointer ${
-            mobileTab === 'diff' ? 'border-sky-400 text-sky-400 font-bold' : 'border-transparent text-slate-400 hover:text-slate-200'
+          className={`flex-1 min-h-[40px] text-xs font-semibold flex items-center justify-center gap-1 border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
+            mobileTab === 'diff'
+              ? 'border-accent text-accent font-bold'
+              : 'border-transparent text-text-secondary hover:text-text-primary'
           }`}
         >
           <span>Diff Hunks</span>
@@ -30,20 +32,24 @@ export const MonacoDiffMobileView: React.FC<MonacoDiffMobileViewProps> = ({
         <button
           type="button"
           onClick={() => onTabChange('original')}
-          className={`flex-1 min-h-[40px] text-xs font-semibold flex items-center justify-center gap-1 border-b-2 transition-colors cursor-pointer ${
-            mobileTab === 'original' ? 'border-sky-400 text-sky-400 font-bold' : 'border-transparent text-slate-400 hover:text-slate-200'
+          className={`flex-1 min-h-[40px] text-xs font-semibold flex items-center justify-center gap-1 border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
+            mobileTab === 'original'
+              ? 'border-accent text-accent font-bold'
+              : 'border-transparent text-text-secondary hover:text-text-primary'
           }`}
         >
-          <span>Original (Repo)</span>
+          <span>Repository</span>
         </button>
         <button
           type="button"
           onClick={() => onTabChange('zip')}
-          className={`flex-1 min-h-[40px] text-xs font-semibold flex items-center justify-center gap-1 border-b-2 transition-colors cursor-pointer ${
-            mobileTab === 'zip' ? 'border-sky-400 text-sky-400 font-bold' : 'border-transparent text-slate-400 hover:text-slate-200'
+          className={`flex-1 min-h-[40px] text-xs font-semibold flex items-center justify-center gap-1 border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
+            mobileTab === 'zip'
+              ? 'border-accent text-accent font-bold'
+              : 'border-transparent text-text-secondary hover:text-text-primary'
           }`}
         >
-          <span>Uploaded (ZIP)</span>
+          <span>Uploaded ZIP</span>
         </button>
       </div>
 
@@ -57,13 +63,17 @@ export const MonacoDiffMobileView: React.FC<MonacoDiffMobileViewProps> = ({
                 <div
                   key={idx}
                   className={`flex ${
-                    isAdd ? 'bg-[#1e3a24] text-[#86efac]' : isDel ? 'bg-[#3b1d1d] text-[#fca5a5]' : 'text-[#9ca3af] hover:bg-[#262626]'
+                    isAdd
+                      ? 'bg-addition/12 text-addition'
+                      : isDel
+                        ? 'bg-deletion/12 text-deletion'
+                        : 'text-text-secondary hover:bg-surface-2/45'
                   }`}
                 >
-                  <span className="w-10 text-right pr-2 text-[10px] text-[#555] select-none tabular-nums shrink-0">
+                  <span className="w-10 text-right pr-2 text-[10px] text-text-tertiary select-none tabular-nums shrink-0">
                     {line.oldLine || ''}
                   </span>
-                  <span className="w-10 text-right pr-2 text-[10px] text-[#555] select-none tabular-nums shrink-0 border-r border-[#333]">
+                  <span className="w-10 text-right pr-2 text-[10px] text-text-tertiary select-none tabular-nums shrink-0 border-r border-border/70">
                     {line.newLine || ''}
                   </span>
                   <span className="w-5 text-center font-bold select-none shrink-0">
@@ -79,11 +89,11 @@ export const MonacoDiffMobileView: React.FC<MonacoDiffMobileViewProps> = ({
         {mobileTab === 'original' && (
           <div className="py-1">
             {oldLines.map((line, idx) => (
-              <div key={idx} className="flex hover:bg-[#262626]">
-                <span className="w-12 text-right pr-2 text-[10px] text-[#555] select-none tabular-nums shrink-0 border-r border-[#333]">
+              <div key={idx} className="flex hover:bg-surface-2/45">
+                <span className="w-12 text-right pr-2 text-[10px] text-text-tertiary select-none tabular-nums shrink-0 border-r border-border/70">
                   {idx + 1}
                 </span>
-                <span className="whitespace-pre px-2 flex-1 text-[#D4D4D4]">{line || ' '}</span>
+                <span className="whitespace-pre px-2 flex-1 text-text-primary">{line || ' '}</span>
               </div>
             ))}
           </div>
@@ -92,11 +102,11 @@ export const MonacoDiffMobileView: React.FC<MonacoDiffMobileViewProps> = ({
         {mobileTab === 'zip' && (
           <div className="py-1">
             {newLines.map((line, idx) => (
-              <div key={idx} className="flex hover:bg-[#262626]">
-                <span className="w-12 text-right pr-2 text-[10px] text-[#555] select-none tabular-nums shrink-0 border-r border-[#333]">
+              <div key={idx} className="flex hover:bg-surface-2/45">
+                <span className="w-12 text-right pr-2 text-[10px] text-text-tertiary select-none tabular-nums shrink-0 border-r border-border/70">
                   {idx + 1}
                 </span>
-                <span className="whitespace-pre px-2 flex-1 text-[#D4D4D4]">{line || ' '}</span>
+                <span className="whitespace-pre px-2 flex-1 text-text-primary">{line || ' '}</span>
               </div>
             ))}
           </div>

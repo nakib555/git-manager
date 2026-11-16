@@ -23,26 +23,34 @@ export const MonacoDiffSplitView: React.FC<MonacoDiffSplitViewProps> = ({
   return (
     <div className="hidden sm:block">
       {viewMode === 'split' ? (
-        <div className="flex flex-col min-w-[750px]">
-          <div className="grid grid-cols-2 divide-x divide-[#2D2D2D] bg-[#252526] text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-[#2D2D2D] sticky top-0 z-10">
-            <div className="px-3 py-1 flex justify-between">
-              <span>Repository Base (Original)</span>
-              <span className="font-mono text-slate-500">{oldLinesCount} lines</span>
+        <div className="flex flex-col min-w-[680px]">
+          <div className="grid grid-cols-2 divide-x divide-border bg-surface-2/60 text-[11px] font-semibold text-text-secondary border-b border-border sticky top-0 z-10">
+            <div className="px-3 py-1.5 flex justify-between items-center">
+              <span>Repository Base</span>
+              <span className="font-mono text-text-tertiary tabular-nums">{oldLinesCount} lines</span>
             </div>
-            <div className="px-3 py-1 flex justify-between">
-              <span>Uploaded ZIP (Incoming)</span>
-              <span className="font-mono text-slate-500">{newLinesCount} lines</span>
+            <div className="px-3 py-1.5 flex justify-between items-center">
+              <span>Uploaded ZIP</span>
+              <span className="font-mono text-text-tertiary tabular-nums">{newLinesCount} lines</span>
             </div>
           </div>
-          <div className="divide-y divide-[#262626]">
+          <div className="divide-y divide-border/40">
             {splitRows.map((row, idx) => {
               const leftDel = row.left?.type === 'del';
               const rightAdd = row.right?.type === 'add';
 
               return (
-                <div key={idx} className="grid grid-cols-2 divide-x divide-[#2D2D2D] leading-5 font-mono text-[11px]">
-                  <div className={`flex ${leftDel ? 'bg-[#3b1d1d]/90 text-[#fca5a5]' : row.left ? 'text-[#9ca3af] hover:bg-[#262626]' : 'bg-[#181818]/60 text-transparent select-none'}`}>
-                    <span className="w-10 text-right pr-2 text-[10px] text-[#555] select-none tabular-nums shrink-0 border-r border-[#333]">
+                <div key={idx} className="grid grid-cols-2 divide-x divide-border leading-5 font-mono text-[11px]">
+                  <div
+                    className={`flex ${
+                      leftDel
+                        ? 'bg-deletion/12 text-deletion'
+                        : row.left
+                          ? 'text-text-secondary hover:bg-surface-2/40'
+                          : 'bg-surface-2/30 text-transparent select-none'
+                    }`}
+                  >
+                    <span className="w-10 text-right pr-2 text-[10px] text-text-tertiary select-none tabular-nums shrink-0 border-r border-border/70">
                       {row.left?.lineNum || ''}
                     </span>
                     <span className="w-4 text-center text-[10px] select-none font-bold shrink-0">
@@ -51,8 +59,16 @@ export const MonacoDiffSplitView: React.FC<MonacoDiffSplitViewProps> = ({
                     <span className="whitespace-pre px-2 flex-1 overflow-x-hidden">{row.left?.text ?? ' '}</span>
                   </div>
 
-                  <div className={`flex ${rightAdd ? 'bg-[#1e3a24]/90 text-[#86efac]' : row.right ? 'text-[#D4D4D4] hover:bg-[#262626]' : 'bg-[#181818]/60 text-transparent select-none'}`}>
-                    <span className="w-10 text-right pr-2 text-[10px] text-[#555] select-none tabular-nums shrink-0 border-r border-[#333]">
+                  <div
+                    className={`flex ${
+                      rightAdd
+                        ? 'bg-addition/12 text-addition'
+                        : row.right
+                          ? 'text-text-primary hover:bg-surface-2/40'
+                          : 'bg-surface-2/30 text-transparent select-none'
+                    }`}
+                  >
+                    <span className="w-10 text-right pr-2 text-[10px] text-text-tertiary select-none tabular-nums shrink-0 border-r border-border/70">
                       {row.right?.lineNum || ''}
                     </span>
                     <span className="w-4 text-center text-[10px] select-none font-bold shrink-0">
@@ -74,13 +90,17 @@ export const MonacoDiffSplitView: React.FC<MonacoDiffSplitViewProps> = ({
               <div
                 key={idx}
                 className={`flex ${
-                  isAdd ? 'bg-[#1e3a24] text-[#86efac]' : isDel ? 'bg-[#3b1d1d] text-[#fca5a5]' : 'text-[#9ca3af] hover:bg-[#262626]'
+                  isAdd
+                    ? 'bg-addition/12 text-addition'
+                    : isDel
+                      ? 'bg-deletion/12 text-deletion'
+                      : 'text-text-secondary hover:bg-surface-2/40'
                 }`}
               >
-                <span className="w-10 text-right pr-2 text-[10px] text-[#555] select-none tabular-nums shrink-0">
+                <span className="w-10 text-right pr-2 text-[10px] text-text-tertiary select-none tabular-nums shrink-0">
                   {line.oldLine || ''}
                 </span>
-                <span className="w-10 text-right pr-2 text-[10px] text-[#555] select-none tabular-nums shrink-0 border-r border-[#333]">
+                <span className="w-10 text-right pr-2 text-[10px] text-text-tertiary select-none tabular-nums shrink-0 border-r border-border/70">
                   {line.newLine || ''}
                 </span>
                 <span className="w-5 text-center font-bold select-none shrink-0">

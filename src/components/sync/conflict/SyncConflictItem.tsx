@@ -15,6 +15,20 @@ interface SyncConflictItemProps {
   onViewDiffMobile?: (file: DiffFileItem) => void;
 }
 
+const STATUS_LABEL: Record<DiffFileItem['status'], string> = {
+  modified: 'Modified',
+  removed: 'Missing in ZIP',
+  added: 'New file',
+  unchanged: 'Unchanged',
+};
+
+const RES_LABEL: Record<ConflictResolution, string> = {
+  take_zip: 'Use ZIP',
+  keep_original: 'Keep Repo',
+  delete: 'Delete',
+  restore: 'Retain',
+};
+
 export const SyncConflictItem: React.FC<SyncConflictItemProps> = ({
   file,
   isSelected,
@@ -30,35 +44,48 @@ export const SyncConflictItem: React.FC<SyncConflictItemProps> = ({
   return (
     <div
       onClick={() => onSelectFile(file.path)}
-      className={`p-3 sm:p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-        isSelected ? 'bg-surface-2/90 border-accent/50 shadow-xs' : 'bg-surface-1 hover:bg-surface-2/50 border-border/70'
+      className={`px-3.5 py-3 transition-colors cursor-pointer flex flex-col gap-2.5 ${
+        isSelected
+          ? 'bg-accent/8 border-l-2 border-l-accent'
+          : 'bg-surface-1 hover:bg-surface-2/45 border-l-2 border-l-transparent'
       }`}
     >
-      <div className="flex items-center gap-3 min-w-0">
-        <div
-          className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-            isModified ? 'bg-accent/15 text-accent' : isRemoved ? 'bg-rose-500/15 text-rose-400' : 'bg-emerald-500/15 text-emerald-400'
-          }`}
-        >
-          <FileCode size={15} />
-        </div>
-        <div className="min-w-0">
-          <span className="font-mono text-xs font-bold text-text-primary truncate block" title={file.path}>
-            {file.path}
-          </span>
-          <div className="flex items-center gap-2 mt-0.5 text-[11px] text-text-tertiary font-mono">
-            <span className="font-bold uppercase tracking-wider text-[10px]">
-              {isModified ? 'Overlap Conflict' : isRemoved ? 'Missing in ZIP' : 'New File'}
+      <div className="flex items-start justify-between gap-2.5 min-w-0">
+        <div className="flex items-start gap-2.5 min-w-0 flex-1">
+          <div
+            className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
+              isModified
+                ? 'bg-accent/12 text-accent'
+                : isRemoved
+                  ? 'bg-danger/12 text-danger'
+                  : 'bg-success/12 text-success'
+            }`}
+          >
+            <FileCode size={14} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="font-mono text-xs font-semibold text-text-primary truncate block" title={file.path}>
+              {file.path}
             </span>
-            {file.additions > 0 && <span className="text-emerald-400 font-semibold">+{file.additions}</span>}
-            {file.deletions > 0 && <span className="text-rose-400 font-semibold">-{file.deletions}</span>}
+            <div className="flex items-center flex-wrap gap-1.5 mt-0.5 text-[11px] text-text-secondary tabular-nums">
+              <span className={isRemoved ? 'text-danger font-medium' : isModified ? 'text-accent font-medium' : 'text-success font-medium'}>
+                {STATUS_LABEL[file.status]}
+              </span>
+              {(file.additions > 0 || file.deletions > 0) && (
+                <span aria-hidden="true" className="text-text-tertiary">·</span>
+              )}
+              {file.additions > 0 && <span className="font-mono text-addition font-medium">+{file.additions}</span>}
+              {file.deletions > 0 && <span className="font-mono text-deletion font-medium">-{file.deletions}</span>}
+              <span aria-hidden="true" className="text-text-tertiary hidden md:inline">·</span>
+              <span className="hidden md:inline text-text-tertiary">{RES_LABEL[currentRes]}</span>
+            </div>
           </div>
         </div>
       </div>
 
       <SyncConflictActions file={file} currentRes={currentRes} onSetResolution={onSetResolution} />
 
-      <div className="sm:hidden flex items-center gap-2 pt-2 border-t border-border/40">
+      <div className="md:hidden flex items-center gap-2">
         <button
           type="button"
           onClick={(e) => {
@@ -66,9 +93,9 @@ export const SyncConflictItem: React.FC<SyncConflictItemProps> = ({
             onSelectFile(file.path);
             if (onViewDiffMobile) onViewDiffMobile(file);
           }}
-          className="min-h-[44px] flex-1 px-3 py-2 bg-surface-2 hover:bg-surface-3 border border-border rounded-xl text-xs font-bold text-sky-400 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+          className="min-h-[40px] flex-1 px-3 py-1.5 bg-surface-2 hover:bg-surface-3 border border-border rounded-xl text-xs font-semibold text-text-primary flex items-center justify-center gap-1.5 cursor-pointer btn-tactile"
         >
-          <FileCode size={14} />
+          <FileCode size={14} className="text-accent" />
           <span>Inspect Diff</span>
         </button>
         <button
@@ -77,10 +104,10 @@ export const SyncConflictItem: React.FC<SyncConflictItemProps> = ({
             e.stopPropagation();
             onOpenSheet(file);
           }}
-          className="min-h-[44px] flex-1 px-3 py-2 bg-accent/10 hover:bg-accent/20 border border-accent/30 rounded-xl text-xs font-bold text-accent flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+          className="min-h-[40px] flex-1 px-3 py-1.5 bg-accent/12 hover:bg-accent/20 border border-accent/30 rounded-xl text-xs font-semibold text-accent flex items-center justify-center gap-1.5 cursor-pointer btn-tactile"
         >
           <Sliders size={14} />
-          <span className="truncate">Action ({currentRes.replace('_', ' ')})</span>
+          <span className="truncate">{RES_LABEL[currentRes]}</span>
         </button>
       </div>
     </div>

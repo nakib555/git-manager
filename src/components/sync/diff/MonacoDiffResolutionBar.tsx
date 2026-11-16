@@ -8,19 +8,25 @@ interface MonacoDiffResolutionBarProps {
   onResolve: (action: 'take_zip' | 'keep_original' | 'delete' | 'restore') => void;
 }
 
+const STATUS_LABEL: Record<DiffFileItem['status'], string> = {
+  modified: 'Conflict Resolution',
+  removed: 'Missing in ZIP',
+  added: 'New File',
+  unchanged: 'Unchanged',
+};
+
 export const MonacoDiffResolutionBar: React.FC<MonacoDiffResolutionBarProps> = ({
   file,
   resolution = 'take_zip',
   onResolve,
 }) => {
+  if (file.status === 'unchanged') return null;
+
   return (
-    <div className="lg:hidden p-2.5 bg-[#252526] border-t border-[#2D2D2D] flex items-center justify-between gap-2 shrink-0">
+    <div className="md:hidden p-2.5 bg-surface-2/50 border-t border-border flex items-center justify-between gap-2 shrink-0">
       <div className="min-w-0 pr-1">
-        <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider block">
-          {file.status === 'modified' ? 'Conflict Resolution' : file.status === 'removed' ? 'Missing File Action' : 'New File Action'}
-        </span>
-        <span className="text-xs font-bold text-slate-200 truncate block">
-          {resolution.replace('_', ' ').toUpperCase()}
+        <span className="text-[11px] text-text-secondary block">
+          {STATUS_LABEL[file.status]}
         </span>
       </div>
 
@@ -30,18 +36,22 @@ export const MonacoDiffResolutionBar: React.FC<MonacoDiffResolutionBarProps> = (
             <button
               type="button"
               onClick={() => onResolve('take_zip')}
-              className={`min-h-[42px] px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 ${
-                resolution === 'take_zip' ? 'bg-[#0E639C] text-white shadow-xs' : 'bg-[#1E1E1E] text-slate-300 border border-[#3E3E42]'
+              className={`min-h-[40px] px-3 rounded-xl text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 btn-tactile ${
+                resolution === 'take_zip'
+                  ? 'bg-accent text-white'
+                  : 'bg-surface-1 text-text-secondary border border-border'
               }`}
             >
               <Check size={13} />
-              <span>Take ZIP</span>
+              <span>Use ZIP</span>
             </button>
             <button
               type="button"
               onClick={() => onResolve('keep_original')}
-              className={`min-h-[42px] px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 ${
-                resolution === 'keep_original' ? 'bg-[#3E3E42] text-white shadow-xs' : 'bg-[#1E1E1E] text-slate-300 border border-[#3E3E42]'
+              className={`min-h-[40px] px-3 rounded-xl text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 btn-tactile ${
+                resolution === 'keep_original'
+                  ? 'bg-surface-3 text-text-primary border border-border'
+                  : 'bg-surface-1 text-text-secondary border border-border'
               }`}
             >
               <span>Keep Repo</span>
@@ -54,17 +64,21 @@ export const MonacoDiffResolutionBar: React.FC<MonacoDiffResolutionBarProps> = (
             <button
               type="button"
               onClick={() => onResolve('restore')}
-              className={`min-h-[42px] px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 ${
-                resolution === 'restore' ? 'bg-amber-600 text-white shadow-xs' : 'bg-[#1E1E1E] text-slate-300 border border-[#3E3E42]'
+              className={`min-h-[40px] px-3 rounded-xl text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 btn-tactile ${
+                resolution === 'restore'
+                  ? 'bg-warning text-white'
+                  : 'bg-surface-1 text-text-secondary border border-border'
               }`}
             >
-              <span>Restore</span>
+              <span>Retain</span>
             </button>
             <button
               type="button"
               onClick={() => onResolve('delete')}
-              className={`min-h-[42px] px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 ${
-                resolution === 'delete' ? 'bg-rose-600 text-white shadow-xs' : 'bg-[#1E1E1E] text-slate-300 border border-[#3E3E42]'
+              className={`min-h-[40px] px-3 rounded-xl text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 btn-tactile ${
+                resolution === 'delete'
+                  ? 'bg-danger text-white'
+                  : 'bg-surface-1 text-text-secondary border border-border'
               }`}
             >
               <span>Delete</span>
@@ -77,8 +91,10 @@ export const MonacoDiffResolutionBar: React.FC<MonacoDiffResolutionBarProps> = (
             <button
               type="button"
               onClick={() => onResolve('take_zip')}
-              className={`min-h-[42px] px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 ${
-                resolution === 'take_zip' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-[#1E1E1E] text-slate-300 border border-[#3E3E42]'
+              className={`min-h-[40px] px-3 rounded-xl text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 btn-tactile ${
+                resolution === 'take_zip'
+                  ? 'bg-success text-white'
+                  : 'bg-surface-1 text-text-secondary border border-border'
               }`}
             >
               <Check size={13} />
@@ -87,8 +103,10 @@ export const MonacoDiffResolutionBar: React.FC<MonacoDiffResolutionBarProps> = (
             <button
               type="button"
               onClick={() => onResolve('keep_original')}
-              className={`min-h-[42px] px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 ${
-                resolution === 'keep_original' ? 'bg-[#3E3E42] text-white shadow-xs' : 'bg-[#1E1E1E] text-slate-300 border border-[#3E3E42]'
+              className={`min-h-[40px] px-3 rounded-xl text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 btn-tactile ${
+                resolution === 'keep_original'
+                  ? 'bg-surface-3 text-text-primary border border-border'
+                  : 'bg-surface-1 text-text-secondary border border-border'
               }`}
             >
               <span>Skip</span>
