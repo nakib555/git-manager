@@ -2,6 +2,8 @@ import { ZipExtractedFile, DiffFileItem, TreeDiffResult, FileChangeStatus } from
 import { cleanPath, isBinaryFilename } from './zipParser';
 import { alignZipPath } from './zipSyncHelpers';
 
+const textEncoder = new TextEncoder();
+
 export function computeLineDiff(oldText: string = '', newText: string = ''): {
   additions: number;
   deletions: number;
@@ -63,9 +65,30 @@ export function computeLineDiff(oldText: string = '', newText: string = ''): {
   return { additions, deletions, lines };
 }
 
+export async function computeGitBlobSha(zFile: ZipExtractedFile): Promise<string | null> {
+  if (typeof globalThis.crypto?.subtle === 'undefined') return null;
+  try {
+    const bodyBytes = zFile.binaryData ?? textEncoder.encode(zFile.content || '');
+    const headerBytes = textEncoder.encode(`blob ${bodyBytes.byteLength}\0`);
+    const combined = new Uint8Array(headerBytes.byteLength + bodyBytes.byteLength);
+    combined.set(headerBytes, 0);
+    combined.set(bodyBytes, headerBytes.byteLength);
+
+    const hashBuffer = await globalThis.crypto.subtle.digest('SHA-1', combined);
+    const hashBytes = new Uint8Array(hashBuffer);
+    let hex = '';
+    for (let i = 0; i < hashBytes.length; i++) {
+      hex += hashBytes[i].toString(16).padStart(2, '0');
+    }
+    return hex;
+  } catch {
+    return null;
+  }
+}
+
 async function runWithConcurrency<T>(
   tasks: Array<() => Promise<T>>,
-  limit: number = 6
+  limit: number = 12
 ): Promise<T[]> {
   const results: T[] = new Array(tasks.length);
   let nextIndex = 0;
@@ -90,17 +113,20 @@ export async function compareZipWithRepo({
   onProgress,
 }: {
   zipFiles: ZipExtractedFile[];
-  repoFiles: { name: string; type: 'file' | 'dir' }[];
+  repoFiles: { name: string; type: 'file' | 'dir'; sha?: string; size?: number; lines?: number }[];
   rootPrefixToStrip?: string;
   fetchOldContent: (path: string) => Promise<string>;
   onProgress?: (completed: number, total: number, currentPath?: string) => void;
 }): Promise<TreeDiffResult> {
-  const repoFileNames = new Set(
-    repoFiles
-      .filter(f => f.type === 'file' || (!f.type && !f.name.endsWith('/')))
-      .map(f => cleanPath(f.name))
-      .filter(Boolean)
-  );
+  const repoFileMap = new Map<string, { name: string; sha?: string; size?: number; lines?: number }>();
+  for (const f of repoFiles) {
+    if (f.type === 'file' || (!f.type && !f.name.endsWith('/'))) {
+      const cleaned = cleanPath(f.name);
+      if (cleaned) {
+        repoFileMap.set(cleaned, { name: cleaned, sha: f.sha, size: f.size, lines: f.lines });
+      }
+    }
+  }
 
   const zipFileMap = new Map<string, ZipExtractedFile>();
   for (const zf of zipFiles) {
@@ -112,7 +138,7 @@ export async function compareZipWithRepo({
   const tasks: Array<() => Promise<void>> = [];
 
   const zipEntries = Array.from(zipFileMap.entries());
-  const missingRepoPaths = Array.from(repoFileNames).filter(
+  const missingRepoPaths = Array.from(repoFileMap.keys()).filter(
     (repoPath) =>
       !zipFileMap.has(repoPath) &&
       !repoPath.startsWith('.git') &&
@@ -121,21 +147,50 @@ export async function compareZipWithRepo({
       repoPath !== '.env.local'
   );
 
+  // Skip downloading contents for large missing sets (>25 files) so comparing stays sub-second
+  const shouldFetchRemovedContents = missingRepoPaths.length <= 25;
+
+  // Precompute SHA-1 hashes in parallel to short-circuit identical files with zero HTTP requests
+  const shaMatchSet = new Set<string>();
+  await Promise.all(
+    zipEntries.map(async ([path, zFile]) => {
+      const repoEntry = repoFileMap.get(path);
+      if (repoEntry?.sha) {
+        const localSha = await computeGitBlobSha(zFile);
+        if (localSha && localSha === repoEntry.sha) {
+          shaMatchSet.add(path);
+        }
+      }
+    })
+  );
+
   const totalToFetch =
-    zipEntries.filter(([p]) => repoFileNames.has(p) && !isBinaryFilename(p)).length +
-    missingRepoPaths.filter((p) => !isBinaryFilename(p)).length;
+    zipEntries.filter(([p]) => repoFileMap.has(p) && !isBinaryFilename(p) && !shaMatchSet.has(p)).length +
+    (shouldFetchRemovedContents ? missingRepoPaths.filter((p) => !isBinaryFilename(p)).length : 0);
   let completedFetch = 0;
 
   onProgress?.(0, totalToFetch);
 
   for (const [path, zFile] of zipEntries) {
-    const isBinary = isBinaryFilename(path);
-    const existsInRepo = repoFileNames.has(path);
+    const isBinary = isBinaryFilename(path) || Boolean(zFile.binaryData && zFile.content === undefined);
+    const repoEntry = repoFileMap.get(path);
 
-    if (!existsInRepo) {
+    if (!repoEntry) {
       const newContent = zFile.content || '';
       const additions = isBinary ? 0 : (newContent ? newContent.split('\n').length : 0);
       diffItems.push({ path, originalZipPath: zFile.originalPath, status: 'added', selected: true, newContent, additions, deletions: 0, isBinary });
+    } else if (shaMatchSet.has(path)) {
+      diffItems.push({
+        path,
+        originalZipPath: zFile.originalPath,
+        status: 'unchanged',
+        selected: false,
+        oldContent: zFile.content,
+        newContent: zFile.content,
+        additions: 0,
+        deletions: 0,
+        isBinary,
+      });
     } else if (isBinary) {
       diffItems.push({ path, originalZipPath: zFile.originalPath, status: 'modified', selected: true, additions: 0, deletions: 0, isBinary: true });
     } else {
@@ -156,8 +211,10 @@ export async function compareZipWithRepo({
 
   for (const repoPath of missingRepoPaths) {
     const isBinary = isBinaryFilename(repoPath);
-    if (isBinary) {
-      diffItems.push({ path: repoPath, status: 'removed', selected: false, oldContent: '', additions: 0, deletions: 0, isBinary: true });
+    const repoEntry = repoFileMap.get(repoPath);
+    if (isBinary || !shouldFetchRemovedContents) {
+      const estDeletions = isBinary ? 0 : (repoEntry?.lines || (repoEntry?.size ? Math.max(1, Math.round(repoEntry.size / 36)) : 0));
+      diffItems.push({ path: repoPath, status: 'removed', selected: false, oldContent: '', additions: 0, deletions: estDeletions, isBinary });
     } else {
       tasks.push(async () => {
         const oldContent = await fetchOldContent(repoPath);
@@ -170,7 +227,7 @@ export async function compareZipWithRepo({
   }
 
   if (tasks.length > 0) {
-    await runWithConcurrency(tasks, 6);
+    await runWithConcurrency(tasks, 12);
   }
 
   const statusWeight: Record<FileChangeStatus, number> = { modified: 1, added: 2, removed: 3, unchanged: 4 };

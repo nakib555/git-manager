@@ -7,6 +7,7 @@ interface ZipSyncStepperProps {
   onSelectStep: (step: 1 | 2 | 3) => void;
   canNavigateToStep2: boolean;
   canNavigateToStep3: boolean;
+  isLocked?: boolean;
 }
 
 const STEPS: Array<{ id: 1 | 2 | 3; label: string; shortLabel: string }> = [
@@ -20,8 +21,10 @@ export const ZipSyncStepper: React.FC<ZipSyncStepperProps> = ({
   onSelectStep,
   canNavigateToStep2,
   canNavigateToStep3,
+  isLocked = false,
 }) => {
   const isStepEnabled = (id: 1 | 2 | 3) => {
+    if (isLocked && currentStep !== id) return false;
     if (id === 1) return true;
     if (id === 2) return canNavigateToStep2;
     return canNavigateToStep3;
@@ -35,7 +38,7 @@ export const ZipSyncStepper: React.FC<ZipSyncStepperProps> = ({
       <ol className="flex items-center justify-between gap-2">
         {STEPS.map((step, index) => {
           const isActive = currentStep === step.id;
-          const isCompleted = currentStep > step.id && isStepEnabled(step.id);
+          const isCompleted = currentStep > step.id && !isLocked;
           const enabled = isStepEnabled(step.id);
 
           return (

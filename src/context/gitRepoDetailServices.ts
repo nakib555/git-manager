@@ -58,17 +58,25 @@ export const fetchRemoteBranches = async (
   headers: Record<string, string>
 ) => {
   const branchesRes = await fetch(
-    `https://api.github.com/repos/${owner}/${repo}/branches?per_page=15`,
+    `https://api.github.com/repos/${owner}/${repo}/branches?per_page=50`,
     { headers },
   );
   if (!branchesRes.ok) return [];
   const rawBranches = await branchesRes.json();
-  return rawBranches.map((b: any) => ({
-    name: b.name,
-    desc: `Branch head: ${b.commit.sha.substring(0, 7)}`,
-    isDefault: b.name === actualDefaultBranch,
-    borderColor: b.name === activeBranch ? "#38BDF8" : "transparent",
-  }));
+  if (!Array.isArray(rawBranches)) return [];
+  return rawBranches.map((b: any) => {
+    const commitSha = b.commit?.sha || '';
+    const shortSha = commitSha ? commitSha.substring(0, 7) : '';
+    return {
+      name: b.name,
+      commitSha,
+      shortSha,
+      desc: shortSha ? `Branch tip ${shortSha}` : 'Active branch',
+      isDefault: b.name === actualDefaultBranch,
+      isProtected: Boolean(b.protected),
+      borderColor: b.name === activeBranch ? '#38BDF8' : 'transparent',
+    };
+  });
 };
 
 export const fetchRemotePRs = async (

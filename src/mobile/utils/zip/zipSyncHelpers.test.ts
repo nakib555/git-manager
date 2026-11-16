@@ -12,6 +12,13 @@ import {
 } from './zipSyncHelpers';
 import { parseZipArchive } from './zipParser';
 import { compareZipWithRepo } from './zipDiffCalculator';
+import { commitSyncToGitHub, isSyncAbortError } from './zipGitCommitService';
+import {
+  buildDiffTree,
+  collectFolderPaths,
+  getNodeSelectionState,
+  applyTreeNodeSelection,
+} from './zipDiffTree';
 import type { DiffFileItem, ZipExtractedFile } from './zipTypes';
 
 test('sanitizeZipPath normalizes slashes and drops path traversal segments', () => {
@@ -157,4 +164,155 @@ test('compareZipWithRepo classifies added, modified, unchanged, and removed with
   assert.equal(result.counts.unchanged, 1);
   assert.equal(lastProgress.completed, 3);
   assert.equal(lastProgress.total, 3);
+});
+
+test('buildDiffTree groups folders alphabetically and computes tri-state folder selection', () => {
+  const diffItems: DiffFileItem[] = [
+    { path: 'src/context/StoreContext.tsx', status: 'modified', selected: true, newContent: 'hello world', additions: 1, deletions: 0 },
+    { path: 'src/context/ThemeContext.tsx', status: 'added', selected: true, newContent: 'export {}', additions: 1, deletions: 0 },
+    { path: 'public/icon.svg', status: 'removed', selected: false, oldContent: '<svg/>', additions: 0, deletions: 1 },
+    { path: 'README.md', status: 'unchanged', selected: false, additions: 0, deletions: 0 },
+  ];
+
+  const tree = buildDiffTree(diffItems);
+  assert.equal(tree.length, 2); // public, src (README unchanged excluded)
+  assert.equal(tree[0].name, 'public');
+  assert.equal(tree[1].name, 'src');
+  assert.equal(tree[1].totalFiles, 2);
+
+  const folders = collectFolderPaths(tree);
+  assert.deepEqual(folders, ['public', 'src', 'src/context']);
+
+  // Initially public has 1 removed file (default restore -> unchecked) and src has 2 checked
+  assert.equal(getNodeSelectionState(tree[0], new Map()), 'unchecked');
+  assert.equal(getNodeSelectionState(tree[1], new Map()), 'checked');
+
+  // Unchecking StoreContext makes src indeterminate
+  const storeFileNode = tree[1].children[0].children[0];
+  const partialRes = applyTreeNodeSelection(storeFileNode, new Map(), false);
+  assert.equal(getNodeSelectionState(tree[1], partialRes), 'indeterminate');
+
+  // Checking public marks missing file for deletion
+  const deletedRes = applyTreeNodeSelection(tree[0], partialRes, true);
+  assert.equal(deletedRes.get('public/icon.svg'), 'delete');
+  assert.equal(getNodeSelectionState(tree[0], deletedRes), 'checked');
+});
+
+test('commitSyncToGitHub aborts immediately when AbortSignal is aborted', async () => {
+  const controller = new AbortController();
+  controller.abort();
+
+  await assert.rejects(
+    () =>
+      commitSyncToGitHub({
+        token: 'test_token',
+        owner: 'octodev',
+        repo: 'demo',
+        branch: 'main',
+        commitMessage: 'Test',
+        selectedDiffFiles: [{ path: 'README.md', status: 'modified', selected: true, newContent: '# New', additions: 1, deletions: 0 }],
+        zipFilesMap: new Map(),
+        signal: controller.signal,
+      }),
+    (err) => isSyncAbortError(err)
+  );
+});
+
+test('analyzeZipRoots never selects partial nested subfolder over full 77-file archive root', async () => {
+  const { analyzeZipRoots } = await import('../zipAutoDetect');
+  const paths: string[] = [];
+  for (let i = 0; i < 44; i++) {
+    paths.push(`my-export/frontend/src/Comp${i}.tsx`);
+  }
+  paths.push('my-export/frontend/package.json', 'my-export/frontend/tsconfig.json', 'my-export/frontend/index.html');
+  for (let i = 0; i < 30; i++) {
+    paths.push(`my-export/backend/routes/r${i}.ts`);
+  }
+  assert.equal(paths.length, 77);
+
+  const analysis = analyzeZipRoots(paths);
+  assert.equal(analysis.suggestedRoot, 'my-export/');
+});
+
+test('compareZipWithRepo short-circuits unchanged files via Git Blob SHA-1 without HTTP fetches', async () => {
+  const { computeGitBlobSha } = await import('./zipDiffCalculator');
+  const zipFile: ZipExtractedFile = {
+    originalPath: 'same.ts',
+    normalizedPath: 'same.ts',
+    isDir: false,
+    content: 'export const x = 42;\n',
+    size: 21,
+  };
+  const sha = await computeGitBlobSha(zipFile);
+  assert.ok(sha);
+
+  let fetchCount = 0;
+  const result = await compareZipWithRepo({
+    zipFiles: [zipFile],
+    repoFiles: [{ name: 'same.ts', type: 'file', sha: sha! }],
+    fetchOldContent: async () => {
+      fetchCount++;
+      return 'should not fetch';
+    },
+  });
+
+  assert.equal(fetchCount, 0);
+  assert.equal(result.counts.unchanged, 1);
+});
+
+test('commitSyncToGitHub uploads all 77 files concurrently and records 77 tree entries', async () => {
+  const diffFiles: DiffFileItem[] = [];
+  const zipMap = new Map<string, ZipExtractedFile>();
+  for (let i = 0; i < 77; i++) {
+    const p = `src/file_${i}.ts`;
+    const content = `export const v${i} = ${i};`;
+    diffFiles.push({ path: p, status: 'added', selected: true, newContent: content, additions: 1, deletions: 0 });
+    zipMap.set(p, { originalPath: p, normalizedPath: p, isDir: false, content, size: content.length });
+  }
+
+  let blobCalls = 0;
+  let treeEntriesCount = 0;
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    if (url.includes('/git/ref/heads/')) {
+      return new Response(JSON.stringify({ object: { sha: 'base_commit_1' } }), { status: 200 });
+    }
+    if (url.includes('/git/commits/base_commit_1')) {
+      return new Response(JSON.stringify({ sha: 'base_commit_1', tree: { sha: 'base_tree_1' } }), { status: 200 });
+    }
+    if (url.includes('/git/blobs')) {
+      blobCalls++;
+      return new Response(JSON.stringify({ sha: `blob_${blobCalls}` }), { status: 201 });
+    }
+    if (url.includes('/git/trees')) {
+      const body = JSON.parse(String(init?.body || '{}'));
+      treeEntriesCount = Array.isArray(body.tree) ? body.tree.length : 0;
+      return new Response(JSON.stringify({ sha: 'new_tree_sha' }), { status: 201 });
+    }
+    if (url.includes('/git/commits') && init?.method === 'POST') {
+      return new Response(JSON.stringify({ sha: 'new_commit_77' }), { status: 201 });
+    }
+    if (url.includes('/git/refs/heads/') && init?.method === 'PATCH') {
+      return new Response(JSON.stringify({ object: { sha: 'new_commit_77' } }), { status: 200 });
+    }
+    return new Response('{}', { status: 200 });
+  }) as typeof fetch;
+
+  try {
+    const res = await commitSyncToGitHub({
+      token: 'ghp_test',
+      owner: 'acme',
+      repo: 'app',
+      branch: 'main',
+      commitMessage: 'Upload 77 files',
+      selectedDiffFiles: diffFiles,
+      zipFilesMap: zipMap,
+    });
+    assert.equal(blobCalls, 77);
+    assert.equal(treeEntriesCount, 77);
+    assert.equal(res.uploadedCount, 77);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });

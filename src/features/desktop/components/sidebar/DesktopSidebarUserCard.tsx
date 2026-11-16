@@ -21,12 +21,21 @@ export const DesktopSidebarUserCard: React.FC<DesktopSidebarUserCardProps> = ({
     return (
       <div className="mb-6">
         {githubUser ? (
-          <img
-            src={githubUser.avatar_url}
-            alt="Avatar"
-            className="w-8 h-8 rounded-full border border-border"
-            title={githubUser.login}
-          />
+          githubUser.avatar_url ? (
+            <img
+              src={githubUser.avatar_url}
+              alt={githubUser.login || 'Avatar'}
+              className="w-8 h-8 rounded-full border border-border object-cover"
+              title={githubUser.login}
+            />
+          ) : (
+            <div
+              className="w-8 h-8 rounded-full bg-surface-2 border border-border flex items-center justify-center text-text-secondary"
+              title={githubUser.login}
+            >
+              <User size={15} />
+            </div>
+          )
         ) : (
           <button
             onClick={connectGitHub}
@@ -43,8 +52,12 @@ export const DesktopSidebarUserCard: React.FC<DesktopSidebarUserCardProps> = ({
   return (
     <div className="bg-hover/20 border border-border/60 rounded-2xl p-4 mb-6">
       <div className="flex items-center gap-3">
-        {githubUser ? (
-          <img src={githubUser.avatar_url} alt="Avatar" className="w-10 h-10 rounded-full border border-border" />
+        {githubUser?.avatar_url ? (
+          <img
+            src={githubUser.avatar_url}
+            alt={githubUser.login || 'Avatar'}
+            className="w-10 h-10 rounded-full border border-border object-cover"
+          />
         ) : (
           <div className="w-10 h-10 rounded-full bg-hover border border-border flex items-center justify-center text-text-muted">
             <User size={18} />

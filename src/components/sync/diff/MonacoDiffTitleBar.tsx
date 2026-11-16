@@ -1,5 +1,5 @@
 import React from 'react';
-import { Columns, AlignJustify, Copy, Check, FileCode, ArrowLeft } from 'lucide-react';
+import { Columns, AlignJustify, Copy, Check, FileCode, ArrowLeft, Maximize2, Minimize2 } from 'lucide-react';
 import { DiffFileItem } from '../../../mobile/utils/zipSyncEngine';
 
 interface MonacoDiffTitleBarProps {
@@ -9,6 +9,9 @@ interface MonacoDiffTitleBarProps {
   onCopy: () => void;
   isCopied: boolean;
   onBack?: () => void;
+  backLabel?: string;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
 }
 
 export const MonacoDiffTitleBar: React.FC<MonacoDiffTitleBarProps> = ({
@@ -18,6 +21,9 @@ export const MonacoDiffTitleBar: React.FC<MonacoDiffTitleBarProps> = ({
   onCopy,
   isCopied,
   onBack,
+  backLabel = 'Back to Tree',
+  isExpanded = false,
+  onToggleExpand,
 }) => {
   return (
     <div className="h-12 px-3 sm:px-4 border-b border-border bg-surface-2/45 flex items-center justify-between gap-2.5 shrink-0">
@@ -26,11 +32,12 @@ export const MonacoDiffTitleBar: React.FC<MonacoDiffTitleBarProps> = ({
           <button
             type="button"
             onClick={onBack}
-            className="md:hidden min-h-[34px] px-2.5 bg-surface-1 hover:bg-surface-2 border border-border text-text-primary rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer shrink-0 btn-tactile"
-            title="Back to file list"
+            aria-label="Back to changed files tree"
+            className="min-h-[34px] px-2.5 bg-surface-1 hover:bg-surface-2 border border-border text-text-primary rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer shrink-0 btn-tactile whitespace-nowrap"
+            title={backLabel}
           >
             <ArrowLeft size={13} />
-            <span>Files</span>
+            <span>{backLabel}</span>
           </button>
         )}
         <FileCode size={15} className="text-accent shrink-0 hidden sm:inline" />
@@ -74,6 +81,18 @@ export const MonacoDiffTitleBar: React.FC<MonacoDiffTitleBarProps> = ({
             <span>Unified</span>
           </button>
         </div>
+
+        {onToggleExpand && (
+          <button
+            type="button"
+            onClick={onToggleExpand}
+            aria-label={isExpanded ? 'Exit full diff view' : 'Expand slide-over diff view'}
+            title={isExpanded ? 'Dock diff view' : 'Expand slide-over diff view'}
+            className="hidden lg:flex min-h-[32px] min-w-[32px] px-2 rounded-lg border border-border bg-surface-1 hover:bg-surface-2 text-text-secondary hover:text-text-primary transition-colors items-center justify-center cursor-pointer btn-tactile"
+          >
+            {isExpanded ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+          </button>
+        )}
 
         <button
           type="button"

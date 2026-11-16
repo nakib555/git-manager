@@ -1,9 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { RefreshCw } from 'lucide-react';
-import { SyncConflictResolver, ConflictResolution } from '../../../components/sync/SyncConflictResolver';
+import { DiffTreeExplorer } from '../../../components/sync/DiffTreeExplorer';
 import { MonacoDiffViewer } from '../../../components/sync/MonacoDiffViewer';
-import { BulkResolutionType, DiffFileItem, getDefaultResolution } from '../../../mobile/utils/zipSyncEngine';
+import {
+  BulkResolutionType,
+  ConflictResolution,
+  DiffFileItem,
+  getDefaultResolution,
+} from '../../../mobile/utils/zipSyncEngine';
 import { useResponsiveBreakpoints } from '../../../hooks/useIsDesktop';
 
 interface ZipSyncStepReviewProps {
@@ -12,6 +17,7 @@ interface ZipSyncStepReviewProps {
   onSelectFilePath: (path: string) => void;
   resolutions: Map<string, ConflictResolution>;
   onSetResolution: (path: string, res: ConflictResolution) => void;
+  onUpdateResolutions: (next: Map<string, ConflictResolution>) => void;
   onBulkResolve: (type: BulkResolutionType) => void;
   isComparing: boolean;
   compareProgress: { completed: number; total: number } | null;
@@ -24,13 +30,14 @@ export const ZipSyncStepReview: React.FC<ZipSyncStepReviewProps> = ({
   onSelectFilePath,
   resolutions,
   onSetResolution,
+  onUpdateResolutions,
   onBulkResolve,
   isComparing,
   compareProgress,
   theme,
 }) => {
-  const [mobilePane, setMobilePane] = useState<'list' | 'diff'>('list');
-  const { isMobile } = useResponsiveBreakpoints();
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const { isDesktop } = useResponsiveBreakpoints();
 
   const changedItems = diffItems.filter((f) => f.status !== 'unchanged');
   const activeDiffItem =
@@ -43,22 +50,37 @@ export const ZipSyncStepReview: React.FC<ZipSyncStepReviewProps> = ({
     ? resolutions.get(activeDiffItem.path) ?? getDefaultResolution(activeDiffItem)
     : 'take_zip';
 
-  const handleViewDiffMobile = (file: DiffFileItem) => {
+  useEffect(() => {
+    if (!isDrawerOpen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        setIsDrawerOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKey, true);
+    return () => window.removeEventListener('keydown', handleKey, true);
+  }, [isDrawerOpen]);
+
+  const handleInspectDiff = (file: DiffFileItem) => {
     onSelectFilePath(file.path);
-    setMobilePane('diff');
+    if (!isDesktop) {
+      setIsDrawerOpen(true);
+    }
   };
 
   return (
-    <div className="relative flex flex-col md:flex-row h-[470px] sm:h-[520px] min-h-0 border border-border rounded-2xl bg-surface-1 overflow-hidden">
-      {!isMobile ? (
+    <div className="relative flex h-[480px] sm:h-[530px] min-h-0 border border-border rounded-2xl bg-surface-1 overflow-hidden">
+      {isDesktop ? (
         <div className="flex w-full h-full min-h-0 divide-x divide-border">
-          <div className="w-[340px] lg:w-[380px] flex flex-col shrink-0 min-h-0">
-            <SyncConflictResolver
+          <div className="w-[390px] xl:w-[430px] flex flex-col shrink-0 min-h-0">
+            <DiffTreeExplorer
               files={diffItems}
               selectedFilePath={activeDiffItem?.path || null}
               onSelectFile={onSelectFilePath}
+              onInspectDiff={handleInspectDiff}
               resolutions={resolutions}
-              onSetResolution={onSetResolution}
+              onUpdateResolutions={onUpdateResolutions}
               onBulkResolve={onBulkResolve}
             />
           </div>
@@ -73,57 +95,64 @@ export const ZipSyncStepReview: React.FC<ZipSyncStepReviewProps> = ({
                   ? (res) => onSetResolution(activeDiffItem.path, res)
                   : undefined
               }
+              isExpanded={isDrawerOpen}
+              onToggleExpand={() => setIsDrawerOpen((v) => !v)}
             />
           </div>
         </div>
       ) : (
-        <div className="flex flex-col w-full h-full min-h-0 overflow-hidden">
-          <AnimatePresence mode="wait" initial={false}>
-            {mobilePane === 'list' ? (
-              <motion.div
-                key="mobile-list"
-                initial={{ opacity: 0, x: -16 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -16 }}
-                transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                className="w-full h-full flex flex-col min-h-0"
-              >
-                <SyncConflictResolver
-                  files={diffItems}
-                  selectedFilePath={activeDiffItem?.path || null}
-                  onSelectFile={onSelectFilePath}
-                  resolutions={resolutions}
-                  onSetResolution={onSetResolution}
-                  onBulkResolve={onBulkResolve}
-                  onViewDiffMobile={handleViewDiffMobile}
-                />
-              </motion.div>
-            ) : (
-              <motion.div
-                key="mobile-diff"
-                initial={{ opacity: 0, x: 16 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 16 }}
-                transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                className="w-full h-full flex flex-col min-h-0"
-              >
-                <MonacoDiffViewer
-                  file={activeDiffItem}
-                  theme={theme}
-                  resolution={activeResolution}
-                  onResolve={
-                    activeDiffItem
-                      ? (res) => onSetResolution(activeDiffItem.path, res)
-                      : undefined
-                  }
-                  onBack={() => setMobilePane('list')}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
+        <div className="w-full h-full flex flex-col min-h-0">
+          <DiffTreeExplorer
+            files={diffItems}
+            selectedFilePath={activeDiffItem?.path || null}
+            onSelectFile={onSelectFilePath}
+            onInspectDiff={handleInspectDiff}
+            resolutions={resolutions}
+            onUpdateResolutions={onUpdateResolutions}
+            onBulkResolve={onBulkResolve}
+          />
         </div>
       )}
 
+      {/* Slide-Over Diff Drawer (mobile, tablet, and desktop expanded mode) */}
+      <AnimatePresence>
+        {isDrawerOpen && activeDiffItem && (
+          <div className="absolute inset-0 z-20 flex justify-end overflow-hidden">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.16 }}
+              onClick={() => setIsDrawerOpen(false)}
+              className="hidden sm:block absolute inset-0 bg-black/45 cursor-pointer"
+              aria-hidden="true"
+            />
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              className="relative z-10 w-full md:w-[92%] lg:w-[88%] h-full bg-surface-1 border-l border-border shadow-2xl flex flex-col min-h-0"
+            >
+              <MonacoDiffViewer
+                file={activeDiffItem}
+                theme={theme}
+                resolution={activeResolution}
+                onResolve={
+                  activeDiffItem
+                    ? (res) => onSetResolution(activeDiffItem.path, res)
+                    : undefined
+                }
+                onBack={() => setIsDrawerOpen(false)}
+                backLabel="Tree"
+                alwaysShowResolutionBar
+              />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Re-comparing Loading Overlay */}
       <AnimatePresence>
         {isComparing && (
           <motion.div
@@ -131,7 +160,7 @@ export const ZipSyncStepReview: React.FC<ZipSyncStepReviewProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="absolute inset-0 z-20 bg-surface-1/85 backdrop-blur-xs flex flex-col items-center justify-center gap-3 p-6 text-center"
+            className="absolute inset-0 z-30 bg-surface-1/90 flex flex-col items-center justify-center gap-3 p-6 text-center"
           >
             <div className="w-10 h-10 rounded-xl bg-accent/15 text-accent flex items-center justify-center">
               <RefreshCw size={18} className="animate-spin" />

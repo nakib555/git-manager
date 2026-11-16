@@ -1,21 +1,22 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence, MotionConfig } from 'motion/react';
 import { useAppContext } from '../../AppContext';
-import { X, ArrowLeft, ArrowRight, GitCommit } from 'lucide-react';
+import { X, ArrowLeft, ArrowRight, GitCommit, Ban } from 'lucide-react';
 import {
   parseZipArchive,
   compareZipWithRepo,
   commitSyncToGitHub,
+  isSyncAbortError,
   ZipExtractedFile,
   DiffFileItem,
   BulkResolutionType,
+  ConflictResolution,
   applyBulkResolution,
   buildAlignedZipMap,
   computeSyncSummary,
 } from '../../mobile/utils/zipSyncEngine';
 import { analyzeZipRoots, RootCandidate, DirectoryNode } from '../../mobile/utils/zipAutoDetect';
 import { fetchFileContentSafe } from '../../mobile/utils/gitApi';
-import { ConflictResolution } from './SyncConflictResolver';
 import { ZipSyncStepper } from '../../features/sync/components/ZipSyncStepper';
 import { ZipSyncStepUpload } from '../../features/sync/components/ZipSyncStepUpload';
 import { ZipSyncStepReview } from '../../features/sync/components/ZipSyncStepReview';
@@ -33,6 +34,7 @@ export const ZipSyncModal: React.FC<{ isOpen: boolean; onClose: () => void }> = 
   const [compareProgress, setCompareProgress] = useState<{ completed: number; total: number } | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [commitError, setCommitError] = useState<string | null>(null);
+  const [cancelNotice, setCancelNotice] = useState<string | null>(null);
 
   const [zipExtractedFiles, setZipExtractedFiles] = useState<ZipExtractedFile[]>([]);
   const [suggestedRoot, setSuggestedRoot] = useState('');
@@ -50,10 +52,15 @@ export const ZipSyncModal: React.FC<{ isOpen: boolean; onClose: () => void }> = 
   const [prBody, setPrBody] = useState('This pull request synchronizes updated code files exported from AI Studio.');
   const [isCommitting, setIsCommitting] = useState(false);
   const [progressStatus, setProgressStatus] = useState('');
+  const [commitProgress, setCommitProgress] = useState<{ completed: number; total: number } | null>(null);
   const [commitSuccess, setCommitSuccess] = useState<any>(null);
+
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (isOpen) {
+      abortControllerRef.current?.abort();
+      abortControllerRef.current = null;
       setCurrentStep(1);
       setStepDirection(1);
       setZipFile(null);
@@ -62,6 +69,7 @@ export const ZipSyncModal: React.FC<{ isOpen: boolean; onClose: () => void }> = 
       setCompareProgress(null);
       setUploadError(null);
       setCommitError(null);
+      setCancelNotice(null);
       setZipExtractedFiles([]);
       setSuggestedRoot('');
       setActiveRoot('');
@@ -73,14 +81,39 @@ export const ZipSyncModal: React.FC<{ isOpen: boolean; onClose: () => void }> = 
       setResolutions(new Map());
       setNewBranchName(`sync-aistudio-${Date.now().toString(36).slice(-4)}`);
       setProgressStatus('');
+      setCommitProgress(null);
+      setIsCommitting(false);
+    } else {
+      abortControllerRef.current?.abort();
+      abortControllerRef.current = null;
     }
   }, [isOpen]);
+
+  const handleCancelSync = (targetStep?: 1 | 2) => {
+    if (!isCommitting) return;
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+    setIsCommitting(false);
+    setProgressStatus('');
+    setCommitProgress(null);
+    setCommitError(null);
+    setCancelNotice('Synchronization cancelled safely. No commit was created on your branch.');
+    showToast('Synchronization cancelled', 'warning');
+    if (targetStep && targetStep !== currentStep) {
+      setStepDirection(targetStep > currentStep ? 1 : -1);
+      setCurrentStep(targetStep);
+    }
+  };
 
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !isCommitting) {
-        onClose();
+      if (e.key === 'Escape') {
+        if (isCommitting) {
+          handleCancelSync();
+        } else {
+          onClose();
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -88,12 +121,13 @@ export const ZipSyncModal: React.FC<{ isOpen: boolean; onClose: () => void }> = 
   }, [isOpen, isCommitting, onClose]);
 
   const goToStep = (nextStep: 1 | 2 | 3) => {
-    if (nextStep === currentStep) return;
+    if (isCommitting || nextStep === currentStep) return;
     setStepDirection(nextStep > currentStep ? 1 : -1);
     setCurrentStep(nextStep);
   };
 
   const runComparison = async (files: ZipExtractedFile[], root: string) => {
+    if (isCommitting) return;
     setIsComparing(true);
     setCompareProgress({ completed: 0, total: 0 });
     try {
@@ -127,8 +161,10 @@ export const ZipSyncModal: React.FC<{ isOpen: boolean; onClose: () => void }> = 
   };
 
   const handleFileSelected = async (file: File) => {
+    if (isCommitting) return;
     setUploadError(null);
     setCommitError(null);
+    setCancelNotice(null);
     setZipFile(file);
     setIsParsingZip(true);
     try {
@@ -153,6 +189,7 @@ export const ZipSyncModal: React.FC<{ isOpen: boolean; onClose: () => void }> = 
   };
 
   const handleBulkResolve = (type: BulkResolutionType) => {
+    if (isCommitting) return;
     setResolutions((prev) => applyBulkResolution(diffItems, prev, type));
     const labels: Record<BulkResolutionType, string> = {
       all_zip: 'Selected all ZIP updates',
@@ -166,7 +203,7 @@ export const ZipSyncModal: React.FC<{ isOpen: boolean; onClose: () => void }> = 
   const summaryCounts = useMemo(() => computeSyncSummary(diffItems, resolutions), [diffItems, resolutions]);
 
   const handleExecuteSync = async () => {
-    if (!currentRepo) return;
+    if (!currentRepo || isCommitting) return;
     if (!commitMessage.trim()) {
       setCommitError('Please enter a commit message.');
       return;
@@ -176,8 +213,14 @@ export const ZipSyncModal: React.FC<{ isOpen: boolean; onClose: () => void }> = 
       return;
     }
 
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setCommitError(null);
+    setCancelNotice(null);
     setIsCommitting(true);
+    setCommitProgress({ completed: 0, total: summaryCounts.toUpload });
+
     try {
       const zipMap = buildAlignedZipMap(zipExtractedFiles, activeRoot);
       const res = await commitSyncToGitHub({
@@ -193,22 +236,38 @@ export const ZipSyncModal: React.FC<{ isOpen: boolean; onClose: () => void }> = 
         newBranchName: newBranchName.trim(),
         prTitle: prTitle.trim(),
         prBody: prBody.trim(),
-        onProgress: setProgressStatus,
+        signal: controller.signal,
+        onProgress: (step, completed, total) => {
+          setProgressStatus(step);
+          if (typeof completed === 'number' && typeof total === 'number') {
+            setCommitProgress({ completed, total });
+          }
+        },
       });
-      setCommitSuccess(res);
-      refreshData();
+      if (!controller.signal.aborted) {
+        setCommitSuccess(res);
+        refreshData();
+      }
     } catch (err: any) {
+      if (isSyncAbortError(err) || controller.signal.aborted) {
+        return;
+      }
       const msg = err?.message || 'Synchronization failed.';
       setCommitError(msg);
       showToast(msg, 'error');
     } finally {
+      if (abortControllerRef.current === controller) {
+        abortControllerRef.current = null;
+      }
       setIsCommitting(false);
+      setCommitProgress(null);
     }
   };
 
   const samplePath = zipExtractedFiles[0]?.originalPath || '';
   const hasExtracted = zipExtractedFiles.length > 0;
   const changedCount = useMemo(() => diffItems.filter((f) => f.status !== 'unchanged').length, [diffItems]);
+  const unchangedCount = useMemo(() => diffItems.filter((f) => f.status === 'unchanged').length, [diffItems]);
 
   const canSubmitCommit =
     !isCommitting &&
@@ -226,7 +285,9 @@ export const ZipSyncModal: React.FC<{ isOpen: boolean; onClose: () => void }> = 
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.18 }}
-              onClick={() => { if (!isCommitting) onClose(); }}
+              onClick={() => {
+                if (!isCommitting) onClose();
+              }}
               className="absolute inset-0 bg-black/75 cursor-pointer"
               aria-hidden="true"
             />
@@ -253,10 +314,16 @@ export const ZipSyncModal: React.FC<{ isOpen: boolean; onClose: () => void }> = 
                 </div>
                 <button
                   type="button"
-                  onClick={onClose}
-                  disabled={isCommitting}
-                  aria-label="Close dialog"
-                  className="touch-target-44 rounded-xl hover:bg-surface-2 text-text-tertiary hover:text-text-primary btn-tactile cursor-pointer disabled:opacity-40"
+                  onClick={() => {
+                    if (isCommitting) {
+                      handleCancelSync();
+                    } else {
+                      onClose();
+                    }
+                  }}
+                  aria-label={isCommitting ? 'Cancel active sync' : 'Close dialog'}
+                  title={isCommitting ? 'Cancel active sync' : 'Close dialog'}
+                  className="touch-target-44 rounded-xl hover:bg-surface-2 text-text-tertiary hover:text-text-primary btn-tactile cursor-pointer"
                 >
                   <X size={17} />
                 </button>
@@ -268,6 +335,7 @@ export const ZipSyncModal: React.FC<{ isOpen: boolean; onClose: () => void }> = 
                   onSelectStep={goToStep}
                   canNavigateToStep2={hasExtracted && !isParsingZip}
                   canNavigateToStep3={hasExtracted && !isParsingZip && !isComparing}
+                  isLocked={isCommitting}
                 />
               )}
 
@@ -301,6 +369,7 @@ export const ZipSyncModal: React.FC<{ isOpen: boolean; onClose: () => void }> = 
                           directoryTree={directoryTree}
                           samplePath={samplePath}
                           onRootChange={(r) => {
+                            if (isCommitting) return;
                             setActiveRoot(r);
                             runComparison(zipExtractedFiles, r);
                           }}
@@ -315,6 +384,7 @@ export const ZipSyncModal: React.FC<{ isOpen: boolean; onClose: () => void }> = 
                           onSelectFilePath={setSelectedFilePath}
                           resolutions={resolutions}
                           onSetResolution={(p, r) => setResolutions((prev) => new Map(prev).set(p, r))}
+                          onUpdateResolutions={setResolutions}
                           onBulkResolve={handleBulkResolve}
                           isComparing={isComparing}
                           compareProgress={compareProgress}
@@ -336,9 +406,15 @@ export const ZipSyncModal: React.FC<{ isOpen: boolean; onClose: () => void }> = 
                           prBody={prBody}
                           setPrBody={setPrBody}
                           summaryCounts={summaryCounts}
+                          unchangedCount={unchangedCount}
+                          totalArchiveFiles={zipExtractedFiles.length}
                           isCommitting={isCommitting}
                           progressStatus={progressStatus}
+                          commitProgress={commitProgress}
                           commitError={commitError}
+                          cancelNotice={cancelNotice}
+                          onCancelSync={() => handleCancelSync()}
+                          onDismissNotice={() => setCancelNotice(null)}
                         />
                       )}
                     </motion.div>
@@ -349,24 +425,36 @@ export const ZipSyncModal: React.FC<{ isOpen: boolean; onClose: () => void }> = 
               {/* Sticky Wizard Navigation Footer */}
               {!commitSuccess && (
                 <div className="px-4 sm:px-6 py-3 pb-[calc(env(safe-area-inset-bottom,0px)+12px)] border-t border-border bg-surface-2/35 flex items-center justify-between gap-3 shrink-0">
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
                     {currentStep > 1 ? (
-                      <button
-                        type="button"
-                        disabled={isCommitting}
-                        onClick={() => goToStep(currentStep === 3 ? 2 : 1)}
-                        className="min-h-[40px] px-3.5 rounded-xl border border-border bg-surface-1 hover:bg-surface-2 text-xs font-semibold text-text-primary inline-flex items-center gap-1.5 cursor-pointer btn-tactile disabled:opacity-40 whitespace-nowrap"
-                      >
-                        <ArrowLeft size={14} />
-                        <span>Back</span>
-                      </button>
+                      isCommitting ? (
+                        <button
+                          type="button"
+                          onClick={() => handleCancelSync(2)}
+                          className="min-h-[40px] px-3.5 rounded-xl border border-danger/35 bg-danger/10 hover:bg-danger/20 text-xs font-semibold text-danger inline-flex items-center gap-1.5 cursor-pointer btn-tactile whitespace-nowrap"
+                        >
+                          <Ban size={14} />
+                          <span>Cancel & Back</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => goToStep(currentStep === 3 ? 2 : 1)}
+                          className="min-h-[40px] px-3.5 rounded-xl border border-border bg-surface-1 hover:bg-surface-2 text-xs font-semibold text-text-primary inline-flex items-center gap-1.5 cursor-pointer btn-tactile whitespace-nowrap"
+                        >
+                          <ArrowLeft size={14} />
+                          <span>Back</span>
+                        </button>
+                      )
                     ) : (
                       <span className="text-xs text-text-secondary tabular-nums truncate">
                         {hasExtracted
                           ? isComparing
-                            ? 'Comparing against repository...'
-                            : `${changedCount} changed files detected`
-                          : 'Upload a .zip archive to begin'}
+                            ? 'Comparing against repo...'
+                            : unchangedCount > 0
+                              ? `${changedCount} changed · ${unchangedCount} identical`
+                              : `${changedCount} changed files`
+                          : 'Upload a .zip archive'}
                       </span>
                     )}
 
@@ -403,21 +491,28 @@ export const ZipSyncModal: React.FC<{ isOpen: boolean; onClose: () => void }> = 
                     )}
 
                     {currentStep === 3 && (
-                      <button
-                        type="button"
-                        disabled={!canSubmitCommit}
-                        onClick={handleExecuteSync}
-                        className="min-h-[40px] px-4 rounded-xl bg-accent hover:opacity-90 text-white text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer btn-tactile disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
-                      >
-                        <GitCommit size={14} />
-                        <span>
-                          {isCommitting
-                            ? 'Syncing...'
-                            : commitMode === 'pr'
-                              ? 'Push & Open PR'
-                              : 'Commit & Push'}
-                        </span>
-                      </button>
+                      isCommitting ? (
+                        <button
+                          type="button"
+                          onClick={() => handleCancelSync()}
+                          className="min-h-[40px] px-4 rounded-xl bg-surface-2 hover:bg-surface-3 border border-border text-text-primary text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer btn-tactile whitespace-nowrap"
+                        >
+                          <Ban size={14} className="text-danger" />
+                          <span>Cancel Sync</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={!canSubmitCommit}
+                          onClick={handleExecuteSync}
+                          className="min-h-[40px] px-4 rounded-xl bg-accent hover:opacity-90 text-white text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer btn-tactile disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                        >
+                          <GitCommit size={14} />
+                          <span>
+                            {commitMode === 'pr' ? 'Push & Open PR' : 'Commit & Push'}
+                          </span>
+                        </button>
+                      )
                     )}
                   </div>
                 </div>

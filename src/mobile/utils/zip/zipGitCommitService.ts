@@ -2,6 +2,25 @@ import { DiffFileItem, ZipExtractedFile } from './zipTypes';
 import { uploadGitBlob } from './zipBlobService';
 import { updateOrCreateBranch } from './zipRefService';
 
+function throwIfAborted(signal?: AbortSignal) {
+  if (signal?.aborted) {
+    throw new DOMException('Synchronization cancelled by user.', 'AbortError');
+  }
+}
+
+export function isSyncAbortError(error: unknown): boolean {
+  return (
+    error instanceof DOMException && error.name === 'AbortError'
+  ) || (
+    typeof error === 'object' &&
+    error !== null &&
+    'name' in error &&
+    (error as { name?: string }).name === 'AbortError'
+  );
+}
+
+const UPLOAD_CONCURRENCY = 8;
+
 export async function commitSyncToGitHub({
   token,
   owner,
@@ -16,6 +35,7 @@ export async function commitSyncToGitHub({
   prTitle = '',
   prBody = '',
   onProgress,
+  signal,
 }: {
   token: string;
   owner: string;
@@ -29,14 +49,20 @@ export async function commitSyncToGitHub({
   newBranchName?: string;
   prTitle?: string;
   prBody?: string;
-  onProgress?: (step: string) => void;
+  onProgress?: (step: string, completedCount?: number, totalCount?: number) => void;
+  signal?: AbortSignal;
 }): Promise<{
   commitSha: string;
   branchName: string;
   prNumber?: number;
   prUrl?: string;
   htmlUrl: string;
+  uploadedCount: number;
+  deletedCount: number;
+  unchangedCount: number;
 }> {
+  throwIfAborted(signal);
+
   const authHeader = token.startsWith('ghp_') || token.startsWith('github_pat_') || token.startsWith('gho_') || token.startsWith('Bearer ')
     ? (token.startsWith('Bearer ') ? token : `Bearer ${token}`)
     : `token ${token}`;
@@ -48,7 +74,10 @@ export async function commitSyncToGitHub({
   };
 
   onProgress?.('Fetching current branch commit reference...');
-  const refRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/ref/heads/${branch}`, { headers });
+  const refRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/ref/heads/${encodeURIComponent(branch)}`, {
+    headers,
+    signal,
+  });
   if (!refRes.ok) {
     const err = await refRes.json().catch(() => ({}));
     throw new Error(`Failed to get branch '${branch}': ${err.message || refRes.statusText}`);
@@ -56,8 +85,12 @@ export async function commitSyncToGitHub({
   const refData = await refRes.json();
   const baseCommitSha = refData.object.sha;
 
+  throwIfAborted(signal);
   onProgress?.('Fetching base git tree...');
-  const commitRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/commits/${baseCommitSha}`, { headers });
+  const commitRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/commits/${baseCommitSha}`, {
+    headers,
+    signal,
+  });
   if (!commitRes.ok) {
     const err = await commitRes.json().catch(() => ({}));
     throw new Error(`Failed to get base commit: ${err.message || commitRes.statusText}`);
@@ -65,32 +98,69 @@ export async function commitSyncToGitHub({
   const commitData = await commitRes.json();
   const baseTreeSha = commitData.tree.sha;
 
-  const treeEntries: { path: string; mode: string; type: 'blob'; sha: string | null }[] = [];
   const filesToUpload = selectedDiffFiles.filter(f => {
     const res = fileResolutions?.get(f.path);
     return (f.status === 'added' || f.status === 'modified') && (res === undefined || res === 'take_zip');
   });
 
-  let uploadedCount = 0;
-  for (const file of filesToUpload) {
-    uploadedCount++;
-    onProgress?.(`Uploading blob ${uploadedCount}/${filesToUpload.length}: ${file.path}...`);
-    const sha = await uploadGitBlob(file, zipFilesMap, owner, repo, headers);
-    treeEntries.push({ path: file.path, mode: '100644', type: 'blob', sha });
-  }
-
   const filesToDelete = selectedDiffFiles.filter(f => f.status === 'removed' && fileResolutions?.get(f.path) === 'delete');
-  for (const rFile of filesToDelete) {
-    treeEntries.push({ path: rFile.path, mode: '100644', type: 'blob', sha: null });
+  const unchangedCount = selectedDiffFiles.filter(f => f.status === 'unchanged').length;
+  const totalOperations = filesToUpload.length + filesToDelete.length;
+
+  if (totalOperations === 0) {
+    throw new Error('No files selected for synchronization.');
   }
 
-  if (treeEntries.length === 0) throw new Error('No files selected for synchronization.');
+  // Concurrent blob upload worker pool (8 parallel connections, AbortSignal-aware)
+  const uploadedEntries = new Array<{ path: string; mode: string; type: 'blob'; sha: string | null }>(filesToUpload.length);
+  let nextIdx = 0;
+  let completedBlobs = 0;
 
-  onProgress?.('Constructing new Git tree object...');
+  async function blobWorker() {
+    while (nextIdx < filesToUpload.length) {
+      throwIfAborted(signal);
+      const currentIdx = nextIdx++;
+      const file = filesToUpload[currentIdx];
+      const sha = await uploadGitBlob(file, zipFilesMap, owner, repo, headers, signal);
+      throwIfAborted(signal);
+      uploadedEntries[currentIdx] = { path: file.path, mode: '100644', type: 'blob', sha };
+      completedBlobs++;
+      onProgress?.(
+        `Uploading blobs (${completedBlobs}/${filesToUpload.length}): ${file.path}`,
+        completedBlobs,
+        totalOperations
+      );
+    }
+  }
+
+  if (filesToUpload.length > 0) {
+    onProgress?.(`Uploading ${filesToUpload.length} files in parallel...`, 0, totalOperations);
+    const workers = Array.from(
+      { length: Math.min(UPLOAD_CONCURRENCY, filesToUpload.length) },
+      () => blobWorker()
+    );
+    await Promise.all(workers);
+  }
+
+  throwIfAborted(signal);
+
+  const treeEntryMap = new Map<string, { path: string; mode: string; type: 'blob'; sha: string | null }>();
+  for (const entry of uploadedEntries) {
+    if (entry) treeEntryMap.set(entry.path, entry);
+  }
+  for (const rFile of filesToDelete) {
+    throwIfAborted(signal);
+    treeEntryMap.set(rFile.path, { path: rFile.path, mode: '100644', type: 'blob', sha: null });
+  }
+  const treeEntries = Array.from(treeEntryMap.values());
+
+  throwIfAborted(signal);
+  onProgress?.('Constructing new Git tree object...', totalOperations, totalOperations);
   const treeRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/trees`, {
     method: 'POST',
     headers,
     body: JSON.stringify({ base_tree: baseTreeSha, tree: treeEntries }),
+    signal,
   });
   if (!treeRes.ok) {
     const err = await treeRes.json().catch(() => ({}));
@@ -98,11 +168,13 @@ export async function commitSyncToGitHub({
   }
   const newTreeData = await treeRes.json();
 
-  onProgress?.('Creating atomic commit...');
+  throwIfAborted(signal);
+  onProgress?.('Creating atomic commit...', totalOperations, totalOperations);
   const newCommitRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/commits`, {
     method: 'POST',
     headers,
     body: JSON.stringify({ message: commitMessage, tree: newTreeData.sha, parents: [baseCommitSha] }),
+    signal,
   });
   if (!newCommitRes.ok) {
     const err = await newCommitRes.json().catch(() => ({}));
@@ -111,6 +183,7 @@ export async function commitSyncToGitHub({
   const newCommit = await newCommitRes.json();
   const newCommitSha = newCommit.sha;
 
+  throwIfAborted(signal);
   const { targetBranch, prNumber, prUrl } = await updateOrCreateBranch({
     owner,
     repo,
@@ -121,10 +194,20 @@ export async function commitSyncToGitHub({
     prTitle,
     prBody,
     commitMessage,
-    selectedFilesCount: selectedDiffFiles.length,
+    selectedFilesCount: treeEntries.length,
     headers,
-    onProgress,
+    onProgress: (msg) => onProgress?.(msg, totalOperations, totalOperations),
+    signal,
   });
 
-  return { commitSha: newCommitSha, branchName: targetBranch, prNumber, prUrl, htmlUrl: `https://github.com/${owner}/${repo}/commit/${newCommitSha}` };
+  return {
+    commitSha: newCommitSha,
+    branchName: targetBranch,
+    prNumber,
+    prUrl,
+    htmlUrl: `https://github.com/${owner}/${repo}/commit/${newCommitSha}`,
+    uploadedCount: filesToUpload.length,
+    deletedCount: filesToDelete.length,
+    unchangedCount,
+  };
 }

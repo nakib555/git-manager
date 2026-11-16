@@ -126,6 +126,7 @@ export const ensureWebhookInstalled = async (token: string, owner: string, repoN
     const hooksRes = await fetch(`https://api.github.com/repos/${owner}/${repoName}/hooks`, { headers });
     if (hooksRes.ok) {
       const hooks = await hooksRes.json();
+      if (!Array.isArray(hooks)) return;
       const webhookUrl = `${window.location.origin}/api/webhooks/github`;
       const hasHook = hooks.some((hook: any) => hook.config?.url === webhookUrl);
       if (!hasHook) {

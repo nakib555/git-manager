@@ -42,6 +42,7 @@ export function analyzeZipRoots(rawPaths: string[]): {
     .map(p => p.replace(/\\/g, '/').replace(/^\/+/, ''))
     .filter(p => p && !p.includes('__MACOSX/') && !p.endsWith('.DS_Store'));
 
+  const totalFiles = cleanPaths.length;
   const dirSet = new Set<string>();
   dirSet.add('');
 
@@ -80,8 +81,20 @@ export function analyzeZipRoots(rawPaths: string[]): {
       if (matchedLandmarks.includes('README.md') || matchedLandmarks.includes('readme.md')) score += 10;
       if (matchedLandmarks.includes('tsconfig.json')) score += 10;
 
+      // Strongly reward full-archive coverage so a nested subfolder containing only part of the ZIP
+      // never hijacks suggestedRoot and excludes sibling directories.
+      const coverage = totalFiles > 0 ? fileCount / totalFiles : 1;
+      if (coverage === 1) {
+        score += 180;
+      } else if (coverage >= 0.95) {
+        score += 110;
+      } else {
+        score -= 150 + Math.round((1 - coverage) * 150);
+      }
+
+      // If a single top-level wrapper folder wraps all 100% of files (e.g. "repo-main/"), strip it by default
       const depth = dir ? dir.split('/').filter(Boolean).length : 0;
-      if (depth === 1) score += 10;
+      if (depth === 1 && coverage === 1) score += 40;
 
       const displayLabel = dir === '' ? '/ (Root)' : dir;
       candidates.push({
@@ -94,7 +107,7 @@ export function analyzeZipRoots(rawPaths: string[]): {
     }
   }
 
-  candidates.sort((a, b) => b.score - a.score || a.path.length - b.path.length);
+  candidates.sort((a, b) => b.score - a.score || b.fileCount - a.fileCount || a.path.length - b.path.length);
 
   const suggestedRoot = candidates.length > 0 && candidates[0].score > 0
     ? candidates[0].path

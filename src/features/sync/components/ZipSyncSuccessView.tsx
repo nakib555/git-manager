@@ -9,6 +9,9 @@ interface ZipSyncSuccessViewProps {
     prNumber?: number;
     prUrl?: string;
     htmlUrl: string;
+    uploadedCount?: number;
+    deletedCount?: number;
+    unchangedCount?: number;
   };
   onClose: () => void;
 }
@@ -67,6 +70,15 @@ export const ZipSyncSuccessView: React.FC<ZipSyncSuccessViewProps> = ({
             {copiedSha ? <Check size={12} className="text-success" /> : <Copy size={12} />}
           </button>
         </div>
+        {typeof success.uploadedCount === 'number' && (
+          <div className="px-4 py-2.5 flex justify-between items-center gap-3">
+            <span className="text-text-secondary">Files Committed</span>
+            <span className="font-mono text-text-primary font-semibold tabular-nums">
+              {success.uploadedCount + (success.deletedCount || 0)} changed
+              {success.unchangedCount ? ` · ${success.unchangedCount} identical` : ''}
+            </span>
+          </div>
+        )}
         {success.prNumber && (
           <div className="px-4 py-2.5 flex justify-between items-center gap-3">
             <span className="text-text-secondary">Pull Request</span>

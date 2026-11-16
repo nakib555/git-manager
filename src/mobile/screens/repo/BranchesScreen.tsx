@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useAppContext } from '../../../AppContext';
 import { GitBranch, Plus, RefreshCw } from 'lucide-react';
 import { EmptyState } from '../../components/EmptyState';
@@ -6,26 +6,75 @@ import { InlineErrorCard } from '../../components/InlineErrorCard';
 import { CommitDetailModal } from '../../components/CommitDetailModal';
 import { BranchCardItem } from './branches/BranchCardItem';
 import { BranchDetailModal } from './branches/BranchDetailModal';
+import {
+  enrichBranchesWithCommits,
+  resolveDefaultBranchName,
+} from '../../../features/branches/branchInspectionService';
+import {
+  BranchFilterMode,
+  BranchOverviewStrip,
+} from '../../../features/branches/components/BranchOverviewStrip';
 
 export const BranchesScreen: React.FC = () => {
-  const { 
-    activeBranches, 
-    currentBranch, 
-    switchBranch, 
-    openModal, 
-    currentRepo, 
-    showToast, 
+  const {
+    activeBranches,
+    currentBranch,
+    switchBranch,
+    openModal,
+    currentRepo,
+    currentRepoOwner,
+    githubToken,
+    githubUser,
+    showToast,
     refreshData,
     activeCommits,
-    deleteBranch: deleteBranchOnGitHub
+    deleteBranch: deleteBranchOnGitHub,
   } = useAppContext();
 
   const [switchError, setSwitchError] = useState<string | null>(null);
   const [isSwitching, setIsSwitching] = useState(false);
-  const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
+  const [selectedBranchName, setSelectedBranchName] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'commits' | 'compare'>('overview');
   const [isDeleting, setIsDeleting] = useState(false);
   const [selectedCommit, setSelectedCommit] = useState<any | null>(null);
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState<BranchFilterMode>('all');
+
+  const defaultBranchName = useMemo(
+    () => resolveDefaultBranchName(activeBranches),
+    [activeBranches]
+  );
+
+  const activeHeadName = currentBranch || defaultBranchName;
+
+  const enrichedBranches = useMemo(
+    () =>
+      enrichBranchesWithCommits(
+        activeBranches,
+        activeCommits,
+        activeHeadName,
+        defaultBranchName
+      ),
+    [activeBranches, activeCommits, activeHeadName, defaultBranchName]
+  );
+
+  const filteredBranches = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return enrichedBranches.filter((branch) => {
+      if (filter === 'protected' && !branch.isProtected) return false;
+      if (!q) return true;
+      return (
+        branch.name.toLowerCase().includes(q) ||
+        branch.lastCommitMsg.toLowerCase().includes(q) ||
+        branch.shortSha.toLowerCase().includes(q)
+      );
+    });
+  }, [enrichedBranches, filter, search]);
+
+  const selectedBranch = useMemo(
+    () => enrichedBranches.find((b) => b.name === selectedBranchName) || null,
+    [enrichedBranches, selectedBranchName]
+  );
 
   const handleSwitch = async (name: string) => {
     if (isSwitching || name === currentBranch) return;
@@ -45,7 +94,8 @@ export const BranchesScreen: React.FC = () => {
   };
 
   const handleDelete = async (name: string) => {
-    if (name === currentBranch || name === 'main' || name === 'master') {
+    const target = enrichedBranches.find((b) => b.name === name);
+    if (name === activeHeadName || target?.isDefault || name === 'main' || name === 'master') {
       const msg = 'Cannot delete default or currently active branch';
       showToast(msg, 'error');
       throw new Error(msg);
@@ -65,23 +115,19 @@ export const BranchesScreen: React.FC = () => {
 
   return (
     <div className="px-4 py-4 space-y-4 pb-8 select-none">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-base font-bold text-text-primary tracking-tight">Branches</h2>
-            <span className="text-xs font-mono text-text-tertiary">({activeBranches.length})</span>
-          </div>
-          <p className="text-xs text-text-tertiary mt-0.5">Active branches in {currentRepo || 'repository'}</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => openModal('branch')}
-          className="h-9 px-3.5 rounded-xl bg-text-primary text-background hover:opacity-90 text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer shadow-xs"
-        >
-          <Plus size={15} strokeWidth={2.5} />
-          <span>New Branch</span>
-        </button>
-      </div>
+      {enrichedBranches.length > 0 && (
+        <BranchOverviewStrip
+          branches={enrichedBranches}
+          activeBranchName={activeHeadName}
+          defaultBranchName={defaultBranchName}
+          search={search}
+          filter={filter}
+          compact
+          onSearchChange={setSearch}
+          onFilterChange={setFilter}
+          onCreateBranch={() => openModal('branch')}
+        />
+      )}
 
       {switchError && (
         <InlineErrorCard
@@ -95,7 +141,7 @@ export const BranchesScreen: React.FC = () => {
         />
       )}
 
-      {activeBranches.length === 0 ? (
+      {enrichedBranches.length === 0 ? (
         <EmptyState
           icon={GitBranch}
           title="No branches available"
@@ -103,16 +149,22 @@ export const BranchesScreen: React.FC = () => {
           primaryAction={{ label: 'Create New Branch', icon: Plus, onClick: () => openModal('branch') }}
           secondaryAction={{ label: 'Refresh Repository', icon: RefreshCw, onClick: () => refreshData() }}
         />
+      ) : filteredBranches.length === 0 ? (
+        <div className="p-8 text-center bg-surface-1 border border-border rounded-2xl space-y-1.5">
+          <p className="text-sm font-semibold text-text-primary">No matching branches</p>
+          <p className="text-xs text-text-secondary">
+            Try clearing the filter or search query.
+          </p>
+        </div>
       ) : (
         <div className="space-y-2.5">
-          {activeBranches.map((branch) => (
+          {filteredBranches.map((branch, idx) => (
             <BranchCardItem
               key={branch.name}
               branch={branch}
-              isActive={branch.name === currentBranch}
-              isDefault={branch.name === 'main' || branch.name === 'master'}
               isSwitching={isSwitching}
-              onSelect={() => setSelectedBranch(branch.name)}
+              index={idx}
+              onSelect={() => setSelectedBranchName(branch.name)}
               onSwitch={(e) => {
                 e.stopPropagation();
                 handleSwitch(branch.name);
@@ -124,20 +176,23 @@ export const BranchesScreen: React.FC = () => {
 
       <BranchDetailModal
         selectedBranch={selectedBranch}
-        currentBranch={currentBranch}
+        baseBranchName={defaultBranchName}
+        owner={currentRepoOwner || githubUser?.login || null}
+        repo={currentRepo}
+        token={githubToken}
         activeTab={activeTab}
         activeCommits={activeCommits}
         isSwitching={isSwitching}
         isDeleting={isDeleting}
         onTabChange={setActiveTab}
-        onClose={() => setSelectedBranch(null)}
+        onClose={() => setSelectedBranchName(null)}
         onSelectCommit={setSelectedCommit}
         onCreatePR={() => {
-          setSelectedBranch(null);
+          setSelectedBranchName(null);
           openModal('pr');
         }}
-        onSwitch={() => selectedBranch && handleSwitch(selectedBranch)}
-        onDelete={() => selectedBranch && handleDelete(selectedBranch)}
+        onSwitch={() => selectedBranch && handleSwitch(selectedBranch.name)}
+        onDelete={() => selectedBranch && handleDelete(selectedBranch.name)}
       />
 
       <CommitDetailModal commit={selectedCommit} onClose={() => setSelectedCommit(null)} />

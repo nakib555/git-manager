@@ -11,6 +11,7 @@ export async function updateOrCreateBranch({
   selectedFilesCount,
   headers,
   onProgress,
+  signal,
 }: {
   owner: string;
   repo: string;
@@ -24,7 +25,12 @@ export async function updateOrCreateBranch({
   selectedFilesCount: number;
   headers: Record<string, string>;
   onProgress?: (step: string) => void;
+  signal?: AbortSignal;
 }): Promise<{ targetBranch: string; prNumber?: number; prUrl?: string }> {
+  if (signal?.aborted) {
+    throw new DOMException('Synchronization cancelled by user.', 'AbortError');
+  }
+
   let targetBranch = branch;
   let prNumber: number | undefined;
   let prUrl: string | undefined;
@@ -36,6 +42,7 @@ export async function updateOrCreateBranch({
       method: 'POST',
       headers,
       body: JSON.stringify({ ref: `refs/heads/${targetBranch}`, sha: newCommitSha }),
+      signal,
     });
     if (!createBranchRes.ok) {
       const err = await createBranchRes.json().catch(() => ({}));
@@ -52,6 +59,7 @@ export async function updateOrCreateBranch({
         head: targetBranch,
         base: branch,
       }),
+      signal,
     });
     if (prRes.ok) {
       const prData = await prRes.json();
@@ -64,6 +72,7 @@ export async function updateOrCreateBranch({
       method: 'PATCH',
       headers,
       body: JSON.stringify({ sha: newCommitSha, force: false }),
+      signal,
     });
     if (!updateRefRes.ok) {
       const err = await updateRefRes.json().catch(() => ({}));

@@ -4,9 +4,9 @@ import { sanitizeZipPath } from './zipSyncHelpers';
 
 export function isBinaryFilename(path: string): boolean {
   const binaryExtensions = [
-    'png', 'jpg', 'jpeg', 'gif', 'webp', 'ico', 'svg', 'bmp', 'tiff',
-    'pdf', 'zip', 'tar', 'gz', '7z', 'rar',
-    'exe', 'dll', 'so', 'dylib', 'bin',
+    'png', 'jpg', 'jpeg', 'gif', 'webp', 'ico', 'svg', 'bmp', 'tiff', 'avif',
+    'pdf', 'zip', 'tar', 'gz', '7z', 'rar', 'wasm',
+    'exe', 'dll', 'so', 'dylib', 'bin', 'db', 'sqlite',
     'woff', 'woff2', 'ttf', 'otf', 'eot',
     'mp3', 'wav', 'ogg', 'mp4', 'mov', 'webm'
   ];
@@ -32,6 +32,16 @@ export function detectCommonRoot(paths: string[]): string {
   return allMatch ? `${candidate}/` : '';
 }
 
+const utf8FatalDecoder = new TextDecoder('utf-8', { fatal: true });
+
+function looksBinaryBytes(bytes: Uint8Array): boolean {
+  const sampleLen = Math.min(bytes.length, 4096);
+  for (let i = 0; i < sampleLen; i++) {
+    if (bytes[i] === 0) return true;
+  }
+  return false;
+}
+
 export async function parseZipArchive(file: File): Promise<{
   files: ZipExtractedFile[];
   commonRoot: string;
@@ -45,12 +55,17 @@ export async function parseZipArchive(file: File): Promise<{
     throw new Error('Invalid or corrupted ZIP archive. Please export a valid .zip file.');
   }
 
+  const entryMap = new Map<string, JSZip.JSZipObject>();
   const rawPaths: string[] = [];
+
   zipContent.forEach((relativePath, entry) => {
     if (entry.dir) return;
     if (!relativePath.includes('__MACOSX/') && !relativePath.endsWith('.DS_Store')) {
       const cleaned = sanitizeZipPath(relativePath);
-      if (cleaned) rawPaths.push(cleaned);
+      if (cleaned && !entryMap.has(cleaned)) {
+        entryMap.set(cleaned, entry);
+        rawPaths.push(cleaned);
+      }
     }
   });
 
@@ -59,49 +74,56 @@ export async function parseZipArchive(file: File): Promise<{
   }
 
   const commonRoot = detectCommonRoot(rawPaths);
-  const extractedFiles: ZipExtractedFile[] = [];
+  const extractedFiles: ZipExtractedFile[] = new Array(rawPaths.length);
 
-  for (const rawPath of rawPaths) {
-    // Look up original entry from zipContent safely
-    const entry = zipContent.file(rawPath) || Object.values(zipContent.files).find(
-      (f) => !f.dir && sanitizeZipPath(f.name) === rawPath
+  // Concurrent extraction in batches of 16 for fast archive processing
+  const BATCH_SIZE = 16;
+  for (let start = 0; start < rawPaths.length; start += BATCH_SIZE) {
+    const slice = rawPaths.slice(start, start + BATCH_SIZE);
+    await Promise.all(
+      slice.map(async (rawPath, offset) => {
+        const entry = entryMap.get(rawPath);
+        if (!entry || entry.dir) return;
+
+        const normalizedPath = commonRoot && rawPath.startsWith(commonRoot)
+          ? rawPath.slice(commonRoot.length)
+          : rawPath;
+
+        const bytes = await entry.async('uint8array');
+        const forceBinary = isBinaryFilename(normalizedPath) || looksBinaryBytes(bytes);
+
+        let content: string | undefined;
+        let binaryData: Uint8Array | undefined;
+
+        if (forceBinary) {
+          binaryData = bytes;
+        } else {
+          try {
+            content = utf8FatalDecoder.decode(bytes);
+          } catch {
+            binaryData = bytes;
+          }
+        }
+
+        extractedFiles[start + offset] = {
+          originalPath: rawPath,
+          normalizedPath: cleanPath(normalizedPath),
+          isDir: false,
+          content,
+          binaryData,
+          size: bytes.byteLength,
+        };
+      })
     );
-    if (!entry || entry.dir) continue;
-
-    const normalizedPath = commonRoot && rawPath.startsWith(commonRoot)
-      ? rawPath.slice(commonRoot.length)
-      : rawPath;
-
-    const isBinary = isBinaryFilename(normalizedPath);
-    let content: string | undefined;
-    let binaryData: Uint8Array | undefined;
-
-    if (isBinary) {
-      binaryData = await entry.async('uint8array');
-    } else {
-      try {
-        content = await entry.async('string');
-      } catch {
-        binaryData = await entry.async('uint8array');
-      }
-    }
-
-    extractedFiles.push({
-      originalPath: rawPath,
-      normalizedPath: cleanPath(normalizedPath),
-      isDir: false,
-      content,
-      binaryData,
-      size: binaryData ? binaryData.length : (content ? new TextEncoder().encode(content).length : 0),
-    });
   }
 
-  if (extractedFiles.length === 0) {
+  const compactFiles = extractedFiles.filter(Boolean);
+  if (compactFiles.length === 0) {
     throw new Error('Could not extract any readable files from this ZIP archive.');
   }
 
   return {
-    files: extractedFiles,
+    files: compactFiles,
     commonRoot,
     rawPaths,
   };

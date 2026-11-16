@@ -3,3 +3,4 @@ export * from './zip/zipParser';
 export * from './zip/zipDiffCalculator';
 export * from './zip/zipGitCommitService';
 export * from './zip/zipSyncHelpers';
+export * from './zip/zipDiffTree';

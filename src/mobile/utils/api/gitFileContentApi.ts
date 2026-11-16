@@ -39,6 +39,9 @@ export async function fetchFileContentSafe({
     }
   }
 
+  const encodedPath = filePath.split('/').map(encodeURIComponent).join('/');
+  const encodedRef = encodeURIComponent(resolvedBranch);
+
   if (token) {
     try {
       const authHeader = token.startsWith('ghp_') || token.startsWith('github_pat_') || token.startsWith('gho_') || token.startsWith('Bearer ')
@@ -46,7 +49,7 @@ export async function fetchFileContentSafe({
         : `token ${token}`;
 
       const res = await fetch(
-        `https://api.github.com/repos/${resolvedOwner}/${repoName}/contents/${filePath}?ref=${resolvedBranch}`,
+        `https://api.github.com/repos/${resolvedOwner}/${repoName}/contents/${encodedPath}?ref=${encodedRef}`,
         {
           headers: {
             Authorization: authHeader,
@@ -67,7 +70,7 @@ export async function fetchFileContentSafe({
   }
 
   try {
-    const rawUrl = `https://raw.githubusercontent.com/${resolvedOwner}/${repoName}/${resolvedBranch}/${filePath}`;
+    const rawUrl = `https://raw.githubusercontent.com/${resolvedOwner}/${repoName}/${encodedRef}/${encodedPath}`;
     const rawRes = await fetch(rawUrl);
     if (rawRes.ok) {
       return await rawRes.text();
@@ -76,7 +79,7 @@ export async function fetchFileContentSafe({
 
   if (resolvedBranch !== 'master') {
     try {
-      const rawMasterUrl = `https://raw.githubusercontent.com/${resolvedOwner}/${repoName}/master/${filePath}`;
+      const rawMasterUrl = `https://raw.githubusercontent.com/${resolvedOwner}/${repoName}/master/${encodedPath}`;
       const rawRes = await fetch(rawMasterUrl);
       if (rawRes.ok) {
         return await rawRes.text();
@@ -86,7 +89,7 @@ export async function fetchFileContentSafe({
 
   try {
     const res = await fetch(
-      `https://api.github.com/repos/${resolvedOwner}/${repoName}/contents/${filePath}?ref=${resolvedBranch}`,
+      `https://api.github.com/repos/${resolvedOwner}/${repoName}/contents/${encodedPath}?ref=${encodedRef}`,
       {
         headers: {
           Accept: 'application/vnd.github.v3+json',
