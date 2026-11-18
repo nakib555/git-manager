@@ -56,7 +56,7 @@ export const PaginationSizeSelector: React.FC<PaginationSizeSelectorProps> = ({
                 disabled={isLoading}
                 className={`min-h-[28px] px-2 py-0.5 rounded-md text-[11px] font-mono tabular-nums font-semibold transition-all cursor-pointer ${
                   isActive
-                    ? 'bg-accent text-white shadow-xs font-bold'
+                    ? 'bg-primary text-white shadow-xs font-bold'
                     : 'text-text-tertiary hover:text-text-primary hover:bg-surface-3/50'
                 }`}
                 title={opt === -1 ? 'Show all items' : `Show ${opt} items per page`}

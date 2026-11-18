@@ -25,8 +25,8 @@ export const GitGraph: React.FC<GitGraphProps> = ({
 
   const layout = useMemo(() => {
     return computeGitGraphLayout(commits, {
-      nodeSpacingY: isDesktop ? 60 : 50, laneSpacingX: isDesktop ? 32 : 24,
-      paddingLeft: isDesktop ? 40 : 20, paddingTop: isDesktop ? 36 : 24,
+      nodeSpacingY: isDesktop ? 40 : 44, laneSpacingX: isDesktop ? 26 : 24,
+      paddingLeft: isDesktop ? 26 : 20, paddingTop: isDesktop ? 22 : 22,
     });
   }, [commits, isDesktop]);
 
@@ -55,8 +55,12 @@ export const GitGraph: React.FC<GitGraphProps> = ({
   };
 
   return (
-    <div ref={containerRef} className={`relative w-full h-full min-h-[300px] overflow-hidden bg-main/30 select-none ${className}`}>
-      <GitGraphToolbar onZoomIn={() => handleZoom(1.3)} onZoomOut={() => handleZoom(0.75)} onResetZoom={handleReset} />
+    <div ref={containerRef} className={`flex flex-col relative w-full h-full min-h-[148px] overflow-hidden bg-surface-1 select-none ${className}`}>
+      <div className="flex items-center justify-between px-2.5 py-1 border-b border-border/70 bg-surface-2/40 shrink-0">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Branch Topology</span>
+        <GitGraphToolbar onZoomIn={() => handleZoom(1.3)} onZoomOut={() => handleZoom(0.75)} onResetZoom={handleReset} />
+      </div>
+      <div className="relative flex-1 min-h-0 overflow-hidden">
       <svg ref={svgRef} className="w-full h-full cursor-grab active:cursor-grabbing">
         <defs>
           <radialGradient id="head-halo" cx="50%" cy="50%" r="50%">
@@ -67,19 +71,19 @@ export const GitGraph: React.FC<GitGraphProps> = ({
           {Array.from({ length: layout.lanesCount }).map((_, laneIdx) => (
             <line
               key={`guide-${laneIdx}`}
-              x1={(isDesktop ? 40 : 20) + laneIdx * (isDesktop ? 32 : 24)}
-              y1={20}
-              x2={(isDesktop ? 40 : 20) + laneIdx * (isDesktop ? 32 : 24)}
+              x1={(isDesktop ? 26 : 20) + laneIdx * (isDesktop ? 26 : 24)}
+              y1={12}
+              x2={(isDesktop ? 26 : 20) + laneIdx * (isDesktop ? 26 : 24)}
               y2={layout.height}
               stroke={BRANCH_LANE_COLORS[laneIdx % BRANCH_LANE_COLORS.length]}
-              strokeWidth="1.5" strokeDasharray="3 4" strokeOpacity="0.25"
+              strokeWidth="1.5" strokeDasharray="3 4" strokeOpacity="0.28"
             />
           ))}
           {layout.links.map((link) => (
             <path
               key={link.id} d={link.d} fill="none" stroke={link.color}
-              strokeWidth={activeSelected === link.sourceHash || activeSelected === link.targetHash ? 3.5 : 2}
-              strokeOpacity={0.8} strokeLinecap="round"
+              strokeWidth={activeSelected === link.sourceHash || activeSelected === link.targetHash ? 3 : 2}
+              strokeOpacity={0.85} strokeLinecap="round"
             />
           ))}
           {layout.nodes.map((node) => {
@@ -91,20 +95,28 @@ export const GitGraph: React.FC<GitGraphProps> = ({
                 onMouseEnter={(e) => {
                   setHoveredNode(node);
                   const rect = containerRef.current?.getBoundingClientRect();
-                  if (rect) setTooltipPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+                  if (rect) {
+                    const clampedX = Math.min(Math.max(12, e.clientX - rect.left), Math.max(12, rect.width - 230));
+                    const clampedY = Math.min(Math.max(12, e.clientY - rect.top), Math.max(12, rect.height - 110));
+                    setTooltipPos({ x: clampedX, y: clampedY });
+                  }
                 }}
                 onMouseLeave={() => { setHoveredNode(null); setTooltipPos(null); }}
               >
-                {node.isHead && <circle r="16" fill="url(#head-halo)" className="head-glow" />}
+                {node.isHead && <circle r="14" fill="url(#head-halo)" className="head-glow" />}
+                {isSelected && <circle r="10" fill="none" stroke="var(--color-accent)" strokeWidth="1.5" strokeOpacity="0.7" />}
                 <circle
-                  r={isSelected ? 8 : (node.isMerge ? 6 : 5)}
+                  r={isSelected ? 6.5 : (node.isMerge ? 5.5 : 4.5)}
                   fill={node.isMerge ? MERGE_COMMIT_COLOR : node.color}
-                  stroke="var(--card, #161b22)" strokeWidth="2.5"
+                  stroke="var(--color-surface-1)" strokeWidth="2"
                 />
-                <g transform={`translate(${Math.max(16, (layout.lanesCount - node.lane) * (isDesktop ? 32 : 24) + 6)}, 4)`}>
-                  <rect x="0" y="-12" width="54" height="18" rx="4" fill="rgba(255,255,255,0.06)" stroke={node.color} strokeWidth="1" strokeOpacity="0.6" />
+                <g transform={`translate(${Math.max(16, (layout.lanesCount - node.lane) * (isDesktop ? 26 : 24) + 6)}, 4)`}>
+                  <rect
+                    x="0" y="-12" width="54" height="18" rx="5"
+                    fill="var(--color-surface-2)" stroke={node.color} strokeWidth="1" strokeOpacity="0.55"
+                  />
                   <text x="27" y="0" textAnchor="middle" fill={node.color} fontSize="10" fontFamily="monospace" fontWeight="bold">{node.hash.slice(0, 7)}</text>
-                  <text x="62" y="1" fill="currentColor" fontSize="11" fontWeight="600" className="text-text-main">{node.msg.slice(0, 32)}</text>
+                  <text x="62" y="1" fill="var(--color-text-primary)" fontSize="11" fontWeight="600">{node.msg.slice(0, 32)}</text>
                 </g>
               </g>
             );
@@ -112,6 +124,7 @@ export const GitGraph: React.FC<GitGraphProps> = ({
         </g>
       </svg>
       <GitGraphTooltip node={hoveredNode} pos={tooltipPos} />
+      </div>
     </div>
   );
 };

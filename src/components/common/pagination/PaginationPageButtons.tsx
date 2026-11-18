@@ -75,7 +75,7 @@ export const PaginationPageButtons: React.FC<PaginationPageButtonsProps> = ({
                 aria-current={isCurrent ? 'page' : undefined}
                 className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-mono tabular-nums font-medium transition-all cursor-pointer ${
                   isCurrent
-                    ? 'bg-accent text-white font-bold shadow-xs border border-accent'
+                    ? 'bg-primary text-white font-bold shadow-xs border border-primary'
                     : 'text-text-secondary border border-border/70 hover:border-border hover:bg-surface-2 hover:text-text-primary'
                 }`}
               >

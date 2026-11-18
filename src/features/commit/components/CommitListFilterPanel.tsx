@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Calendar, RotateCcw } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 import { CommitFilter, DatePreset } from '../utils/commitFilterUtils';
 
 interface CommitListFilterPanelProps {
@@ -33,7 +33,7 @@ export const CommitListFilterPanel: React.FC<CommitListFilterPanelProps> = ({
           initial={{ height: 0, opacity: 0 }}
           animate={{ height: 'auto', opacity: 1 }}
           exit={{ height: 0, opacity: 0 }}
-          className="flex flex-col gap-2.5 overflow-hidden p-3 bg-main/40 rounded-xl border border-border"
+          className="flex flex-col gap-2.5 overflow-hidden p-3 bg-surface-2/60 rounded-xl border border-border shrink-0"
         >
           <div className="space-y-1.5">
             <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider block">
@@ -57,7 +57,7 @@ export const CommitListFilterPanel: React.FC<CommitListFilterPanelProps> = ({
                     className={`text-[11px] px-2.5 py-1 rounded-lg border font-medium transition-colors cursor-pointer ${
                       isSelected
                         ? 'bg-primary text-white border-primary shadow-xs'
-                        : 'bg-card border-border text-text-muted hover:text-text-main'
+                        : 'bg-surface-1 border-border text-text-muted hover:text-text-main'
                     }`}
                   >
                     {p.label}
@@ -70,14 +70,16 @@ export const CommitListFilterPanel: React.FC<CommitListFilterPanelProps> = ({
           <div className="grid grid-cols-2 gap-2 pt-1">
             <input
               type="text"
-              className="w-full bg-card border border-border text-text-main text-xs rounded-xl px-3 py-2 outline-none focus:border-primary placeholder:text-text-muted/60"
+              aria-label="Filter commits by author"
+              className="w-full bg-surface-1 border border-border text-text-main text-xs rounded-xl px-3 py-1.5 outline-none focus:border-primary placeholder:text-text-tertiary"
               placeholder="Author (e.g. alex)"
               value={authorInput}
               onChange={(e) => setAuthorInput(e.target.value)}
             />
             <input
               type="text"
-              className="w-full bg-card border border-border text-text-main text-xs rounded-xl px-3 py-2 outline-none focus:border-primary placeholder:text-text-muted/60"
+              aria-label="Filter commits by branch"
+              className="w-full bg-surface-1 border border-border text-text-main text-xs rounded-xl px-3 py-1.5 outline-none focus:border-primary placeholder:text-text-tertiary"
               placeholder="Branch (e.g. main)"
               value={branchInput}
               onChange={(e) => setBranchInput(e.target.value)}
@@ -85,29 +87,25 @@ export const CommitListFilterPanel: React.FC<CommitListFilterPanelProps> = ({
           </div>
 
           <div className="grid grid-cols-2 gap-2 items-start pt-1">
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1 min-w-0">
               <span className="text-[10px] text-text-muted pl-1">Since (From)</span>
-              <div className="relative">
-                <Calendar size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
-                <input
-                  type="date"
-                  className="w-full bg-card border border-border text-text-main text-xs rounded-xl pl-8 pr-2 py-1.5 outline-none focus:border-primary"
-                  value={filters.since}
-                  onChange={(e) => setFilters(prev => ({ ...prev, since: e.target.value, datePreset: 'custom', page: 1 }))}
-                />
-              </div>
+              <input
+                type="date"
+                aria-label="Commits since date"
+                className="w-full min-w-0 bg-surface-1 border border-border text-text-main text-[11px] font-mono rounded-xl px-2.5 py-1.5 outline-none focus:border-primary"
+                value={filters.since}
+                onChange={(e) => setFilters(prev => ({ ...prev, since: e.target.value, datePreset: 'custom', page: 1 }))}
+              />
             </div>
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1 min-w-0">
               <span className="text-[10px] text-text-muted pl-1">Until (To)</span>
-              <div className="relative">
-                <Calendar size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
-                <input
-                  type="date"
-                  className="w-full bg-card border border-border text-text-main text-xs rounded-xl pl-8 pr-2 py-1.5 outline-none focus:border-primary"
-                  value={filters.until}
-                  onChange={(e) => setFilters(prev => ({ ...prev, until: e.target.value, datePreset: 'custom', page: 1 }))}
-                />
-              </div>
+              <input
+                type="date"
+                aria-label="Commits until date"
+                className="w-full min-w-0 bg-surface-1 border border-border text-text-main text-[11px] font-mono rounded-xl px-2.5 py-1.5 outline-none focus:border-primary"
+                value={filters.until}
+                onChange={(e) => setFilters(prev => ({ ...prev, until: e.target.value, datePreset: 'custom', page: 1 }))}
+              />
             </div>
           </div>
 

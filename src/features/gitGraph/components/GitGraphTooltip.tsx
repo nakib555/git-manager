@@ -1,6 +1,6 @@
 import React from 'react';
 import { GraphNode } from '../../../utils/gitGraphLayout';
-import { GitCommit, User, Clock } from 'lucide-react';
+import { User, Clock } from 'lucide-react';
 
 interface GitGraphTooltipProps {
   node: GraphNode | null;
@@ -12,8 +12,8 @@ export const GitGraphTooltip: React.FC<GitGraphTooltipProps> = ({ node, pos }) =
 
   return (
     <div
-      style={{ left: `${pos.x + 12}px`, top: `${pos.y - 10}px` }}
-      className="absolute z-30 pointer-events-none bg-card/95 backdrop-blur-sm border border-border rounded-xl p-3 shadow-xl text-xs space-y-1.5 max-w-xs animate-fade-in"
+      style={{ left: `${pos.x + 10}px`, top: `${pos.y + 10}px` }}
+      className="absolute z-30 pointer-events-none bg-card/95 backdrop-blur-sm border border-border rounded-xl p-3 shadow-xl text-xs space-y-1.5 max-w-[220px] popover-enter"
     >
       <div className="flex items-center gap-2">
         <span

@@ -30,7 +30,7 @@ export const CommitListVirtualScroller: React.FC<CommitListVirtualScrollerProps>
   const rowVirtualizer = useVirtualizer({
     count: commits.length,
     getScrollElement: () => scrollElementRef.current,
-    estimateSize: () => (isDesktop ? 106 : 134),
+    estimateSize: () => (isDesktop ? 84 : 134),
     overscan: 5,
   });
 

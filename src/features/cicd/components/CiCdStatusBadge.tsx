@@ -9,9 +9,10 @@ interface CiCdStatusBadgeProps {
 }
 
 export const CiCdStatusBadge: React.FC<CiCdStatusBadgeProps> = ({ hash, className = '', isCompact = false }) => {
-  const { cicd } = useCiCdStatus(hash);
+  const { cicd, isReal } = useCiCdStatus(hash);
 
   if (isCompact) {
+    if (!isReal) return null;
     return (
       <span className={`inline-flex items-center justify-center w-4 h-4 rounded-full ${cicd.badgeBg} ${className}`} title={cicd.label}>
         {cicd.status === 'success' && <Check size={9} className="text-emerald-500 stroke-[3]" />}

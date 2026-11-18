@@ -18,6 +18,48 @@ export const DEMO_COMMITS: GitCommitNode[] = [
     del: '-18',
     parents: ['b3e2a0f'],
     isPrimary: true,
+    files: [
+      {
+        filename: 'src/core/reconciler.ts',
+        status: 'modified',
+        additions: 94,
+        deletions: 12,
+        patch: `@@ -42,16 +42,24 @@ export class FiberReconciler {
+-  public flushSync(root: FiberNode): void {
+-    let cursor: FiberNode | null = root;
+-    while (cursor) {
+-      cursor = this.performUnitOfWork(cursor);
++  public scheduleConcurrentWork(root: FiberNode, priority: LanePriority): void {
++    const deadline = performance.now() + this.frameBudgetMs;
++    let cursor: FiberNode | null = this.resumeInterruptedCursor(root, priority);
++
++    while (cursor && performance.now() < deadline) {
++      cursor = this.performUnitOfWork(cursor, priority);
+     }
++
++    if (cursor) {
++      this.yieldToBrowserHost(cursor, priority);
++      return;
++    }
+     this.commitRootEffects(root);
+   }
+ }`,
+      },
+      {
+        filename: 'src/core/lanes.ts',
+        status: 'added',
+        additions: 48,
+        deletions: 6,
+        patch: `@@ -1,6 +1,11 @@
++export type LanePriority = 'sync' | 'input' | 'transition' | 'idle';
++
+ export const DEFAULT_FRAME_BUDGET_MS = 5;
++
++export function isUrgentLane(priority: LanePriority): boolean {
++  return priority === 'sync' || priority === 'input';
++}`,
+      },
+    ],
   },
   {
     hash: 'b3e2a0f',
@@ -31,6 +73,26 @@ export const DEMO_COMMITS: GitCommitNode[] = [
     del: '-35',
     parents: ['c9d8e7a'],
     isPrimary: true,
+    files: [
+      {
+        filename: 'src/core/fiberQueue.ts',
+        status: 'modified',
+        additions: 64,
+        deletions: 35,
+        patch: `@@ -18,11 +18,14 @@ export class FiberWorkQueue {
+-  private tasks: WorkUnit[] = [];
++  private ringBuffer: Array<WorkUnit | undefined> = new Array(256);
++  private head = 0;
++  private tail = 0;
+ 
+   enqueue(unit: WorkUnit): void {
+-    this.tasks.push(unit);
++    this.ringBuffer[this.tail] = unit;
++    this.tail = (this.tail + 1) & 255;
+   }
+ }`,
+      },
+    ],
   },
   {
     hash: 'c9d8e7a',
@@ -44,6 +106,24 @@ export const DEMO_COMMITS: GitCommitNode[] = [
     del: '-7',
     parents: ['d4f3b2c'],
     isPrimary: true,
+    files: [
+      {
+        filename: 'src/ssr/hydrateStream.ts',
+        status: 'modified',
+        additions: 28,
+        deletions: 7,
+        patch: `@@ -73,9 +73,12 @@ export async function hydrateBoundary(boundaryId: string): Promise<void> {
+-  const marker = document.getElementById(boundaryId);
+-  if (!marker) return;
++  const marker = await waitForStreamMarker(boundaryId, { timeoutMs: 2500 });
++  if (!marker || marker.dataset.hydrated === 'true') {
++    return;
++  }
++  marker.dataset.hydrated = 'true';
+   mountClientSubtree(marker);
+ }`,
+      },
+    ],
   },
   {
     hash: 'd4f3b2c',
@@ -57,6 +137,18 @@ export const DEMO_COMMITS: GitCommitNode[] = [
     del: '-142',
     parents: ['e5a6c1b'],
     isPrimary: true,
+    files: [
+      {
+        filename: 'src/ssr/suspenseController.ts',
+        status: 'modified',
+        additions: 188,
+        deletions: 142,
+        patch: `@@ -10,6 +10,9 @@ export interface SuspenseController {
+   resolve(payload: string): void;
++  abort(reason: Error): void;
+ }`,
+      },
+    ],
   },
   {
     hash: 'e5a6c1b',

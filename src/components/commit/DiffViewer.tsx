@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vs, vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { WrapText } from 'lucide-react';
+import { WrapText, Copy, Check } from 'lucide-react';
 import { useAppContext } from '../../AppContext';
 import { parseUnifiedDiff } from '../../features/desktop/utils/diffParser';
 
@@ -9,29 +9,61 @@ export const DiffViewer = ({ patch, filename, isDark }: { patch: string; filenam
   const { theme } = useAppContext();
   const darkActive = isDark ?? theme !== 'light';
   const [wrapLines, setWrapLines] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const parsed = useMemo(() => parseUnifiedDiff(patch || ''), [patch]);
 
+  const normalizedPrismTheme = useMemo(() => {
+    const baseTheme = darkActive ? vscDarkPlus : vs;
+    const preStyle = { ...(baseTheme['pre[class*="language-"]'] || {}) };
+    const codeStyle = { ...(baseTheme['code[class*="language-"]'] || {}) };
+    delete preStyle.background;
+    delete codeStyle.background;
+    preStyle.backgroundColor = 'transparent';
+    codeStyle.backgroundColor = 'transparent';
+    return {
+      ...baseTheme,
+      'pre[class*="language-"]': preStyle,
+      'code[class*="language-"]': codeStyle,
+    };
+  }, [darkActive]);
+
   if (!patch) return <div className="text-text-muted italic pl-2 p-2">Binary or empty file change.</div>;
 
+  const handleCopyPatch = () => {
+    navigator.clipboard?.writeText(patch);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
+  };
+
   return (
-    <div className="w-full text-[12px] md:text-sm font-mono relative overflow-hidden rounded-2xl border border-border bg-card">
-      <div className="bg-surface-2 border-b border-border px-4 py-2.5 min-h-[44px] flex items-center justify-between gap-3 text-text-secondary">
+    <div className="w-full text-[12.5px] font-mono relative overflow-hidden rounded-2xl border border-border bg-card shadow-xs">
+      <div className="bg-surface-2/80 border-b border-border px-4 py-2 min-h-[42px] flex items-center justify-between gap-3 text-text-secondary">
         <span className="font-semibold text-text-primary text-xs tracking-mono truncate">{filename}</span>
-        <div className="flex items-center gap-3 shrink-0">
-          <div className="flex items-center gap-2 text-[11px] font-mono tabular-nums">
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 text-[11px] font-mono tabular-nums pr-1">
             <span className="text-addition-oklch font-semibold">+{parsed.additions}</span>
             <span className="text-deletion-oklch font-semibold">-{parsed.deletions}</span>
           </div>
           <button
             type="button"
+            onClick={handleCopyPatch}
+            aria-label={`Copy diff for ${filename}`}
+            title="Copy patch"
+            className="flex items-center gap-1 h-7 px-2 rounded-lg border border-border bg-surface-1 hover:bg-hover text-[11px] font-sans font-medium text-text-secondary hover:text-text-primary cursor-pointer transition-colors"
+          >
+            {copied ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
+            <span>{copied ? 'Copied' : 'Copy'}</span>
+          </button>
+          <button
+            type="button"
             onClick={() => setWrapLines((prev) => !prev)}
             aria-pressed={wrapLines}
             title={wrapLines ? 'Disable line wrapping' : 'Wrap long lines'}
-            className={`flex items-center gap-1 px-2 py-1 rounded-md border text-[11px] font-sans font-medium cursor-pointer transition-colors ${
+            className={`flex items-center gap-1 h-7 px-2 rounded-lg border text-[11px] font-sans font-medium cursor-pointer transition-colors ${
               wrapLines
                 ? 'bg-primary/10 border-primary/40 text-primary'
-                : 'bg-surface-1 border-border text-text-muted hover:text-text-main'
+                : 'bg-surface-1 border-border text-text-secondary hover:text-text-primary hover:bg-hover'
             }`}
           >
             <WrapText size={12} />
@@ -42,11 +74,13 @@ export const DiffViewer = ({ patch, filename, isDark }: { patch: string; filenam
       <div className="w-full overflow-x-auto bg-surface-1 tabular-nums">
         <SyntaxHighlighter
           language="diff"
-          style={darkActive ? vscDarkPlus : vs}
+          style={normalizedPrismTheme}
           customStyle={{
             margin: 0,
-            padding: '1rem',
-            background: 'transparent',
+            padding: '0.875rem 1rem',
+            backgroundColor: 'transparent',
+            fontSize: '12.5px',
+            lineHeight: '1.6',
             whiteSpace: wrapLines ? 'pre-wrap' : 'pre',
             wordBreak: wrapLines ? 'break-word' : 'normal',
           }}

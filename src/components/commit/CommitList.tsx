@@ -78,10 +78,11 @@ export const CommitList: React.FC<any> = ({
       />
 
       <div className={`flex-1 flex ${viewMode === 'split' ? 'flex-col' : ''} gap-3 min-h-0 overflow-hidden`}>
-        {(viewMode === 'graph' || viewMode === 'split') && (
-          <div className={`${viewMode === 'split' ? 'h-[210px] shrink-0' : 'flex-1 min-h-0'} overflow-hidden bg-card border border-border rounded-xl`}>
+        {(viewMode === 'graph' || (viewMode === 'split' && !showFilters)) && (
+          <div className={`${viewMode === 'split' ? 'h-[156px] shrink-0' : 'flex-1 min-h-0'} overflow-hidden bg-surface-1 border border-border rounded-xl`}>
             <GitGraph
               commits={commits}
+              isDesktop={isDesktop}
               selectedHash={selectedCommitHash}
               onSelectCommit={(hash: string) => {
                 const c = commits.find((it: any) => it.hash === hash || it.fullHash === hash);
@@ -91,7 +92,7 @@ export const CommitList: React.FC<any> = ({
           </div>
         )}
         {(viewMode === 'list' || viewMode === 'split') && (
-          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div className="flex-1 flex flex-col min-h-[120px] overflow-hidden">
             <CommitListVirtualScroller
               commits={commits} isLoading={isLoading} isError={isError}
               selectedCommitHash={selectedCommitHash} onSelectCommit={onSelectCommit}

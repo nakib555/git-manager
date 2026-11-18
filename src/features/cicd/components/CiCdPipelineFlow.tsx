@@ -4,11 +4,25 @@ import { useCiCdStatus } from '../hooks/useCiCdStatus';
 import { CiCdPipelineMetrics } from './CiCdPipelineMetrics';
 import { CiCdStepItem } from './CiCdStepItem';
 
-export const CiCdPipelineFlow: React.FC<{ hash: string }> = ({ hash }) => {
+export const CiCdPipelineFlow: React.FC<{ hash: string; inline?: boolean }> = ({ hash, inline = false }) => {
   const { cicd, isReal, isPolling } = useCiCdStatus(hash);
   const shortHash = hash ? hash.substring(0, 7) : 'head';
 
   if (!isReal || !cicd || !cicd.steps || cicd.steps.length === 0) {
+    if (inline) {
+      return (
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-border text-xs">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
+            <Cpu size={14} className="text-text-tertiary shrink-0" />
+            <span className="font-medium text-text-secondary">CI/CD Workflows</span>
+            <span className="text-border" aria-hidden="true">·</span>
+            <span className="text-text-muted">
+              No check runs reported for <span className="font-mono text-text-primary">{shortHash}</span>
+            </span>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-card border border-border text-left">
         <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">

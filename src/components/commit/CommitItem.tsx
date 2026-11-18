@@ -4,14 +4,17 @@ import { CiCdBadge } from './CiCdStatus';
 import { formatRelativeTime } from '../../mobile/utils/formatters';
 
 export const CommitItem = memo(({ commit, isSelected, isLatest, onSelect, onActionClick, style, isDesktop }: any) => {
+  const addCount = String(commit.add ?? 0).replace(/^\+/, '');
+  const delCount = String(commit.del ?? 0).replace(/^-/, '');
+
   return (
     <div style={style} className="pb-2">
       <div
         className={`relative group/commit p-3 border rounded-xl transition-colors ${
           isSelected
-            ? 'bg-primary/5 border-primary/45 shadow-xs'
-            : 'border-border/60 bg-hover/10 hover:bg-hover/30'
-        } ${isDesktop ? 'flex items-start justify-between gap-2' : 'flex justify-between items-start gap-2'}`}
+            ? 'bg-primary/8 border-primary/50 shadow-xs'
+            : 'border-border bg-surface-1 hover:bg-hover/60'
+        } flex items-start justify-between gap-2`}
       >
         <button
           type="button"
@@ -23,24 +26,29 @@ export const CommitItem = memo(({ commit, isSelected, isLatest, onSelect, onActi
             <>
               <div className="flex justify-between items-center gap-2 mb-1 text-xs">
                 <div className="flex items-center gap-1.5 min-w-0">
-                  <span className={`w-2 h-2 rounded-full shrink-0 ${isSelected ? 'bg-primary' : isLatest ? 'bg-emerald-500' : 'bg-text-muted/50'}`} />
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${isSelected ? 'bg-primary' : isLatest ? 'bg-emerald-500' : 'bg-text-tertiary/60'}`} />
                   <span className="font-mono text-[11px] font-bold text-primary tabular-nums tracking-mono">
                     {commit.hash}
                   </span>
+                  {isLatest && (
+                    <span className="text-[10px] font-mono font-semibold text-emerald-500 uppercase tracking-micro shrink-0">
+                      HEAD
+                    </span>
+                  )}
                 </div>
-                {isLatest && (
-                  <span className="text-[10px] font-mono font-semibold text-emerald-500 uppercase tracking-micro shrink-0">
-                    HEAD
-                  </span>
-                )}
-              </div>
-              <p className="text-[11px] font-bold text-text-main truncate text-pretty">{commit.msg}</p>
-              <div className="mt-1 flex">
                 <CiCdBadge hash={commit.hash} isCompact={true} />
               </div>
-              <div className="flex justify-between text-[10px] text-text-muted mt-1.5">
-                <span className="font-semibold truncate">{commit.author}</span>
-                <span className="font-mono tabular-nums shrink-0">{formatRelativeTime(commit.timestamp || commit.date, commit.time)}</span>
+              <p className="text-xs font-semibold text-text-main truncate text-pretty leading-snug">{commit.msg}</p>
+              <div className="flex items-center justify-between gap-2 text-[10px] text-text-muted mt-1.5">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="font-medium truncate">{commit.author}</span>
+                  <span className="text-border" aria-hidden="true">·</span>
+                  <span className="font-mono tabular-nums shrink-0">{formatRelativeTime(commit.timestamp || commit.date, commit.time)}</span>
+                </div>
+                <div className="flex items-center gap-1.5 font-mono tabular-nums shrink-0">
+                  <span className="text-addition-oklch font-semibold">+{addCount}</span>
+                  <span className="text-deletion-oklch font-semibold">-{delCount}</span>
+                </div>
               </div>
             </>
           ) : (
@@ -74,8 +82,8 @@ export const CommitItem = memo(({ commit, isSelected, isLatest, onSelect, onActi
                   <span className="text-[10px] text-text-muted font-mono tabular-nums">{formatRelativeTime(commit.timestamp || commit.date, commit.time)}</span>
                 </div>
                 <div className="flex items-center gap-2 text-[10px] font-mono tabular-nums shrink-0">
-                  <span className="text-addition-oklch font-bold">+{String(commit.add ?? 0).replace(/^\+/, '')}</span>
-                  <span className="text-deletion-oklch font-bold">-{String(commit.del ?? 0).replace(/^-/, '')}</span>
+                  <span className="text-addition-oklch font-bold">+{addCount}</span>
+                  <span className="text-deletion-oklch font-bold">-{delCount}</span>
                 </div>
               </div>
             </div>
@@ -90,9 +98,9 @@ export const CommitItem = memo(({ commit, isSelected, isLatest, onSelect, onActi
               onActionClick(commit, e);
             }}
             aria-label={`Commit options for ${commit.hash}`}
-            className={`${isDesktop ? 'w-7 h-7 opacity-0 group-hover/commit:opacity-100 group-focus-within/commit:opacity-100 focus-visible:opacity-100' : 'touch-target-44 w-10 h-10 -mr-1'} rounded-lg flex items-center justify-center text-text-muted hover:text-text-main hover:bg-hover active:bg-border transition-all btn-tactile cursor-pointer shrink-0`}
+            className={`${isDesktop ? 'w-6 h-6 opacity-0 group-hover/commit:opacity-100 group-focus-within/commit:opacity-100 focus-visible:opacity-100' : 'touch-target-44 w-10 h-10 -mr-1'} rounded-lg flex items-center justify-center text-text-muted hover:text-text-main hover:bg-hover active:bg-border transition-all btn-tactile cursor-pointer shrink-0`}
           >
-            <MoreVertical size={isDesktop ? 14 : 16} />
+            <MoreVertical size={isDesktop ? 13 : 16} />
           </button>
         )}
       </div>
