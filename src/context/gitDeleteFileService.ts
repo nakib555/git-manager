@@ -38,7 +38,7 @@ export const deleteRemoteSingleFile = async ({
   if (!fileSha) {
     const fileRes = await fetch(
       `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}?ref=${branch}`,
-      { headers }
+      { headers, cache: 'no-store' }
     );
     if (!fileRes.ok) {
       const err = await fileRes.json().catch(() => ({}));
@@ -87,7 +87,7 @@ export const deleteRemoteFolderBatch = async ({
   // 1. Get current branch head ref
   const refRes = await fetch(
     `https://api.github.com/repos/${owner}/${repo}/git/ref/heads/${branch}`,
-    { headers }
+    { headers, cache: 'no-store' }
   );
   if (!refRes.ok) {
     throw new Error(`Failed to resolve head reference for branch '${branch}'`);
@@ -98,7 +98,7 @@ export const deleteRemoteFolderBatch = async ({
   // 2. Fetch the commit to get root tree SHA
   const commitRes = await fetch(
     `https://api.github.com/repos/${owner}/${repo}/git/commits/${currentHeadSha}`,
-    { headers }
+    { headers, cache: 'no-store' }
   );
   if (!commitRes.ok) {
     throw new Error(`Failed to read commit ${currentHeadSha}`);
@@ -109,7 +109,7 @@ export const deleteRemoteFolderBatch = async ({
   // 3. Fetch full tree recursively
   const treeRes = await fetch(
     `https://api.github.com/repos/${owner}/${repo}/git/trees/${baseTreeSha}?recursive=1`,
-    { headers }
+    { headers, cache: 'no-store' }
   );
   if (!treeRes.ok) {
     throw new Error(`Failed to read repository tree from GitHub`);

@@ -53,7 +53,7 @@ export async function fetchFileCommitHistorySafe({
         repoName
       )}/commits?path=${encodeURIComponent(filePath)}&sha=${encodeURIComponent(resolvedBranch)}&per_page=100`;
 
-      const res = await fetch(url, { headers });
+      const res = await fetch(url, { headers, cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {

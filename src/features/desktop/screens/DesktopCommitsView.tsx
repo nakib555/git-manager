@@ -93,7 +93,8 @@ export const DesktopCommitsView: React.FC = () => {
         ? clean
         : (clean.startsWith('ghp_') || clean.startsWith('github_pat_') ? `token ${clean}` : `Bearer ${clean}`);
       fetch(`https://api.github.com/repos/${currentRepoOwner}/${currentRepo}/commits/${sha}`, {
-        headers: { Authorization: authHeader, Accept: 'application/vnd.github.v3+json' }
+        headers: { Authorization: authHeader, Accept: 'application/vnd.github.v3+json' },
+        cache: 'no-store',
       })
         .then(res => res.ok ? res.json() : null)
         .then(data => { if (data) setCommitDetailData(data); })

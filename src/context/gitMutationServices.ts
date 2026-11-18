@@ -12,7 +12,7 @@ export const findBaseSha = async (owner: string, repo: string, headers: any, pre
 
   for (const b of branchesToTry) {
     try {
-      const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/ref/heads/${b}`, { headers });
+      const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/ref/heads/${b}`, { headers, cache: 'no-store' });
       if (res.status === 401) sawAuthError = true;
       if (res.ok) {
         const data = await res.json();
@@ -22,7 +22,7 @@ export const findBaseSha = async (owner: string, repo: string, headers: any, pre
   }
 
   try {
-    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/commits?per_page=1`, { headers });
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/commits?per_page=1`, { headers, cache: 'no-store' });
     if (res.status === 401) sawAuthError = true;
     if (res.ok) {
       const data = await res.json();

@@ -143,7 +143,7 @@ export async function executeFetchRepoDetails(
 
   let activeBranch = branchOverride || "main";
   try {
-    const repoRes = await fetch(`https://api.github.com/repos/${owner}/${repoName}`, { headers });
+    const repoRes = await fetch(`https://api.github.com/repos/${owner}/${repoName}`, { headers, cache: 'no-store' });
     if (repoRes.ok) {
       const repoData = await repoRes.json();
       if (!branchOverride && repoData.default_branch) activeBranch = repoData.default_branch;
@@ -158,14 +158,14 @@ export async function executeFetchRepoDetails(
   ]);
 
   const localCommits = getLocalRepoDetails(repoName, "commits");
-  const uniqueLocal = localCommits.filter((lc: any) => !commitsData.some((gc: any) => gc.hash === lc.hash));
+  const uniqueLocal = localCommits.filter((lc: any) => lc.isLocalOnly === true && !commitsData.some((gc: any) => gc.hash === lc.hash));
   const mergedCommits = [...uniqueLocal, ...commitsData];
 
   try {
     localStorage.setItem(`local_details_${repoName}_commits`, JSON.stringify(mergedCommits.slice(0, 500)));
     if (branchesData.length) localStorage.setItem(`local_details_${repoName}_branches`, JSON.stringify(branchesData.slice(0, 100)));
-    if (prsData.length) localStorage.setItem(`local_details_${repoName}_prs`, JSON.stringify(prsData.slice(0, 100)));
-    if (filesData.length) localStorage.setItem(`local_details_${repoName}_files`, JSON.stringify(filesData));
+    localStorage.setItem(`local_details_${repoName}_prs`, JSON.stringify(prsData.slice(0, 100)));
+    localStorage.setItem(`local_details_${repoName}_files`, JSON.stringify(filesData));
     localStorage.setItem("currentBranch", activeBranch);
   } catch (_) {}
 
@@ -173,7 +173,7 @@ export async function executeFetchRepoDetails(
     currentBranch: activeBranch,
     activeCommits: mergedCommits,
     activeBranches: branchesData.length ? branchesData : getLocalRepoDetails(repoName, "branches"),
-    activePRs: prsData.length ? prsData : getLocalRepoDetails(repoName, "prs"),
-    activeFiles: filesData.length ? filesData : getLocalRepoDetails(repoName, "files"),
+    activePRs: prsData,
+    activeFiles: filesData,
   };
 }

@@ -21,7 +21,7 @@ export async function fetchCommitCheckRuns({
   }
 
   try {
-    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/commits/${ref}/check-runs`, { headers });
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/commits/${ref}/check-runs`, { headers, cache: 'no-store' });
     if (res.ok) {
       const data = await res.json();
       return (data.check_runs || []).map((cr: any) => ({
@@ -79,7 +79,7 @@ export async function fetchCommitDetailsSafe({
   }
 
   try {
-    const res = await fetch(`https://api.github.com/repos/${resolvedOwner}/${repoName}/commits/${commitSha}`, { headers });
+    const res = await fetch(`https://api.github.com/repos/${resolvedOwner}/${repoName}/commits/${commitSha}`, { headers, cache: 'no-store' });
     if (res.ok) {
       const data = await res.json();
       const files: ChangedFileDiff[] = (data.files || []).map((f: any) => ({

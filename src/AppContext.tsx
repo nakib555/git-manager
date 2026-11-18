@@ -94,25 +94,33 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
 
   const refreshData = async () => {
-    setState(prev => ({ ...prev, isLoadingRepoDetails: true }));
-    await new Promise(r => setTimeout(r, 300));
-    if (state.githubToken) {
-      await repoSlice.fetchGitHubData(state.githubToken);
-      if (state.currentRepo && state.currentRepoOwner) {
-        await repoSlice.fetchRepoDetails(state.currentRepo, state.currentRepoOwner, false, state.currentBranch || undefined);
+    setState(prev => ({ ...prev, isLoadingRepoDetails: true, isAutoSyncing: true }));
+    try {
+      if (state.githubToken) {
+        const tasks: Promise<any>[] = [repoSlice.fetchGitHubData(state.githubToken)];
+        if (state.currentRepo && state.currentRepoOwner) {
+          tasks.push(repoSlice.fetchRepoDetails(state.currentRepo, state.currentRepoOwner, false, state.currentBranch || undefined));
+        }
+        await Promise.all(tasks);
+      } else {
+        const local = getLocalRepos();
+        setState(prev => ({
+          ...prev,
+          githubRepos: local.length ? local : (prev.githubRepos.length ? prev.githubRepos : DEMO_REPOSITORIES),
+        }));
+        if (state.currentRepo) {
+          await repoSlice.fetchRepoDetails(state.currentRepo, state.currentRepoOwner || 'octodev', false, state.currentBranch || undefined);
+        }
       }
-    } else {
-      const local = getLocalRepos();
+      uiSlice.showToast("Data refreshed successfully", "success");
+    } finally {
       setState(prev => ({
         ...prev,
-        githubRepos: local.length ? local : (prev.githubRepos.length ? prev.githubRepos : DEMO_REPOSITORIES),
         isLoadingRepoDetails: false,
+        isAutoSyncing: false,
+        lastSyncTimestamp: Date.now(),
       }));
-      if (state.currentRepo) {
-        await repoSlice.fetchRepoDetails(state.currentRepo, state.currentRepoOwner || 'octodev', false, state.currentBranch || undefined);
-      }
     }
-    uiSlice.showToast("Data refreshed successfully", "success");
   };
 
   return (

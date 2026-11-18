@@ -165,11 +165,11 @@ export const fetchRemoteBranches = async (
         : `token ${token}`;
     }
 
-    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/branches?per_page=100`, { headers, signal });
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/branches?per_page=100`, { headers, signal, cache: 'no-store' });
     if (!res.ok) {
       // If fetching branches list is restricted or 404, check repo metadata for default_branch
       try {
-        const repoRes = await fetch(`https://api.github.com/repos/${owner}/${repo}`, { headers, signal });
+        const repoRes = await fetch(`https://api.github.com/repos/${owner}/${repo}`, { headers, signal, cache: 'no-store' });
         if (repoRes.ok) {
           const repoData = await repoRes.json();
           if (repoData.default_branch) return [repoData.default_branch];
@@ -204,7 +204,7 @@ export const fetchRemoteRepoTree = async (
         : `token ${token}`;
     }
 
-    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`, { headers, signal });
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`, { headers, signal, cache: 'no-store' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if (!data.tree || !Array.isArray(data.tree)) throw new Error('Invalid tree format');

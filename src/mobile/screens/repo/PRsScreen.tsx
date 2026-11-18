@@ -45,8 +45,8 @@ export const PRsScreen: React.FC = () => {
     setIsLoadingDetails(true);
     const headers = { Authorization: `Bearer ${githubToken}`, Accept: 'application/vnd.github.v3+json' };
     Promise.all([
-      fetch(`https://api.github.com/repos/${currentRepoOwner}/${currentRepo}/pulls/${selectedPR.id}/commits`, { headers }).then(r => r.ok ? r.json() : []).catch(() => []),
-      fetch(`https://api.github.com/repos/${currentRepoOwner}/${currentRepo}/pulls/${selectedPR.id}/files`, { headers }).then(r => r.ok ? r.json() : []).catch(() => [])
+      fetch(`https://api.github.com/repos/${currentRepoOwner}/${currentRepo}/pulls/${selectedPR.id}/commits`, { headers, cache: 'no-store' }).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch(`https://api.github.com/repos/${currentRepoOwner}/${currentRepo}/pulls/${selectedPR.id}/files`, { headers, cache: 'no-store' }).then(r => r.ok ? r.json() : []).catch(() => [])
     ]).then(([commitsData, filesData]) => {
       setPrCommits((commitsData || []).map((c: any) => ({
         hash: (c.sha || '').substring(0, 7), msg: c.commit?.message || '', author: c.commit?.author?.name || 'user', time: formatTime(c.commit?.author?.date)
@@ -61,8 +61,8 @@ export const PRsScreen: React.FC = () => {
     if (!selectedPR) return;
     setIsMerging(true);
     try {
-      updateLocalPRStatus(selectedPR.id, 'Merged');
-      if (shouldDeleteBranch && selectedPR.branch) deleteBranch(selectedPR.branch);
+      await updateLocalPRStatus(selectedPR.id, 'Merged');
+      if (shouldDeleteBranch && selectedPR.branch) await deleteBranch(selectedPR.branch);
       showToast(`Pull Request #${selectedPR.id} merged!`);
       setSelectedPRId(null);
     } catch (e: any) { showToast(e.message || 'Merge failed', 'error'); }

@@ -11,7 +11,7 @@ export const fetchRemoteCommits = async (
   const url = cleanBranch
     ? `https://api.github.com/repos/${owner}/${repo}/commits?sha=${encodeURIComponent(cleanBranch)}&per_page=100`
     : `https://api.github.com/repos/${owner}/${repo}/commits?per_page=100`;
-  const commitsRes = await fetch(url, { headers });
+  const commitsRes = await fetch(url, { headers, cache: 'no-store' });
   if (!commitsRes.ok) return [];
   const rawCommits = await commitsRes.json();
   if (!Array.isArray(rawCommits)) return [];
@@ -21,7 +21,7 @@ export const fetchRemoteCommits = async (
       let del = "-0";
       if (index < 10 && c.url) {
         try {
-          const detailRes = await fetch(c.url, { headers });
+          const detailRes = await fetch(c.url, { headers, cache: 'no-store' });
           if (detailRes.ok) {
             const detailData = await detailRes.json();
             if (detailData.stats) {
@@ -59,7 +59,7 @@ export const fetchRemoteBranches = async (
 ) => {
   const branchesRes = await fetch(
     `https://api.github.com/repos/${owner}/${repo}/branches?per_page=50`,
-    { headers },
+    { headers, cache: 'no-store' },
   );
   if (!branchesRes.ok) return [];
   const rawBranches = await branchesRes.json();
@@ -86,7 +86,7 @@ export const fetchRemotePRs = async (
 ) => {
   const prsRes = await fetch(
     `https://api.github.com/repos/${owner}/${repo}/pulls?state=all&per_page=15`,
-    { headers },
+    { headers, cache: 'no-store' },
   );
   if (!prsRes.ok) return [];
   const rawPRs = await prsRes.json();
@@ -115,7 +115,7 @@ export const fetchRemoteFilesTree = async (
   const cleanBranch = (branch || 'HEAD').trim() || 'HEAD';
   const filesRes = await fetch(
     `https://api.github.com/repos/${owner}/${repo}/git/trees/${encodeURIComponent(cleanBranch)}?recursive=1`,
-    { headers },
+    { headers, cache: 'no-store' },
   );
   if (!filesRes.ok) return [];
   const rawFiles = await filesRes.json();

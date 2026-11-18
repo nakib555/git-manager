@@ -33,7 +33,7 @@ export async function fetchTimelineEvents({
   }
 
   try {
-    const res = await fetch(url, { headers });
+    const res = await fetch(url, { headers, cache: 'no-store' });
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data)) {

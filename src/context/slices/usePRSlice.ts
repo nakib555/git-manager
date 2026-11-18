@@ -23,7 +23,7 @@ export const usePRSlice = ({ state, setState, showToast, fetchRepoDetails }: Use
       try {
         const prData = await createRemoteGitHubPR(state.currentRepoOwner, state.currentRepo, pr, state.githubToken);
         showToast(`Pull Request #${prData.number} opened on GitHub!`, 'success');
-        await fetchRepoDetails(state.currentRepo, state.currentRepoOwner);
+        await fetchRepoDetails(state.currentRepo, state.currentRepoOwner, false, state.currentBranch || undefined);
         return prData;
       } catch (error: any) {
         showToast(`Failed to open Pull Request: ${error.message || error}`, 'error');
@@ -65,7 +65,7 @@ export const usePRSlice = ({ state, setState, showToast, fetchRepoDetails }: Use
       try {
         await updateRemoteGitHubPRStatus(state.currentRepoOwner, state.currentRepo, prId, status, strategy, state.githubToken);
         showToast(status === 'Merged' ? `Successfully merged Pull Request #${prId}!` : `Pull Request #${prId} set to ${status}!`, 'success');
-        await fetchRepoDetails(state.currentRepo, state.currentRepoOwner);
+        await fetchRepoDetails(state.currentRepo, state.currentRepoOwner, false, state.currentBranch || undefined);
       } catch (error: any) {
         showToast(`Failed to update Pull Request: ${error.message || error}`, 'error');
         throw error;

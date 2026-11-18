@@ -40,7 +40,6 @@ export const useCommitSlice = ({ state, setState, showToast, fetchRepoDetails, s
         }));
         showToast(`Commit created locally (${res.sha})!`, 'success');
       }
-      setRefreshTrigger(p => p + 1);
       return { hash: res.sha, isRemote: res.isRemote };
     } catch (err: any) {
       showToast(`Failed to commit: ${err.message || err}`, 'error');
@@ -88,7 +87,6 @@ export const useCommitSlice = ({ state, setState, showToast, fetchRepoDetails, s
         showToast(`Committed (${res.sha})! Changes saved.`, 'success');
       }
     }
-    setRefreshTrigger(p => p + 1);
     return true;
   };
 
@@ -104,7 +102,6 @@ export const useCommitSlice = ({ state, setState, showToast, fetchRepoDetails, s
         const parentSha = await deleteRemoteHeadCommit(state.currentRepoOwner, state.currentRepo, hash, branch, state.githubToken);
         showToast(`Deleted HEAD commit! Reset to ${parentSha.substring(0, 7)}.`, "success");
         await fetchRepoDetails(state.currentRepo, state.currentRepoOwner, false, branch);
-        setRefreshTrigger(prev => prev + 1);
         return true;
       } catch (err: any) { showToast(`Failed to delete remote commit: ${err.message || err}`, "error"); return false; }
     }
@@ -114,7 +111,6 @@ export const useCommitSlice = ({ state, setState, showToast, fetchRepoDetails, s
     try { localStorage.setItem(`local_details_${state.currentRepo}_commits`, JSON.stringify(updated)); } catch (_) {}
     setState(p => ({ ...p, activeCommits: updated }));
     showToast(`Deleted HEAD commit ${hash.substring(0, 7)}.`, "success");
-    setRefreshTrigger(p => p + 1);
     return true;
   };
 
@@ -132,7 +128,6 @@ export const useCommitSlice = ({ state, setState, showToast, fetchRepoDetails, s
       setState(p => ({ ...p, activeCommits: res.updatedCommits || p.activeCommits, sessionCommitsCount: p.sessionCommitsCount + 1 }));
       showToast(`Reverted commit ${hash.substring(0, 7)} (created revert commit ${res.sha})`, 'success');
     }
-    setRefreshTrigger(p => p + 1);
     return true;
   };
 
@@ -141,7 +136,13 @@ export const useCommitSlice = ({ state, setState, showToast, fetchRepoDetails, s
     deleteFileOrFolder: (params: DeleteFileOrFolderParams) =>
       executeFileOrFolderDelete({ state, setState, params, showToast, fetchRepoDetails, setRefreshTrigger }),
     editCommitMessage: (h: string, m: string) => {
-      setState(p => ({ ...p, activeCommits: p.activeCommits.map(c => c.hash === h ? { ...c, msg: m } : c) }));
+      setState(p => {
+        const updated = p.activeCommits.map(c => c.hash === h ? { ...c, msg: m } : c);
+        if (state.currentRepo) {
+          try { localStorage.setItem(`local_details_${state.currentRepo}_commits`, JSON.stringify(updated)); } catch (_) {}
+        }
+        return { ...p, activeCommits: updated };
+      });
       showToast("Commit message updated!");
     },
     undoLatestCommit: async () => state.activeCommits.length > 0 ? deleteCommit(state.activeCommits[0].hash) : false,
@@ -165,7 +166,6 @@ export const useCommitSlice = ({ state, setState, showToast, fetchRepoDetails, s
       localStorage.setItem(`local_details_${state.currentRepo}_commits`, JSON.stringify(updated));
       setState(p => ({ ...p, activeCommits: updated }));
       showToast(`Reset branch to ${sha.slice(0, 7)}!`, 'success');
-      setRefreshTrigger(p => p + 1);
       return true;
     },
   };

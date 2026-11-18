@@ -26,7 +26,7 @@ export const pushFileToGitHub = async (
   try {
     const fileRes = await fetch(
       `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`,
-      { headers }
+      { headers, cache: 'no-store' }
     );
     if (fileRes.ok) {
       const fileData = await fileRes.json();
@@ -66,7 +66,7 @@ export const deleteRemoteHeadCommit = async (
     Accept: "application/vnd.github.v3+json",
   };
 
-  const commitRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/commits/${hash}`, { headers });
+  const commitRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/commits/${hash}`, { headers, cache: 'no-store' });
   if (!commitRes.ok) throw new Error("Failed to fetch commit details from GitHub");
   const commitData = await commitRes.json();
   if (!commitData.parents || commitData.parents.length === 0) {
@@ -98,19 +98,19 @@ export const revertRemoteCommit = async (
     Accept: "application/vnd.github.v3+json",
   };
 
-  const targetRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/commits/${hash}`, { headers });
+  const targetRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/commits/${hash}`, { headers, cache: 'no-store' });
   if (!targetRes.ok) throw new Error("Failed to fetch commit from GitHub");
   const targetData = await targetRes.json();
   const parentSha = targetData.parents?.[0]?.sha;
 
-  const refRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/refs/heads/${branch}`, { headers });
+  const refRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/refs/heads/${branch}`, { headers, cache: 'no-store' });
   if (!refRes.ok) throw new Error("Failed to fetch head ref from GitHub");
   const refData = await refRes.json();
   const currentHeadSha = refData.object.sha;
 
   let treeToUse = targetData.tree.sha;
   if (parentSha) {
-    const parentRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/commits/${parentSha}`, { headers });
+    const parentRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/commits/${parentSha}`, { headers, cache: 'no-store' });
     if (parentRes.ok) {
       const parentData = await parentRes.json();
       treeToUse = parentData.tree.sha;

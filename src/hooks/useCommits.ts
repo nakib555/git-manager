@@ -13,16 +13,18 @@ export type { DatePreset, CommitFilter };
 export { normalizeDateRange, filterLocalCommits };
 
 export const useCommits = (filters: CommitFilter) => {
-  const { currentRepo, currentRepoOwner, githubToken, activeCommits } = useAppContext();
+  const { currentRepo, currentRepoOwner, currentBranch, githubToken, activeCommits } = useAppContext();
+  const headHash = activeCommits?.[0]?.hash || '';
+  const headMsg = activeCommits?.[0]?.msg || '';
 
   return useQuery({
-    queryKey: ['commits', currentRepoOwner, currentRepo, filters, activeCommits?.length],
+    queryKey: ['commits', currentRepoOwner, currentRepo, currentBranch, filters, activeCommits?.length, headHash, headMsg],
     queryFn: async () => {
       const selectedPageSize = filters.pageSize === -1 ? 100 : (filters.pageSize || 10);
 
       const getFallbackResult = () => {
         let repoSpecificCommits = activeCommits || [];
-        if (currentRepo) {
+        if (repoSpecificCommits.length === 0 && currentRepo) {
           try {
             const raw = localStorage.getItem(`local_details_${currentRepo}_commits`);
             if (raw) {
@@ -55,26 +57,21 @@ export const useCommits = (filters: CommitFilter) => {
       }
 
       try {
+        const effectiveFilters = filters.branch ? filters : { ...filters, branch: currentBranch || '' };
         const { items: remoteItems, totalCount: remoteCount } = await fetchRemoteCommits({
           owner: currentRepoOwner,
           repo: currentRepo,
           token: githubToken,
-          filters,
+          filters: effectiveFilters,
         });
 
         let items = remoteItems;
         let totalCount = remoteCount;
 
         if ((!filters.page || filters.page === 1) && activeCommits && activeCommits.length > 0) {
-          let repoSpecificLocalCommits: any[] = [];
-          try {
-            const raw = localStorage.getItem(`local_details_${currentRepo}_commits`);
-            if (raw) repoSpecificLocalCommits = JSON.parse(raw);
-          } catch (_) {}
-
           const localOnly = activeCommits.filter(
             (lc: any) =>
-              repoSpecificLocalCommits.some((rsc: any) => rsc.hash === lc.hash || rsc.fullHash === lc.fullHash) &&
+              lc.isLocalOnly === true &&
               !items.some((it: any) => it.hash === lc.hash || it.fullHash === lc.fullHash)
           );
           if (localOnly.length > 0) {
@@ -105,7 +102,7 @@ export const useCommits = (filters: CommitFilter) => {
       }
     },
     enabled: !!currentRepo,
-    staleTime: 10 * 1000,
+    staleTime: 0,
     refetchInterval: 15 * 1000,
     placeholderData: (previousData: any) => previousData,
   });

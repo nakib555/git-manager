@@ -32,7 +32,7 @@ export const useCiCdStatus = (hash: string) => {
         };
         const res = await fetch(
           `https://api.github.com/repos/${currentRepoOwner}/${currentRepo}/commits/${hash}/check-runs`,
-          { headers }
+          { headers, cache: 'no-store' }
         );
         if (!res.ok) {
           if (isMounted) setRealState(null);

@@ -78,8 +78,8 @@ export const DesktopPRsView: React.FC = () => {
     const headers = { Authorization: getGitHubAuthHeader(githubToken), Accept: 'application/vnd.github.v3+json' };
     const prNumber = selectedPR.number || selectedPR.id;
     Promise.all([
-      fetch(`https://api.github.com/repos/${currentRepoOwner}/${currentRepo}/pulls/${prNumber}/commits`, { headers }).then(r => r.ok ? r.json() : []).catch(() => []),
-      fetch(`https://api.github.com/repos/${currentRepoOwner}/${currentRepo}/pulls/${prNumber}/files`, { headers }).then(r => r.ok ? r.json() : []).catch(() => [])
+      fetch(`https://api.github.com/repos/${currentRepoOwner}/${currentRepo}/pulls/${prNumber}/commits`, { headers, cache: 'no-store' }).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch(`https://api.github.com/repos/${currentRepoOwner}/${currentRepo}/pulls/${prNumber}/files`, { headers, cache: 'no-store' }).then(r => r.ok ? r.json() : []).catch(() => [])
     ]).then(([commitsData, filesData]) => {
       setPrCommits((commitsData || []).map((c: any) => ({
         hash: (c.sha || '').substring(0, 7), msg: c.commit?.message || '', author: c.commit?.author?.name || 'user', time: formatTime(c.commit?.author?.date)

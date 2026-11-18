@@ -183,6 +183,7 @@ export const fetchBranchComparison = async ({
         Accept: 'application/vnd.github.v3+json',
       },
       signal,
+      cache: 'no-store',
     });
 
     if (res.ok) {
@@ -303,6 +304,7 @@ export const fetchBranchProtection = async ({
             Accept: 'application/vnd.github.v3+json',
           },
           signal,
+          cache: 'no-store',
         }
       );
       if (res.ok) {

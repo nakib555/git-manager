@@ -22,14 +22,16 @@ export async function fetchFileContentSafe({
     return `// Repository or owner not specified.`;
   }
 
-  try {
-    const localContent = localStorage.getItem(`local_file_${repoName}_${filePath}`);
-    if (localContent !== null) {
-      return localContent;
-    }
-  } catch (_) {}
+  const isLocalOrDemo = !token || repoName === 'nexus-web-engine' || resolvedOwner === 'octodev' || resolvedOwner === 'local-developer' || resolvedOwner === 'local-user';
 
-  if (!token || repoName === 'nexus-web-engine' || resolvedOwner === 'octodev') {
+  if (isLocalOrDemo) {
+    try {
+      const localContent = localStorage.getItem(`local_file_${repoName}_${filePath}`);
+      if (localContent !== null) {
+        return localContent;
+      }
+    } catch (_) {}
+
     const catalog = getCatalogOrDefault(repoName);
     if (catalog.fileContents && catalog.fileContents[filePath]) {
       return catalog.fileContents[filePath];
@@ -55,6 +57,7 @@ export async function fetchFileContentSafe({
             Authorization: authHeader,
             Accept: 'application/vnd.github.v3+json',
           },
+          cache: 'no-store',
         }
       );
 
@@ -71,7 +74,7 @@ export async function fetchFileContentSafe({
 
   try {
     const rawUrl = `https://raw.githubusercontent.com/${resolvedOwner}/${repoName}/${encodedRef}/${encodedPath}`;
-    const rawRes = await fetch(rawUrl);
+    const rawRes = await fetch(rawUrl, { cache: 'no-store' });
     if (rawRes.ok) {
       return await rawRes.text();
     }
@@ -80,7 +83,7 @@ export async function fetchFileContentSafe({
   if (resolvedBranch !== 'master') {
     try {
       const rawMasterUrl = `https://raw.githubusercontent.com/${resolvedOwner}/${repoName}/master/${encodedPath}`;
-      const rawRes = await fetch(rawMasterUrl);
+      const rawRes = await fetch(rawMasterUrl, { cache: 'no-store' });
       if (rawRes.ok) {
         return await rawRes.text();
       }
@@ -94,6 +97,7 @@ export async function fetchFileContentSafe({
         headers: {
           Accept: 'application/vnd.github.v3+json',
         },
+        cache: 'no-store',
       }
     );
 
@@ -104,6 +108,13 @@ export async function fetchFileContentSafe({
       } else if (data.content) {
         return data.content;
       }
+    }
+  } catch (_) {}
+
+  try {
+    const localContent = localStorage.getItem(`local_file_${repoName}_${filePath}`);
+    if (localContent !== null) {
+      return localContent;
     }
   } catch (_) {}
 
@@ -133,21 +144,23 @@ export async function fetchFileBinarySafe({
   const resolvedOwner = owner || '';
   const resolvedBranch = branch || 'main';
 
-  try {
-    const localContent = localStorage.getItem(`local_file_${repoName}_${filePath}`);
-    if (localContent !== null) {
-      const encoder = new TextEncoder();
-      const rawBuffer = encoder.encode(localContent);
-      return {
-        text: localContent,
-        rawBuffer,
-        sizeBytes: rawBuffer.length,
-      };
-    }
-  } catch (_) {}
+  const isLocalOrDemo = !token || repoName === 'nexus-web-engine' || resolvedOwner === 'octodev' || resolvedOwner === 'local-developer' || resolvedOwner === 'local-user';
 
-  // Demo fallback
-  if (!token || repoName === 'nexus-web-engine' || resolvedOwner === 'octodev') {
+  if (isLocalOrDemo) {
+    try {
+      const localContent = localStorage.getItem(`local_file_${repoName}_${filePath}`);
+      if (localContent !== null) {
+        const encoder = new TextEncoder();
+        const rawBuffer = encoder.encode(localContent);
+        return {
+          text: localContent,
+          rawBuffer,
+          sizeBytes: rawBuffer.length,
+        };
+      }
+    } catch (_) {}
+
+    // Demo fallback
     const catalog = getCatalogOrDefault(repoName);
     const content = (catalog.fileContents && catalog.fileContents[filePath]) || DEMO_FILE_CONTENTS[filePath];
     if (content) {
@@ -178,7 +191,7 @@ export async function fetchFileBinarySafe({
 
       const res = await fetch(
         `https://api.github.com/repos/${resolvedOwner}/${repoName}/contents/${encodedPath}?ref=${encodedRef}`,
-        { headers }
+        { headers, cache: 'no-store' }
       );
 
       if (res.ok) {
@@ -199,7 +212,7 @@ export async function fetchFileBinarySafe({
           };
         } else if (data.download_url) {
           // Download directly
-          const dlRes = await fetch(data.download_url, { headers: authHeader ? { Authorization: authHeader } : {} });
+          const dlRes = await fetch(data.download_url, { headers: authHeader ? { Authorization: authHeader } : {}, cache: 'no-store' });
           if (dlRes.ok) {
             const ab = await dlRes.arrayBuffer();
             const bytes = new Uint8Array(ab);
@@ -221,7 +234,7 @@ export async function fetchFileBinarySafe({
       const headers: Record<string, string> = {};
       if (authHeader) headers.Authorization = authHeader;
 
-      const rawRes = await fetch(rawUrl, { headers });
+      const rawRes = await fetch(rawUrl, { headers, cache: 'no-store' });
       if (rawRes.ok) {
         const ab = await rawRes.arrayBuffer();
         const bytes = new Uint8Array(ab);

@@ -70,9 +70,9 @@ export const executeFileOrFolderDelete = async ({
         });
         showToast(`Deleted file '${targetPath}' (SHA: ${commitSha ? commitSha.slice(0, 7) : 'head'})`, 'success');
       }
+      try { localStorage.removeItem(`local_file_${repo}_${targetPath.replace(/^\/+/, '')}`); } catch (_) {}
       setState(p => ({ ...p, sessionCommitsCount: p.sessionCommitsCount + 1 }));
       await fetchRepoDetails(repo, owner, false, targetBranch);
-      setRefreshTrigger(p => p + 1);
       return true;
     } catch (err: any) {
       const msg = err?.message || String(err) || 'Failed to delete from remote repository.';
@@ -134,12 +134,12 @@ export const executeFileOrFolderDelete = async ({
     sessionCommitsCount: p.sessionCommitsCount + 1,
   }));
 
+  try { localStorage.removeItem(`local_file_${repo}_${normalizedTarget}`); } catch (_) {}
   showToast(
     isFolder
       ? `Deleted folder '${targetPath}' (${deletedCount} files pruned locally).`
       : `Deleted file '${targetPath}' locally.`,
     'success'
   );
-  setRefreshTrigger(p => p + 1);
   return true;
 };

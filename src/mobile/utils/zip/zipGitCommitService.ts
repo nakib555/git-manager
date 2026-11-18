@@ -77,6 +77,7 @@ export async function commitSyncToGitHub({
   const refRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/ref/heads/${encodeURIComponent(branch)}`, {
     headers,
     signal,
+    cache: 'no-store',
   });
   if (!refRes.ok) {
     const err = await refRes.json().catch(() => ({}));
@@ -90,6 +91,7 @@ export async function commitSyncToGitHub({
   const commitRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/commits/${baseCommitSha}`, {
     headers,
     signal,
+    cache: 'no-store',
   });
   if (!commitRes.ok) {
     const err = await commitRes.json().catch(() => ({}));

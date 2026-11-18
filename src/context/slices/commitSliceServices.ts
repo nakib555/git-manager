@@ -21,6 +21,7 @@ export function createLocalCommitNode(
     del,
     parents: existingCommits.length > 0 ? [existingCommits[0].hash] : [],
     isPrimary: true,
+    isLocalOnly: true,
   };
 }
 
@@ -96,6 +97,7 @@ export async function executeRevertCommitOperation(params: {
     del: "-0",
     parents: existing.length > 0 ? [existing[0].hash] : [],
     isPrimary: true,
+    isLocalOnly: true,
   };
   const updated = [revNode, ...existing];
   try { localStorage.setItem(`local_details_${repo}_commits`, JSON.stringify(updated.slice(0, 500))); } catch (_) {}
@@ -119,18 +121,18 @@ export async function executeSaveAndCommitFileOperation(params: {
   const cleanMsg = message.trim();
   const fullMsg = description?.trim() ? `${cleanMsg}\n\n${description.trim()}` : cleanMsg;
 
-  try { localStorage.setItem(`local_file_${repo}_${cleanPath}`, content); } catch (_) {}
-
   if (githubToken && owner && owner !== 'local-user' && owner !== 'local-developer' && !(owner === 'octodev' && repo === 'nexus-web-engine')) {
     try {
       const res = await pushFileToGitHub(owner, repo, cleanPath, content, fullMsg, branch, githubToken);
       const shortSha = res.commit?.sha ? res.commit.sha.substring(0, 7) : 'updated';
+      try { localStorage.removeItem(`local_file_${repo}_${cleanPath}`); } catch (_) {}
       return { isRemote: true, sha: shortSha };
     } catch (err: any) {
       return await saveLocallyWithWarning(repo, cleanPath, content, fullMsg, authorName, err?.message || 'Remote push failed; saved locally.');
     }
   }
 
+  try { localStorage.setItem(`local_file_${repo}_${cleanPath}`, content); } catch (_) {}
   return await saveLocallyWithWarning(repo, cleanPath, content, fullMsg, authorName);
 }
 
@@ -142,6 +144,7 @@ async function saveLocallyWithWarning(
   authorName: string,
   warning?: string
 ): Promise<{ isRemote: boolean; sha: string; updatedCommits?: GitCommitNode[]; warning?: string }> {
+  try { localStorage.setItem(`local_file_${repo}_${cleanPath}`, content); } catch (_) {}
   const localHash = Math.random().toString(16).substring(2, 9);
   const existing = getLocalRepoDetails(repo, "commits");
   const linesCount = Math.max(1, content.split('\n').length);
@@ -149,7 +152,7 @@ async function saveLocallyWithWarning(
     hash: localHash, fullHash: `${localHash}0000000000000000`, msg: fullMsg,
     author: authorName, time: "Just now", timestamp: new Date().toISOString(),
     add: `+${linesCount}`, del: "-0", parents: existing.length > 0 ? [existing[0].hash] : [],
-    isPrimary: true, files: [{ filename: cleanPath, status: 'modified', additions: linesCount, deletions: 0 }],
+    isPrimary: true, isLocalOnly: true, files: [{ filename: cleanPath, status: 'modified', additions: linesCount, deletions: 0 }],
   };
   const updated = [newCommit, ...existing];
   try { localStorage.setItem(`local_details_${repo}_commits`, JSON.stringify(updated.slice(0, 500))); } catch (_) {}

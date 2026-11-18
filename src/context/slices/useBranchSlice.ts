@@ -38,7 +38,7 @@ export const useBranchSlice = ({
           state.currentBranch || undefined
         );
         showToast(`Branch '${resName}' created on GitHub!`, 'success');
-        await fetchRepoDetails(state.currentRepo, state.currentRepoOwner);
+        await fetchRepoDetails(state.currentRepo, state.currentRepoOwner, false, state.currentBranch || undefined);
         return { name: resName };
       } catch (error: any) {
         const msg = error.message || String(error);

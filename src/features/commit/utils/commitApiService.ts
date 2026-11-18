@@ -45,7 +45,7 @@ export const fetchRemoteCommits = async ({
     if (untilDate) url += `&until=${untilDate.toISOString()}`;
   }
 
-  const res = await fetch(url, { headers });
+  const res = await fetch(url, { headers, cache: 'no-store' });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.message || `Failed to fetch commits (${res.status})`);

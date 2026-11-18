@@ -14,6 +14,7 @@ export interface GitCommitNode {
   date?: string;
   stats?: any;
   files?: any[];
+  isLocalOnly?: boolean;
 }
 
 export interface CommitCreationPayload {

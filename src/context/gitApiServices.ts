@@ -15,6 +15,7 @@ export const fetchUserProfile = async (token: string): Promise<GitHubUser | null
           Authorization: headerVal,
           Accept: "application/vnd.github.v3+json",
         },
+        cache: 'no-store',
       });
     } catch (_) {
       return null;
@@ -77,7 +78,7 @@ export const fetchUserRepos = async (token: string): Promise<GitHubRepo[]> => {
 
   while (hasMore && curPage <= 5) {
     const reposUrl = `https://api.github.com/user/repos?sort=updated&per_page=100&page=${curPage}&affiliation=owner,collaborator,organization_member`;
-    const reposRes = await fetch(reposUrl, { headers });
+    const reposRes = await fetch(reposUrl, { headers, cache: 'no-store' });
     if (!reposRes.ok) break;
     const pageRepos: GitHubRepo[] = await reposRes.json();
     if (Array.isArray(pageRepos) && pageRepos.length > 0) {
@@ -106,7 +107,7 @@ export const searchGlobalRepositories = async (
   const apiSort = (sortBy === 'stars' || sortBy === 'forks' || sortBy === 'updated') ? sortBy : 'updated';
   const searchUrl = `https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&sort=${apiSort}&order=${sortDir}&per_page=${perPage}&page=${page}`;
   
-  const searchRes = await fetch(searchUrl, { headers });
+  const searchRes = await fetch(searchUrl, { headers, cache: 'no-store' });
   if (searchRes.ok) {
     const searchData = await searchRes.json();
     const items = searchData.items || [];
@@ -123,7 +124,7 @@ export const ensureWebhookInstalled = async (token: string, owner: string, repoN
       Authorization: `Bearer ${token}`,
       Accept: "application/vnd.github.v3+json",
     };
-    const hooksRes = await fetch(`https://api.github.com/repos/${owner}/${repoName}/hooks`, { headers });
+    const hooksRes = await fetch(`https://api.github.com/repos/${owner}/${repoName}/hooks`, { headers, cache: 'no-store' });
     if (hooksRes.ok) {
       const hooks = await hooksRes.json();
       if (!Array.isArray(hooks)) return;

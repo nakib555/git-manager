@@ -38,8 +38,7 @@ export const executeCreateBranchAtCommit = async ({
         throw new Error(err.message || `Status ${res.status}`);
       }
       showToast(`Branch '${cleanName}' created at ${commitSha.slice(0, 7)}!`, 'success');
-      await fetchRepoDetails(state.currentRepo, state.currentRepoOwner);
-      setRefreshTrigger(prev => prev + 1);
+      await fetchRepoDetails(state.currentRepo, state.currentRepoOwner, false, state.currentBranch || undefined);
       return true;
     } catch (err: any) {
       showToast(`Failed to create branch: ${err.message || err}`, 'error');
@@ -57,7 +56,6 @@ export const executeCreateBranchAtCommit = async ({
   try { localStorage.setItem(key, JSON.stringify(updated)); } catch (_) {}
   setState(prev => ({ ...prev, activeBranches: updated }));
   showToast(`Branch '${cleanName}' created at ${commitSha.slice(0, 7)}!`, 'success');
-  setRefreshTrigger(prev => prev + 1);
   return true;
 };
 

@@ -30,6 +30,7 @@ export const useRepoSlice = ({ state, setState, showToast }: UseRepoSliceParams)
         currentRepoOwner: data.currentRepoOwner,
         repoTotalPages: data.repoTotalPages,
         isFetchingRepos: false,
+        lastSyncTimestamp: Date.now(),
       }));
     } catch (error: any) {
       if (!isBackground) showToast(`Error loading GitHub data: ${error.message || error}`, 'error');
@@ -41,7 +42,7 @@ export const useRepoSlice = ({ state, setState, showToast }: UseRepoSliceParams)
     if (!isBackground) setState(prev => ({ ...prev, isLoadingRepoDetails: true }));
     try {
       const details = await executeFetchRepoDetails(repoName, owner, state.githubToken, branchOverride);
-      setState(prev => ({ ...prev, ...details, isLoadingRepoDetails: false }));
+      setState(prev => ({ ...prev, ...details, isLoadingRepoDetails: false, lastSyncTimestamp: Date.now() }));
     } catch (err: any) {
       if (!isBackground) {
         showToast(`Error fetching repo '${owner}/${repoName}': ${err?.message || 'Failed to retrieve repository data'}`, 'error');
