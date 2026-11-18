@@ -284,7 +284,7 @@ export const DesktopBranchesView: React.FC = () => {
 
         {/* Desktop Inline Sticky Inspector Panel */}
         {isDesktop && (
-          <div className="w-[390px] xl:w-[430px] shrink-0 min-h-0">
+          <div className="w-[330px] lg:w-[390px] xl:w-[430px] shrink-0 min-h-0">
             <BranchInspectorPanel
               branch={selectedBranch}
               baseBranchName={defaultBranchName}

@@ -15,10 +15,10 @@ import { GlobalToastContainer } from './components/ui/GlobalToastContainer';
 const queryClient = new QueryClient();
 
 const MainApp = () => {
-  const { githubToken, isCommandPaletteOpen, closeCommandPalette, isZipSyncOpen, closeZipSync } = useAppContext();
+  const { githubToken, demoMode, isCommandPaletteOpen, closeCommandPalette, isZipSyncOpen, closeZipSync } = useAppContext();
   const isDesktop = useIsDesktop();
 
-  if (!githubToken) {
+  if (!githubToken && !demoMode) {
     return (
       <div className="flex flex-col w-full h-full bg-background text-text-primary relative overflow-y-auto justify-center items-center">
         <UnauthenticatedState />
@@ -42,7 +42,13 @@ const MainApp = () => {
 };
 
 export default function App() {
-  const [showSplash, setShowSplash] = useState(true);
+  const [showSplash, setShowSplash] = useState(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('autostart') === '1' || params.get('demo') === '1') return false;
+    } catch (_) {}
+    return true;
+  });
 
   return (
     <QueryClientProvider client={queryClient}>

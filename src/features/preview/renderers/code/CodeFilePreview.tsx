@@ -3,8 +3,6 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vs, vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useAppContext } from '../../../../AppContext';
 import {
-  Copy,
-  Check,
   Search,
   ChevronDown,
   ChevronUp,
@@ -81,7 +79,6 @@ export const CodeFilePreview: React.FC<CodeFilePreviewProps> = ({
 }) => {
   const { theme } = useAppContext();
   const isDark = theme !== 'light';
-  const [copied, setCopied] = useState(false);
   const [search, setSearch] = useState('');
   const fontSize = 13;
   const [wrapLines, setWrapLines] = useState<boolean>(true);
@@ -126,12 +123,6 @@ export const CodeFilePreview: React.FC<CodeFilePreviewProps> = ({
   const handlePrevMatch = () => {
     if (searchMatches.length === 0) return;
     setActiveMatchIndex((prev) => (prev - 1 + searchMatches.length) % searchMatches.length);
-  };
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(content);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
   };
 
   // Custom high-contrast clean styling for Prism with full line wrap support
@@ -298,18 +289,6 @@ export const CodeFilePreview: React.FC<CodeFilePreviewProps> = ({
           >
             <WrapText size={12} />
             <span className="hidden sm:inline">{wrapLines ? 'Wrap' : 'No Wrap'}</span>
-          </button>
-
-          {/* Copy Button */}
-          <button
-            type="button"
-            onClick={handleCopy}
-            className={`flex items-center gap-1.5 h-7 px-2.5 bg-surface-1 hover:bg-surface-2 border border-border rounded-md text-xs font-medium text-text-secondary hover:text-text-primary transition-all cursor-pointer ${
-              copied ? 'border-emerald-500/50 text-emerald-700 bg-emerald-500/10' : ''
-            }`}
-          >
-            {copied ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
-            <span>{copied ? 'Copied' : 'Copy'}</span>
           </button>
         </div>
       </div>

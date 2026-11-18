@@ -51,23 +51,42 @@ export const useCommitSlice = ({ state, setState, showToast, fetchRepoDetails, s
   const saveAndCommitFile = async ({ filePath, content, message, description, branch }: SaveAndCommitFileParams): Promise<boolean> => {
     if (!state.currentRepo) { showToast("No repository currently selected.", "error"); return false; }
     const isOwner = isRepositoryOwnedByUser({
-      repoName: state.currentRepo, repoOwner: state.currentRepoOwner, userLogin: state.githubUser?.login, reposList: state.githubRepos,
+      repoName: state.currentRepo, repoOwner: state.currentRepoOwner, userLogin: state.githubUser?.login, reposList: state.githubRepos, adminOverride: state.adminModeOverride,
     });
     if (!isOwner) { showToast("Unauthorized: You can only commit code to repositories you own.", "error"); return false; }
     if (!message.trim()) { showToast("Commit message is required.", "error"); return false; }
     const repo = state.currentRepo, targetBranch = branch || state.currentBranch || "main";
     const owner = state.currentRepoOwner || state.githubUser?.login || "local-user";
+    const cleanPath = filePath.trim().replace(/^\/+/, '');
     const res = await executeSaveAndCommitFileOperation({
       repo, owner, authorName: state.githubUser?.name || "Local Developer", branch: targetBranch,
-      filePath, content, message, description, githubToken: state.githubToken, activeCommits: state.activeCommits,
+      filePath: cleanPath, content, message, description, githubToken: state.githubToken, activeCommits: state.activeCommits,
     });
     if (res.isRemote) {
       showToast(`Committed to ${targetBranch}! SHA: ${res.sha}`, 'success');
       setState(p => ({ ...p, sessionCommitsCount: p.sessionCommitsCount + 1 }));
       await fetchRepoDetails(repo, owner, false, targetBranch);
     } else {
-      setState(p => ({ ...p, activeCommits: res.updatedCommits || p.activeCommits, sessionCommitsCount: p.sessionCommitsCount + 1 }));
-      showToast(`Committed (${res.sha})! Changes saved.`, 'success');
+      const byteSize = new TextEncoder().encode(content).length;
+      const linesCount = Math.max(1, content.split('\n').length);
+      setState(p => {
+        const exists = p.activeFiles.some((f: any) => f.name === cleanPath || f.path === cleanPath);
+        const updatedFiles = exists
+          ? p.activeFiles.map((f: any) => (f.name === cleanPath || f.path === cleanPath) ? { ...f, size: byteSize, lines: linesCount } : f)
+          : [...p.activeFiles, { name: cleanPath, path: cleanPath, type: 'file', size: byteSize, lines: linesCount }];
+        try { localStorage.setItem(`local_details_${repo}_files`, JSON.stringify(updatedFiles)); } catch (_) {}
+        return {
+          ...p,
+          activeCommits: res.updatedCommits || p.activeCommits,
+          activeFiles: updatedFiles,
+          sessionCommitsCount: p.sessionCommitsCount + 1,
+        };
+      });
+      if (res.warning) {
+        showToast(`${res.warning} (Saved locally: ${res.sha})`, 'warning');
+      } else {
+        showToast(`Committed (${res.sha})! Changes saved.`, 'success');
+      }
     }
     setRefreshTrigger(p => p + 1);
     return true;

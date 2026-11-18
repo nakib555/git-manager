@@ -1,5 +1,6 @@
 import { AppState } from '../../types';
 import { getLocalRepoDetails } from '../contextUtils';
+import { getGitHubAuthHeader } from '../gitMutationServices';
 
 interface CreateRefParams {
   state: AppState;
@@ -19,12 +20,14 @@ export const executeCreateBranchAtCommit = async ({
   const cleanName = (branchName || '').trim();
   if (!cleanName) return false;
 
-  if (state.githubToken && state.currentRepoOwner) {
+  const isLocalOrDemo = !state.githubToken || !state.currentRepoOwner || state.currentRepoOwner === 'local-user' || state.currentRepoOwner === 'local-developer' || (state.currentRepoOwner === 'octodev' && state.currentRepo === 'nexus-web-engine');
+
+  if (!isLocalOrDemo && state.githubToken && state.currentRepoOwner) {
     try {
       const res = await fetch(`https://api.github.com/repos/${state.currentRepoOwner}/${state.currentRepo}/git/refs`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${state.githubToken}`,
+          Authorization: getGitHubAuthHeader(state.githubToken),
           'Content-Type': 'application/json',
           Accept: 'application/vnd.github.v3+json',
         },
@@ -65,12 +68,14 @@ export const executeCreateTagAtCommit = async ({
   const cleanTag = (tagName || '').trim();
   if (!cleanTag) return false;
 
-  if (state.githubToken && state.currentRepoOwner) {
+  const isLocalOrDemo = !state.githubToken || !state.currentRepoOwner || state.currentRepoOwner === 'local-user' || state.currentRepoOwner === 'local-developer' || (state.currentRepoOwner === 'octodev' && state.currentRepo === 'nexus-web-engine');
+
+  if (!isLocalOrDemo && state.githubToken && state.currentRepoOwner) {
     try {
       const res = await fetch(`https://api.github.com/repos/${state.currentRepoOwner}/${state.currentRepo}/git/refs`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${state.githubToken}`,
+          Authorization: getGitHubAuthHeader(state.githubToken),
           'Content-Type': 'application/json',
           Accept: 'application/vnd.github.v3+json',
         },

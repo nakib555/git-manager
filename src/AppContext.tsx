@@ -61,11 +61,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [uiSlice]);
 
-  // Load repositories on token/search change
+  // Load repositories on token/search/demoMode change
   useEffect(() => {
     if (state.githubToken) {
       repoSlice.fetchGitHubData(state.githubToken, false, state.repoPage, state.repoSearchQuery);
-    } else {
+    } else if (state.demoMode) {
       const local = getLocalRepos();
       const reposToUse = local.length > 0 ? local : DEMO_REPOSITORIES;
       setState(prev => ({
@@ -74,7 +74,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         repoTotalPages: Math.max(1, Math.ceil(reposToUse.length / (prev.repoPerPage || 10))),
       }));
     }
-  }, [state.githubToken, state.repoPage, state.repoSearchQuery, state.repoSearchScope, state.repoSortBy, state.repoSortDirection, refreshTrigger]);
+  }, [state.githubToken, state.demoMode, state.repoPage, state.repoSearchQuery, state.repoSearchScope, state.repoSortBy, state.repoSortDirection, refreshTrigger]);
 
   // Load repository details when currentRepo changes
   useEffect(() => {
@@ -90,12 +90,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
       }
     }
-  }, [state.currentRepo, state.githubToken, state.currentRepoOwner, state.currentBranch, refreshTrigger]);
+  }, [state.currentRepo, state.githubToken, state.demoMode, state.currentRepoOwner, state.currentBranch, refreshTrigger]);
 
 
   const refreshData = async () => {
     setState(prev => ({ ...prev, isLoadingRepoDetails: true }));
-    await new Promise(r => setTimeout(r, 600));
+    await new Promise(r => setTimeout(r, 300));
     if (state.githubToken) {
       await repoSlice.fetchGitHubData(state.githubToken);
       if (state.currentRepo && state.currentRepoOwner) {
@@ -103,7 +103,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
     } else {
       const local = getLocalRepos();
-      setState(prev => ({ ...prev, githubRepos: local.length ? local : prev.githubRepos, isLoadingRepoDetails: false }));
+      setState(prev => ({
+        ...prev,
+        githubRepos: local.length ? local : (prev.githubRepos.length ? prev.githubRepos : DEMO_REPOSITORIES),
+        isLoadingRepoDetails: false,
+      }));
+      if (state.currentRepo) {
+        await repoSlice.fetchRepoDetails(state.currentRepo, state.currentRepoOwner || 'octodev', false, state.currentBranch || undefined);
+      }
     }
     uiSlice.showToast("Data refreshed successfully", "success");
   };

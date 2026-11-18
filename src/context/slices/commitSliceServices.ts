@@ -78,11 +78,9 @@ export async function executeRevertCommitOperation(params: {
   const title = `Revert "${(msg || target?.msg || "commit").split('\n')[0]}"`;
   const desc = `Reverses delta introduced in ${shortSha}.`;
 
-  if (githubToken && owner) {
-    try {
-      const newSha = await revertRemoteCommit(owner, repo, hash, branch, title, desc, githubToken);
-      return { success: true, isRemote: true, sha: newSha.substring(0, 7) };
-    } catch (_) {}
+  if (githubToken && owner && owner !== 'local-user' && owner !== 'local-developer' && !(owner === 'octodev' && repo === 'nexus-web-engine')) {
+    const newSha = await revertRemoteCommit(owner, repo, hash, branch, title, desc, githubToken);
+    return { success: true, isRemote: true, sha: newSha.substring(0, 7) };
   }
 
   const localHash = Math.random().toString(16).substring(2, 9);
@@ -116,32 +114,44 @@ export async function executeSaveAndCommitFileOperation(params: {
   githubToken: string | null;
   activeCommits: GitCommitNode[];
 }): Promise<{ isRemote: boolean; sha: string; updatedCommits?: GitCommitNode[]; warning?: string }> {
-  const { repo, owner, authorName, branch, filePath, content, message, description, githubToken, activeCommits } = params;
+  const { repo, owner, authorName, branch, filePath, content, message, description, githubToken } = params;
   const cleanPath = filePath.trim().replace(/^\/+/, '');
   const cleanMsg = message.trim();
   const fullMsg = description?.trim() ? `${cleanMsg}\n\n${description.trim()}` : cleanMsg;
 
   try { localStorage.setItem(`local_file_${repo}_${cleanPath}`, content); } catch (_) {}
 
-  if (githubToken && owner && owner !== 'local-user') {
+  if (githubToken && owner && owner !== 'local-user' && owner !== 'local-developer' && !(owner === 'octodev' && repo === 'nexus-web-engine')) {
     try {
       const res = await pushFileToGitHub(owner, repo, cleanPath, content, fullMsg, branch, githubToken);
       const shortSha = res.commit?.sha ? res.commit.sha.substring(0, 7) : 'updated';
       return { isRemote: true, sha: shortSha };
     } catch (err: any) {
-      // Remote push failed, proceed to local save with warning
+      return await saveLocallyWithWarning(repo, cleanPath, content, fullMsg, authorName, err?.message || 'Remote push failed; saved locally.');
     }
   }
 
+  return await saveLocallyWithWarning(repo, cleanPath, content, fullMsg, authorName);
+}
+
+async function saveLocallyWithWarning(
+  repo: string,
+  cleanPath: string,
+  content: string,
+  fullMsg: string,
+  authorName: string,
+  warning?: string
+): Promise<{ isRemote: boolean; sha: string; updatedCommits?: GitCommitNode[]; warning?: string }> {
   const localHash = Math.random().toString(16).substring(2, 9);
   const existing = getLocalRepoDetails(repo, "commits");
+  const linesCount = Math.max(1, content.split('\n').length);
   const newCommit: GitCommitNode = {
     hash: localHash, fullHash: `${localHash}0000000000000000`, msg: fullMsg,
     author: authorName, time: "Just now", timestamp: new Date().toISOString(),
-    add: "+1", del: "-0", parents: existing.length > 0 ? [existing[0].hash] : [],
-    isPrimary: true, files: [{ filename: cleanPath, status: 'modified', additions: 1, deletions: 0 }],
+    add: `+${linesCount}`, del: "-0", parents: existing.length > 0 ? [existing[0].hash] : [],
+    isPrimary: true, files: [{ filename: cleanPath, status: 'modified', additions: linesCount, deletions: 0 }],
   };
   const updated = [newCommit, ...existing];
   try { localStorage.setItem(`local_details_${repo}_commits`, JSON.stringify(updated.slice(0, 500))); } catch (_) {}
-  return { isRemote: false, sha: localHash, updatedCommits: updated };
+  return { isRemote: false, sha: localHash, updatedCommits: updated, warning };
 }

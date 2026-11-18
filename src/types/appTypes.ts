@@ -30,6 +30,7 @@ export interface AppState {
   toasts: ToastItem[];
   isSearchFocused: boolean;
   theme: 'dark' | 'light' | 'slate' | 'fantasy';
+  demoMode: boolean;
   githubToken: string | null;
   githubUser: GitHubUser | null;
   githubRepos: GitHubRepo[];
@@ -51,7 +52,7 @@ export interface AppState {
   activeFiles: any[];
   activeLanguages: Record<string, number>;
   isLoadingRepoDetails: boolean;
-  activeModal: 'repo' | 'branch' | 'pr' | 'commit' | 'clone' | 'oauth_setup' | null;
+  activeModal: 'repo' | 'branch' | 'pr' | 'commit' | 'clone' | 'oauth_setup' | 'delete_repo' | null;
   sessionCommitsCount: number;
   recentClones: { name: string; url: string; dest: string; timestamp: number }[];
   isCommandPaletteOpen: boolean;
@@ -91,11 +92,13 @@ export type AppContextType = AppState & {
   connectGitHub: () => void;
   disconnectGitHub: () => void;
   setManualToken: (token: string) => void;
+  enterDemoMode: () => void;
+  exitDemoMode: () => void;
   toggleAdminMode: () => void;
   refreshData: () => Promise<void>;
   
   // Details and local creation actions
-  openModal: (modalType: 'repo' | 'branch' | 'pr' | 'commit' | 'clone' | 'oauth_setup') => void;
+  openModal: (modalType: 'repo' | 'branch' | 'pr' | 'commit' | 'clone' | 'oauth_setup' | 'delete_repo') => void;
   closeModal: () => void;
   addRecentClone: (clone: { name: string; url: string; dest: string; timestamp: number }) => void;
   cloneRepository: (repo: { url: string; destFolder: string; branch: string; shallow: boolean; submodules: boolean }) => void;

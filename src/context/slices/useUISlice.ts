@@ -120,7 +120,7 @@ export const useUISlice = ({ state, setState }: UseUISliceParams) => {
   const openDrawer = () => setState((prev) => ({ ...prev, isDrawerOpen: true }));
   const closeDrawer = () => setState((prev) => ({ ...prev, isDrawerOpen: false }));
 
-  const openModal = (modalType: 'repo' | 'branch' | 'pr' | 'commit' | 'clone' | 'oauth_setup') => {
+  const openModal = (modalType: 'repo' | 'branch' | 'pr' | 'commit' | 'clone' | 'oauth_setup' | 'delete_repo') => {
     setState((prev) => ({ ...prev, activeModal: modalType, isActionSheetOpen: false }));
   };
   const closeModal = () => setState((prev) => (prev.activeModal ? { ...prev, activeModal: null } : prev));

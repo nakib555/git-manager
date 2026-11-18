@@ -7,6 +7,7 @@ import {
   filterLocalCommits,
 } from '../features/commit/utils/commitFilterUtils';
 import { fetchRemoteCommits } from '../features/commit/utils/commitApiService';
+import { isDemoCatalogRepo } from '../data/demoRepoCatalog';
 
 export type { DatePreset, CommitFilter };
 export { normalizeDateRange, filterLocalCommits };
@@ -42,7 +43,14 @@ export const useCommits = (filters: CommitFilter) => {
         };
       };
 
-      if (!currentRepoOwner || !currentRepo) {
+      const isDemoOrLocal =
+        !currentRepoOwner ||
+        !currentRepo ||
+        currentRepoOwner === 'local-developer' ||
+        isDemoCatalogRepo(currentRepo) ||
+        (!githubToken && currentRepoOwner === 'octodev');
+
+      if (isDemoOrLocal) {
         return getFallbackResult();
       }
 

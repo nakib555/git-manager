@@ -25,25 +25,31 @@ export const PRDetailOverview: React.FC<PRDetailOverviewProps> = ({
 }) => {
   const isMerged = pr.status === 'Merged';
   const isClosed = pr.status === 'Closed';
+  const sourceBranch = pr.source || pr.branch || 'feature';
 
   return (
     <div className="space-y-5">
       <div className="p-4 bg-main/40 border border-border rounded-xl space-y-3">
         <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider block">Branch Flow</span>
-        <div className="flex items-center gap-2 font-mono text-xs">
+        <div className="flex items-center gap-2 font-mono text-xs flex-wrap">
           <span className="px-2.5 py-1 rounded-md bg-card border border-border font-bold text-text-main">
-            {pr.branch}
+            {sourceBranch}
           </span>
-          <CornerDownRight size={14} className="text-text-muted" />
+          <CornerDownRight size={14} className="text-text-muted shrink-0" />
           <span className="px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20 font-bold text-primary">
             {pr.target || 'main'}
           </span>
         </div>
+        {pr.body && (
+          <p className="text-xs text-text-secondary leading-relaxed pt-2 border-t border-border/60">
+            {pr.body}
+          </p>
+        )}
       </div>
 
       {!isMerged && !isClosed && (
         <div className="bg-card border border-border rounded-xl p-4 space-y-4 shadow-xs">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <span className="text-xs font-bold text-text-main flex items-center gap-1.5">
               <GitMerge size={14} className="text-primary" />
               <span>Merge Pull Request</span>
@@ -52,7 +58,7 @@ export const PRDetailOverview: React.FC<PRDetailOverviewProps> = ({
               <button
                 type="button"
                 onClick={() => setMergeStrategy('merge')}
-                className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                className={`px-2.5 py-1 rounded-md transition-all cursor-pointer whitespace-nowrap ${
                   mergeStrategy === 'merge' ? 'bg-primary text-white' : 'text-text-muted hover:text-text-main'
                 }`}
               >
@@ -61,7 +67,7 @@ export const PRDetailOverview: React.FC<PRDetailOverviewProps> = ({
               <button
                 type="button"
                 onClick={() => setMergeStrategy('squash')}
-                className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                className={`px-2.5 py-1 rounded-md transition-all cursor-pointer whitespace-nowrap ${
                   mergeStrategy === 'squash' ? 'bg-primary text-white' : 'text-text-muted hover:text-text-main'
                 }`}
               >
@@ -77,7 +83,7 @@ export const PRDetailOverview: React.FC<PRDetailOverviewProps> = ({
               onChange={(e) => setDeleteBranch(e.target.checked)}
               className="rounded border-border text-primary focus:ring-primary"
             />
-            <span>Delete branch <code className="font-mono text-text-main">{pr.branch}</code> after merging</span>
+            <span>Delete branch <code className="font-mono text-text-main">{sourceBranch}</code> after merging</span>
           </label>
 
           <div className="flex gap-2 pt-1 items-center">

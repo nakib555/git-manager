@@ -133,6 +133,19 @@ export async function fetchFileBinarySafe({
   const resolvedOwner = owner || '';
   const resolvedBranch = branch || 'main';
 
+  try {
+    const localContent = localStorage.getItem(`local_file_${repoName}_${filePath}`);
+    if (localContent !== null) {
+      const encoder = new TextEncoder();
+      const rawBuffer = encoder.encode(localContent);
+      return {
+        text: localContent,
+        rawBuffer,
+        sizeBytes: rawBuffer.length,
+      };
+    }
+  } catch (_) {}
+
   // Demo fallback
   if (!token || repoName === 'nexus-web-engine' || resolvedOwner === 'octodev') {
     const catalog = getCatalogOrDefault(repoName);
@@ -148,6 +161,9 @@ export async function fetchFileBinarySafe({
     }
   }
 
+  const encodedPath = filePath.split('/').map(encodeURIComponent).join('/');
+  const encodedRef = encodeURIComponent(resolvedBranch);
+
   const authHeader = token
     ? (token.startsWith('ghp_') || token.startsWith('github_pat_') || token.startsWith('gho_') || token.startsWith('Bearer ')
       ? (token.startsWith('Bearer ') ? token : `Bearer ${token}`)
@@ -161,7 +177,7 @@ export async function fetchFileBinarySafe({
       if (authHeader) headers.Authorization = authHeader;
 
       const res = await fetch(
-        `https://api.github.com/repos/${resolvedOwner}/${repoName}/contents/${filePath}?ref=${resolvedBranch}`,
+        `https://api.github.com/repos/${resolvedOwner}/${repoName}/contents/${encodedPath}?ref=${encodedRef}`,
         { headers }
       );
 
@@ -201,7 +217,7 @@ export async function fetchFileBinarySafe({
   // 2. Try raw GitHub content stream
   if (resolvedOwner && repoName) {
     try {
-      const rawUrl = `https://raw.githubusercontent.com/${resolvedOwner}/${repoName}/${resolvedBranch}/${filePath}`;
+      const rawUrl = `https://raw.githubusercontent.com/${resolvedOwner}/${repoName}/${encodedRef}/${encodedPath}`;
       const headers: Record<string, string> = {};
       if (authHeader) headers.Authorization = authHeader;
 

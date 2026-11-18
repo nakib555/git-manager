@@ -13,7 +13,7 @@ export const GitGraphToolbar: React.FC<GitGraphToolbarProps> = ({
   onResetZoom,
 }) => {
   return (
-    <div className="absolute top-3 right-3 z-20 flex items-center bg-card/90 backdrop-blur-xs border border-border rounded-xl p-1 shadow-md gap-0.5">
+    <div className="absolute bottom-2.5 right-2.5 z-20 flex items-center bg-card/90 backdrop-blur-xs border border-border rounded-xl p-1 shadow-md gap-0.5">
       <button
         type="button"
         onClick={onZoomIn}

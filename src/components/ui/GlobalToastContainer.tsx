@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useAppContext } from '../../AppContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle2, AlertCircle, AlertTriangle, Info, X } from 'lucide-react';
@@ -10,7 +10,6 @@ interface ToastCardProps {
 }
 
 const ToastCard: React.FC<ToastCardProps> = ({ toast, onDismiss }) => {
-  const [isHovered, setIsHovered] = useState(false);
 
   const getVariantConfig = (type: ToastType) => {
     switch (type) {
@@ -51,14 +50,12 @@ const ToastCard: React.FC<ToastCardProps> = ({ toast, onDismiss }) => {
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: -16, scale: 0.94 }}
+      initial={{ opacity: 0, y: 12, scale: 0.94 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -12, scale: 0.92, transition: { duration: 0.15 } }}
+      exit={{ opacity: 0, y: 8, scale: 0.94, transition: { duration: 0.15 } }}
       transition={{ type: 'spring', damping: 28, stiffness: 350 }}
       role={toast.type === 'error' ? 'alert' : 'status'}
       aria-live={toast.type === 'error' ? 'assertive' : 'polite'}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
       className={`pointer-events-auto relative w-full sm:w-[380px] bg-surface-1 border rounded-2xl p-3.5 shadow-xl flex items-start gap-3 overflow-hidden backdrop-blur-md ${config.borderClass}`}
     >
       {/* Visual Accent indicator bar */}
@@ -130,7 +127,7 @@ export const GlobalToastContainer: React.FC = () => {
   return (
     <div
       aria-label="Notifications"
-      className="fixed z-[9999] pointer-events-none top-[calc(env(safe-area-inset-top,0px)+12px)] left-4 right-4 sm:left-auto sm:right-6 sm:top-6 sm:w-auto flex flex-col items-center sm:items-end gap-2.5"
+      className="fixed z-[9999] pointer-events-none top-[calc(env(safe-area-inset-top,0px)+12px)] left-4 right-4 sm:top-auto sm:bottom-10 sm:left-auto sm:right-6 sm:w-auto flex flex-col items-center sm:items-end gap-2.5"
     >
       <AnimatePresence mode="popLayout">
         {activeList.map((toast) => (

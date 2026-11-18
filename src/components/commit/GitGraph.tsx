@@ -95,7 +95,7 @@ export const GitGraph: React.FC<GitGraphProps> = ({
                 }}
                 onMouseLeave={() => { setHoveredNode(null); setTooltipPos(null); }}
               >
-                {node.isHead && <circle r="16" fill="url(#head-halo)" className="animate-pulse" />}
+                {node.isHead && <circle r="16" fill="url(#head-halo)" className="head-glow" />}
                 <circle
                   r={isSelected ? 8 : (node.isMerge ? 6 : 5)}
                   fill={node.isMerge ? MERGE_COMMIT_COLOR : node.color}

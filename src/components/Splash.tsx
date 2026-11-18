@@ -8,48 +8,69 @@ export const Splash: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
   const textRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (checkPrefersReducedMotion()) {
+    let skip = checkPrefersReducedMotion();
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('autostart') === '1' || params.get('demo') === '1') {
+        skip = true;
+      }
+    } catch (_) {}
+
+    if (skip) {
       onComplete();
       return;
     }
 
+    const anims: any[] = [];
+
     // Intro animation with anime.js
     if (logoRef.current) {
-      animate(logoRef.current, {
-        scale: [0.88, 1],
-        opacity: [0, 1],
-        duration: 650,
-        ease: 'outExpo',
-      });
+      anims.push(
+        animate(logoRef.current, {
+          scale: [0.88, 1],
+          opacity: [0, 1],
+          duration: 500,
+          ease: 'outExpo',
+        })
+      );
     }
 
     if (textRef.current) {
-      animate(textRef.current, {
-        translateY: [12, 0],
-        opacity: [0, 1],
-        duration: 700,
-        delay: 150,
-        ease: 'outQuart',
-      });
+      anims.push(
+        animate(textRef.current, {
+          translateY: [12, 0],
+          opacity: [0, 1],
+          duration: 550,
+          delay: 120,
+          ease: 'outQuart',
+        })
+      );
     }
 
     const timer = setTimeout(() => {
       if (containerRef.current) {
-        animate(containerRef.current, {
-          opacity: [1, 0],
-          scale: [1, 1.02],
-          duration: 400,
-          ease: 'inOutQuad',
-          onComplete: () => {
-            onComplete();
-          },
-        });
+        anims.push(
+          animate(containerRef.current, {
+            opacity: [1, 0],
+            scale: [1, 1.02],
+            duration: 300,
+            ease: 'inOutQuad',
+            onComplete: () => {
+              onComplete();
+            },
+          })
+        );
       } else {
         onComplete();
       }
-    }, 1300);
+    }, 950);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      anims.forEach((a) => {
+        try { a?.pause?.(); } catch (_) {}
+      });
+    };
   }, [onComplete]);
 
   return (

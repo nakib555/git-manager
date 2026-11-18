@@ -31,10 +31,8 @@ export const CommitRestoreSheet: React.FC<CommitRestoreSheetProps> = ({
     onClose,
   });
 
-  if (!isOpen || !commit) return null;
-
   const handleSubmit = () => {
-    if (workflow.isBusy) return;
+    if (workflow.isBusy || !commit) return;
     workflow.execute(async () => {
       const ok = selectedMode === 'snapshot'
         ? await restoreFilesToCommit(fullSha, firstLineMsg)
@@ -54,6 +52,7 @@ export const CommitRestoreSheet: React.FC<CommitRestoreSheetProps> = ({
 
   return (
     <AnimatePresence>
+      {isOpen && commit && (
       <div className="fixed inset-0 z-[220] flex items-end sm:items-center justify-center p-0 sm:p-4">
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -144,6 +143,7 @@ export const CommitRestoreSheet: React.FC<CommitRestoreSheetProps> = ({
           )}
         </motion.div>
       </div>
+      )}
     </AnimatePresence>
   );
 };

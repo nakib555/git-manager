@@ -21,7 +21,7 @@ export const MonacoDiffSplitView: React.FC<MonacoDiffSplitViewProps> = ({
   newLinesCount,
 }) => {
   return (
-    <div className="hidden sm:block">
+    <div className="hidden sm:block overflow-x-auto">
       {viewMode === 'split' ? (
         <div className="flex flex-col min-w-[680px]">
           <div className="grid grid-cols-2 divide-x divide-border bg-surface-2/60 text-[11px] font-semibold text-text-secondary border-b border-border sticky top-0 z-10">
@@ -42,7 +42,7 @@ export const MonacoDiffSplitView: React.FC<MonacoDiffSplitViewProps> = ({
               return (
                 <div key={idx} className="grid grid-cols-2 divide-x divide-border leading-5 font-mono text-[11px]">
                   <div
-                    className={`flex ${
+                    className={`flex min-w-0 ${
                       leftDel
                         ? 'bg-deletion/12 text-deletion'
                         : row.left
@@ -56,11 +56,11 @@ export const MonacoDiffSplitView: React.FC<MonacoDiffSplitViewProps> = ({
                     <span className="w-4 text-center text-[10px] select-none font-bold shrink-0">
                       {leftDel ? '-' : ''}
                     </span>
-                    <span className="whitespace-pre px-2 flex-1 overflow-x-hidden">{row.left?.text ?? ' '}</span>
+                    <span className="whitespace-pre px-2 flex-1 overflow-x-auto no-scrollbar">{row.left?.text ?? ' '}</span>
                   </div>
 
                   <div
-                    className={`flex ${
+                    className={`flex min-w-0 ${
                       rightAdd
                         ? 'bg-addition/12 text-addition'
                         : row.right
@@ -74,7 +74,7 @@ export const MonacoDiffSplitView: React.FC<MonacoDiffSplitViewProps> = ({
                     <span className="w-4 text-center text-[10px] select-none font-bold shrink-0">
                       {rightAdd ? '+' : ''}
                     </span>
-                    <span className="whitespace-pre px-2 flex-1 overflow-x-hidden">{row.right?.text ?? ' '}</span>
+                    <span className="whitespace-pre px-2 flex-1 overflow-x-auto no-scrollbar">{row.right?.text ?? ' '}</span>
                   </div>
                 </div>
               );

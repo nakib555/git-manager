@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAppContext } from '../AppContext';
 import { CloneModal } from './CloneModal';
+import { DeleteRepoModal } from './DeleteRepoModal';
 import { ModalHeader } from './modals/ModalHeader';
 import { RepoForm } from './modals/RepoForm';
 import { BranchForm } from './modals/BranchForm';
@@ -10,7 +11,7 @@ import { CommitForm } from './modals/CommitForm';
 import { OAuthSetupForm } from './modals/OAuthSetupForm';
 
 export const CreateModals: React.FC = () => {
-  const { activeModal, closeModal, createLocalRepo, createLocalBranch, createLocalPR, createLocalCommit } = useAppContext();
+  const { activeModal, closeModal, createLocalRepo, createLocalBranch, createLocalPR, createLocalCommit, currentRepo, currentRepoOwner } = useAppContext();
   const isMountedRef = React.useRef<boolean>(true);
 
   React.useEffect(() => {
@@ -33,13 +34,28 @@ export const CreateModals: React.FC = () => {
   }, [closeModal]);
 
   React.useEffect(() => {
-    if (!activeModal) return;
+    if (!activeModal || activeModal === 'delete_repo') return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isMountedRef.current) handleSafeClose();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [activeModal, handleSafeClose]);
+
+  if (activeModal === 'clone') {
+    return <CloneModal />;
+  }
+
+  if (activeModal === 'delete_repo') {
+    return (
+      <DeleteRepoModal
+        isOpen={true}
+        onClose={handleSafeClose}
+        repoName={currentRepo || ''}
+        repoOwner={currentRepoOwner}
+      />
+    );
+  }
 
   return (
     <AnimatePresence>
@@ -61,7 +77,7 @@ export const CreateModals: React.FC = () => {
             transition={{ type: 'spring', damping: 28, stiffness: 350, mass: 0.8 }}
             role="dialog"
             aria-modal="true"
-            className="relative w-full max-w-md max-h-[88vh] overflow-y-auto bg-surface-1 rounded-2xl border border-border p-5 sm:p-6 shadow-2xl z-10 flex flex-col sm:-translate-y-4 affordance-card"
+            className="relative w-full max-w-md max-h-[88vh] overflow-y-auto bg-surface-1 rounded-2xl border border-border p-5 sm:p-6 shadow-2xl z-10 flex flex-col sm:-translate-y-4"
           >
             <ModalHeader activeModal={activeModal} onClose={handleSafeClose} />
 
@@ -79,7 +95,6 @@ export const CreateModals: React.FC = () => {
                 <CommitForm onExecute={createLocalCommit} onClose={handleSafeClose} />
               )}
               {activeModal === 'oauth_setup' && <OAuthSetupForm />}
-              {activeModal === 'clone' && <CloneModal />}
             </div>
           </motion.div>
         </div>

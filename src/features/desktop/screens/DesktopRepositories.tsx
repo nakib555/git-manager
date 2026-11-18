@@ -34,7 +34,7 @@ export const DesktopRepositories: React.FC<{ globalSearch?: string }> = ({ globa
   const paginatedRepos = filteredRepos.slice((repoPage - 1) * repoPerPage, repoPage * repoPerPage);
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+    <div className="flex-1 flex flex-col min-h-0 overflow-hidden max-w-[1600px] mx-auto w-full">
       {/* Search and Filters Bar */}
       <div className="flex items-center justify-between gap-3 mb-4 shrink-0 flex-wrap">
         <div className="flex items-center gap-2 flex-1 min-w-[240px]">
@@ -146,7 +146,7 @@ export const DesktopRepositories: React.FC<{ globalSearch?: string }> = ({ globa
                   <DesktopRepoCard
                     repo={repo}
                     isActive={currentRepo === repo.name}
-                    onOpen={() => openRepo(repo.name)}
+                    onOpen={() => openRepo(repo.name, (repo as any).owner?.login)}
                     onDelete={() => setRepoToDelete({ name: repo.name, owner: (repo as any).owner?.login })}
                   />
                 </div>

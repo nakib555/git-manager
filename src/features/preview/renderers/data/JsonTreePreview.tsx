@@ -2,8 +2,6 @@ import React, { useState, useMemo } from 'react';
 import {
   ChevronRight,
   ChevronDown,
-  Copy,
-  Check,
   Search,
   Code2,
   FolderTree,
@@ -26,7 +24,6 @@ export const JsonTreePreview: React.FC<JsonTreePreviewProps> = ({
   initialMode = 'tree',
 }) => {
   const [viewMode, setViewMode] = useState<'tree' | 'raw'>(initialMode);
-  const [copied, setCopied] = useState(false);
   const [search, setSearch] = useState('');
   const [collapsedKeys, setCollapsedKeys] = useState<Record<string, boolean>>({});
   const [formattedContent, setFormattedContent] = useState<string | null>(null);
@@ -76,12 +73,6 @@ export const JsonTreePreview: React.FC<JsonTreePreviewProps> = ({
       const obj = JSON.parse(content);
       setFormattedContent(JSON.stringify(obj));
     } catch (_) {}
-  };
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(activeRawContent);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
   };
 
   const renderValue = (val: any, path: string, depth: number = 0): React.ReactNode => {
@@ -242,17 +233,6 @@ export const JsonTreePreview: React.FC<JsonTreePreviewProps> = ({
               </button>
             </>
           )}
-
-          <button
-            type="button"
-            onClick={handleCopy}
-            className={`flex items-center gap-1.5 h-7 px-2.5 bg-surface-1 hover:bg-surface-2 border border-border rounded-md text-xs font-medium text-text-secondary hover:text-text-primary transition-all cursor-pointer ${
-              copied ? 'border-emerald-500/50 text-emerald-700 bg-emerald-500/10' : ''
-            }`}
-          >
-            {copied ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
-            <span>{copied ? 'Copied' : 'Copy'}</span>
-          </button>
         </div>
       </div>
 

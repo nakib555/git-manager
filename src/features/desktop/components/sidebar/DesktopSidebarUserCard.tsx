@@ -17,14 +17,18 @@ export const DesktopSidebarUserCard: React.FC<DesktopSidebarUserCardProps> = ({
   connectGitHub,
   disconnectGitHub,
 }) => {
+  const [imgFailed, setImgFailed] = React.useState(false);
+
   if (isSidebarCollapsed) {
     return (
-      <div className="mb-6">
+      <div className="mb-5">
         {githubUser ? (
-          githubUser.avatar_url ? (
+          githubUser.avatar_url && !imgFailed ? (
             <img
               src={githubUser.avatar_url}
               alt={githubUser.login || 'Avatar'}
+              referrerPolicy="no-referrer"
+              onError={() => setImgFailed(true)}
               className="w-8 h-8 rounded-full border border-border object-cover"
               title={githubUser.login}
             />
@@ -38,9 +42,11 @@ export const DesktopSidebarUserCard: React.FC<DesktopSidebarUserCardProps> = ({
           )
         ) : (
           <button
+            type="button"
             onClick={connectGitHub}
-            className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center"
+            className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center cursor-pointer"
             title="Connect GitHub"
+            aria-label="Connect GitHub"
           >
             <Github size={16} />
           </button>
@@ -50,32 +56,35 @@ export const DesktopSidebarUserCard: React.FC<DesktopSidebarUserCardProps> = ({
   }
 
   return (
-    <div className="bg-hover/20 border border-border/60 rounded-2xl p-4 mb-6">
+    <div className="bg-hover/20 border border-border/60 rounded-2xl p-3.5 mb-5">
       <div className="flex items-center gap-3">
-        {githubUser?.avatar_url ? (
+        {githubUser?.avatar_url && !imgFailed ? (
           <img
             src={githubUser.avatar_url}
             alt={githubUser.login || 'Avatar'}
-            className="w-10 h-10 rounded-full border border-border object-cover"
+            referrerPolicy="no-referrer"
+            onError={() => setImgFailed(true)}
+            className="w-9 h-9 rounded-full border border-border object-cover shrink-0"
           />
         ) : (
-          <div className="w-10 h-10 rounded-full bg-hover border border-border flex items-center justify-center text-text-muted">
-            <User size={18} />
+          <div className="w-9 h-9 rounded-full bg-hover border border-border flex items-center justify-center text-text-muted shrink-0">
+            <User size={17} />
           </div>
         )}
-        <div className="overflow-hidden">
+        <div className="overflow-hidden min-w-0">
           <span className="block font-semibold text-xs text-text-main truncate">
             {githubUser ? (githubUser.name || githubUser.login) : 'Guest Developer'}
           </span>
           <span className="block text-[10px] text-text-muted truncate mt-0.5">
-            {githubUser ? `@${githubUser.login}` : 'Offline Mode'}
+            {githubUser ? `@${githubUser.login}` : 'Demo Workspace'}
           </span>
         </div>
       </div>
 
-      <div className="mt-4 flex gap-2">
+      <div className="mt-3 flex gap-2">
         {githubToken ? (
           <button 
+            type="button"
             onClick={disconnectGitHub}
             className="flex-1 bg-danger/10 hover:bg-danger/20 border border-danger/25 text-danger h-8 px-3 rounded-xl text-[11px] font-medium btn-tactile cursor-pointer text-center flex items-center justify-center"
           >
@@ -83,6 +92,7 @@ export const DesktopSidebarUserCard: React.FC<DesktopSidebarUserCardProps> = ({
           </button>
         ) : (
           <button 
+            type="button"
             onClick={connectGitHub}
             className="flex-1 bg-primary hover:bg-primary-hover text-white h-8 px-3 rounded-xl text-[11px] font-medium btn-tactile cursor-pointer flex items-center justify-center gap-1.5 shadow-sm shadow-primary/15"
           >

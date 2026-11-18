@@ -22,6 +22,7 @@ export const UniversalFilePreview: React.FC<UniversalPreviewProps> = ({
   isOwner,
   isFullscreen,
   onToggleFullscreen,
+  refreshTrigger,
   className = '',
 }) => {
   const [viewMode, setViewMode] = useState<'preview' | 'hex'>('preview');
@@ -48,6 +49,7 @@ export const UniversalFilePreview: React.FC<UniversalPreviewProps> = ({
 
   useEffect(() => {
     if (!filePath) return;
+    let cancelled = false;
 
     setIsLoading(true);
     setError(null);
@@ -66,6 +68,7 @@ export const UniversalFilePreview: React.FC<UniversalPreviewProps> = ({
       token,
     })
       .then((res) => {
+        if (cancelled) return;
         const rawBuffer = res.rawBuffer;
         const text = res.text || (rawBuffer ? safeTextDecode(rawBuffer) : '');
         let blobUrl: string | undefined;
@@ -85,19 +88,24 @@ export const UniversalFilePreview: React.FC<UniversalPreviewProps> = ({
         });
       })
       .catch((err) => {
-        setError(err.message || 'Failed to fetch file content');
+        if (!cancelled) {
+          setError(err.message || 'Failed to fetch file content');
+        }
       })
       .finally(() => {
-        setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       });
 
     return () => {
+      cancelled = true;
       if (revokeRef.current) {
         revokeRef.current();
         revokeRef.current = null;
       }
     };
-  }, [filePath, repoName, owner, branch, token, formatInfo.mimeType]);
+  }, [filePath, repoName, owner, branch, token, refreshTrigger]);
 
   const handleCopy = () => {
     if (payload.text) {

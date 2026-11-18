@@ -12,7 +12,7 @@ interface UseCommandPaletteItemsParams {
   refreshData?: () => Promise<void>;
   navigate: (screen: any) => void;
   openModal: (modal: any) => void;
-  openRepo: (name: string) => void;
+  openRepo: (name: string, owner?: string) => void;
   switchBranch: (branch: string) => void;
   toggleTheme: () => void;
   openZipSync: () => void;
@@ -94,7 +94,7 @@ export const useCommandPaletteItems = ({
         title: `Admin: Delete Active Repository "${currentRepo}"`,
         category: 'Admin',
         icon: Trash2,
-        run: () => { openModal('delete_repo'); onClose(); }
+        run: () => { openModal('delete_repo'); }
       }
     ] : []),
     {
@@ -139,21 +139,24 @@ export const useCommandPaletteItems = ({
           });
           sessionStorage.clear();
         } catch (_) {}
+        if (refreshData) {
+          refreshData();
+        }
         if (showToast) showToast('Local repository cache purged successfully', 'success');
         onClose();
       }
     },
     {
       id: 'action-theme',
-      title: 'Theme: Clean Light Workstation',
+      title: theme === 'light' ? 'Switch to Cloudflare Dark Workstation' : 'Switch to Clean Light Workstation',
       category: 'Preferences',
-      icon: Sun,
+      icon: theme === 'light' ? Moon : Sun,
       run: () => { toggleTheme(); onClose(); }
     }
   ].filter(a => a.title.toLowerCase().includes(query.toLowerCase()) || a.category.toLowerCase().includes(query.toLowerCase()));
 
   const items = [
-    ...matchedRepos.map(r => ({ type: 'repo' as const, id: `repo-${r.name}`, data: r, run: () => { openRepo(r.name); onClose(); } })),
+    ...matchedRepos.map(r => ({ type: 'repo' as const, id: `repo-${r.name}`, data: r, run: () => { openRepo(r.name, r.owner?.login); onClose(); } })),
     ...matchedBranches.map(b => ({ type: 'branch' as const, id: `branch-${b.name}`, data: b, run: () => { switchBranch(b.name); onClose(); } })),
     ...actions.map(a => ({ type: 'action' as const, id: a.id, data: a, run: a.run }))
   ];

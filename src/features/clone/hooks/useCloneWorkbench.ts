@@ -152,18 +152,14 @@ export function useCloneWorkbench(options: UseCloneWorkbenchOptions = {}) {
           showToast(`Selected destination: ${handle.name}`, 'info');
         }
       } else {
-        // Fallback quick prompt or preset
-        const custom = window.prompt('Enter target filesystem destination directory:', dest);
-        if (custom) {
-          handleDestChange(custom);
-        }
+        showToast('Browser folder picker unavailable; edit the Destination Path field directly.', 'info');
       }
     } catch (err: any) {
       if (err.name !== 'AbortError') {
         showToast('Directory picker cancelled or unavailable', 'info');
       }
     }
-  }, [dest, parsedRepoInfo.repo, handleDestChange, showToast]);
+  }, [parsedRepoInfo.repo, showToast]);
 
   // Repository Browse Lists
   const myGitHubRepos: UnifiedRepoItem[] = useMemo(() => {

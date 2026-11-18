@@ -16,10 +16,12 @@ export const DesktopFileTreeItem: React.FC<{
   depth: number;
   activeFileName: string;
   isOwner?: boolean;
+  forceExpanded?: boolean;
   onSelect: (item: DesktopTreeNode) => void;
   onDelete?: (item: DesktopTreeNode) => void;
-}> = ({ item, depth, activeFileName, isOwner, onSelect, onDelete }) => {
+}> = ({ item, depth, activeFileName, isOwner, forceExpanded, onSelect, onDelete }) => {
   const [isOpen, setIsOpen] = useState(depth === 0);
+  const expanded = forceExpanded || isOpen;
   const isSelected = activeFileName === item.path;
   const isDir = item.type === 'dir';
 
@@ -27,31 +29,33 @@ export const DesktopFileTreeItem: React.FC<{
     return (
       <div>
         <div
-          onClick={() => setIsOpen(!isOpen)}
-          style={{ paddingLeft: `${depth * 14 + 10}px` }}
-          className="group/item flex items-center justify-between py-1.5 pr-2 rounded-lg text-xs font-semibold text-text-muted hover:text-text-main hover:bg-hover/40 cursor-pointer select-none transition-colors"
+          style={{ paddingLeft: `${depth * 14 + 6}px` }}
+          className="group/item flex items-center justify-between pr-1 rounded-lg text-xs font-semibold text-text-muted hover:text-text-main hover:bg-hover/40 transition-colors"
         >
-          <div className="flex items-center gap-1.5 min-w-0">
-            {isOpen ? <ChevronDown size={12} className="shrink-0 text-text-muted/70" /> : <ChevronRight size={12} className="shrink-0 text-text-muted/70" />}
-            {isOpen ? <FolderOpen size={14} className="text-primary shrink-0" /> : <Folder size={14} className="text-primary shrink-0" />}
+          <button
+            type="button"
+            onClick={() => setIsOpen(!expanded)}
+            aria-expanded={expanded}
+            className="flex-1 min-w-0 flex items-center gap-1.5 py-1.5 pl-1 text-left cursor-pointer"
+          >
+            {expanded ? <ChevronDown size={12} className="shrink-0 text-text-muted/70" /> : <ChevronRight size={12} className="shrink-0 text-text-muted/70" />}
+            {expanded ? <FolderOpen size={14} className="text-primary shrink-0" /> : <Folder size={14} className="text-primary shrink-0" />}
             <span className="truncate">{item.name}</span>
-          </div>
+          </button>
 
           {isOwner && onDelete && (
             <button
               type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(item);
-              }}
-              className="opacity-0 group-hover/item:opacity-100 p-1 text-text-muted hover:text-rose-400 hover:bg-rose-500/10 rounded transition-opacity cursor-pointer shrink-0"
+              aria-label={`Delete folder '${item.name}'`}
+              onClick={() => onDelete(item)}
+              className="opacity-0 group-hover/item:opacity-100 group-focus-within/item:opacity-100 focus-visible:opacity-100 p-1 text-text-muted hover:text-rose-400 hover:bg-rose-500/10 rounded transition-opacity cursor-pointer shrink-0"
               title={`Delete folder '${item.name}'`}
             >
               <Trash2 size={12} />
             </button>
           )}
         </div>
-        {isOpen && item.children && (
+        {expanded && item.children && (
           <div className="space-y-0.5">
             {item.children.map(child => (
               <DesktopFileTreeItem
@@ -60,6 +64,7 @@ export const DesktopFileTreeItem: React.FC<{
                 depth={depth + 1}
                 activeFileName={activeFileName}
                 isOwner={isOwner}
+                forceExpanded={forceExpanded}
                 onSelect={onSelect}
                 onDelete={onDelete}
               />
@@ -74,32 +79,33 @@ export const DesktopFileTreeItem: React.FC<{
 
   return (
     <div
-      onClick={() => onSelect(item)}
-      style={{ paddingLeft: `${depth * 14 + 22}px` }}
-      className={`group/item flex items-center justify-between py-1.5 pr-2 rounded-lg text-xs cursor-pointer select-none btn-tactile ${
+      style={{ paddingLeft: `${depth * 14 + 18}px` }}
+      className={`group/item flex items-center justify-between pr-1 rounded-lg text-xs btn-tactile ${
         isSelected
           ? 'bg-primary/10 text-primary font-semibold border border-primary/20'
           : 'text-text-muted hover:text-text-main hover:bg-hover/30 border border-transparent'
       }`}
     >
-      <div className="flex items-center gap-1.5 min-w-0">
-        <Icon size={13} className={isSelected ? 'text-primary' : 'text-text-muted'} />
+      <button
+        type="button"
+        onClick={() => onSelect(item)}
+        className="flex-1 min-w-0 flex items-center gap-1.5 py-1.5 pl-1 text-left cursor-pointer"
+      >
+        <Icon size={13} className={`shrink-0 ${isSelected ? 'text-primary' : 'text-text-muted'}`} />
         <span className="truncate">{item.name}</span>
-      </div>
-      <div className="flex items-center gap-1.5 shrink-0 ml-1">
+      </button>
+      <div className="flex items-center gap-1 shrink-0 ml-1">
         {typeof item.size === 'number' && item.size > 0 && (
-          <span className="text-[10px] font-mono text-text-muted/70 group-hover/item:hidden tabular-nums">
+          <span className="text-[10px] font-mono text-text-muted/70 group-hover/item:hidden group-focus-within/item:hidden tabular-nums pr-1">
             {formatBytes(item.size)}
           </span>
         )}
         {isOwner && onDelete && (
           <button
             type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(item);
-            }}
-            className="opacity-0 group-hover/item:opacity-100 p-1 text-text-muted hover:text-rose-400 hover:bg-rose-500/10 rounded btn-tactile cursor-pointer"
+            aria-label={`Delete file '${item.name}'`}
+            onClick={() => onDelete(item)}
+            className="opacity-0 group-hover/item:opacity-100 group-focus-within/item:opacity-100 focus-visible:opacity-100 p-1 text-text-muted hover:text-rose-400 hover:bg-rose-500/10 rounded btn-tactile cursor-pointer"
             title={`Delete file '${item.name}'`}
           >
             <Trash2 size={12} />

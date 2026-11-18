@@ -594,14 +594,10 @@ body {
 /* Principle 16: Affordance Signifiers */
 .affordance-card {
   box-shadow: var(--shadow-soft);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .affordance-card:hover {
   box-shadow: var(--shadow-medium);
-  transform: translateY(-1px);
-}
-.affordance-card:active {
-  transform: translateY(0);
 }
 
 /* Principle 17: Combobox aesthetics */

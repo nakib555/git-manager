@@ -98,5 +98,6 @@ export interface UniversalPreviewProps {
   isOwner?: boolean;
   isFullscreen?: boolean;
   onToggleFullscreen?: () => void;
+  refreshTrigger?: number;
   className?: string;
 }

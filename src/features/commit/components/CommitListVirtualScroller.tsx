@@ -30,7 +30,7 @@ export const CommitListVirtualScroller: React.FC<CommitListVirtualScrollerProps>
   const rowVirtualizer = useVirtualizer({
     count: commits.length,
     getScrollElement: () => scrollElementRef.current,
-    estimateSize: () => 120,
+    estimateSize: () => (isDesktop ? 106 : 134),
     overscan: 5,
   });
 
@@ -73,6 +73,8 @@ export const CommitListVirtualScroller: React.FC<CommitListVirtualScrollerProps>
           return (
             <div
               key={virtualRow.key}
+              data-index={virtualRow.index}
+              ref={rowVirtualizer.measureElement}
               style={{
                 position: 'absolute',
                 top: 0,
@@ -86,7 +88,7 @@ export const CommitListVirtualScroller: React.FC<CommitListVirtualScrollerProps>
                 isSelected={isSelected}
                 isLatest={virtualRow.index === 0}
                 onSelect={() => onSelectCommit?.(commit)}
-                onActionClick={(e: any) => onActionClick?.(commit, e)}
+                onActionClick={onActionClick ? (c: any, e: React.MouseEvent) => onActionClick(c, e) : undefined}
                 isDesktop={isDesktop}
               />
             </div>

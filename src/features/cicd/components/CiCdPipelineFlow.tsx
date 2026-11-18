@@ -10,14 +10,14 @@ export const CiCdPipelineFlow: React.FC<{ hash: string }> = ({ hash }) => {
 
   if (!isReal || !cicd || !cicd.steps || cicd.steps.length === 0) {
     return (
-      <div className="bg-card border border-border rounded-2xl p-6 text-center space-y-3 shadow-xs">
-        <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mx-auto">
-          <Cpu size={20} />
+      <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-card border border-border text-left">
+        <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <Cpu size={16} />
         </div>
-        <div>
-          <h4 className="text-xs font-bold text-text-main">No CI/CD Workflows Reported</h4>
-          <p className="text-[11px] text-text-muted mt-1 max-w-sm mx-auto leading-relaxed">
-            No active GitHub Actions workflow runs or check suites detected for commit <span className="font-mono text-primary">{shortHash}</span>.
+        <div className="min-w-0">
+          <h4 className="text-xs font-semibold text-text-main leading-tight">No CI/CD Workflows Reported</h4>
+          <p className="text-[11px] text-text-muted mt-0.5 leading-snug">
+            No GitHub Actions runs detected for <span className="font-mono text-primary">{shortHash}</span>.
           </p>
         </div>
       </div>

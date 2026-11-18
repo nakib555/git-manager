@@ -47,7 +47,11 @@ export const DeleteRepoModal: React.FC<DeleteRepoModalProps> = ({
   };
 
   useEffect(() => {
-    if (!isOpen) { workflow.reset(); setConfirmInput(''); }
+    if (!isOpen) {
+      workflow.reset();
+      setConfirmInput('');
+      return;
+    }
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && !workflow.isBusy) handleModalClose();
     };
@@ -81,7 +85,7 @@ export const DeleteRepoModal: React.FC<DeleteRepoModalProps> = ({
           <motion.div
             initial={{ opacity: 0, scale: 0.94, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.94, y: 8 }}
             transition={{ type: 'spring', damping: 28, stiffness: 350, mass: 0.8 }}
-            className="relative w-full max-w-md sm:max-w-lg bg-card border border-danger/40 rounded-2xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[90vh] overflow-y-auto min-w-0 sm:-translate-y-4 affordance-card"
+            className="relative w-full max-w-md sm:max-w-lg bg-card border border-danger/40 rounded-2xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[90vh] overflow-y-auto min-w-0 sm:-translate-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <DeleteRepoHeader onClose={handleModalClose} isDeleting={workflow.isBusy} />

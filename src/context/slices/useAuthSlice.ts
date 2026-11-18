@@ -6,7 +6,7 @@ interface UseAuthSliceParams {
   state: AppState;
   setState: React.Dispatch<React.SetStateAction<AppState>>;
   showToast: (msg: string, type?: 'info' | 'success' | 'warning' | 'error') => void;
-  openModal: (modal: 'repo' | 'branch' | 'pr' | 'commit' | 'clone' | 'oauth_setup') => void;
+  openModal: (modal: 'repo' | 'branch' | 'pr' | 'commit' | 'clone' | 'oauth_setup' | 'delete_repo') => void;
   fetchGitHubData: (token: string, isBg?: boolean, p?: number, q?: string) => Promise<void>;
   setRefreshTrigger: React.Dispatch<React.SetStateAction<number>>;
 }
@@ -52,8 +52,10 @@ export const useAuthSlice = ({
               localStorage.setItem("githubUser", JSON.stringify(incomingUser));
             } catch (_) {}
           }
+          localStorage.removeItem('gm_demo_mode');
           setState((prev) => ({
             ...prev,
+            demoMode: false,
             githubToken: token,
             githubUser: incomingUser || prev.githubUser,
             currentRepo: null,
@@ -117,6 +119,7 @@ export const useAuthSlice = ({
 
     setState((prev) => ({
       ...prev,
+      demoMode: false,
       githubToken: null,
       tokenScopes: [],
       hasDeleteRepoScope: false,
@@ -131,14 +134,48 @@ export const useAuthSlice = ({
       activeFiles: [],
       activeLanguages: {},
       repoTotalPages: 1,
-      selectedPR: null,
-      selectedCommit: null,
     }));
     showToast("Signed out. All credentials and local session caches have been purged.", "info");
   };
 
+  const enterDemoMode = () => {
+    try {
+      localStorage.setItem('gm_demo_mode', 'true');
+      localStorage.setItem('currentRepo', 'nexus-web-engine');
+      localStorage.setItem('currentRepoOwner', 'octodev');
+      localStorage.setItem('currentBranch', 'main');
+    } catch (_) {}
+    setState((prev) => ({
+      ...prev,
+      demoMode: true,
+      githubRepos: DEMO_REPOSITORIES,
+      currentRepo: 'nexus-web-engine',
+      currentRepoOwner: 'octodev',
+      currentBranch: 'main',
+      activeCommits: DEMO_COMMITS,
+      activeBranches: DEMO_BRANCHES,
+      activePRs: DEMO_PRS,
+      activeFiles: DEMO_FILES,
+      activeLanguages: { TypeScript: 74, JavaScript: 18, CSS: 8 },
+      repoTotalPages: 1,
+    }));
+    showToast("Demo Workspace loaded with sample repositories.", "info");
+  };
+
+  const exitDemoMode = () => {
+    try { localStorage.removeItem('gm_demo_mode'); } catch (_) {}
+    setState((prev) => ({
+      ...prev,
+      demoMode: false,
+      currentRepo: null,
+      currentRepoOwner: null,
+      currentBranch: null,
+    }));
+  };
+
   const setManualToken = (token: string) => {
     localStorage.setItem("githubToken", token);
+    try { localStorage.removeItem('gm_demo_mode'); } catch (_) {}
     const scopes: string[] = JSON.parse(localStorage.getItem("githubScopes") || "[]");
     let cachedUser = null;
     try {
@@ -148,6 +185,7 @@ export const useAuthSlice = ({
 
     setState((prev) => ({
       ...prev,
+      demoMode: false,
       githubToken: token,
       tokenScopes: scopes,
       hasDeleteRepoScope: scopes.includes("delete_repo"),
@@ -169,5 +207,7 @@ export const useAuthSlice = ({
     connectGitHub,
     disconnectGitHub,
     setManualToken,
+    enterDemoMode,
+    exitDemoMode,
   };
 };

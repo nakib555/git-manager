@@ -32,8 +32,8 @@ export const DesktopInsightsView: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-6 flex-1 overflow-y-auto pr-1 no-scrollbar pb-8">
-      <div className="grid grid-cols-3 gap-6">
+    <div className="space-y-6 flex-1 overflow-y-auto pr-1 no-scrollbar pb-8 max-w-[1600px] mx-auto w-full">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6">
         <div className="bg-card rounded-2xl p-6 border border-border flex flex-col justify-between">
           <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider mb-2">Total Commits Logged</span>
           <span className="text-2xl font-extrabold text-text-main font-mono tabular-nums">{commitCount}</span>

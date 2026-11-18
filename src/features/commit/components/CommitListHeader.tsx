@@ -33,114 +33,122 @@ export const CommitListHeader: React.FC<CommitListHeaderProps> = ({
   onRefresh,
 }) => {
   return (
-    <div className="flex items-center gap-2 w-full">
-      <div className="relative flex-1">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted">
-          <Search size={14} />
+    <div className="flex flex-col gap-2 w-full">
+      <div className="flex items-center gap-2 w-full">
+        <div className="relative flex-1 min-w-0">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted">
+            <Search size={13} />
+          </div>
+          <input
+            type="text"
+            className="w-full bg-card border border-border text-text-main text-xs rounded-xl pl-8 pr-3 py-1.5 focus:outline-none focus:border-primary transition-colors placeholder:text-text-muted/60"
+            placeholder="Filter commit messages, hashes..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+          />
         </div>
-        <input
-          type="text"
-          className="w-full bg-card border border-border text-text-main text-xs rounded-xl pl-9 pr-3 py-2 focus:outline-none focus:border-primary transition-colors placeholder:text-text-muted/60"
-          placeholder="Filter commit messages, hashes..."
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-        />
-      </div>
 
-      <div className="flex items-center bg-card border border-border rounded-xl p-0.5 shrink-0">
         <button
           type="button"
-          onClick={() => setViewMode('list')}
-          className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-            viewMode === 'list' ? 'bg-primary text-white shadow-xs' : 'text-text-muted hover:text-text-main'
+          onClick={() => setShowFilters(!showFilters)}
+          className={`px-2.5 py-1.5 border rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer text-xs shrink-0 ${
+            showFilters || activeFilterCount > 0
+              ? 'bg-primary/10 border-primary/40 text-primary font-semibold'
+              : 'bg-card border-border text-text-muted hover:text-text-main'
           }`}
-          title="Timeline list view"
+          title="Toggle filters"
         >
-          <List size={14} />
+          <Filter size={13} />
+          <span className="hidden sm:inline">Filter</span>
+          {activeFilterCount > 0 && (
+            <span className="min-w-[16px] h-4 px-1 rounded-md bg-primary text-white text-[10px] font-semibold flex items-center justify-center">
+              {activeFilterCount}
+            </span>
+          )}
         </button>
-        <button
-          type="button"
-          onClick={() => setViewMode('graph')}
-          className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-            viewMode === 'graph' ? 'bg-primary text-white shadow-xs' : 'text-text-muted hover:text-text-main'
-          }`}
-          title="Interactive D3 graph view"
-        >
-          <GitGraphIcon size={14} />
-        </button>
-        {isDesktop && (
+
+        {onRefresh && (
           <button
             type="button"
-            onClick={() => setViewMode('split')}
-            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-              viewMode === 'split' ? 'bg-primary text-white shadow-xs' : 'text-text-muted hover:text-text-main'
-            }`}
-            title="Split view (Graph + List)"
+            onClick={onRefresh}
+            className="p-1.5 border border-border rounded-xl bg-card hover:bg-hover text-text-muted hover:text-text-main transition-colors cursor-pointer shrink-0"
+            title="Refresh commits"
+            aria-label="Refresh commits"
           >
-            <Columns size={14} />
+            <RefreshCw size={13} className={isFetching ? 'animate-spin text-primary' : ''} />
           </button>
         )}
       </div>
 
-      {/* Dual Descending & Ascending Horizontal Buttons */}
-      <div className="flex items-center bg-card border border-border rounded-xl p-0.5 shrink-0 text-xs font-semibold">
-        <button
-          type="button"
-          onClick={() => onSetSortDirection ? onSetSortDirection('desc') : onToggleSortDirection && onToggleSortDirection()}
-          className={`px-2 py-1.5 rounded-lg flex items-center gap-1 transition-all cursor-pointer ${
-            sortDirection === 'desc'
-              ? 'bg-primary text-white shadow-xs font-bold'
-              : 'text-text-muted hover:text-text-main'
-          }`}
-          title="Descending (Newest first - Default)"
-        >
-          <ArrowDownWideNarrow size={13} />
-          <span className="hidden sm:inline">Desc</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => onSetSortDirection ? onSetSortDirection('asc') : onToggleSortDirection && onToggleSortDirection()}
-          className={`px-2 py-1.5 rounded-lg flex items-center gap-1 transition-all cursor-pointer ${
-            sortDirection === 'asc'
-              ? 'bg-primary text-white shadow-xs font-bold'
-              : 'text-text-muted hover:text-text-main'
-          }`}
-          title="Ascending (Oldest first / Chronological)"
-        >
-          <ArrowUpNarrowWide size={13} />
-          <span className="hidden sm:inline">Asc</span>
-        </button>
+      <div className="flex items-center justify-between gap-2 w-full">
+        <div className="flex items-center bg-card border border-border rounded-xl p-0.5 shrink-0">
+          <button
+            type="button"
+            onClick={() => setViewMode('list')}
+            className={`px-2 py-1 rounded-lg transition-colors cursor-pointer flex items-center gap-1 text-[11px] font-medium ${
+              viewMode === 'list' ? 'bg-primary text-white shadow-xs font-semibold' : 'text-text-muted hover:text-text-main'
+            }`}
+            title="Timeline list view"
+          >
+            <List size={12} />
+            <span>List</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('graph')}
+            className={`px-2 py-1 rounded-lg transition-colors cursor-pointer flex items-center gap-1 text-[11px] font-medium ${
+              viewMode === 'graph' ? 'bg-primary text-white shadow-xs font-semibold' : 'text-text-muted hover:text-text-main'
+            }`}
+            title="Interactive D3 graph view"
+          >
+            <GitGraphIcon size={12} />
+            <span>Graph</span>
+          </button>
+          {isDesktop && (
+            <button
+              type="button"
+              onClick={() => setViewMode('split')}
+              className={`px-2 py-1 rounded-lg transition-colors cursor-pointer flex items-center gap-1 text-[11px] font-medium ${
+                viewMode === 'split' ? 'bg-primary text-white shadow-xs font-semibold' : 'text-text-muted hover:text-text-main'
+              }`}
+              title="Split view (Graph + List)"
+            >
+              <Columns size={12} />
+              <span>Split</span>
+            </button>
+          )}
+        </div>
+
+        {/* Dual Descending & Ascending Horizontal Buttons */}
+        <div className="flex items-center bg-card border border-border rounded-xl p-0.5 shrink-0 text-[11px] font-semibold">
+          <button
+            type="button"
+            onClick={() => onSetSortDirection ? onSetSortDirection('desc') : onToggleSortDirection && onToggleSortDirection()}
+            className={`px-2 py-1 rounded-lg flex items-center gap-1 transition-all cursor-pointer ${
+              sortDirection === 'desc'
+                ? 'bg-primary text-white shadow-xs font-bold'
+                : 'text-text-muted hover:text-text-main'
+            }`}
+            title="Descending (Newest first - Default)"
+          >
+            <ArrowDownWideNarrow size={12} />
+            <span>Desc</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onSetSortDirection ? onSetSortDirection('asc') : onToggleSortDirection && onToggleSortDirection()}
+            className={`px-2 py-1 rounded-lg flex items-center gap-1 transition-all cursor-pointer ${
+              sortDirection === 'asc'
+                ? 'bg-primary text-white shadow-xs font-bold'
+                : 'text-text-muted hover:text-text-main'
+            }`}
+            title="Ascending (Oldest first / Chronological)"
+          >
+            <ArrowUpNarrowWide size={12} />
+            <span>Asc</span>
+          </button>
+        </div>
       </div>
-
-      <button
-        type="button"
-        onClick={() => setShowFilters(!showFilters)}
-        className={`px-3 py-2 border rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer text-xs shrink-0 ${
-          showFilters || activeFilterCount > 0
-            ? 'bg-primary/10 border-primary/40 text-primary font-semibold'
-            : 'bg-card border-border text-text-muted hover:text-text-main'
-        }`}
-        title="Toggle filters"
-      >
-        <Filter size={14} />
-        <span className="hidden sm:inline">Filter</span>
-        {activeFilterCount > 0 && (
-          <span className="min-w-[16px] h-4 px-1 rounded-md bg-primary text-white text-[10px] font-semibold flex items-center justify-center">
-            {activeFilterCount}
-          </span>
-        )}
-      </button>
-
-      {onRefresh && (
-        <button
-          type="button"
-          onClick={onRefresh}
-          className="p-2 border border-border rounded-xl bg-card hover:bg-hover text-text-muted hover:text-text-main transition-colors cursor-pointer shrink-0"
-          title="Refresh commits"
-        >
-          <RefreshCw size={14} className={isFetching ? 'animate-spin text-primary' : ''} />
-        </button>
-      )}
     </div>
   );
 };

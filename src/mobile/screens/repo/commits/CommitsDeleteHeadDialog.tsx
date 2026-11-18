@@ -28,7 +28,7 @@ export const CommitsDeleteHeadDialog: React.FC<CommitsDeleteHeadDialogProps> = (
   const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
-    if (!isOpen) { setStatus('idle'); setErrorMsg(''); }
+    if (!isOpen) { setStatus('idle'); setErrorMsg(''); return; }
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && status !== 'deleting') onClose();
     };
@@ -53,10 +53,9 @@ export const CommitsDeleteHeadDialog: React.FC<CommitsDeleteHeadDialogProps> = (
     }
   };
 
-  if (!isOpen || !commit) return null;
-
   return (
     <AnimatePresence>
+      {isOpen && commit && (
       <div className="fixed inset-0 z-[220] flex items-center justify-center p-4 sm:p-6">
         <motion.div
           initial={{ opacity: 0 }}
@@ -140,6 +139,7 @@ export const CommitsDeleteHeadDialog: React.FC<CommitsDeleteHeadDialogProps> = (
           )}
         </motion.div>
       </div>
+      )}
     </AnimatePresence>
   );
 };

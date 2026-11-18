@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAppContext } from '../AppContext';
 import { motion } from 'motion/react';
 import { CloneFormInputs } from '../features/clone/components/CloneFormInputs';
@@ -10,6 +10,14 @@ import { useCloneWorkbench } from '../features/clone/hooks/useCloneWorkbench';
 
 export const CloneModal = () => {
   const { closeModal } = useAppContext();
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeModal();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [closeModal]);
 
   const {
     activeTab,
@@ -60,7 +68,7 @@ export const CloneModal = () => {
         transition={{ type: 'spring', damping: 28, stiffness: 320, mass: 0.8 }}
         role="dialog"
         aria-modal="true"
-        className="relative bg-surface-1 border-t sm:border border-border rounded-t-3xl sm:rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh] z-10 pb-[env(safe-area-inset-bottom,0px)] sm:-translate-y-4 affordance-card"
+        className="relative bg-surface-1 border-t sm:border border-border rounded-t-3xl sm:rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh] z-10 pb-[env(safe-area-inset-bottom,0px)] sm:-translate-y-4"
       >
         <div className="w-10 h-1 bg-border rounded-full mx-auto mt-2.5 -mb-1 sm:hidden shrink-0" />
         <CloneTabHeader activeTab={activeTab} setActiveTab={setActiveTab} onClose={closeModal} />

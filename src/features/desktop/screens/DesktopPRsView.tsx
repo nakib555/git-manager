@@ -6,9 +6,10 @@ import { PRListItem } from '../../pr/components/PRListItem';
 import { PRDetailOverview } from '../../pr/components/PRDetailOverview';
 import { PRDetailCommits } from '../../pr/components/PRDetailCommits';
 import { PRDetailFiles } from '../../pr/components/PRDetailFiles';
+import { getGitHubAuthHeader } from '../../../context/gitMutationServices';
 
 export const DesktopPRsView: React.FC = () => {
-  const { activePRs, openModal, updateLocalPRStatus, showToast, theme, githubToken, currentRepo, currentRepoOwner, deleteBranch } = useAppContext();
+  const { activePRs, activeCommits, openModal, updateLocalPRStatus, showToast, theme, githubToken, currentRepo, currentRepoOwner, deleteBranch } = useAppContext();
   const [activeTab, setActiveTab] = useState<PRStatusTab>('Open');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPRId, setSelectedPRId] = useState<number | null>(null);
@@ -20,14 +21,24 @@ export const DesktopPRsView: React.FC = () => {
   const [prFiles, setPrFiles] = useState<PRFile[]>([]);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
+  // Reset selection when active repository changes
+  useEffect(() => {
+    setSelectedPRId(null);
+    setDetailTab('overview');
+  }, [currentRepo]);
+
   const counts = {
-    open: activePRs.filter(p => p.status === 'Open').length,
+    open: activePRs.filter(p => p.status === 'Open' || p.status === 'Draft').length,
     merged: activePRs.filter(p => p.status === 'Merged').length,
     closed: activePRs.filter(p => p.status === 'Closed').length,
   };
 
   const filteredPRs = activePRs.filter(p => {
-    if (p.status !== activeTab) return false;
+    if (activeTab === 'Open') {
+      if (p.status !== 'Open' && p.status !== 'Draft') return false;
+    } else if (p.status !== activeTab) {
+      return false;
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       return p.title.toLowerCase().includes(q) || p.author.toLowerCase().includes(q);
@@ -36,16 +47,39 @@ export const DesktopPRsView: React.FC = () => {
   });
 
   const selectedPR = activePRs.find(p => p.id === selectedPRId);
+  const isDemoRepo = currentRepoOwner === 'octodev' && currentRepo === 'nexus-web-engine';
 
   useEffect(() => {
-    if (!selectedPR || !githubToken || !currentRepoOwner || !currentRepo) {
+    if (!selectedPR) {
       setPrCommits([]); setPrFiles([]); return;
     }
+    if (!githubToken || !currentRepoOwner || !currentRepo || isDemoRepo || currentRepoOwner === 'local-developer') {
+      // Populate deterministic commits from active repository history in local/demo mode
+      setPrCommits(
+        (activeCommits || []).slice(0, 3).map((c) => ({
+          hash: (c.hash || '').substring(0, 7),
+          msg: c.msg,
+          author: c.author,
+          time: c.time || 'Recently',
+        }))
+      );
+      setPrFiles([
+        {
+          filename: `src/features/${(selectedPR.source || 'feature').replace(/[^a-zA-Z0-9_-]/g, '-')}.ts`,
+          additions: 14,
+          deletions: 3,
+          patch: `@@ -1,4 +1,6 @@\n-export const status = 'pending';\n+export const status = '${selectedPR.status.toLowerCase()}';\n+export const targetBranch = '${selectedPR.target || 'main'}';`,
+        },
+      ]);
+      return;
+    }
+
     setIsLoadingDetails(true);
-    const headers = { Authorization: `Bearer ${githubToken}`, Accept: 'application/vnd.github.v3+json' };
+    const headers = { Authorization: getGitHubAuthHeader(githubToken), Accept: 'application/vnd.github.v3+json' };
+    const prNumber = selectedPR.number || selectedPR.id;
     Promise.all([
-      fetch(`https://api.github.com/repos/${currentRepoOwner}/${currentRepo}/pulls/${selectedPR.id}/commits`, { headers }).then(r => r.ok ? r.json() : []).catch(() => []),
-      fetch(`https://api.github.com/repos/${currentRepoOwner}/${currentRepo}/pulls/${selectedPR.id}/files`, { headers }).then(r => r.ok ? r.json() : []).catch(() => [])
+      fetch(`https://api.github.com/repos/${currentRepoOwner}/${currentRepo}/pulls/${prNumber}/commits`, { headers }).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch(`https://api.github.com/repos/${currentRepoOwner}/${currentRepo}/pulls/${prNumber}/files`, { headers }).then(r => r.ok ? r.json() : []).catch(() => [])
     ]).then(([commitsData, filesData]) => {
       setPrCommits((commitsData || []).map((c: any) => ({
         hash: (c.sha || '').substring(0, 7), msg: c.commit?.message || '', author: c.commit?.author?.name || 'user', time: formatTime(c.commit?.author?.date)
@@ -54,17 +88,35 @@ export const DesktopPRsView: React.FC = () => {
         filename: f.filename, additions: f.additions, deletions: f.deletions, patch: f.patch || ''
       })));
     }).finally(() => setIsLoadingDetails(false));
-  }, [selectedPRId, githubToken, currentRepoOwner, currentRepo]);
+  }, [selectedPRId, githubToken, currentRepoOwner, currentRepo, isDemoRepo, activeCommits, selectedPR?.source, selectedPR?.status, selectedPR?.target, selectedPR?.number, selectedPR?.id]);
 
   const handleMerge = async () => {
     if (!selectedPR) return;
     setIsMerging(true);
     try {
-      updateLocalPRStatus(selectedPR.id, 'Merged');
-      if (shouldDeleteBranch && selectedPR.branch) deleteBranch(selectedPR.branch);
-      showToast(`Pull Request #${selectedPR.id} merged!`);
-    } catch (e: any) { showToast(e.message || 'Merge failed', 'error'); }
-    finally { setIsMerging(false); }
+      const targetId = selectedPR.number || selectedPR.id;
+      await updateLocalPRStatus(targetId, 'Merged', mergeStrategy);
+      const sourceBranch = selectedPR.source || (selectedPR as any).branch;
+      if (shouldDeleteBranch && sourceBranch) {
+        await deleteBranch(sourceBranch);
+      }
+    } catch (e: any) {
+      showToast(e?.message || 'Merge failed', 'error');
+    } finally {
+      setIsMerging(false);
+    }
+  };
+
+  const handleClosePR = async () => {
+    if (!selectedPR) return;
+    setIsMerging(true);
+    try {
+      await updateLocalPRStatus(selectedPR.number || selectedPR.id, 'Closed');
+    } catch (e: any) {
+      showToast(e?.message || 'Failed to close PR', 'error');
+    } finally {
+      setIsMerging(false);
+    }
   };
 
   return (
@@ -76,7 +128,7 @@ export const DesktopPRsView: React.FC = () => {
       />
 
       <div className="flex-1 flex gap-4 min-h-0 overflow-hidden">
-        <div className="w-80 lg:w-96 flex flex-col shrink-0 min-h-0 space-y-3 overflow-y-auto pr-1 no-scrollbar">
+        <div className="w-72 lg:w-80 xl:w-96 flex flex-col shrink-0 min-h-0 space-y-3 overflow-y-auto pr-1 no-scrollbar">
           {filteredPRs.map(pr => (
             <PRListItem
               key={pr.id} pr={pr} isSelected={selectedPRId === pr.id}
@@ -88,18 +140,19 @@ export const DesktopPRsView: React.FC = () => {
           )}
         </div>
 
-        <div className="flex-1 flex flex-col min-h-0 bg-card border border-border rounded-2xl p-5 shadow-xs overflow-y-auto">
+        <div className="flex-1 min-w-0 flex flex-col min-h-0 bg-card border border-border rounded-2xl p-5 shadow-xs overflow-y-auto">
           {selectedPR ? (
             <div className="space-y-4">
-              <div className="flex items-center justify-between border-b border-border pb-3">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-base text-text-main">#{selectedPR.id} {selectedPR.title}</h3>
+              <div className="flex items-center justify-between border-b border-border pb-3 gap-3 flex-wrap">
+                <div className="flex items-center gap-2 min-w-0">
+                  <h3 className="font-bold text-base text-text-main truncate">#{selectedPR.number || selectedPR.id} {selectedPR.title}</h3>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-1.5 shrink-0">
                   {(['overview', 'commits', 'files'] as PRDetailSubTab[]).map(tab => (
                     <button
+                      type="button"
                       key={tab} onClick={() => setDetailTab(tab)}
-                      className={`text-xs font-bold px-3 py-1.5 rounded-lg capitalize cursor-pointer ${
+                      className={`text-xs font-bold px-3 py-1.5 rounded-lg capitalize cursor-pointer whitespace-nowrap ${
                         detailTab === tab ? 'bg-primary text-white' : 'text-text-muted hover:text-text-main'
                       }`}
                     >
@@ -114,7 +167,7 @@ export const DesktopPRsView: React.FC = () => {
                   pr={selectedPR} mergeStrategy={mergeStrategy} setMergeStrategy={setMergeStrategy}
                   deleteBranch={shouldDeleteBranch} setDeleteBranch={setShouldDeleteBranch}
                   isMerging={isMerging} onMerge={handleMerge}
-                  onClosePR={() => updateLocalPRStatus(selectedPR.id, 'Closed')}
+                  onClosePR={handleClosePR}
                 />
               )}
               {detailTab === 'commits' && <PRDetailCommits commits={prCommits} isLoading={isLoadingDetails} />}
